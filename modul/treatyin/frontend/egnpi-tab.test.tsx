@@ -116,7 +116,7 @@ describe('tab EGNPI — bentuk dari ekspor', () => {
     expect(SRC).toContain('<TanggalRedup')
     expect(SRC).toContain('label={EGNPI.asAt}')
     const html = render('ubah')
-    expect(html).toContain(`aria-label="Pilih dari kalender — ${EGNPI.asAt}"`)
+    expect(html).toContain(`aria-label="Pick from the calendar — ${EGNPI.asAt}"`)
     expect(html).toContain('type="date"')
   })
 
@@ -140,7 +140,11 @@ describe('tab EGNPI — bentuk dari ekspor', () => {
   // ⭐ `Amount` dan `Amount in IDR` SEPASANG: satuan di kiri, nilai di
   // kanan tanpa label sendiri — bentuk ekspor dan tangkapan layar.
   it('⭐ Amount dan Amount in IDR dirender berpasangan', () => {
-    expect((SRC.match(/trin__egnpi-pasangan/g) ?? []).length).toBe(2)
+    // ⭐ 8 Oktober 2026 (agen N, tata Pega): kedua baris kini `Inline grid
+    // 30 70` @1324 = `TataPegaBlok tata="t3070"` [satuan berlabel | nilai],
+    // bukan lagi kelas `trin__egnpi-pasangan` (1fr:2fr). Empat t3070 di
+    // berkas: dua baris rincian ini + dua di blok total.
+    expect((SRC.match(/<TataPegaBlok tata="t3070">/g) ?? []).length).toBe(4)
     // Satuan baris kedua TETAP `IDR`, hanya-baca.
     expect(SRC).toContain('value={EGNPI.satuanIDR} readOnly')
     expect(CSS).toContain('.trin__egnpi-pasangan')
@@ -170,11 +174,15 @@ describe('tab EGNPI — bentuk dari ekspor', () => {
     expect(kode).not.toContain('@divide')
   })
 
-  it('⭐ nol baris → petunjuk, bukan tabel kosong', () => {
+  // ⭐ 8 Oktober 2026 — bentuk Pega: grid tetap tampil (kepala + `Add`),
+  // dan baris kosongnya satu sel `No items`, seperti tangkapan layar Pega.
+  it('⭐ nol baris → grid Pega berisi "No items" dan tombol Add', () => {
     const html = renderToStaticMarkup(
       <TabEgnpi baris={[]} kurs={[]} retensi={[]} opsiAwal={OPSI} mode="ubah" />,
     )
-    expect(html).toContain(EGNPI.petunjukKosong)
+    expect(html).toContain(`<td colSpan="8" class="trin__kosong-pega">${EGNPI.tanpaBaris}</td>`)
+    expect(html).toContain(`>${EGNPI.tambah}</button>`)
+    expect(html).not.toContain(EGNPI.petunjukKosong)
   })
 })
 

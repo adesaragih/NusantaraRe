@@ -229,6 +229,15 @@ var PetaPendaratan = []Pendaratan{
 		Kolom: []string{"PARENTREINSTYPEID", "PCT", "REINSTYPEID", "REINSTYPENAME", "RP", "USD", "VALUE"},
 	},
 	{
+		// ⭐ 454 (8 Oktober 2026) — `SpreadingList(n).BreakDownSprdList`:
+		// pecahan spreading MANUAL (`SetSpreadName` [3.2.8.1.1], panel
+		// `SpreadingTPDtl`). Tingkat KEEMPAT — induknya baris spreading.
+		Induk: "T_TREATY_LIMIT_SPREADING", KunciAnak: "BreakDownSprdList",
+		Tabel: "T_TREATY_LIMIT_SPRD_BREAKDOWN", Seq: "SEQ_TT_LIMIT_SPRD_BRKDN",
+		Kunci: []string{"Amount", "Currency", "ReinsID", "ReinsName", "SharePct"},
+		Kolom: []string{"AMOUNT", "CURRENCY", "REINSID", "REINSNAME", "SHAREPCT"},
+	},
+	{
 		// ⭐ 450 (8 Oktober 2026) — grid Deduction rincian Limits Prop.
 		Induk: "T_TREATY_LIMIT_DETAIL", KunciAnak: "DeductionList",
 		Tabel: "T_TREATY_LIMIT_DEDUCTION", Seq: "SEQ_TT_LIMIT_DEDUCTION",

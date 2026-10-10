@@ -206,18 +206,35 @@ var barisLahirDiSlot = map[string]string{
 	"coverlife":       "957_menu_coverlife.sql",
 }
 
-// langkahPensiunMenu - langkah inti yang MEMBUANG baris modul luar korpus yang dihapus (berkas -> KODE): salin hak
-// menunya (M_LOGIN_GO_MENU), buang haknya, buang barisnya. Diterapkan skema tiruan seperti 900/901. Keputusan work
-// owner 04-10-2026: modul `masterdata` dihapus (pecah delapan modul), hak "Ya, salin otomatis".
-var langkahPensiunMenu = map[string]string{
-	"920_m_nav_menu_masterdata_pensiun.sql": "masterdata",
+// langkahPensiunMenu - langkah inti yang MEMBUANG baris modul (berkas -> KODE): buang haknya (M_LOGIN_GO_MENU) - salin
+// lebih dulu bila diputuskan -, buang barisnya. Diterapkan skema tiruan seperti 900/901.
+//   - Keputusan work owner 04-10-2026: modul luar korpus `masterdata` dihapus (pecah delapan modul), hak "Ya, salin
+//     otomatis".
+//   - Perintah work owner 09-10-2026: menu keempat modul komite dihapus (`modulTanpaMenu`), hak tidak disalin.
+var langkahPensiunMenu = map[string][]string{
+	"920_m_nav_menu_masterdata_pensiun.sql": {"masterdata"},
+	"949_m_nav_menu_komite_pensiun.sql":     {"komiteclaimfacin", "komiteclaimlife", "komiteclaimnonprop", "komiteclaimprop"},
+}
+
+// modulTanpaMenu - modul KORPUS yang menunya DIHAPUS (perintah work owner 09-10-2026: "kode menu nya di hapus dari
+// repo, anggap menu itu tidak pernah ada, karena digabung di menu klaim nya masing-masing"): KODE -> nama folder korpus.
+// Baris isi awal 900-nya dibuang langkah pensiun 949, hak isi awal 903-nya ikut dibuang. Modul yang sudah punya backend
+// tetap modul - TANPA menu: frontend `layar.ts` (bukan `menu.ts`), dipasang bagi pemegang menu klaim peminjamnya
+// (`MODUL_DIPINJAM`), rutenya dipinjam (`ruteDipinjam`); `Slot menu` MODUL.md-nya `—`.
+var modulTanpaMenu = map[string]string{
+	"komiteclaimfacin":   "Komite Claim FacIn",
+	"komiteclaimlife":    "Komite Claim Life",
+	"komiteclaimnonprop": "Komite Claim Non Prop",
+	"komiteclaimprop":    "Komite Claim Prop",
 }
 
 // kodePensiun menjawab apakah `kode` baris modul yang dipensiunkan `langkahPensiunMenu`.
 func kodePensiun(kode string) bool {
-	for _, k := range langkahPensiunMenu {
-		if k == kode {
-			return true
+	for _, daftar := range langkahPensiunMenu {
+		for _, k := range daftar {
+			if k == kode {
+				return true
+			}
 		}
 	}
 	return false
@@ -704,9 +721,18 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 	if len(butir) != 0 {
 		t.Errorf("hasil bersih masih memuat %d butir anak %v - 901 membuangnya (1 modul 1 menu)", len(butir), butir)
 	}
-	if len(kelompok) != 20+len(modulLuarKorpus) {
-		t.Fatalf("hasil bersih memuat %d baris modul, mau %d (satu per folder modul korpus + modulLuarKorpus)",
-			len(kelompok), 20+len(modulLuarKorpus))
+	if len(kelompok) != 20-len(modulTanpaMenu)+len(modulLuarKorpus) {
+		t.Fatalf("hasil bersih memuat %d baris modul, mau %d (satu per folder modul korpus kecuali modulTanpaMenu + "+
+			"modulLuarKorpus)", len(kelompok), 20-len(modulTanpaMenu)+len(modulLuarKorpus))
+	}
+	for _, k := range kelompok {
+		if _, tanpa := modulTanpaMenu[k.kode]; tanpa {
+			t.Errorf("baris %s masih ada - modul tanpa menu (modulTanpaMenu), barisnya dibuang 949", k.kode)
+		}
+	}
+	folderTanpaMenu := map[string]bool{}
+	for _, f := range modulTanpaMenu {
+		folderTanpaMenu[f] = true
 	}
 	kode := map[string]bool{}
 	urutanTerakhir := map[string]int{}
@@ -774,7 +800,7 @@ func TestMenuBersihDuaPuluhBarisSatuPerModul(t *testing.T) {
 		}
 		_, errA := os.Stat(filepath.Join(akarKorpus, e.Name(), "Activity"))
 		_, errS := os.Stat(filepath.Join(akarKorpus, e.Name(), "Section"))
-		if errA == nil && errS == nil && !labelLuar[e.Name()] {
+		if errA == nil && errS == nil && !labelLuar[e.Name()] && !folderTanpaMenu[e.Name()] {
 			folder = append(folder, e.Name())
 		}
 	}
@@ -796,7 +822,11 @@ func TestMenuDimigrasiSamaDenganModulBackend(t *testing.T) {
 	}
 	var backend []string
 	for _, c := range cocok {
-		backend = append(backend, filepath.Base(filepath.Dir(filepath.Dir(c))))
+		m := filepath.Base(filepath.Dir(filepath.Dir(c)))
+		if _, tanpa := modulTanpaMenu[m]; tanpa {
+			continue // modul tanpa menu: tanpa baris M_NAV_MENU sama sekali (949)
+		}
+		backend = append(backend, m)
 	}
 	sort.Strings(backend)
 	if len(backend) == 0 {
@@ -1027,6 +1057,9 @@ func TestIsiAwalMenuAkunMemuatSemuaMenu(t *testing.T) {
 		if _, luar := modulLuarKorpus[k.kode]; !luar { // lahir sesudah 903 - hak menu lewat Kelola User
 			mau = append(mau, k.kode)
 		}
+	}
+	for k := range modulTanpaMenu { // isi awal 903 menyebutnya; barisnya dan haknya dibuang 949
+		mau = append(mau, k)
 	}
 	for _, a := range menu.MenuAplikasi {
 		if !menuAplikasiSesudah903[a.Kode] { // lahir sesudah 903 - hak menu lewat Kelola User

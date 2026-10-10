@@ -16,7 +16,8 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
-import { Field, FieldAngka, Kosong, Panel, Pilih } from '../../../../inti/frontend/components/ui/dasar'
+import { Field, FieldAngka, Kosong } from '../../../../inti/frontend/components/ui/dasar'
+import { PilihCari as Pilih } from '../../../../inti/frontend/components/ui/pilihSaring'
 import { formatNumber } from '../../../../inti/frontend/lib/format'
 import {
   ambilKelasBisnis,
@@ -50,10 +51,13 @@ import {
 import { useProperti } from '../halaman'
 import type { ModeForm } from '../mode'
 import { DropdownDaftar } from './IsianAuto'
-import { Bagian, Chip, KartuLipat, KepalaBagian, TombolHapus, TombolTambah } from './limitsUI'
+import { TombolHapus, TombolTambah } from './limitsUI'
+import { BlokPega, GridPega } from './gridPega'
 import { selAngka } from './angka'
 import { StripTabNavigasi } from './navigasi'
 import { PemicuUbah } from './pemicuUbah'
+import { saringAngka } from './saringAngka'
+import { SelKosongPega, TataPegaBlok } from './tataPega'
 
 /** Teks satu medan simpul — larik dan kunci yang tidak ada → kosong. */
 export function teksDari(s: SimpulLimit, kunci: string): string {
@@ -157,23 +161,31 @@ function PanelAchievement({ d, grid }: { d: SimpulLimit; grid: (larik: string) =
       {grid('AchievementLists')}
       <GridLimit kolom={KOLOM_ACH_PARAMETER} baris={larikDari(d, 'CurrencyList')} bisaUbah={false} tambah={false} bacaSaja onUbah={() => undefined} />
       {a !== null && (
-        <div className="form-grid">
-          <Pilih
-            label={ACHIEVEMENT.asAt}
-            value={a.asAt}
-            kosong={LIMITS_PROP.pilihKosong}
-            opsi={a.kuartal.map((q) => ({ value: q, label: q }))}
-            onChange={a.pilihAsAt}
-          />
-          <Pilih
-            label={ACHIEVEMENT.tahun}
-            value={a.tahun}
-            kosong={LIMITS_PROP.pilihKosong}
-            opsi={a.tahunKuartal.map((q) => ({ value: q, label: q }))}
-            onChange={a.pilihTahun}
-          />
-        </div>
+        // ⭐ TATA LETAK PEGA (8 Oktober 2026) — `Section/DetailLimits.xml`
+        // `Inline labels left` L98928: As At Quarter dan Quarter Year SEBARIS,
+        // label masing-masing di kiri kotaknya.
+        <TataPegaBlok tata="alir">
+          <TataPegaBlok tata="kiri">
+            <Pilih
+              label={ACHIEVEMENT.asAt}
+              value={a.asAt}
+              kosong={LIMITS_PROP.pilihKosong}
+              opsi={a.kuartal.map((q) => ({ value: q, label: q }))}
+              onChange={a.pilihAsAt}
+            />
+          </TataPegaBlok>
+          <TataPegaBlok tata="kiri">
+            <Pilih
+              label={ACHIEVEMENT.tahun}
+              value={a.tahun}
+              kosong={LIMITS_PROP.pilihKosong}
+              opsi={a.tahunKuartal.map((q) => ({ value: q, label: q }))}
+              onChange={a.pilihTahun}
+            />
+          </TataPegaBlok>
+        </TataPegaBlok>
       )}
+      {/* `Inline` L100440 — Refresh · Excel · Insert Log sebaris. */}
       <div className="trin__aksi">
         <button type="button" className="btn" onClick={a?.segarkan}>
           {ACHIEVEMENT.refresh}
@@ -372,37 +384,57 @@ function ganti(larik: readonly SimpulLimit[], i: number, baru: SimpulLimit): Sim
 }
 
 /** Satu medan simpul: teks baca-saja (lihat) atau kotak isian (ubah). */
+/**
+ * Pembungkus `Stacked with labels left` satu sel — label di KIRI medan
+ * (`.trin__tata--kiri > .field`). Tanpa `aktif`, anaknya dirender apa adanya.
+ */
+function BungkusKiri({ aktif, children }: { aktif: boolean; children: ReactNode }) {
+  return aktif ? <div className="trin__tata trin__tata--kiri">{children}</div> : <>{children}</>
+}
+
 function MedanSimpul({
   m,
   simpul,
   bisaUbah,
   onUbah,
+  tataKiri = false,
 }: {
   m: MedanLimit
   simpul: SimpulLimit
   bisaUbah: boolean
   onUbah: (s: SimpulLimit) => void
+  /**
+   * ⭐ TATA LETAK PEGA (8 Oktober 2026) — medan ini duduk di layout `Stacked
+   * with labels left` (`Section/DetailLimits.xml`): label di KIRI kotaknya.
+   * Medan bermata uang (Event Limits) menjadi pasangan `Inline 30 70 table`
+   * L27339 — [mata uang berlabel, 30%] | [nilai, 70%].
+   */
+  tataKiri?: boolean
 }) {
   const opsi = useContext(OpsiLimitsCtx)
   const ada = m.kunci in simpul
   const nilai = teksDari(simpul, m.kunci)
+  const kelas = !tataKiri ? 'trin__limit-medan' : m.mataUang !== undefined ? 'trin__tata trin__tata--t3070' : 'trin__tata trin__tata--kiri'
   return (
-    <div className="trin__limit-medan">
+    <div className={kelas}>
       {/* `.Currency…` pxDropdown — `BrowseCurrencyTreatyIn_RD`, nilai `.Currency`. */}
-      {m.mataUang !== undefined &&
-        (bisaUbah ? (
-          <Pilih
-            label={m.label}
-            value={teksDari(simpul, m.mataUang)}
-            kosong={LIMITS_PROP.pilihKosong}
-            opsi={opsiDari(opsi.mataUang, 'nama')}
-            onChange={(v) => {
-              onUbah({ ...simpul, [m.mataUang ?? '']: v })
-            }}
-          />
-        ) : (
-          <Field label={m.label} value={teksDari(simpul, m.mataUang)} readOnly onChange={() => undefined} />
-        ))}
+      {m.mataUang !== undefined && (
+        <BungkusKiri aktif={tataKiri}>
+          {bisaUbah ? (
+            <Pilih
+              label={m.label}
+              value={teksDari(simpul, m.mataUang)}
+              kosong={LIMITS_PROP.pilihKosong}
+              opsi={opsiDari(opsi.mataUang, 'nama')}
+              onChange={(v) => {
+                onUbah({ ...simpul, [m.mataUang ?? '']: v })
+              }}
+            />
+          ) : (
+            <Field label={m.label} value={teksDari(simpul, m.mataUang)} readOnly onChange={() => undefined} />
+          )}
+        </BungkusKiri>
+      )}
       {/* ⭐ PEMISAH RIBUAN SAAT MENGETIK — hanya untuk kolom yang BENAR
           angka DAN presisinya terbaca di ekspor (`pyDecimalPlaces`).
 
@@ -420,7 +452,10 @@ function MedanSimpul({
           value={bisaUbah ? nilai : formatLimit(m.golongan, m.desimal, nilai)}
           readOnly={!bisaUbah}
           onChange={(v) => {
-            onUbah({ ...simpul, [m.kunci]: v })
+            // Kontrol Number ditolak hurufnya; `teks` (mis. `>=30% up to
+            // < 50%`) lewat apa adanya. `Periode` (Period (Month)) bergolongan
+            // teks di sini tetapi kontrol Number di `Section/DetailLimits.xml` @2170296.
+            onUbah({ ...simpul, [m.kunci]: m.golongan !== 'teks' || m.kunci === 'Periode' ? saringAngka(v) : v })
           }}
         />
       ) : (
@@ -509,7 +544,7 @@ export function GridLimit({
         </div>
       )}
       <div className="table-wrap">
-        <table className="trin__tabel">
+        <table className="trin__tabel trin__tabel--pega">
           <colgroup>
             {kolom.map((k, i) => (
               <col key={i} style={{ width: `${((k.lebar / total) * 100).toFixed(2)}%` }} />
@@ -654,7 +689,7 @@ export function GridLimit({
                             value={v}
                             aria-label={k.label || k.kunci}
                             onChange={(e) => {
-                              ubahSel({ ...b, [k.kunci]: e.target.value })
+                              ubahSel({ ...b, [k.kunci]: k.golongan !== 'teks' ? saringAngka(e.target.value) : e.target.value })
                             }}
                           />
                         </PemicuUbah>
@@ -736,6 +771,66 @@ function JudulNilai({ judul, persen }: { judul: string; persen: string }) {
 
 /** `.Note` baris retensi yang memicu `LimitCalculation(surplus)` saat MATA UANG berubah. */
 const SURPLUS_MATA_UANG = ['SURPLUS', '2ND SURPLUS', '3RD SURPLUS']
+
+/**
+ * Sub-tab DetailLimits yang medannya duduk LANGSUNG di layout `Stacked with
+ * labels left` — label di kiri kotak (`Section/DetailLimits.xml`: Event
+ * Limits L26873 → pasangan `Inline 30 70 table` L27339, Deduction In A
+ * L35922, Experience Premium Refund L51491). `% Premium Reserve` (sel
+ * `Inline grid double` L44861) dan medan LPC (`Inline` L72437) TIDAK.
+ */
+const SUB_LABEL_KIRI: ReadonlySet<string> = new Set(['Event Limits', 'Deduction In A', 'Experience Premium Refund'])
+
+/**
+ * ⭐ TATA LETAK PEGA (8 Oktober 2026) — susunan isi satu sub-tab DetailLimits
+ * menurut `pyLayoutOtherFormat` `Section/DetailLimits.xml`. Urutan `butir`
+ * = urutan `TAB_DETAIL_LIMIT[...].isi` (`labelsLimitsProp.ts`).
+ */
+function susunSubTabLimit(judul: string, butir: ReactNode[]): ReactNode {
+  switch (judul) {
+    case 'Reserve':
+      // `Stacked with labels left` L44563: [`Inline grid double` L44861 —
+      // % Premium Reserve (label di ATAS) | kosong], lalu `Inline grid 30 70`
+      // L45874 — [label "Premium Reserve" 30% | grid 70%] (gambar Pega 08).
+      return (
+        <TataPegaBlok tata="kiri">
+          <TataPegaBlok tata="g2">
+            {butir[0]}
+            <SelKosongPega />
+          </TataPegaBlok>
+          <TataPegaBlok tata="t3070">{butir.slice(1)}</TataPegaBlok>
+        </TataPegaBlok>
+      )
+    case 'LPC':
+      // Layout bertumpuk L71989: label "Loss Participation Clause (LPC)",
+      // lalu `Inline` L72437 — empat medan sebaris.
+      return (
+        <TataPegaBlok tata="tumpuk">
+          {butir[0]}
+          <TataPegaBlok tata="alir">{butir.slice(1)}</TataPegaBlok>
+        </TataPegaBlok>
+      )
+    case 'Deduction':
+      // Layout bertumpuk L37172: grid Deduction Details lalu grid total.
+      return <TataPegaBlok tata="tumpuk">{butir}</TataPegaBlok>
+    case 'PLA':
+    case 'Cash Loss Limit':
+    case 'Claim Cooperation':
+    case 'EPI':
+      // `Stacked with labels left` (L53773, L59848, L65923, L74566) →
+      // `Inline grid 30 70` (L54239, L60314, L66389, L75032): [label 30% |
+      // grid 70%], bentuk yang sama dengan Premium Reserve di gambar Pega 08.
+      return (
+        <TataPegaBlok tata="kiri">
+          <TataPegaBlok tata="t3070">{butir}</TataPegaBlok>
+        </TataPegaBlok>
+      )
+    default:
+      // Event Limits L26873, Deduction In A L35922, Experience Premium
+      // Refund L51491, Achievement L80637 — `Stacked with labels left`.
+      return <TataPegaBlok tata="kiri">{butir}</TataPegaBlok>
+  }
+}
 
 /** Tingkat 3 — `Section/DetailLimits.xml`. */
 /**
@@ -922,18 +1017,25 @@ function DetailLimits({
       />
     )
   }
-  const medan = (m: MedanLimit, ubah = bisaUbah) => <MedanSimpul key={m.kunci} m={m} simpul={d} bisaUbah={ubah} onUbah={onUbah} />
+  const medan = (m: MedanLimit, ubah = bisaUbah, kiri = false) => (
+    <MedanSimpul key={m.kunci} m={m} simpul={d} bisaUbah={ubah} onUbah={onUbah} tataKiri={kiri} />
+  )
   const aktif = TAB_DETAIL_LIMIT.find((t) => t.judul === tab) ?? TAB_DETAIL_LIMIT[0]
   const tabTerkunci = aktif !== undefined && TAB_KUNCI_MATERIAL.includes(aktif.judul)
   return (
-    <div className="tl-rincian">
+    <>
       {/* `.TreatyGroupID` pxDropdown — `BrowseTreatyGroup_RD` (TREATYGROUP):
           nilai `ID`, label `.TreatyGroupName`; berubah → `SetTreatyGroupName_Act`
           lalu `LimitCalculation(surplus, '', true)` bila jenisnya SURPLUS.
           ⚠️ `FetchQSfromMaster` (bila QUOTA SHARE) mengisi larik spreading
           yang TAMPIL di tab Share — dibangun bersama tab Share, bukan di sini. */}
-      <Bagian judul={LIMITS_PROP.bagianGrup}>
-        <div className="trin__limit-medan">
+      {/* ⭐ TATA LETAK PEGA (8 Oktober 2026) — `Section/DetailLimits.xml`
+          `Inline grid double` L644, tiga sel: Treaty Group (`Stacked with
+          labels left` L946) | sel `Spacer` `1=2` (L1879) — TETAP memesan
+          slotnya | grid Class of Business (L2823). Jadi CoB turun ke baris
+          kedua, separuh KIRI — persis gambar Pega 05/06/08. */}
+      <TataPegaBlok tata="g2">
+        <div className="trin__tata trin__tata--kiri">
           <PilihKode
             label={LIMITS_PROP.treatyGroup}
             daftar={opsiLimits.kelompokTreaty}
@@ -947,45 +1049,65 @@ function DetailLimits({
             }}
           />
         </div>
+        <SelKosongPega />
         {/* Class of Business — autocomplete; Add CoB/Delete MATI di ekspor. */}
         {grid('COBList', undefined, true)}
-      </Bagian>
+      </TataPegaBlok>
 
+      {/* ⭐ TATA LETAK PEGA (8 Oktober 2026) — `Section/DetailLimits.xml`
+          L4956, `Stacked with labels left` L5178: QS % dan Lines masing-masing
+          `Inline grid double` (L5665, L7103) — medannya di separuh KIRI,
+          label di kiri kotak; lalu `Inline grid 30 70` L8544. */}
+      <TataPegaBlok tata="kiri">
       {(qs || syaratSurplus(jenis)) && (
-        <Bagian judul={LIMITS_PROP.bagianKetentuan}>
+        <>
           {qs && (
             // Sel 37 `.QSPct` — `LimitCalculation(qs, '', true)` pada `change`.
+            <TataPegaBlok tata="g2">
             <PemicuUbah
               nilai={teksDari(d, 'QSPct')}
               aksi={() => {
                 hitung('qs')
               }}
             >
-              {medan({
-                label: LIMITS_PROP.qs,
-                kunci: 'QSPct',
-                golongan: 'persen',
-                desimal: 2,
-              })}
+              {medan(
+                {
+                  label: LIMITS_PROP.qs,
+                  kunci: 'QSPct',
+                  golongan: 'persen',
+                  desimal: 2,
+                },
+                bisaUbah,
+                true,
+              )}
             </PemicuUbah>
+            <SelKosongPega />
+            </TataPegaBlok>
           )}
           {syaratSurplus(jenis) && (
             // Sel 42 `.Surplus` — `LimitCalculation(surplus, '', true)` pada `change`.
+            <TataPegaBlok tata="g2">
             <PemicuUbah
               nilai={teksDari(d, 'Surplus')}
               aksi={() => {
                 hitung('surplus')
               }}
             >
-              {medan({
-                label: LIMITS_PROP.lines,
-                kunci: 'Surplus',
-                golongan: 'uang',
-                desimal: 2,
-              })}
+              {medan(
+                {
+                  label: LIMITS_PROP.lines,
+                  kunci: 'Surplus',
+                  golongan: 'uang',
+                  desimal: 2,
+                },
+                bisaUbah,
+                true,
+              )}
             </PemicuUbah>
+            <SelKosongPega />
+            </TataPegaBlok>
           )}
-        </Bagian>
+        </>
       )}
       {gagalHitung !== '' && (
         <p className="tl-pesan" role="alert">
@@ -1000,30 +1122,42 @@ function DetailLimits({
         </ul>
       )}
 
-      <Bagian judul={LIMITS_PROP.bagianLimit}>
         {/* Tiap grid: judul + persennya BERDAMPINGAN sebagai teks baca-saja
             (`100 %`, `0 %`, `100 %` — permintaan pemakai 7 Oktober 2026,
-            persis tangkapan layar Pega), tombol Add di baris yang sama.
+            persis tangkapan layar Pega).
             `.RetentionPct` / `.CessionPct` Read-only SELALU di ekspor —
             ditulis `LimitCalculation`. Tampil bila QUOTA SHARE (@297544,
-            @474451, @656819). */}
-        <div className="tl-tiga tl-tiga--nilai">
-          {grid('IOOLimitList', <JudulNilai judul={LIMITS_PROP.limit100} persen={qs ? `${LIMITS_PROP.seratus} ${LIMITS_PROP.persen}` : ''} />, false)}
-          {grid('RetentionList', <JudulNilai judul={LIMITS_PROP.retensi} persen={qs ? persenSamping(persenQuotaShare(d).retensi) : ''} />, false)}
-          {grid('CessionList', <JudulNilai judul={LIMITS_PROP.cession} persen={qs ? persenSamping(persenQuotaShare(d).cession) : ''} />, false)}
-        </div>
-      </Bagian>
+            @474451, @656819).
+
+            ⭐ TATA LETAK PEGA (8 Oktober 2026) — `Inline grid 30 70` L8544
+            = TIGA BARIS [judul 30% | grid 70%], BUKAN tiga grid berdampingan:
+            gambar Pega 05/06/08 menaruh "100% Limit", "Retention", "Cession
+            to R/I" di kiri dan gridnya mulai ±30% lebar. Sel judul =
+            layout L8565/L14519/L20620, sel grid = L10815/L16834/L22935.
+            Tombol Add tetap di kepala gridnya. */}
+        <TataPegaBlok tata="t3070">
+          <JudulNilai judul={LIMITS_PROP.limit100} persen={qs ? `${LIMITS_PROP.seratus} ${LIMITS_PROP.persen}` : ''} />
+          {grid('IOOLimitList', undefined, false)}
+          <JudulNilai judul={LIMITS_PROP.retensi} persen={qs ? persenSamping(persenQuotaShare(d).retensi) : ''} />
+          {grid('RetentionList', undefined, false)}
+          <JudulNilai judul={LIMITS_PROP.cession} persen={qs ? persenSamping(persenQuotaShare(d).cession) : ''} />
+          {grid('CessionList', undefined, false)}
+        </TataPegaBlok>
+      </TataPegaBlok>
 
       <StripTabNavigasi tab={TAB_DETAIL_LIMIT.map((t) => t.judul)} aktif={aktif?.judul ?? ''} onPilih={setTab} />
-      <Panel judul={aktif?.judul ?? ''}>
-        {(aktif?.isi ?? []).map((b, i) =>
+      {/* `[BLOK tab] X` → `[BLOK] X`: judul blok = judul sub-tab, seperti ekspor. */}
+      <BlokPega judul={aktif?.judul ?? ''}>
+        {susunSubTabLimit(
+          aktif?.judul ?? '',
+          (aktif?.isi ?? []).map((b, i) =>
           b.t === 'medan' ? (
             b.m.kunci === 'PremiumReservePct' ? (
               <PemicuUbah key={b.m.kunci} nilai={teksDari(d, 'PremiumReservePct')} aksi={hitungCadanganPremi}>
                 {medan(b.m, bisaUbahM)}
               </PemicuUbah>
             ) : (
-              medan(b.m, tabTerkunci ? bisaUbahM : bisaUbah)
+              medan(b.m, tabTerkunci ? bisaUbahM : bisaUbah, SUB_LABEL_KIRI.has(aktif?.judul ?? ''))
             )
           ) : b.t === 'grid' && b.larik === 'AchievementLists' ? (
             <PanelAchievement key={b.larik} d={d} grid={(larik) => grid(larik, undefined, false)} />
@@ -1034,24 +1168,9 @@ function DetailLimits({
               {b.teks}
             </span>
           ),
+          ),
         )}
-      </Panel>
-    </div>
-  )
-}
-
-/** Ringkasan kepala kartu Treaty Group — nilai yang paling sering dicari. */
-function ringkasDetail(d: SimpulLimit): ReactNode {
-  const jenis = teksDari(d, 'TreatyType')
-  const ioo = larikDari(d, 'IOOLimitList')[0]
-  return (
-    <>
-      {syaratQS(jenis) && <Chip label={LIMITS_PROP.qs} nilai={teksDari(d, 'QSPct') === '' ? '' : formatLimit('persen', 2, teksDari(d, 'QSPct'))} />}
-      {syaratSurplus(jenis) && <Chip label={LIMITS_PROP.lines} nilai={teksDari(d, 'Surplus') === '' ? '' : formatLimit('uang', 2, teksDari(d, 'Surplus'))} />}
-      {ioo !== undefined && (
-        <Chip label={LIMITS_PROP.limit100} nilai={`${teksDari(ioo, 'Currency')} ${formatLimit('uang', 2, teksDari(ioo, 'Value'))}`.trim()} />
-      )}
-      <Chip label={LIMITS_PROP.jumlahKelas} nilai={String(larikDari(d, 'COBList').length)} />
+      </BlokPega>
     </>
   )
 }
@@ -1095,98 +1214,89 @@ function LimitProportional({
 }) {
   const detail = larikDari(l, 'Detail')
   const { jenisTreaty } = useContext(OpsiLimitsCtx)
+  // ⭐ Bentuk Pega (8 Oktober 2026) — `Section/LimitProportional.xml`:
+  // Treaty Type, lalu grid `masterDetail` Treaty Group (lebar 1368, kolom
+  // tombol 83) yang barisnya dibuka menjadi `DetailLimits`. Kartu berchip
+  // dan kotak `Kind of Treaty` tambahan DICABUT — Kind of Treaty sudah
+  // tampil di baris grid induknya.
   return (
-    <div className="tl-rincian">
-      <div className="form-grid">
-        {/* ⭐ Treaty Type — pilihan dari menu Reinsurance Type (`REINSURANCETYPE`,
-            Flag `active`, urut ID menurun — RD `BrowseReinsuranceType_RD`):
-            nilai `ID`, label kolom **Name**. Memilih mengisi Kind of Treaty
-            dengan kolom **SOA Name** baris yang sama (`kindOfTreatyDari`).
-            Baca-saja hanya bila `TreatyIn.ViewState = 1`. */}
-        <PilihKode
-          label={LIMITS_PROP.treatyType}
-          daftar={jenisTreaty}
-          simpul={l}
-          kunciID="TreatyTypeID"
-          kunciNama="TreatyType"
-          bisaUbah={bisaUbah}
-          onUbah={(x) => {
-            // `SetTreatyTypeName_Act` → DT `TreatyTypeSetIndex`.
-            onUbah(terapkanJenisTreaty(x, indeks))
-          }}
-          namaDari={kindOfTreatyDari}
-          // ⭐ Dapat diketik seperti Ceding — permintaan pemakai 7 Oktober 2026.
-          ketik
-        />
-        {/* Kind of Treaty — hasil pilihan Treaty Type (SOA Name), ditampilkan
-            supaya terlihat apa yang tertulis. */}
-        <Field label={KOLOM_KIND_OF_TREATY[0]?.label ?? ''} value={teksDari(l, 'TreatyType')} readOnly onChange={() => undefined} />
-      </div>
-      <KepalaBagian
-        judul={KOLOM_TREATY_GROUP[0]?.label ?? ''}
-        jumlah={detail.length}
-        aksi={
-          bisaUbah && (
-            <TombolTambah
-              label={LIMITS_PROP.tambah}
-              onClick={() => {
-                // `AddClassofBusiness`: ID kosong, ParentID = subscript induk,
-                // TreatyType = jenis induk.
-                onUbah({
-                  ...l,
-                  Detail: [...detail, { ID: '', ParentID: String(indeks + 1), TreatyType: teksDari(l, 'TreatyType') }],
-                })
-              }}
-            />
-          )
-        }
+    <>
+      {/* ⭐ Treaty Type — pilihan dari menu Reinsurance Type (`REINSURANCETYPE`,
+          Flag `active`, urut ID menurun — RD `BrowseReinsuranceType_RD`):
+          nilai `ID`, label kolom **Name**. Memilih mengisi Kind of Treaty
+          dengan kolom **SOA Name** baris yang sama (`kindOfTreatyDari`).
+          Baca-saja hanya bila `TreatyIn.ViewState = 1`. */}
+      <PilihKode
+        label={LIMITS_PROP.treatyType}
+        daftar={jenisTreaty}
+        simpul={l}
+        kunciID="TreatyTypeID"
+        kunciNama="TreatyType"
+        bisaUbah={bisaUbah}
+        onUbah={(x) => {
+          // `SetTreatyTypeName_Act` → DT `TreatyTypeSetIndex`.
+          onUbah(terapkanJenisTreaty(x, indeks))
+        }}
+        namaDari={kindOfTreatyDari}
+        // ⭐ Dapat diketik seperti Ceding — permintaan pemakai 7 Oktober 2026.
+        ketik
       />
-      {detail.length === 0 ? (
-        <Kosong pesan={LIMITS_PROP.tanpaBaris} />
-      ) : (
-        <div className="tl-daftar">
-          {detail.map((d, i) => (
-            <KartuLipat
-              key={i}
-              nomor={i + 1}
-              judul={teksDari(d, 'TreatyGroup')}
-              judulKosong={LIMITS_PROP.belumDipilih}
-              bukaAwal={teksDari(d, 'TreatyGroup') === ''}
-              meta={ringkasDetail(d)}
-              aksi={
-                bisaUbah && (
-                  <TombolHapus
-                    label={LIMITS_PROP.hapus}
-                    labelAkses={`${LIMITS_PROP.hapus} ${KOLOM_TREATY_GROUP[0]?.label ?? ''} ${i + 1}`}
-                    onClick={() => {
-                      onUbah({ ...l, Detail: detail.filter((_, j) => j !== i) })
-                    }}
-                  />
-                )
+      <GridPega
+        label={KOLOM_TREATY_GROUP[0]?.label}
+        kolom={[
+          {
+            judul: KOLOM_TREATY_GROUP[0]?.label ?? '',
+            lebar: 1368,
+            isi: (d) => (teksDari(d, 'TreatyGroup') === '' ? LIMITS_PROP.belumDipilih : teksDari(d, 'TreatyGroup')),
+          },
+        ]}
+        baris={detail}
+        tombol={
+          bisaUbah
+            ? {
+                lebar: 83,
+                tambah: {
+                  label: LIMITS_PROP.tambah,
+                  onKlik: () => {
+                    // `AddClassofBusiness`: ID kosong, ParentID = subscript induk,
+                    // TreatyType = jenis induk.
+                    onUbah({
+                      ...l,
+                      Detail: [...detail, { ID: '', ParentID: String(indeks + 1), TreatyType: teksDari(l, 'TreatyType') }],
+                    })
+                  },
+                },
+                hapus: {
+                  label: LIMITS_PROP.hapus,
+                  akses: (_, i) => `${LIMITS_PROP.hapus} ${KOLOM_TREATY_GROUP[0]?.label ?? ''} ${String(i + 1)}`,
+                  onKlik: (i) => {
+                    onUbah({ ...l, Detail: detail.filter((_, j) => j !== i) })
+                  },
+                },
               }
-            >
-              <DetailLimits
-                d={d}
-                bisaUbah={bisaUbah}
-                onUbah={(baru) => {
-                  onUbah({ ...l, Detail: ganti(detail, i, baru) })
-                }}
-                terapkan={
-                  terapkan === undefined
-                    ? undefined
-                    : (f) => {
-                        terapkan((lKini) => {
-                          const ds = larikDari(lKini, 'Detail')
-                          return { ...lKini, Detail: ganti(ds, i, f(ds[i] ?? {})) }
-                        })
-                      }
-                }
-              />
-            </KartuLipat>
-          ))}
-        </div>
-      )}
-    </div>
+            : undefined
+        }
+        rincian={(d, i) => (
+          <DetailLimits
+            d={d}
+            bisaUbah={bisaUbah}
+            onUbah={(baru) => {
+              onUbah({ ...l, Detail: ganti(detail, i, baru) })
+            }}
+            terapkan={
+              terapkan === undefined
+                ? undefined
+                : (f) => {
+                    terapkan((lKini) => {
+                      const ds = larikDari(lKini, 'Detail')
+                      return { ...lKini, Detail: ganti(ds, i, f(ds[i] ?? {})) }
+                    })
+                  }
+            }
+          />
+        )}
+      />
+    </>
   )
 }
 
@@ -1295,68 +1405,62 @@ export default function TabLimitsProp({
       <KunciMaterialCtx.Provider value={kunciMaterial}>
       <AchievementCtx.Provider value={keadaanAch}>
       <PohonLimitsCtx.Provider value={limits}>
-      <Panel judul={LIMITS_PROP.judul}>
-        <div className="tl-rincian" role="group" aria-label={LIMITS_PROP.judul}>
-          <KepalaBagian
-            judul={KOLOM_KIND_OF_TREATY[0]?.label ?? ''}
-            jumlah={limits.length}
-            aksi={
-              bisaUbah && (
-                <TombolTambah
-                  label={LIMITS_PROP.tambah}
-                  disabled={kunciMaterial}
-                  onClick={() => {
-                    // `TreatyInPropAdd(limits)`: `Limits(APPEND).ID = ""`.
-                    setLimits([...limits, { ID: '', Detail: [] }])
-                  }}
-                />
-              )
-            }
-          />
-          {limits.length === 0 ? (
-            <Kosong pesan={LIMITS_PROP.tanpaBaris} />
-          ) : (
-            <div className="tl-daftar">
-              {limits.map((l, i) => (
-                <KartuLipat
-                  key={i}
-                  judul={teksDari(l, 'TreatyType')}
-                  judulKosong={LIMITS_PROP.kindBelumDipilih}
-                  bukaAwal
-                  meta={<Chip label={LIMITS_PROP.jumlahGrup} nilai={String(larikDari(l, 'Detail').length)} />}
-                  aksi={
-                    bisaUbah && (
-                      <TombolHapus
-                        label={LIMITS_PROP.hapus}
-                        labelAkses={`${LIMITS_PROP.hapus} ${teksDari(l, 'TreatyType') || (KOLOM_KIND_OF_TREATY[0]?.label ?? '')}`}
-                        disabled={kunciMaterial}
-                        onClick={() => {
-                          setLimits(limits.filter((_, j) => j !== i))
-                        }}
-                      />
-                    )
+      {/* ⭐ Bentuk Pega (8 Oktober 2026) — blok `Limits`: grid `masterDetail`
+          Kind of Treaty (lebar 1315, kolom tombol 80), rincian
+          `LimitProportional`. Kartu berchip DIGANTI grid. */}
+      <div className="trin__blok trin__tab" role="group" aria-label={LIMITS_PROP.judul}>
+        <BlokPega judul={LIMITS_PROP.judul}>
+          <GridPega
+            label={KOLOM_KIND_OF_TREATY[0]?.label}
+            kolom={[
+              {
+                judul: KOLOM_KIND_OF_TREATY[0]?.label ?? '',
+                lebar: 1315,
+                isi: (l) => (teksDari(l, 'TreatyType') === '' ? LIMITS_PROP.kindBelumDipilih : teksDari(l, 'TreatyType')),
+              },
+            ]}
+            baris={limits}
+            tombol={
+              bisaUbah
+                ? {
+                    lebar: 80,
+                    tambah: {
+                      label: LIMITS_PROP.tambah,
+                      mati: kunciMaterial,
+                      onKlik: () => {
+                        // `TreatyInPropAdd(limits)`: `Limits(APPEND).ID = ""`.
+                        setLimits([...limits, { ID: '', Detail: [] }])
+                      },
+                    },
+                    hapus: {
+                      label: LIMITS_PROP.hapus,
+                      mati: kunciMaterial,
+                      akses: (l) => `${LIMITS_PROP.hapus} ${teksDari(l, 'TreatyType') || (KOLOM_KIND_OF_TREATY[0]?.label ?? '')}`,
+                      onKlik: (i) => {
+                        setLimits(limits.filter((_, j) => j !== i))
+                      },
+                    },
                   }
-                >
-                  {/* Kind of Treaty = `.TreatyType`, diisi `SetTreatyTypeName_Act`
-                      dari pilihan Treaty Type (`.Note`, kolom Name menu
-                      Reinsurance Type). */}
-                  <LimitProportional
-                    l={l}
-                    indeks={i}
-                    bisaUbah={bisaUbah}
-                    onUbah={(baru) => {
-                      setLimits((ls) => ganti(ls, i, baru))
-                    }}
-                    terapkan={(f) => {
-                      setLimits((ls) => ganti(ls, i, f(ls[i] ?? {})))
-                    }}
-                  />
-                </KartuLipat>
-              ))}
-            </div>
-          )}
-        </div>
-      </Panel>
+                : undefined
+            }
+            rincian={(l, i) => (
+              // Kind of Treaty = `.TreatyType`, diisi `SetTreatyTypeName_Act`
+              // dari pilihan Treaty Type (`.Note`, kolom Name menu Reinsurance Type).
+              <LimitProportional
+                l={l}
+                indeks={i}
+                bisaUbah={bisaUbah}
+                onUbah={(baru) => {
+                  setLimits((ls) => ganti(ls, i, baru))
+                }}
+                terapkan={(f) => {
+                  setLimits((ls) => ganti(ls, i, f(ls[i] ?? {})))
+                }}
+              />
+            )}
+          />
+        </BlokPega>
+      </div>
       </PohonLimitsCtx.Provider>
       </AchievementCtx.Provider>
       </KunciMaterialCtx.Provider>

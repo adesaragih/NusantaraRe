@@ -1,11 +1,12 @@
 // ⛔ DIPINDAHKAN dari `pages/FormKontrakTreatyIn.tsx` 5 Oktober 2026 —
 // pemindahan MURNI, nol perubahan perilaku.
 
-import { Kosong, Panel } from '../../../../inti/frontend/components/ui/dasar'
+import { Panel } from '../../../../inti/frontend/components/ui/dasar'
 import type { TabTeksWarisan } from '../api'
-import { FORM_KONTRAK } from '../labels'
+
 import { bacaProperti, usePenampung, useProperti } from '../halaman'
 import type { ModeForm } from '../mode'
+import { SelKosongPega, TataPegaBlok } from './tataPega'
 
 /**
  * DT `TreatyInCopyConditions` — perilaku `change` `ExclusionsP` dan
@@ -51,7 +52,6 @@ export default function TabTeksPanjang({
   mode?: ModeForm
 }) {
   const asli = tab?.isi ?? ''
-  const lain = tab?.ejaanLain ?? []
   const bisaUbah = mode === 'ubah'
   // ⭐ Teks yang sedang disunting. Disalin SEKALI saat tab lahir; pemanggil
   // memberi tab lain lewat `judul` yang berbeda, dan React melahirkan
@@ -75,16 +75,38 @@ export default function TabTeksPanjang({
   }
   return (
     <Panel judul={judul}>
-      {lain.length > 0 && (
-        <span className="trin__teks-lain" role="note">
-          {FORM_KONTRAK.ejaanLainBerisi} {lain.join(', ')}
-        </span>
-      )}
+      {/* ⛔ DUA CATATAN PENGEMBANG DIBUANG DARI LAYAR 8 Oktober 2026 —
+          pemilik proses menunjuk tab Special Conditions dan bertanya *"ini
+          kenapa?"*:
+
+            ⚠️ This contract document also has text under another key …
+               That key: SpecialConditions
+            Read from key: SpecialConditionsP
+
+          Keduanya menyebut NAMA PROPERTI PEGA. Itu jeroan migrasi: pemakai
+          tidak dapat berbuat apa pun dengannya, tidak dapat membuka teks
+          yang disebutnya, dan `teks-layar.test.ts` memang ada untuk
+          melarang kalimat semacam ini sampai ke layar — dua ini lolos
+          karena polanya belum menangkapnya.
+
+          ⚠️ ADA YANG HILANG, dan itu dinyatakan: dari 303 dokumen ber-ejaan
+          `SpecialConditions*` ganda, NOL yang isinya identik — jadi ejaan
+          lain memang teks BERBEDA, dan layar ini tidak lagi mengabarkannya.
+          Mengabarkannya pun nol gunanya selama teks itu tidak dapat dibuka
+          dari sini; bila kelak perlu, yang benar adalah MENAMPILKANNYA,
+          bukan menyebut nama kuncinya. */}
       {/* ⭐ MODE UBAH — textarea, seperti layar lama.
           ⛔ Sebelum 6 Oktober 2026 tab ini BACA-SAJA walau mode Edit, dan
           itu bertentangan dengan keputusan pemilik proses bahwa seluruh
           fungsi dapat dipakai di mode Edit. Kosong pun dapat diketik: tab
           yang menolak isian pertama tidak akan pernah terisi. */}
+      {/* ⭐ TATA LETAK PEGA (8 Oktober 2026) — `Inline grid double` dengan
+          SATU sel `pxTextArea`: kotak teks di separuh KIRI, separuh kanan
+          kosong. `Section/TreatyInTabsProportional.xml` L49386 (ExclusionsP)
+          dan L50813 (SpecialConditionsP); `TreatyInTabsNonProportional.xml`
+          L134068 / L135274 sama. */}
+      <TataPegaBlok tata="g2">
+      <div>
       {bisaUbah ? (
         <textarea
           className="field__input trin__teks-isian"
@@ -97,17 +119,17 @@ export default function TabTeksPanjang({
           onBlur={salinSyarat}
         />
       ) : isi === '' ? (
-        <Kosong pesan={FORM_KONTRAK.tanpaTeks} petunjuk={petunjukKosong} />
+        // ⭐ Bentuk Pega (8 Oktober 2026): `pxTextArea` baca-saja yang KOSONG —
+        // kotak teks tanpa isi, bukan ikon "tanpa teks".
+        <div className="trin__teks" tabIndex={0} aria-label={judul} title={petunjukKosong} />
       ) : (
-        <>
-          <span className="trin__teks-asal">
-            {FORM_KONTRAK.ejaanDipakai} {tab?.ejaan}
-          </span>
-          <div className="trin__teks" tabIndex={0}>
-            {isi}
-          </div>
-        </>
+        <div className="trin__teks" tabIndex={0}>
+          {isi}
+        </div>
       )}
+      </div>
+      <SelKosongPega />
+      </TataPegaBlok>
     </Panel>
   )
 }

@@ -59,17 +59,25 @@ export function IkonHapus({ ukuran = 14 }: { ukuran?: number }) {
   )
 }
 
-/** Tombol Add berikon — label tetap teks ekspor (`Add`, `add Layer`, …). */
+/**
+ * Tombol Add — label teks ekspor (`Add`, `add Layer`, …).
+ *
+ * ⛔ 8 Oktober 2026 — TANPA ikon dan tanpa rupa kapsul merah: tombol polos
+ * seperti Pega ("jangan ada design tambahan"). Kelas `tl-tambah` tetap
+ * sebagai penanda (uji dan CSS lama), rupanya disamakan `btn btn--sm`.
+ */
 export function TombolTambah({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
   return (
     <button type="button" className="btn btn--sm tl-tambah" onClick={onClick} disabled={disabled}>
-      <IkonTambah />
       {label}
     </button>
   )
 }
 
-/** Tombol Delete/Remove berikon — `labelAkses` menyebut APA yang dihapus. */
+/**
+ * Tombol Delete/Remove — `labelAkses` menyebut APA yang dihapus. ⛔ Tanpa
+ * ikon (8 Oktober 2026), seperti `TombolTambah`.
+ */
 export function TombolHapus({
   label,
   labelAkses,
@@ -83,7 +91,6 @@ export function TombolHapus({
 }) {
   return (
     <button type="button" className="btn btn--sm tl-hapus" aria-label={labelAkses} onClick={onClick} disabled={disabled}>
-      <IkonHapus />
       {label}
     </button>
   )

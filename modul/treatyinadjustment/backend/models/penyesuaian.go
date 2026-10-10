@@ -39,6 +39,10 @@ type BarisPenyesuaian struct {
 	TanggalBerakhir  string `json:"tanggalBerakhir"`
 	Posisi           string `json:"posisi"`
 	StatusAkseptasi  string `json:"statusAkseptasi"`
+	// KodePosisi - kolom `POSITION` (workbasket tempat berkas menunggu) —
+	// syarat tampil tombol `Edit` daftar @782051. `Posisi` di atas adalah
+	// `POSITIONUSERNAME`.
+	KodePosisi string `json:"kodePosisi"`
 }
 
 // SisiPenyesuaian - satu halaman di dalam dokumen: `TreatyIn` (New) atau

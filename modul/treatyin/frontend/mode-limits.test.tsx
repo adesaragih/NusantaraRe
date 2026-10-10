@@ -217,7 +217,7 @@ describe('Treaty Type — dropdown `BrowseReinsuranceType_RD`', () => {
     expect(html).toMatch(/<label class="field__label">Treaty Type<\/label><input(?=[^>]*role="combobox")(?=[^>]*value="SURPLUS")[^>]*>/)
     expect(html).not.toContain('teks pilihannya tidak ada di ekspor')
     // ⛔ Bukan lagi `<select>` untuk Treaty Type.
-    expect(html).not.toMatch(/<option value="10042" selected="">SURPLUS<\/option>/)
+    expect(html).not.toContain('<option value="10042"')
   })
 
   it('⛔ pilihannya diminta dari server, bukan ditulis di layar', () => {
@@ -249,18 +249,27 @@ describe('tab Limits seperti layar Pega (lampiran 6 Oktober 2026)', () => {
   const html = renderToStaticMarkup(<TabLimitsProp pohon={POHON_G} mode="ubah" opsi={OPSI} />)
 
   it('Treaty Group dropdown `BrowseTreatyGroup_RD` — kode terpilih', () => {
-    expect(html).toMatch(/<option value="10007" selected="">PROPERTY<\/option>/)
+    // ⛔ Combobox sejak 8 Oktober 2026 (*"mengetik harus terasa seperti
+    // mencari"*): teks pilihan ada di KOTAKNYA, dan daftar butirnya baru
+    // dirender ketika dibuka.
+    expect(html).toContain('value="PROPERTY"')
   })
   it('sel mata uang grid = dropdown CURRENCY bernilai `.Currency`', () => {
-    expect(html).toMatch(/<option value="USD" selected="">USD<\/option>/)
-    expect(html).toContain('<option value="IDR">IDR</option>')
+    expect(html).toContain('value="USD"')
+    // ⚠️ `IDR` ada di DAFTARNYA, dan daftar itu baru dirender saat dibuka —
+    // yang dapat diperiksa di sini adalah kontrolnya memang berdaftar.
+    expect(html).toContain('role="combobox"')
   })
   it('baris grid: Remove; baris Kind of Treaty/Treaty Group: Delete', () => {
     expect(html).toContain('>Remove</button>')
     expect(html).toContain('>Delete</button>')
   })
-  it('⭐ Kind of Treaty punya isian sendiri (autocomplete @586908); Treaty Group bernomor', () => {
-    expect(html).toMatch(/<label[^>]*>Kind of Treaty<\/label>/)
-    expect(html).toMatch(/<span class="tl-nomor">1<\/span><span class="tl-kartu__judul">PROPERTY<\/span>/)
+  // ⭐ 8 Oktober 2026 — bentuk Pega: Kind of Treaty dan Treaty Group adalah
+  // KOLOM grid `masterDetail` (bukan kartu bernomor).
+  it('⭐ Kind of Treaty dan Treaty Group = kolom grid Pega', () => {
+    expect(html).toContain('<th scope="col">Kind of Treaty</th>')
+    expect(html).toContain('<th scope="col">Treaty Group</th>')
+    expect(html).toContain('<td>PROPERTY</td>')
+    expect(html).not.toContain('tl-kartu')
   })
 })

@@ -17,7 +17,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Pemilik | `@PEMILIK-KOMITECLAIMPROP` |
 | Status | dimigrasi |
 | Rentang migrasi | `680-719` |
-| Slot menu | `986-987` |
+| Slot menu | `—` |
 | Prefix rute API | `/api/komite-claim-prop` (`/api/komite` milik Komite Claim Life) |
 | Kontrak disediakan | — |
 | Kontrak dipakai | `kontrak.KlaimTreatyKomite` (`inti/backend/kontrak/klaimtreaty.go`, disediakan `claimprop`) — keputusan work owner 08-10-2026 |
@@ -32,7 +32,7 @@ dipensiunkan 1 Oktober 2026.
 | --- | --- |
 | `docs/` | spec, tiket (`issues/`), grilling (tersegel), STRUKTUR / RELASI, `PARITAS.md` (setiap isian / tombol / langkah `KomitePost*` ↔ tiket ↔ status) |
 | `backend/` | `modul.go` (`Pendaftaran`), `models/` (murni; `templat/` = stream HTML `EmailKlaim_HTML_KMT` VERBATIM; `pdf_akseptasi.go` = PDF `FILEAcceptanceNote`), `repository/` (SQL), `services/` (aturan + satu transaksi Submit + perakit isi efek + pelaksana outbox), `handlers/`, `tiruan/` (uji, kontrak palsu Claim Prop), `konfigurasi/kasir.json` / `email.json`, `migrations/` |
-| `frontend/` | `menu.ts`, `rute.tsx`, daftar kerja penyetuju, layar `ShowTransfer` |
+| `frontend/` | `layar.ts` (modul TANPA menu), `rute.tsx`, layar `ShowTransfer` (dibuka dari tabel komite inbox Claim Prop) |
 
 ## Rute
 
@@ -76,6 +76,14 @@ MUATAN email hanya pengenal (claimlife/015: tanpa nama / alamat); isi dirakit sa
 T_STORAGE_IMAGE dan baris tabel warisan dokumen klaim dicatat di satu transaksi - pola lampiran Bordereaux. Gagal =
 keputusan tetap tersimpan, layar menerima `galatDokumen`.
 
+## Menu
+
+**Tidak ada** (perintah work owner 09-10-2026: "kode menu nya di hapus dari repo, anggap menu itu tidak pernah ada,
+karena digabung di menu klaim nya masing-masing"). Baris `M_NAV_MENU` dan hak akunnya dibuang migrasi inti 949; slot
+menu 986 dihapus. Modul ini dipasang bagi pemegang menu `claimprop` (`MODUL_DIPINJAM` frontend/App.tsx, frontend
+`layar.ts`) dan rutenya dipinjam (`ruteDipinjam` cmd/api/rakit.go); kasus komite dibuka dari tabel komite inbox Claim
+Prop.
+
 ## Migrasi
 
 Rentang `680-719`. `-migrate` dijalankan **work owner**.
@@ -85,7 +93,6 @@ Rentang `680-719`. `-migrate` dijalankan **work owner**.
 | 680 | `T_GENERAL_KOMITE` ADD `KOMITE_USUL_TUTUP` / `KOMITE_USUL_CADANG` `CHAR(1) DEFAULT '0' NOT NULL` + CHECK `'0'`/`'1'` |
 | 681 | `UX_GENERAL_KOMITE_ADJ` (unik, `claimlife/013`) → `IX_GENERAL_KOMITE_ADJ` biasa (keputusan work owner 08-10-2026) |
 | 682 | `T_GENERAL_KOMITE` ADD `KOMITE_SUBJECTIVITY` `CHAR(1) DEFAULT '0' NOT NULL` + CHECK, `KOMITE_SUBJECTIVITY_NOTE` `VARCHAR2(1000)` — isian Subjectivity tingkat 1 antar tingkat (keputusan work owner 08-10-2026, OQ-KCP-01 "a") |
-| 986 | slot menu: `UPDATE M_NAV_MENU SET DIMIGRASI = '1' WHERE KODE = 'komiteclaimprop'` |
 
 ## Data lama
 

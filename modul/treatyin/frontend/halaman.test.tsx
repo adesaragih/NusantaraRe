@@ -121,7 +121,10 @@ describe('⭐ isian bertahan saat pindah tab — tab dirender ulang dari penampu
     expect(html).toContain('Q 1')
     expect(html).toContain('01/01/25')
     expect(html).toContain('15/02/25')
-    expect(html).toContain('<option value="quarter" selected="">')
+    // ⛔ Combobox sejak 8 Oktober 2026. Uji ini tidak memberi daftar opsi,
+    // jadi nilai tersimpan tampil APA ADANYA di kotaknya — ditawarkan, bukan
+    // dijatuhkan, persis seperti `<option selected>` dahulu.
+    expect(html).toContain('value="quarter"')
   })
 
   it('Limits: layer yang ditambah di tab Limits, bukan pohon kontrak', () => {
@@ -134,7 +137,7 @@ describe('⭐ ketergantungan antartab — properti yang SAMA', () => {
   it('Share: grid Kind of Treaty = Limits yang diisi di tab Limits (pohon kontrak kosong)', () => {
     const html = diAtas({ Limits: LIMITS }, <TabShareProp pohon={[]} petunjukKosong="" mode="lihat" />)
     expect(html).toContain('SPECIAL SURPLUS')
-    expect(html).not.toContain('(Kind of Treaty belum dipilih)')
+    expect(html).not.toContain('(Kind of Treaty not selected)')
   })
 
   it('Share: total hasil Refresh tinggal di halaman — tampil saat tab dibuka lagi', () => {
@@ -257,7 +260,10 @@ describe('⭐ tab Non-Prop di penampung — bertahan saat pindah tab', () => {
 
   it('Event Limits — properti akar per kunci', () => {
     const html = diAtas({ RSMDLimit: '500000000000', CurrencyRSMD: 'IDR' }, <TabEventLimits mode="ubah" />)
-    expect(html).toContain('value="500000000000"')
+    // ⭐ `FieldAngka` sejak 8 Oktober 2026: yang TAMPIL berpemisah ribuan,
+    // yang tersimpan tetap bentuk kabel.
+    expect(html).toContain('value="500.000.000.000,00"')
+    expect(html).toContain('value="IDR"')
   })
 
   it('Installment — InstallmentNo, halaman per mata uang, dan total', () => {

@@ -8,7 +8,8 @@
 //
 // W6 audit silang P3 (dibaca ulang 04-10-2026): grid `GetListOpportunity` -
 // LABEL "Offer No" (`.TextNoQuotation`), "Name" (`.Name`), "Group Business",
-// "Insured Name", "Marketing", "Status". Kolom "Position" / "No Polis" (tanpa sel
+// "Insured Name", "Marketing", "Status" ("Group Business" kini "Treaty Business" = TREATY_GROUP_NAME, perintah
+// work owner 10-10-2026). Kolom "Position" / "No Polis" (tanpa sel
 // XML) dibuang. ⛔ RALAT tiket 11: kolom "Name" (pxLink `.Name` -> `openWorkByHandle
 // .pzInsKey`) tidak dirender - `.Name` ditulis nol rule korpus, tak berkolom, jadi
 // tautannya selalu tanpa teks; pembuka berkas (kunci yang sama) dipasang di sel
@@ -83,7 +84,7 @@ export function TabelPortal({
                 {selesai && <td data-label={KOLOM_PORTAL_SELESAI.noPolis}>{b.noPolis}</td>}
                 {/* T_POLIS_QUOTATION.PROPORTIONAL_TYPE apa adanya - tidak disingkat (perintah work owner 06-10-2026) */}
                 <td data-label={KOLOM_PORTAL.jenis}>{b.proportionalType}</td>
-                <td data-label={KOLOM_PORTAL.bisnis}>{b.businessName}</td>
+                <td data-label={KOLOM_PORTAL.bisnis}>{b.treatyGroupName}</td>
                 <td data-label={KOLOM_PORTAL.tertanggung}>{b.insuredName}</td>
                 <td data-label={KOLOM_PORTAL.marketing}>{b.marketingName}</td>
                 <td data-label={KOLOM_PORTAL.status}>

@@ -373,14 +373,6 @@ func (l *Layanan) PilihBisnis(ctx context.Context, p inti.Pelaku, id, idDetail s
 		return Layar{}, err
 	}
 	models.TerapkanBisnisPilih(h, bis) // 14.7-14.9
-	// [keputusan work owner 06-10-2026] Class of Business kosong: Group Business dari tabel BUSINESS (ID grup)
-	if h.Ambil(models.HalamanQuotation+".BusinessName") == "" {
-		nama, err := l.g.GrupBisnisDariGrupTreaty(ctx, h.Ambil(models.HalamanPolis+".TreatyGroupID"))
-		if err != nil {
-			return Layar{}, err
-		}
-		models.IsiGrupBisnis(h, nama)
-	}
 	// 16 (NonProportional) dan 18 - K8, nonprop.go (16 dan 17 saling meniadakan;
 	// 18 hanya berbuat bila master XOL termuat).
 	if err := l.pilihBisnisNonProp(ctx, h); err != nil {

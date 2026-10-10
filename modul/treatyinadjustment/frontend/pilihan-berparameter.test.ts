@@ -78,8 +78,9 @@ describe('parameter RD dibaca atas halaman sel/medan', () => {
     expect(pemuat.kelasBisnis).toHaveBeenCalledWith('7')
     // Spreading Non-Prop: grup dari `.TreatyGroupList(1)`, nilai = NAMA.
     opsiUntuk(SPREAD_XOL, 'SpreadingTypeXOL', { ...DATA, muat }, tempat, pemuat)
-    expect(muat).toHaveBeenLastCalledWith('spreading|9|20260701', expect.any(Function))
-    const muatan = { 'spreading|9|20260701': [{ value: '10002', label: 'QS 40%', id: '10002' }] }
+    // ⭐ 9 Oktober 2026 — `TreatyDescID` ekspor (`"10001"`) ikut dikirim, jadi masuk kunci.
+    expect(muat).toHaveBeenLastCalledWith('spreading|9|20260701|10001', expect.any(Function))
+    const muatan = { 'spreading|9|20260701|10001': [{ value: '10002', label: 'QS 40%', id: '10002' }] }
     expect(opsiUntuk(SPREAD_XOL, 'SpreadingTypeXOL', { ...DATA, muatan, muat }, tempat, pemuat)).toEqual([
       { value: 'QS 40%', label: 'QS 40%', id: '10002' },
     ])

@@ -148,7 +148,7 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
 - **Tampilan medan** (08-10-2026, perintah work owner; dikerjakan sesi ASIS CLAIM PROP, ditinjau dan di-commit sesi
   CLAIM PROP): Consultant / Adjuster dropdown memilih dan menampilkan nama (`Tata.Tampilan`, saringan NAME saja), ID
   tetap disimpan; isian angka hanya angka dengan separator Indonesia, paling banyak 4 desimal (`ketikAngka.ts`,
-  `InputAngka.tsx`, `nilai.tampilAngka`); isian tanggal diketik `dd-mm-yyyy` (+ `hh:mm`) dengan tombol kalender, aksi
+  `InputAngka.tsx`, `nilai.tampilAngka`; TAMPILAN selalu 4 desimal - `1.000,0000` - perintah work owner 10-10-2026); isian tanggal diketik `dd-mm-yyyy` (+ `hh:mm`) dengan tombol kalender, aksi
   server hanya saat lengkap dan sah (`ketikTanggal.ts`, `InputTanggal.tsx`); label Type Estimation List dari
   screenshot (`LabelKode["EstimationType"]`); nilai tampil di sel tabel tidak lagi terpecah satu huruf per baris.
 - **Panel baris Acceptation List** (08-10-2026, "perbaiki tampilan" + screenshot Pega "ikuti dan rapihkan" + "tidak harus
@@ -205,6 +205,18 @@ Nama yang tidak boleh muncul di migrasi modul MANA PUN (`TestNamaYangDibuangTida
 - **Pesan pra-proses tidak tampil saat kasus dibuat / dibuka** (08-10-2026, "BARU BUAT UDAH ADA WARNING
   ERROR"): `BukaKasus` membersihkan pesan `CheeckNoRNM_Act` (termasuk ProteksiData langkah 12) sesudah pra-proses;
   bendera Protect / IsError tetap dihitung. Pesan ProteksiData tampil pada Save to issue RNM / Submit.
+- **Choose Master tanpa JSON** (WO 10-10-2026 *"PERBAIKI CEK CHOSE MASTER. JANGAN AMBIL DARI JSON!"*;
+  `repository.MasterTreaty`): header master dari `TREATY_IN` lalu `TREATY_IN_EDM` (`ID = IDMaster`), Limits / Detail
+  dari view `TREATYINDETAILJOINEDM` (TREATYTYPE / TREATYGROUPID / RNM_SHARE unik, urut ID) - `M_TREATY_IN.JSONDATA`
+  tidak dibaca lagi. Cocok dengan JSON di 1.850+ dari 1.856 master (header) dan 2.790 dari 2.796 detail `[data DEV
+  10-10-2026]`. Keputusan WO 10-10-2026: **RNM Share** = RNM_SHARE detail treaty group klaim (`models.ShareMaster`;
+  tanpa yang cocok -> satu nilai bila seluruh detail sama, selain itu dipilih dari dropdown) - beda dengan JSON di 122
+  master; **Cash Loss dikosongkan** (tanpa sumber relasional; plafon cash call Delete Estimation tidak ada untuk 1.004
+  master ber-cash-loss JSON). **Bordereaux / Bordereaux Note / Accounting Mode** dari tabel flat Treaty In
+  `T_TREATY_REVISION` (`MASTERID = IDMaster`; WO 10-10-2026 *"KAMU BISA CEK DARI FLAT TABLE TREATY IN!"*) - master
+  yang belum punya baris flat tetap kosong (DEV 10-10-2026: 18 master). Penjaga inti `TestTCONolNamaTabelBaruDiKode`
+  kini mengecualikan claimprop untuk nama tabel Treaty In (seperti treatyinadjustment). SpreadingList master kosong ->
+  tabel bawah memakai cadangan PROPORTIONALARRG.
 
 ## Pemuat data lama
 

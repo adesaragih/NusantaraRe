@@ -162,6 +162,8 @@ func (g *Gudang) bacaSisi(ctx context.Context, masterID string) (models.SisiPeny
 		return sisi, err
 	}
 	sisi.Pohon = pohon
+	// Total yang tak tersimpan dihitung dari rinciannya (`total_cadangan.go`).
+	lengkapiTotal(&sisi)
 	return sisi, nil
 }
 

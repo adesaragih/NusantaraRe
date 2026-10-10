@@ -19,9 +19,13 @@
 // (`Section/PickerTreatyInMasterRevisi.xml` @110848, `pxRadioButtons`)
 // menampilkan teks ini — bukan kodenya.
 //
-// ⛔ BUKAN untuk kolom grid DAFTAR (`.EDMState`/`.EDMMaterialType` hasil
-// `BrowseTREATY_IN_EDM`): kelas barisnya lain dan rule Property kelas itu
-// tidak diekspor — kolom daftar tetap menampilkan kode.
+// ⭐ RALAT (9 Okt) — kolom grid DAFTAR (`.EDMState` @726743 /
+// `.EDMMaterialType` @733188, baris `BrowseTREATY_IN_EDM`) JUGA menampilkan
+// teks: selnya `pxDropdown` bersumber halaman `EDMStates.pxResults` /
+// `EDMMaterial.pxResults` (nilai `.CARI1`, teks `.CARI2`), diisi DataTransform
+// `InitTreatyEDMStateName` (pre-DT sel Type). DT itu TIDAK diekspor; teksnya
+// diambil dari peta di bawah — kode dan maknanya sama (`EDMState`/
+// `EDMMaterialType` TREATY_IN). Pemakai: "isinya bukan angka cek pega".
 //
 // ⚠️ Nilai di luar peta (mis. `EDMState = 3`) tampil APA ADANYA — tidak ditebak.
 

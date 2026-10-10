@@ -1,25 +1,25 @@
 // Label layar modul Treaty In Adjustment.
 
 export const MENU_TREATYINADJUSTMENT = {
-  rantaiVersi: 'Treaty In Adjustment — Rantai Versi',
+  rantaiVersi: 'Treaty In Adjustment — Version Chain',
 } as const
 
 export const RANTAI_VERSI = {
-  pilihKontrak: 'Kontrak',
+  pilihKontrak: 'Contract',
   // Judul kartu SEBELUM ada kontrak yang dipilih; sesudahnya judulnya nama kontrak itu.
-  panelPilih: 'Pilih kontrak',
-  kolomNomor: 'No. urut',
-  kolomNama: 'Nama kontrak',
+  panelPilih: 'Select a contract',
+  kolomNomor: 'No.',
+  kolomNama: 'Contract Name',
   kolomKeadaan: 'Keadaan',
-  kolomJenis: 'Jenis addendum',
+  kolomJenis: 'Addendum Type',
   kolomMaterial: 'Materialitas',
-  kolomBerlaku: 'Berlaku sejak',
+  kolomBerlaku: 'Valid From',
   kolomDasar: 'Dasar',
-  belumDinomori: 'belum dinomori',
-  versiPertama: 'versi pertama',
+  belumDinomori: 'not numbered yet',
+  versiPertama: 'first version',
   // Dipisah karena `Kosong` punya dua medan: `pesan` = keadaan, `petunjuk` =
   // siapa yang akan mengisinya.
-  kosong: 'Belum ada kontrak tercatat.',
+  kosong: 'No contracts recorded yet.',
   kosongPetunjuk: '',
   keterangan: '',
 } as const
@@ -50,7 +50,7 @@ export const LAMPIRAN = {
   tanpaIsi: 'No items',
   petunjukLampiran: '',
   petunjukHistory:
-    'Riwayat persetujuan kontrak ini. Kosong berarti belum ada catatan.',
+    'Approval history for this contract. Empty means no entries yet.',
   /** Pengenal kontrak warisan yang panelnya tampilkan — sementara, lihat layar. */
-  labelPengenal: 'Pengenal kontrak',
+  labelPengenal: 'Contract ID',
 } as const

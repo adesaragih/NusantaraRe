@@ -515,8 +515,8 @@ func aksiTutupKlaim(j *jalanAksi) error {
 	if err := wajibTerisi(j, models.Evaluasi(h, models.LayarTutupKlaim(), false)); err != nil {
 		return err
 	}
-	if h.Ambil("TempCommiteClaim.AllocationShareSalvage") == "true" {
-		return fmt.Errorf("%w: %s", ErrTertunda, models.OQTutupTanpaBayar)
+	if h.Ambil(models.PropCentangTutupTanpaBayar) == "true" { // "Yes" ini hanya tampil bila tidak dicentang
+		return fmt.Errorf("%w: centang Close Without Payment - gunakan tombol Yes tutup tanpa pembayaran", ErrAksiTertutup)
 	}
 	if !models.PeriksaTutupKlaim(h) { // 1-4
 		return validasi(h)
@@ -541,7 +541,59 @@ func aksiTutupKlaim(j *jalanAksi) error {
 		return err
 	}
 	j.selesai = true
-	return j.l.g.TutupKasus(j.ctx, j.tx, j.kasus.ID, j.kasus.Tahap, k.Sekarang) // 10 ASMForceCaseClose
+	if err := j.l.g.TutupKasus(j.ctx, j.tx, j.kasus.ID, j.kasus.Tahap, k.Sekarang); err != nil { // 10 ASMForceCaseClose
+		return err
+	}
+	return j.l.g.TutupKomiteTerbuka(j.ctx, j.tx, j.kasus.ID, "", k.Sekarang) // 10 CloseAllSubCases true
+}
+
+// aksiTutupTanpaBayar - tombol "Yes" PreventRejectClaimProp (centang Close Without Payment) -> `SendCloseClaimToKomite`
+// (perintah work owner 10-10-2026): kasus komite TKMT- satu tingkat tanpa adjustment, TRANSFER_TYPE 4. Klaim tetap
+// terbuka; Komite Claim Prop menutupnya bila disetujui (`KomitePost_Close`).
+func aksiTutupTanpaBayar(j *jalanAksi) error {
+	h, k := j.h, j.k
+	if err := wajibTerisi(j, models.Evaluasi(h, models.LayarTutupKlaim(), false)); err != nil {
+		return err
+	}
+	if h.Ambil(models.PropCentangTutupTanpaBayar) != "true" { // tombol ini hanya tampil bila dicentang
+		return fmt.Errorf("%w: Close Without Payment tidak dicentang", ErrAksiTertutup)
+	}
+	remarks := h.Ambil("TempCommiteClaim.Remarks")
+	models.TandaiTutupTanpaBayar(h, remarks) // 2
+	if !models.PeriksaTutupTanpaBayar(h) {   // 3-4
+		return validasi(h)
+	}
+	if n, err := j.l.g.KomiteTutupTerbuka(j.ctx, j.tx, j.kasus.ID); err != nil {
+		return err
+	} else if n > 0 {
+		return &GalatValidasi{Pesan: []string{models.PesanTutupTanpaBayarBerjalan}}
+	}
+	roster, err := j.l.a.RosterKomite(j.ctx, models.BatasRosterSemua, models.STSKlaimProp) // 5.2-5.3
+	if err != nil {
+		return err
+	}
+	pemutus, ada := models.PilihPenyetujuTutup(roster)
+	if !ada {
+		return &GalatValidasi{Pesan: []string{"Roster komite (EMAILKOMITE STS_KLAIM PROP) tidak memuat " +
+			models.JabatanTutupTanpaBayar}}
+	}
+	nama, err := j.l.a.NamaPelaku(j.ctx, k.Pelaku)
+	if err != nil {
+		return err
+	}
+	anggota := []repository.AnggotaTangga{{Urut: 1, OperatorID: pemutus.OperatorID, Jabatan: pemutus.Jabatan,
+		Email: pemutus.Email}}
+	komite, err := j.l.g.BuatKasusKomiteTutup(j.ctx, j.tx, j.kasus.ID, h.Ambil(models.PropKronologiTutup), k.Pelaku,
+		nama, anggota, k.Sekarang) // 5.4 pxAddChildWork
+	if err != nil {
+		return err
+	}
+	k.Riwayat(h, models.TeksMintaTutupTanpaBayar+komite)                    // 5.6-5.7
+	if err := j.l.g.SimpanHalaman(j.ctx, j.tx, j.kasus.ID, h); err != nil { // 5.8 Obj-Save
+		return err
+	}
+	return j.antre(JenisEfekEmailKomite, komite, map[string]string{"klaim": j.kasus.ID, "komite": komite,
+		"jenis": "tutup"}) // 5.9 SendEmailKlaimRejectClose
 }
 
 // ---------------------------------------------------------------- efek keluar

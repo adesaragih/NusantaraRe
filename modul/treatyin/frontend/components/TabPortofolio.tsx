@@ -44,9 +44,12 @@
 // `KontrakWarisan` — jadi menyalakannya berarti menebak nilainya. Ia
 // dicatat di sini, tidak dikarang di kode.
 
+import { useState } from 'react'
+
 import { Kosong, Panel } from '../../../../inti/frontend/components/ui/dasar'
+import { cocokSaring, PilihSaring } from '../../../../inti/frontend/components/ui/pilihSaring'
 import type { BarisPortofolioWarisan } from '../api'
-import { FORM_KONTRAK, GRID_TAMBAH, KOLOM_PORTOFOLIO, PORTOFOLIO } from '../labels'
+import { FORM_KONTRAK, KOLOM_PORTOFOLIO, PORTOFOLIO } from '../labels'
 import { useProperti } from '../halaman'
 import type { ModeForm } from '../mode'
 
@@ -64,7 +67,22 @@ export type BarisPortfolio = {
 }
 type Baris = BarisPortfolio
 
-/** Daftar pilihan satu sel — `<select>` telanjang, bukan `Pilih`. */
+/**
+ * Daftar pilihan satu sel — combobox, BUKAN `<select>` telanjang.
+ *
+ * ⛔ Permintaan pemilik proses 8 Oktober 2026 untuk seluruh dropdown Treaty
+ * In dan Adjustment: *"kondisi saat melakukan pengetikannya seharusnya
+ * terlihat layaknya melakukan mencari, kemudian data yang keluar adalah yang
+ * 100% mirip dengan yang diketik"*.
+ *
+ * ⚠️ Nilai yang TIDAK ada di daftar tetap ditawarkan. Himpunan pilihan di
+ * sini DIUKUR dari data, bukan dibaca dari aturan properti (yang tidak ikut
+ * diekspor) — jadi nilai yang sah tetapi belum pernah terpakai mungkin ada.
+ * Menjatuhkannya diam-diam akan MENGUBAH kontrak yang dibuka tanpa seorang
+ * pun menyentuhnya.
+ *
+ * ⭐ Label DISEMBUNYIKAN: ini sel tabel, dan `<th>`-nya sudah menamainya.
+ */
 function SelPilih({
   label,
   nilai,
@@ -76,33 +94,26 @@ function SelPilih({
   opsi: readonly string[]
   onUbah: (v: string) => void
 }) {
-  // ⚠️ Nilai yang TIDAK ada di daftar tetap ditawarkan, di urutan paling
-  // bawah. Himpunan pilihan di sini DIUKUR dari data, bukan dibaca dari
-  // aturan properti (yang tidak ikut diekspor) — jadi nilai yang sah
-  // tetapi belum pernah terpakai mungkin ada. Menjatuhkannya diam-diam
-  // akan MENGUBAH kontrak yang dibuka tanpa seorang pun menyentuhnya.
+  const [kata, setKata] = useState('')
   const asing = nilai !== '' && !opsi.includes(nilai)
+  const semua = [
+    { value: '', label: PORTOFOLIO.belumDipilih },
+    ...opsi.map((o) => ({ value: o, label: o })),
+    ...(asing ? [{ value: nilai, label: nilai }] : []),
+  ]
   return (
-    <select
-      className="field__input"
-      aria-label={label}
+    <PilihSaring
+      label={label}
+      sembunyikanLabel
       value={nilai}
-      onChange={(e) => {
-        onUbah(e.target.value)
+      teksTerpilih={semua.find((o) => o.value === nilai)?.label ?? PORTOFOLIO.belumDipilih}
+      opsi={semua.filter((o) => cocokSaring(o, kata))}
+      onCari={setKata}
+      onPilih={(o) => {
+        onUbah(o.value)
       }}
-    >
-      <option value="">{PORTOFOLIO.belumDipilih}</option>
-      {opsi.map((o) => (
-        <option key={o} value={o}>
-          {o}
-        </option>
-      ))}
-      {asing && (
-        <option key={nilai} value={nilai}>
-          {nilai}
-        </option>
-      )}
-    </select>
+      jedaMs={0}
+    />
   )
 }
 
@@ -143,26 +154,8 @@ export default function TabPortofolio({
 
   return (
     <Panel judul={PORTOFOLIO.judul}>
-      {/* Sel 110 — `pyCondition` = `TreatyIn.IsEditData!='1'`. */}
-      {bisaUbah && (
-        <div className="trin__panel-kepala">
-          <span className="trin__redup">{GRID_TAMBAH.petunjuk}</span>
-          <button
-            type="button"
-            className="btn btn--ghost btn--sm"
-            onClick={() => {
-              // ⛔ Baris baru KOSONG bertiga. `Activity/TreatyInPropAdd.xml`
-              // hanya menetapkan `.Description = ""`; kedua pilihannya
-              // memang lahir belum terisi.
-              setIsi([...isi, { TypePortfolio: '', Type: '', Description: '' }])
-            }}
-          >
-            {PORTOFOLIO.tambah}
-          </button>
-        </div>
-      )}
       <div className="table-wrap">
-        <table className="trin__tabel">
+        <table className="trin__tabel trin__tabel--pega">
           <thead>
             <tr>
               {KOLOM_PORTOFOLIO.map((k) => (
@@ -170,7 +163,25 @@ export default function TabPortofolio({
                   {k}
                 </th>
               ))}
-              {bisaUbah && <th scope="col" aria-label={PORTOFOLIO.hapus} />}
+              {/* Sel 110 — `pyCondition` = `TreatyIn.IsEditData!='1'`. ⭐ Tombol
+                  `Add` DUDUK di sel KEPALA kolom tombol (`tombolKepala` ekspor
+                  @442135, sama dengan `GridPega`), bukan melayang di atas grid. */}
+              {bisaUbah && (
+                <th scope="col">
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => {
+                      // ⛔ Baris baru KOSONG bertiga. `Activity/TreatyInPropAdd.xml`
+                      // hanya menetapkan `.Description = ""`; kedua pilihannya
+                      // memang lahir belum terisi.
+                      setIsi([...isi, { TypePortfolio: '', Type: '', Description: '' }])
+                    }}
+                  >
+                    {PORTOFOLIO.tambah}
+                  </button>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>

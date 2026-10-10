@@ -334,7 +334,7 @@ func (l *Layanan) BacaPanelLampiran(ctx context.Context, p inti.Pelaku, id strin
 	if err := inti.WajibIdentitas(p); err != nil {
 		return PanelLampiran{}, err
 	}
-	kepala, ada, err := l.gudang.BacaKepalaTreatyIn(ctx, strings.TrimSpace(id))
+	kepala, ada, err := l.kepalaLampiran(ctx, strings.TrimSpace(id))
 	if err != nil {
 		return PanelLampiran{}, err
 	}
@@ -370,7 +370,7 @@ func (l *Layanan) UnggahLampiran(ctx context.Context, p inti.Pelaku, m MasukanUn
 		return HasilUnggahLampiran{}, err
 	}
 	id := strings.TrimSpace(m.IDKontrak)
-	kepala, ada, err := l.gudang.BacaKepalaTreatyIn(ctx, id)
+	kepala, ada, err := l.kepalaLampiran(ctx, id)
 	if err != nil {
 		return HasilUnggahLampiran{}, err
 	}

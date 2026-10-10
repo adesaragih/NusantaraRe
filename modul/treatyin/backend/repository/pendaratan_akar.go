@@ -214,11 +214,6 @@ const TabelKursTahunan = "TREATYEXCHANGEYEARLY"
 
 // BacaKursTahunan membaca grid Rate of Exchange satu kontrak.
 //
-// ⚠️ Yang dikembalikan SELURUH baris tahun itu, dari kontrak mana pun.
-// Services menyempitkannya ke periode kontrak (`KursDalamPeriode`,
-// 10 Oktober 2026) — pembaca lain yang memanggil fungsi ini menerima
-// seluruh tahun.
-//
 // ⚠️ DISARING MENURUT `TREATYYEAR`, dan itu BACAAN SAYA atas bentuk
 // tabelnya — bukan salinan aturan Pega. Yang ekspor tunjukkan
 // (`RDBList/GetCurrencyToIDR_SQL.xml`) menyaring menurut `IDCURRENCY` lalu
@@ -247,12 +242,19 @@ func (g *Gudang) BacaKursTahunan(ctx context.Context, tahunTreaty string) ([]mod
 	}
 	q := fmt.Sprintf(`SELECT ID, CURRENCY, IDCURRENCY, TOIDR, STARTDATE, ENDDATE
 		FROM %s WHERE TREATYYEAR = :1 ORDER BY CURRENCY`, nama)
+	return g.bacaBarisKurs(ctx, q, tahunTreaty)
+}
+
+// bacaBarisKurs — enam kolom `ID, CURRENCY, IDCURRENCY, TOIDR, STARTDATE,
+// ENDDATE` (urutan itu) → baris grid Rate of Exchange. Dipakai pembaca kurs
+// tahun dan kurs milik kontrak (`kurs_kontrak.go`).
+func (g *Gudang) bacaBarisKurs(ctx context.Context, q string, arg ...any) ([]models.BarisKursWarisan, error) {
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
-	rows, err := g.db.QueryContext(ctx, q, tahunTreaty)
+	rows, err := g.db.QueryContext(ctx, q, arg...)
 	if err != nil {
-		return nil, fmt.Errorf("repository: membaca %s tahun %s: %w", TabelKursTahunan, tahunTreaty, err)
+		return nil, fmt.Errorf("repository: membaca %s: %w", TabelKursTahunan, err)
 	}
 	defer func() { _ = rows.Close() }()
 

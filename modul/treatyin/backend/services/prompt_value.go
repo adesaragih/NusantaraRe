@@ -55,6 +55,26 @@ var promptValue = map[string]map[string]string{
 		"1": "Material",
 		"2": "Non Material",
 	},
+	// ⛔ `ReinstatementNote.xml` — rule Property dikirim pemilik proses
+	// 8 Oktober 2026, kelas `ASM-FW-GISFW-Data-TreatyInLimits` (grid Limits
+	// Non-Prop). Pasangannya dibaca dari `pyPromptTableList`, bukan ditebak:
+	//
+	//	<pyStandardValue>asamount</pyStandardValue>
+	//	<pyLocalizedValue>Additional Premium as to amount</pyLocalizedValue>
+	//
+	// ⚠️ DAN INILAH CONTOH KEDUA BAHWA MENEBAK MELESET. Sampai berkas itu
+	// tiba, kedua nilai ini ada di `promptDisimpulkan` sebagai `as amount`
+	// dan `as time` — "pola pemisahan kode gandeng", dasar yang terdengar
+	// masuk akal dan seluruhnya salah: labelnya bukan pemecahan kodenya
+	// melainkan kalimat yang nol hubungannya dengan ejaan itu.
+	//
+	// ⭐ Dicatat, bukan dihapus: dua dari dua kesimpulan yang akhirnya
+	// terbukti ternyata meleset (`OptionLimit`, lalu ini). Yang masih
+	// disimpulkan di bawah karena itu patut dicurigai, bukan dipercaya.
+	"ReinstatementNote": {
+		"asamount": "Additional Premium as to amount",
+		"astime":   "Additional Premium as to time",
+	},
 }
 
 // ⭐ TINGKAT KEYAKINAN tiap label — dan mengapa ia dicatat.
@@ -99,12 +119,6 @@ var promptDisimpulkan = map[string]map[string]string{
 	// kata utuh, dan Activity membacanya apa adanya
 	// (`DetailCalculationROL` membandingkan `"AND"` / `"OR"`). Nol yang
 	// perlu dipecah, jadi nol yang perlu diralat.
-	// Dasar: pola pemisahan yang sama — `asamount` dan `astime` kode
-	// gandeng dari frasa `as amount` dan `as time`.
-	"ReinstatementNote": {
-		"asamount": "as amount",
-		"astime":   "as time",
-	},
 	// Dasar: pasangannya `loss` → `Loss Occuring` sudah ada di penerjemah,
 	// dan lawan baku `Losses Occurring` di reasuransi adalah
 	// `Risks Attaching`.

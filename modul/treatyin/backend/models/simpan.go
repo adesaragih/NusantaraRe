@@ -13,6 +13,9 @@ type RencanaSimpan struct {
 	// Operator (`USERID` kurs) dan stempel waktu Pega (`DATEIU`/`DATEIN`).
 	Operator string
 	Stempel  string
+	// Detail - baris `TREATYINDETAIL` (`SaveTreatyIn_Act` [8], hanya bila
+	// kontrak Resolve Complete). `nil` = tabel itu tidak disentuh.
+	Detail *RencanaDetail
 }
 
 // RencanaPenyesuaian - satu penekanan tombol tulis layar ADJUSTMENT (EDM):
@@ -41,4 +44,7 @@ type RencanaPenyesuaian struct {
 	// `TreatyInTabsNPValueDifference_NoProRate` membacanya. Sampai
 	// 8 Oktober 2026 ia nol punya tempat simpan dan hilang setiap Save.
 	SebelumProrata map[string]any
+	// Detail - baris `TREATYINDETAILEDM` (`SaveTreatyIn_EDM_Act` [14], hanya
+	// bila penyesuaian Resolve Complete). `nil` = tabel itu tidak disentuh.
+	Detail *RencanaDetail
 }

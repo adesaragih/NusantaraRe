@@ -57,15 +57,18 @@ func (k Kasus) Tertutup() bool {
 // (`Section/SFAPortal_OpportunitiesList`: nomor, bisnis, tertanggung,
 // marketing, NBStatus).
 type RingkasanKasus struct {
-	ID            string `json:"id"`
-	BusinessName  string `json:"businessName"`
-	InsuredName   string `json:"insuredName"`
-	MarketingName string `json:"marketingName"`
-	NBStatus      string `json:"nbStatus"`
-	StatusWork    string `json:"statusWork"`
-	PositionNote  string `json:"positionNote"`
-	NoPolis       string `json:"noPolis"`
-	TglCreate     string `json:"tglCreate"`
+	ID string `json:"id"`
+	// TreatyGroupName - T_GENERAL_POLIS_TREATY.TREATY_GROUP_NAME, kolom "Treaty Business" portal dan kotak masuk
+	// Beranda (perintah work owner 10-10-2026: "ganti yang di inbox group bisnis jadi treaty bisnis"; dulu
+	// "Group Business" = Quotation.BusinessName, RD GetListOpportunity).
+	TreatyGroupName string `json:"treatyGroupName"`
+	InsuredName     string `json:"insuredName"`
+	MarketingName   string `json:"marketingName"`
+	NBStatus        string `json:"nbStatus"`
+	StatusWork      string `json:"statusWork"`
+	PositionNote    string `json:"positionNote"`
+	NoPolis         string `json:"noPolis"`
+	TglCreate       string `json:"tglCreate"`
 	// NamaPembuat - T_WORK_POLIS.CREATE_OP_NAME, kolom "User Create" portal (keputusan work owner 06-10-2026).
 	NamaPembuat string `json:"createOpName"`
 	// JenisProporsi - T_POLIS_QUOTATION.PROPORTIONAL_TYPE, kolom "Type" portal (keputusan work owner 06-10-2026).

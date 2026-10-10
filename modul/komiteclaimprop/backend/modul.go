@@ -22,8 +22,8 @@ import (
 	"nusantarare/modul/komiteclaimprop/backend/services"
 )
 
-// berkasMigrasi adalah folder `migrations/` modul ini (rentang 680-719, slot menu 986-987 - MODUL.md), ditanam ke
-// biner.
+// berkasMigrasi adalah folder `migrations/` modul ini (rentang 680-719 - MODUL.md; modul ini tanpa menu, baris
+// M_NAV_MENU-nya dihapus migrasi inti 949), ditanam ke biner.
 //
 //go:embed migrations/*.sql
 var berkasMigrasi embed.FS

@@ -62,7 +62,8 @@ export const KOLOM_PORTAL = {
   id: 'Offer No',
   // keputusan work owner 06-10-2026 - bukan kolom GetListOpportunity
   jenis: 'Type',
-  bisnis: 'Group Business',
+  // perintah work owner 10-10-2026 "ganti yang di inbox group bisnis jadi treaty bisnis" (dulu "Group Business")
+  bisnis: 'Treaty Business',
   tertanggung: 'Insured Name',
   marketing: 'Marketing',
   status: 'Status',
@@ -82,7 +83,7 @@ export const KOLOM_BERANDA = {
   id: 'Offer No',
   jenis: 'Type',
   tertanggung: 'Insured Name',
-  bisnis: 'Group Business',
+  bisnis: 'Treaty Business', // perintah work owner 10-10-2026 (dulu "Group Business")
   ceding: 'Ceding Company',
   mulai: 'Inception Date',
   marketing: 'Marketing',

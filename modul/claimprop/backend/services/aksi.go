@@ -74,6 +74,8 @@ var aksiInduk = map[string]string{
 	"TryMakePLA":         "BukaPLA",
 	"PrintDLATreatyIn":   "BukaDLA",
 	"CloseClaimProp":     "BukaTutupKlaim",
+	// tombol Yes tutup tanpa pembayaran (pop-up PreventRejectClaimProp yang sama)
+	"SendCloseClaimToKomite": "BukaTutupKlaim",
 	// tombol modal CommitteeTreaty tampil menurut isian modal - diperiksa ulang SESUDAH kiriman digabung (aksiKomite)
 	"AddKomiteTreatyChild": "BukaKomite",
 }
@@ -336,19 +338,20 @@ func init() {
 		"SubmitOutstanding": aksiSubmit,
 		"Simpan":            halamanSaja(func(j *jalanAksi) {}),
 		// akseptasi (tiket 08, 10, 11, 12, 13)
-		"AddAdjustment":        halamanSaja(func(j *jalanAksi) { models.AddAdjustment(j.k, j.h) }),
-		"DeleteAjsutment":      func(j *jalanAksi) error { return models.DeleteAjsutment(j.h, j.r.Indeks) },
-		"SetPayableTreaty":     indeks(models.SetPayableTreaty),
-		"SetNameCurrency":      aksiMataUangAdjustment,
-		"SetDLACedingSOB":      func(j *jalanAksi) error { return models.SetDLACedingSOB(j.h, j.r.Indeks) },
-		"PilihAllocation":      func(j *jalanAksi) error { return models.PilihAllocation(j.h, j.r.Indeks, j.r.Param) },
-		"CountGrossAdjTreaty":  indeks(models.CountGrossAdjTreaty),
-		"PilihRekening":        aksiPilihRekening,
-		"SetKomiteNo":          halamanSaja(func(j *jalanAksi) {}),
-		"BukaKomite":           aksiBukaKomite,
-		"AddKomiteTreatyChild": aksiKomite,
-		"HitServiceToKasir":    aksiKasir,
-		"PrintDLATreatyIn":     aksiDLA,
-		"CloseClaimProp":       aksiTutupKlaim,
+		"AddAdjustment":          halamanSaja(func(j *jalanAksi) { models.AddAdjustment(j.k, j.h) }),
+		"DeleteAjsutment":        func(j *jalanAksi) error { return models.DeleteAjsutment(j.h, j.r.Indeks) },
+		"SetPayableTreaty":       indeks(models.SetPayableTreaty),
+		"SetNameCurrency":        aksiMataUangAdjustment,
+		"SetDLACedingSOB":        func(j *jalanAksi) error { return models.SetDLACedingSOB(j.h, j.r.Indeks) },
+		"PilihAllocation":        func(j *jalanAksi) error { return models.PilihAllocation(j.h, j.r.Indeks, j.r.Param) },
+		"CountGrossAdjTreaty":    indeks(models.CountGrossAdjTreaty),
+		"PilihRekening":          aksiPilihRekening,
+		"SetKomiteNo":            halamanSaja(func(j *jalanAksi) {}),
+		"BukaKomite":             aksiBukaKomite,
+		"AddKomiteTreatyChild":   aksiKomite,
+		"HitServiceToKasir":      aksiKasir,
+		"PrintDLATreatyIn":       aksiDLA,
+		"CloseClaimProp":         aksiTutupKlaim,
+		"SendCloseClaimToKomite": aksiTutupTanpaBayar,
 	}
 }

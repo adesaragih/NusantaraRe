@@ -42,8 +42,8 @@ export const RETENSI = {
   // tombolnya. Menyalinnya ke sini membuat dua tempat untuk satu teks.
 
   // Teks layar kita sendiri — ditandai supaya tidak tertukar dengan ekspor.
-  barisBaru: '(belum dipilih)',
-  petunjukKosong: 'Belum ada baris Maximum Retention.',
+  barisBaru: '(not selected)',
+  petunjukKosong: 'No Maximum Retention rows yet.',
 } as const
 
 /**

@@ -167,13 +167,30 @@ type sumberGudang struct {
 	err   error
 }
 
+// DescSpreading — `Param.TreatyDescID` yang SELURUH pemanggil RD susunan
+// kirim ketika mereka mengirimnya: `"10001"` (`FetchQSfromMaster[2]`,
+// `FetchQSfromMasterXOL[4]`, `SetSpreadName[3]`, `Section/DetailShare.xml`).
+//
+// ⚠️ Satu-satunya yang TIDAK mengirimnya: dropdown `Spreading Type` XOL
+// (`Section/Share.xml`) — dan di sana filternya karena itu dilewati.
+const DescSpreading = "10001"
+
 func (s *sumberGudang) Induk(grup, mulai string) []models.SusunanSpreading {
 	k := grup + "|" + mulai
 	if v, ada := s.induk[k]; ada || s.err != nil {
 		return v
 	}
-	// Pencarian di Activity tidak mengirim parameter H — filternya dilewati.
-	v, err := s.g.BacaIndukSpreading(s.ctx, grup, mulai, "")
+	// ⛔ ACTIVITY BERBEDA DARI DROPDOWN, dan bedanya baru terbaca setelah
+	// langkahnya dibuka satu per satu 8 Oktober 2026:
+	//
+	//	Section/Share.xml           grup —      desc —       (dropdown)
+	//	Activity/FetchQSfromMasterXOL[4]  grup .TreatyGroupList(1).TreatyGroupID
+	//	                            desc "10001"
+	//
+	// Jadi `TreatyDescID` TETAP dikirim di jalur Activity; yang tidak dikirim
+	// hanya parameter H. Menghapusnya di sini akan melonggarkan pencarian
+	// yang di Pega memang disaring.
+	v, err := s.g.BacaIndukSpreading(s.ctx, grup, DescSpreading, mulai, "")
 	if err != nil {
 		s.err = err
 		return nil
@@ -418,13 +435,31 @@ func (k konteksShare) fetchQS(b *models.BarisShareNP, induk string, perbarui boo
 	b.SpreadingTypeXOL = induk
 	b.SpreadingListXOL = []models.BarisSpreadingNP{}
 	// [5]–[11] induk cocok NAMA → pengenal & tahun → anak susunan.
+	// ⛔ FILTER TREATY GROUP SENGAJA DIBUANG — PENYIMPANGAN DARI PEGA, dan ini
+	// pernyataannya.
+	//
+	// `Section/Share.xml` dan `Section/DetailShare.xml` MENGIRIM
+	// `TreatyGroupID`, begitu pula `FetchQSfromMaster(XOL)`. Mengikutinya berarti
+	// hanya induk yang terdaftar di Treaty Group baris itu yang dapat dipilih —
+	// dan untuk kontrak yang dilaporkan 8 Oktober 2026 daftarnya kosong, padahal
+	// susunannya ADA di `PROPORTIONALARRG` (dinyatakan pemilik proses).
+	//
+	// Keputusan pemilik proses, 8 Oktober 2026: *"gimana pun caranya asal itu ada
+	// isinya"*.
+	//
+	// ⚠️ DIBUANG DI KEDUA TEMPAT SEKALIGUS, dan itu syaratnya. Membuangnya hanya
+	// di dropdown — yang sempat terjadi — membuat layar menawarkan induk yang
+	// pencariannya sendiri tidak dapat menemukan: Spreading Type terpilih,
+	// grid spreading tetap kosong. Setengah penyimpangan lebih buruk daripada
+	// keduanya, sebab ia terbaca seperti berhasil.
+	//
+	// ⭐ `TreatyDescID = "10001"` TETAP dikirim: nol pemanggil yang menghilangkannya,
+	// dan ia tidak pernah menjadi sebab daftar kosong.
+	//
+	// Pasangannya di layar: `TabShareNonProp.tsx`.
 	if induk != "" {
-		grup := ""
-		if len(b.TreatyGroupList) > 0 {
-			grup = b.TreatyGroupList[0].TreatyGroupID
-		}
 		idInduk, tahun := "", ""
-		for _, p := range k.src.Induk(grup, k.mulai) {
+		for _, p := range k.src.Induk("", k.mulai) {
 			if p.ReinsTypeName == induk {
 				b.SpreadingTypeIDXOL = p.ReinsTypeID
 				idInduk, tahun = p.ReinsTypeID, p.TreatyYearID
@@ -920,12 +955,14 @@ func kosongkanSebaran(b *models.BarisShareNP) {
 // dan Treaty Group — `.TreatyGroupList(1).TreatyGroupID` untuk Spreading Type,
 // KOSONG untuk Reins Type spreading manual (`TempSprd.TreatyGroupID`, tak
 // pernah diisi → filter B dilewati, induk semua grup).
-func (l *Layanan) DaftarIndukSpreading(ctx context.Context, p inti.Pelaku, treatyGroupID, mulai string) ([]models.SusunanSpreading, error) {
+func (l *Layanan) DaftarIndukSpreading(ctx context.Context, p inti.Pelaku, treatyGroupID, treatyDescID, mulai string) ([]models.SusunanSpreading, error) {
 	if err := inti.WajibIdentitas(p); err != nil {
 		return nil, err
 	}
-	// Kedua dropdown mengirim `ReinsTypeID = "10246"` (filter H).
-	return l.gudang.BacaIndukSpreading(ctx, treatyGroupID, mulai, repository.IndukDikecualikanDropdown)
+	// Kedua dropdown mengirim `ReinsTypeID = "10246"` (filter H). `TreatyDescID`
+	// datang dari layar: Prop `"10001"`, XOL kosong — lihat
+	// `SaringanIndukSpreading`.
+	return l.gudang.BacaIndukSpreading(ctx, treatyGroupID, treatyDescID, mulai, repository.IndukDikecualikanDropdown)
 }
 
 // DaftarReasuradurShare — isi autocomplete `Reinsurer Name` /

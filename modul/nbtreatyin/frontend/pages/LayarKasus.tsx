@@ -10,7 +10,7 @@
 // Medan wajib datang dari backend (`medanWajib`). Padanan setiap tombol/aksi
 // dengan rule XML: `docs/alat/tombol.json`.
 
-import { Fragment, useCallback, useState, type ReactNode } from 'react'
+import { Fragment, useCallback, useRef, useState, type ReactNode } from 'react'
 
 import { Gagal, Memuat, Modal, Panel, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
 import PanelLampiranReas from '../../../../inti/frontend/lampiran/PanelLampiranReas'
@@ -72,6 +72,7 @@ import {
   type Medan,
 } from '../medan'
 import { tampilNonProp } from '../nonprop'
+import { pertahankanKetikan } from '../hitungLangsung'
 import { BARIS_PER_HALAMAN_USULAN, irisan } from '../paginasi'
 import { idTampil, sajikan, sajikanTanggalJam, type Sajian } from '../sajian'
 import { TATA_UANG_ADMIN, TATA_UANG_ATASAN, TOTAL_ATASAN, deretLayer, deretQ, tataUmum } from '../tataletak'
@@ -99,6 +100,8 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   const [konfirmasi, setKonfirmasi] = useState(false)
   const [nomor, setNomor] = useState<NomorPolis | null>(null)
   const [halUsulan, setHalUsulan] = useState(1)
+  // nomor permintaan hitung terakhir - jawaban permintaan yang sudah disusul diabaikan (hitungLangsung.ts)
+  const hitungTerakhir = useRef(0)
 
   const terima = useCallback((ly: Layar) => {
     setLayar(ly)
@@ -145,7 +148,18 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   /** Action set satu sel - SATU bentuk permintaan: `urutan` satu refresh atau lebih. */
   const refresh = (urutan: Aksi[], indeks?: number, halaman?: Halaman) => {
     if (urutan.length === 0) return
-    void jalankan(() => hitung(id, { urutan, indeks, halaman: halaman ?? h }), terima)
+    const dikirim = halaman ?? h
+    const ke = ++hitungTerakhir.current
+    // Hitung langsung saat mengetik (hitungLangsung.ts): jawaban yang sudah disusul permintaan lain diabaikan, dan
+    // medan yang diketik sesudah permintaan dikirim tidak ditimpa nilai lamanya.
+    void jalankan(
+      () => hitung(id, { urutan, indeks, halaman: dikirim }),
+      (ly) => {
+        if (ke !== hitungTerakhir.current) return
+        setLayar(ly)
+        setH((kini) => (kini ? pertahankanKetikan(ly.halaman, dikirim, kini) : ly.halaman))
+      },
+    )
   }
 
   const selesai = (m: Medan, v: string) => {

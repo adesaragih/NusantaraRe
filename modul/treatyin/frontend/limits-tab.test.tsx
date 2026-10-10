@@ -37,7 +37,14 @@ const OPSI: OpsiLimits = {
     { value: 'OR', label: 'OR' },
     { value: 'AND', label: 'AND' },
   ],
-  catatanReinstatement: [{ value: 'asamount', label: 'asamount' }],
+  // ⛔ Label = PROMPT VALUE rule Property (`ReinstatementNote.xml`,
+  // 8 Oktober 2026), bukan cermin kodenya. Data uji yang mencerminkan kode
+  // membuat uji LULUS untuk kedua perilaku, dan itu yang menyembunyikan
+  // cacatnya selama ini.
+  catatanReinstatement: [
+    { value: 'asamount', label: 'Additional Premium as to amount' },
+    { value: 'astime', label: 'Additional Premium as to time' },
+  ],
 }
 
 describe('tab Limits Prop — sesuai Activity', () => {
@@ -106,9 +113,11 @@ describe('tab Limits Prop — sesuai Activity', () => {
     const pohon: SimpulLimit[] = [{ TreatyType: 'QUOTA SHARE 2020', TreatyTypeID: '10210', Detail: [] }]
     const html = renderToStaticMarkup(<TabLimitsProp pohon={pohon} mode="ubah" opsi={opsiSoa} />)
     // Dropdown berlabel Name — kotak ketik-pilih seperti Ceding (7 Oktober
-    // 2026); Kind of Treaty tampil baca-saja.
+    // 2026); Kind of Treaty tampil di SEL GRID induknya (bentuk Pega,
+    // 8 Oktober 2026), bukan kotak baca-saja tambahan.
     expect(html).toMatch(/<label class="field__label">Treaty Type<\/label><input(?=[^>]*role="combobox")(?=[^>]*value="2020 QS 89M FAC")[^>]*>/)
-    expect(html).toMatch(/<label class="field__label">Kind of Treaty<\/label><input class="field__input field__input--readonly" type="text" readonly="" value="QUOTA SHARE 2020"/)
+    expect(html).toContain('<td>QUOTA SHARE 2020</td>')
+    expect(html).not.toMatch(/<label class="field__label">Kind of Treaty<\/label>/)
   })
 
   // ⭐ RALAT 7 Oktober 2026 (perbandingan layar Pega): kolom kotak centang
@@ -154,11 +163,15 @@ describe('tab Limits Prop — sesuai Activity', () => {
 
   it('⭐ kunci materialitas (EDMMaterialType = 2): Treaty Group & Add terkunci walau Edit', () => {
     const html = renderToStaticMarkup(<TabLimitsProp pohon={POHON} mode="ubah" opsi={OPSI} edmJenisMaterial="2" />)
-    expect(html).toMatch(/<button type="button" class="btn btn--sm tl-tambah" disabled="">(?:(?!<\/button>).)*Add<\/button>/)
+    // ⭐ 8 Oktober 2026 — `Add` di sel kepala kolom tombol grid Pega.
+    expect(html).toContain('<button type="button" class="btn btn--sm" disabled="">Add</button>')
     expect(html).toMatch(/<label class="field__label">Treaty Group<\/label><input class="field__input field__input--readonly"/)
     expect(TAB_KUNCI_MATERIAL).toContain('Event Limits')
     const bebas = renderToStaticMarkup(<TabLimitsProp pohon={POHON} mode="ubah" opsi={OPSI} />)
-    expect(bebas).toContain('<option value="10007" selected="">PROPERTY</option>')
+    // ⛔ Combobox sejak 8 Oktober 2026 (*"mengetik harus terasa seperti
+    // mencari"*): teks pilihan ada di KOTAKNYA, dan daftar butirnya baru
+    // dirender ketika dibuka.
+    expect(bebas).toContain('value="PROPERTY"')
   })
 
   it('⭐ Achievement: Refresh/Quarter Year → GetAchievement di services; Generate Excel .xlsx; Submit → LOG_ACHIEVEMENT', () => {
@@ -192,7 +205,7 @@ describe('tab Limits Non-Prop — grid layer → Layers → Summary → Total', 
     PremiumEarnedList: [{ Currency: 'IDR', Value: '50000' }],
     MDPList: [{ Currency: 'IDR', Value: '40000' }],
     MDPMinList: [],
-    Reinstatement_List: [{ ReinstatementValue: '1', ReinstatementPct: '100', AdditionalPct: '100', ReinstatementAmount1: '1000000', ReinstatementAmount2: '100' }],
+    Reinstatement_List: [{ ReinstatementValue: '1', ReinstatementNote: 'asamount', ReinstatementPct: '100', AdditionalPct: '100', ReinstatementAmount1: '1000000', ReinstatementAmount2: '100' }],
   }
   const AKAR_ISI = {
     LimitSummaryList: [{ Note: 'layer1 of layer1', Limit: '1000000' }],
@@ -207,8 +220,44 @@ describe('tab Limits Non-Prop — grid layer → Layers → Summary → Total', 
       'Total Premium Earned', 'Total MDP', 'Total ROL', '1.000.000,00']) {
       expect(html).toContain(t)
     }
-    // Judul kartu layer = kolom Layers ekspor: `LayerType Layer of LayerPartType LayerPart`.
-    expect(html).toContain('<span class="tl-kartu__judul">layer 1 of layer 1</span>')
+    // ⭐ 8 Oktober 2026 — baris GRID Pega (bukan kartu): lima sel kolom
+    // `Layers` ekspor = `LayerType · Layer · of · LayerPartType · LayerPart`.
+    expect(html).toContain('<td>layer</td><td>1</td><td>of</td><td>layer</td><td>1</td>')
+  })
+
+  // ⛔ KELUHAN PEMILIK PROSES 8 Oktober 2026: *"di nonprop bagian
+  // ReinstatementNote itu seharusnya mengambil Prompt value bukan standard
+  // value"*.
+  //
+  // Rule Property `ReinstatementNote.xml` (kelas
+  // `ASM-FW-GISFW-Data-TreatyInLimits`) memasangkan di `pyPromptTableList`:
+  //   asamount → Additional Premium as to amount
+  //   astime   → Additional Premium as to time
+  //
+  // ⚠️ Sampai berkas itu tiba, kami MENYIMPULKAN `as amount` / `as time`
+  // dengan dasar "kode gandeng dipecah jadi kata". Melesetnya bukan sedikit:
+  // labelnya kalimat penuh yang nol hubungannya dengan ejaan kodenya.
+  it('⛔ sel Note menampilkan PROMPT VALUE, bukan kode tersimpannya', () => {
+    // Mode LIHAT dan mode UBAH — keduanya, sebab cacatnya justru hanya di
+    // mode lihat dan uji yang memeriksa satu mode akan melewatkannya lagi.
+    for (const bisaUbah of [false, true]) {
+      const html = renderToStaticMarkup(
+        <RincianLayer l={LAYER} opsi={OPSI} bisaUbah={bisaUbah} modeUbah={bisaUbah} onUbah={() => undefined} hitung={() => undefined} onGantiGrup={() => undefined} />,
+      )
+      expect(html, `bisaUbah=${String(bisaUbah)}`).toContain('Additional Premium as to amount')
+      // ⚠️ Label yang benar saja tidak cukup: `<select>` di mode LIHAT juga
+      // memuat labelnya sebagai `<option>`, jadi memeriksa teksnya saja
+      // meloloskan sel yang diam-diam dapat diubah.
+      expect(html.includes('role="combobox"'), `combobox saat bisaUbah=${String(bisaUbah)}`).toBe(bisaUbah)
+    }
+    const html = renderToStaticMarkup(
+      <RincianLayer l={LAYER} opsi={OPSI} bisaUbah={false} modeUbah={false} onUbah={() => undefined} hitung={() => undefined} onGantiGrup={() => undefined} />,
+    )
+    // Kode mentahnya tidak boleh bocor sebagai teks sel.
+    expect(html).not.toContain('>asamount<')
+    // Dan bukan pula kesimpulan lama yang terbukti salah.
+    expect(html).not.toContain('as amount<')
+    expect(html).not.toContain('tl-kartu')
     // Mode lihat: nol tombol.
     expect(html).not.toContain('add Layer')
     expect(html).not.toContain('Update Total')
@@ -239,11 +288,17 @@ describe('tab Limits Non-Prop — grid layer → Layers → Summary → Total', 
     expect(html).toContain('PROPERTY')
   })
 
-  it('⛔ kolom Reinstatement Amount USD hanya bila Limit2 ≠ 0', () => {
+  // ⭐ 9 Oktober 2026 — SELALU tampil walau Limit2 kosong/0 (layar Pega
+  // produksi; syarat `.Limit2 != 0` @801378 tidak diikuti, keputusan pemakai).
+  it('⭐ kolom Reinstatement Amount USD tetap tampil walau Limit2 kosong', () => {
     const tanpa = renderToStaticMarkup(
       <RincianLayer l={{ ...LAYER, Limit2: '0' }} opsi={OPSI} bisaUbah={false} modeUbah={false} onUbah={() => undefined} hitung={() => undefined} onGantiGrup={() => undefined} />,
     )
-    expect(tanpa).not.toContain('Reinstatement Amount USD')
+    expect(tanpa).toContain('Reinstatement Amount USD')
+    const kosong = renderToStaticMarkup(
+      <RincianLayer l={{ ...LAYER, Limit2: '' }} opsi={OPSI} bisaUbah={false} modeUbah={false} onUbah={() => undefined} hitung={() => undefined} onGantiGrup={() => undefined} />,
+    )
+    expect(kosong).toContain('Reinstatement Amount USD')
   })
 
   it('⛔ hanya medan yang Activity TULIS yang digabung; rumus di services', () => {
@@ -326,9 +381,10 @@ describe('⛔ kolom tanpa presisi ekspor TIDAK diformat', () => {
   // ⚠️ Dan `Layer`/`Part` memang dikirim tanpa presisi — kalau suatu hari
   // keduanya diberi angka, uji di atas tidak lagi melindunginya.
   it('⚠️ Layer dan Part dikirim `desimal={null}`', () => {
-    // ⛔ Jangkarnya `label={LIMITS_NP.layer}` — `LIMITS_NP.layers` (judul
-    // bagian) cocok lebih dulu bila yang dicari hanya namanya.
-    for (const k of ['label={LIMITS_NP.layer}', 'label={LIMITS_NP.part}']) {
+    // ⛔ Jangkarnya nilai medannya — sejak 8 Oktober 2026 kedua medan TANPA
+    // label (`Layers.xml` @11943, tangkapan layar 31), jadi `label={…}` tak
+    // lagi dapat dijadikan jangkar.
+    for (const k of ["nilai={teksDari(l, 'Layer')}", "nilai={teksDari(l, 'LayerPart')}"]) {
       const i = NP.indexOf(k)
       expect(i, k).toBeGreaterThan(-1)
       expect(NP.slice(i, NP.indexOf('/>', i)), k).toContain('desimal={null}')

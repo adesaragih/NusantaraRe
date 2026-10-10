@@ -69,7 +69,7 @@ describe('label layar = LABEL XML', () => {
   it('portal SFAPortal_OpportunitiesList / Header: judul kolom, judul halaman, placeholder saring', () => {
     expect([KOLOM_PORTAL.id, KOLOM_PORTAL.bisnis, KOLOM_PORTAL.tertanggung, KOLOM_PORTAL.marketing, KOLOM_PORTAL.status]).toEqual([
       'Offer No',
-      'Group Business',
+      'Treaty Business', // perintah work owner 10-10-2026 (dulu "Group Business" GetListOpportunity)
       'Insured Name',
       'Marketing',
       'Status',

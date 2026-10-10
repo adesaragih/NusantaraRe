@@ -9,7 +9,7 @@ export default function PanelPolisProduksi({ baris }: { baris: readonly BarisPol
     <section className="trin__polis" aria-label={POLIS_PRODUKSI.judul}>
       <h4 className="trin__polis-judul">{POLIS_PRODUKSI.judul}</h4>
       <div className="table-wrap">
-        <table className="trin__tabel">
+        <table className="trin__tabel trin__tabel--pega">
           <thead>
             <tr>
               {KOLOM_POLIS_PRODUKSI.map((k) => (

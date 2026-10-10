@@ -20,7 +20,11 @@ export function idMasterPolis(medan: Readonly<Record<string, string>>, id: strin
   return (medan.EDMState ?? '') === '' ? id : idAsal
 }
 
-export default function PanelPolisMaster({ idMaster }: { idMaster: string }) {
+/**
+ * `ringkas` — bentuk Pega (9 Oktober 2026): panel duduk DI KANAN kepala,
+ * judul kecil tanpa kartu, grid berkolom nomor baris (`1`) di kiri.
+ */
+export default function PanelPolisMaster({ idMaster, ringkas = false }: { idMaster: string; ringkas?: boolean }) {
   const [baris, setBaris] = useState<BarisPolisMaster[] | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   useEffect(() => {
@@ -42,6 +46,45 @@ export default function PanelPolisMaster({ idMaster }: { idMaster: string }) {
       dibuang = true
     }
   }, [idMaster])
+  if (ringkas) {
+    return (
+      <section className="tria__polis" aria-label={POLIS_MASTER.judul}>
+        <h4 className="tria__polis-judul">{POLIS_MASTER.judul}</h4>
+        {galat !== null && <Gagal galat={galat} />}
+        {baris === null && galat === null && <Memuat />}
+        {baris !== null && (
+          <div className="table-wrap">
+            <table className="tria__tabel tria__tabel--pega">
+              <thead>
+                <tr>
+                  <th scope="col" className="tria__polis-no" aria-label="No" />
+                  {POLIS_MASTER.kolom.map((k) => (
+                    <th key={k} scope="col">
+                      {k}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {baris.length === 0 && (
+                  <tr>
+                    <td colSpan={POLIS_MASTER.kolom.length + 1}>{POLIS_MASTER.tanpaBaris}</td>
+                  </tr>
+                )}
+                {baris.map((b, i) => (
+                  <tr key={`${b.nomorPolis}|${b.pegaID}|${String(i)}`}>
+                    <td className="tria__polis-no">{i + 1}</td>
+                    <td>{b.nomorPolis}</td>
+                    <td>{b.pegaID}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    )
+  }
   return (
     <Panel judul={POLIS_MASTER.judul}>
       {galat !== null && <Gagal galat={galat} />}

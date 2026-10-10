@@ -60,6 +60,49 @@ export function bolehRevisi(b: Pick<BarisDaftarWarisan, 'statusAkseptasi' | 'pos
 }
 
 /**
+ * Syarat tampil tombol `Edit` — `Section/InputTreatyInOffer.xml` (@268974):
+ * `OperatorID.pyWorkBasketList(2).pyWorkBasketName = 'ReasTreatyInAdmin'
+ * && (.Position = 'ReasTreatyInAdmin' || .Position = '') && (.StatusAkseptasi
+ * != 'Decline' && .StatusAkseptasi != 'Resolve Complete')`.
+ *
+ * ⛔ SecHead / DeptHead / Director hanya mendapat `View` (`SetTreatyIn_Act`
+ * `viewstate=1` → form hanya-baca); mereka bertindak lewat `Actions`. Admin
+ * pun kehilangan `Edit` begitu berkas naik — sampai di-Reject kembali.
+ * (Keputusan pemakai 9 Oktober 2026: samakan dengan Pega.)
+ */
+export function bolehEdit(b: Pick<BarisDaftarWarisan, 'statusAkseptasi' | 'posisi'>, workbasket: readonly string[]): boolean {
+  const posisi = b.posisi ?? ''
+  return (
+    workbasket.includes('ReasTreatyInAdmin') &&
+    (posisi === '' || posisi === 'ReasTreatyInAdmin') &&
+    b.statusAkseptasi !== 'Decline' &&
+    b.statusAkseptasi !== DAFTAR_KONTRAK.keadaanTerkunci
+  )
+}
+
+/**
+ * Tombol aksi satu baris, sesudah syarat Pega diterapkan.
+ *
+ * ⚠️ `Force Edit` TIDAK di sini — di Pega ia tombol FORM
+ * (`TreatyInActionButtons`), tampil saat form terkunci; IT membuka `View`
+ * lalu menekannya (`FormKontrakTreatyIn`).
+ */
+export function aksiBaris(
+  b: Pick<BarisDaftarWarisan, 'statusAkseptasi' | 'posisi'>,
+  workbasket: readonly string[],
+): readonly string[] {
+  const edit = bolehEdit(b, workbasket)
+  const aksi = aksiUntuk(b.statusAkseptasi).filter((a) => {
+    if (a === DAFTAR_KONTRAK.edit) return edit
+    /* ⭐ `Copy` (cell 993) dan `Revision` (cell 994) ber-`pyCondition`
+       IDENTIK — `bolehRevisi` berlaku untuk keduanya. */
+    if (a === DAFTAR_KONTRAK.revisi || a === DAFTAR_KONTRAK.salin) return bolehRevisi(b, workbasket)
+    return true
+  })
+  return aksi
+}
+
+/**
  * Mode form yang dibuka sebuah tombol aksi baris.
  *
  * ⭐ `Edit` → `ubah` (seluruh fungsi form hidup), `View` → `lihat`.
@@ -260,7 +303,7 @@ export default function DaftarKontrakTreatyIn({ onBuka, onTambah, onSalin }: Daf
           pembacanya tidak punya cara tahu kolom apa yang akan datang. */}
       <section className="panel">
         <div className="table-wrap trin__tabel-daftar-bungkus">
-          <table className="trin__tabel">
+          <table className="trin__tabel trin__tabel--pega">
             <thead>
               <tr>
                 {KOLOM_DAFTAR.map((k) => (
@@ -284,7 +327,9 @@ export default function DaftarKontrakTreatyIn({ onBuka, onTambah, onSalin }: Daf
                     </span>
                   </th>
                 ))}
-                <th scope="col">{DAFTAR_KONTRAK.aksi}</th>
+                <th scope="col" className="trin__k--aksi">
+                  {DAFTAR_KONTRAK.aksi}
+                </th>
               </tr>
               {saringTampil && (
                 <tr className="trin__baris-saring">
@@ -330,11 +375,19 @@ export default function DaftarKontrakTreatyIn({ onBuka, onTambah, onSalin }: Daf
                       {sel(b, k.kunci)}
                     </td>
                   ))}
-                  <td className="trin__aksi">
-                    {aksiUntuk(b.statusAkseptasi)
-                      /* ⭐ `Copy` (cell 993) dan `Revision` (cell 994) ber-`pyCondition`
-                         IDENTIK — `bolehRevisi` berlaku untuk keduanya. */
-                      .filter((a) => (a !== DAFTAR_KONTRAK.revisi && a !== DAFTAR_KONTRAK.salin) || bolehRevisi(b, workbasket))
+                  {/* ⛔ `trin__aksi` ber-`display: flex`, dan SEL TABEL tidak
+                      boleh menjadi wadah flex: `display: flex` mencabut `<td>`
+                      dari model tata letak tabel, sehingga ia berhenti ikut
+                      tinggi barisnya. Akibatnya terlihat 8 Oktober 2026 —
+                      tombol melayang di puncak baris yang tinggi, dan kotak
+                      abu kosong tertinggal di tempat selnya seharusnya.
+
+                      ⭐ Flex-nya pindah ke `<div>` DI DALAM sel; selnya
+                      kembali menjadi sel. Keenam pemakai `trin__aksi` lain
+                      memang sudah `<div>` — hanya yang ini `<td>`. */}
+                  <td className="trin__sel-aksi">
+                    <div className="trin__aksi">
+                    {aksiBaris(b, workbasket)
                       .map((a) =>
                         a === DAFTAR_KONTRAK.revisi ? (
                           /* ⚠️ Event `doubleclick`, bukan `click` — persis
@@ -366,6 +419,7 @@ export default function DaftarKontrakTreatyIn({ onBuka, onTambah, onSalin }: Daf
                           </button>
                         ),
                       )}
+                    </div>
                   </td>
                 </tr>
               ))}

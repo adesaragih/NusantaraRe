@@ -348,11 +348,22 @@ func TestGrupRDIndukMenurutJalurnya(t *testing.T) {
 	if len(diminta) == 0 || diminta[0] != "" {
 		t.Errorf("spreading manual meminta grup %q, mau kosong", diminta)
 	}
+	// ⛔ DUA JALUR, SATU GRUP: KOSONG — dan itu berubah 8 Oktober 2026.
+	//
+	// Dahulu `Spreading Type` meminta Treaty Group barisnya (`Section/Share.xml`
+	// memang mengirimnya) sementara spreading manual tidak. Hasilnya untuk
+	// kontrak yang dilaporkan: dropdown kosong, padahal susunannya ADA di
+	// `PROPORTIONALARRG` — hanya terdaftar di Treaty Group lain.
+	//
+	// Keputusan pemilik proses: *"gimana pun caranya asal itu ada isinya"*.
+	// Filter grup dibuang di DROPDOWN dan di PENCARIAN sekaligus; membuangnya
+	// hanya di salah satu membuat Spreading Type terpilih sementara grid
+	// spreadingnya tetap kosong.
 	diminta = nil
 	s.Share[0].SpreadingTypeXOL = "2022 QS 145M TRT"
 	services.HitungShareNP(services.MasukanShareNP{Aksi: services.AksiShareSpreadingType, Share: s}, src)
-	if len(diminta) == 0 || diminta[0] != "10002" {
-		t.Errorf("Spreading Type meminta grup %q, mau 10002", diminta)
+	if len(diminta) == 0 || diminta[0] != "" {
+		t.Errorf("Spreading Type meminta grup %q, mau kosong — lihat `fetchQS`", diminta)
 	}
 }
 

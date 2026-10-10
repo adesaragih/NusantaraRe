@@ -896,6 +896,10 @@ const nilaiAngsuran: Rumus = async (s, a, l) => {
     angsuranLama: (l.lama?.larik.Installment ?? []).map(angsuranRute),
     netPremium: netPremium(s),
     indeks: 0,
+    // Due Date dari Commencement, dibagi rata sampai Termination
+    // (keputusan pemakai 9 Oktober 2026; rute Treaty In).
+    commencement: s.medan.Commencement ?? '',
+    termination: s.medan.Termination ?? '',
   })
   return {
     larik: {
@@ -1198,6 +1202,21 @@ const RUMUS: Readonly<Record<string, Rumus>> = {
   'TreatyInPropshareDetail|': shareProp('detail'),
   'FetchQSfromMaster|': shareProp('spreading'),
   'SetSpreadName|': shareProp('sebar-nama'),
+  // ⭐ 8 Oktober 2026 — `AddDelSpreadingTreatyin` (grid spreading manual
+  // `DetailShare`): baris DITAMBAH/DIHAPUS layar (`aksiTombol.ts`); langkah
+  // [4] `Apply-DataTransform CountTotalPctSpead` — Σ `.Pct` halaman Detail.
+  'AddDelSpreadingTreatyin|': (s) =>
+    Promise.resolve({
+      ...kosong(),
+      medan: { SpreadingTotalPct: (s.larik.SpreadingList ?? []).reduce((t, r) => tambah(t, teks(r.Pct) || '0'), '0') },
+    }),
+  // ⭐ 9 Oktober 2026 — `AddSpreadingXOL` (grid spreading manual Share NP):
+  // langkah [4] `Apply-DataTransform CountTotalPctSpreadXOL` — Σ `.Pct`.
+  'AddSpreadingXOL|': (s) =>
+    Promise.resolve({
+      ...kosong(),
+      medan: { SpreadingTotalPctXOL: (s.larik.SpreadingListXOL ?? []).reduce((t, r) => tambah(t, teks(r.Pct) || '0'), '0') },
+    }),
   'LimitCalculation|': limitCalculation,
   'PremiumReserveCalculate|': cadanganPremi,
   'SetCurrName_Act|': pasangMataUang,

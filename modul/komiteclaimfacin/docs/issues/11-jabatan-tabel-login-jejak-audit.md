@@ -4,6 +4,16 @@
 **Blocked by:** 05 · `claim-facin\issues\12` *(jejak audit klaim)*
 **Menutup:** AC 77 · 78 · 79 · 80 · 81 · 82 · 83 · 84 · 85 *(9 AC)* — US 21 · 22 · 23 · 26
 
+> ⛔ **RALAT 10-10-2026 — TIKET GUGUR, jangan dibangun.** Kepala lamanya dikutip utuh, tidak dihapus: *"**Status:**
+> ready-for-agent"* dan *"**Menutup:** AC 77 · 78 · 79 · 80 · 81 · 82 · 83 · 84 · 85 *(9 AC)* — US 21 · 22 · 23 · 26"*
+> → **K13 "kolom jabatan di tabel login" digantikan workbasket** (prompt tahap 2 §3 "Gugur", KCF-01). Tidak ada kolom
+> jabatan di tabel login, tidak ada daftar induk jabatan, dan tidak ada jejak audit perubahan jabatan di modul ini.
+> Susunan jenjang tetap roster `EMAILKOMITE` STS_KLAIM FACIN (DEGREE, JABATAN, LIMIT_BOTTOM / LIMIT_TOP;
+> `ApprovalKomite_Act` L4), dan `OPERATOR_ID`-nya di-UPDATE di tempat menjadi workbasket lewat migrasi komiteclaimfacin
+> 640–679 (pola claimprop 537 / claimnonprop 611). Pergantian orang = pergantian anggota workbasket (Kelola User), tanpa
+> rilis. Nasib AC-nya ada di RALAT spec AC 77–83 dan AC 85: AC 77 / 78 / 82 / 83 gugur; AC 79 / 80 / 81 / 84 isinya
+> tetap dengan sumber roster + KCF-01; AC 85 alasannya diganti workbasket. **Uji salinan jabatan pindah ke tiket 05.**
+
 ## Hasil & nilai pengguna
 
 Hari ini Jabatan **ditanam di dalam kode** sebagai rantai pencocokan ID pengguna perorangan, dan ⚠️ **orang yang sama tertulis dengan jabatan berbahasa berbeda antar modul**. ⛔ Mengubah susunan jenjang menuntut **rilis**.
@@ -17,6 +27,13 @@ Sesudah tiket ini, ⭐ Jabatan menjadi **kolom berisi KODE di tabel login**, sus
 | ⚠️ Tabel jabatan lama | ⛔ rantai pencocokan **ID pengguna perorangan** dengan jabatan |
 | ⚠️ Dua bahasa | ⛔ orang yang sama tertulis berbeda antar modul, dan **kuncinya beda medan** |
 | Roster lama | ⛔ menyimpan **nama orang**, bukan jabatan — ⭐ itulah akar penukaran akun |
+
+> ⛔ **RALAT 10-10-2026.** Baris lamanya dikutip utuh, tidak dihapus: *"⚠️ Tabel jabatan lama | ⛔ rantai pencocokan
+> **ID pengguna perorangan** dengan jabatan"* dan *"Roster lama | ⛔ menyimpan **nama orang**, bukan jabatan — ⭐ itulah
+> akar penukaran akun"* → rantai pencocokan jabatan di modul ini adalah **sisa editor** (spec RALAT lintas-ronde #2);
+> jalur hidupnya memakai `IDKomite` = `.JABATAN` roster. Roster `EMAILKOMITE` FACIN menyimpan **JABATAN** dan **akun
+> orang** di `OPERATOR_ID` (DEV 10-10-2026), bukan nama orang. Akar penukaran akun (`SetProteksiSubmiteKomite` L1)
+> dibuang (prompt §5 #1) dan `OPERATOR_ID` diganti workbasket (KCF-01).
 
 ⭐ Sumber: `komite-claim-facin\spec.md` · `claim-facin\STRUKTUR-TABEL-CLAIM-FACIN.md` §5.
 

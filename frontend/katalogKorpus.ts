@@ -150,9 +150,26 @@ export const MODUL_LUAR_KORPUS = {
  * Nama menu setiap modul: folder korpus dengan nama tampilan bila diputuskan (`LABEL_TAMPIL`), selain itu nama folder
  * VERBATIM; lalu modul di luar korpus (`MODUL_LUAR_KORPUS`).
  */
+/**
+ * Folder korpus yang menunya DIHAPUS (perintah work owner 09-10-2026: "kode menu nya di hapus dari repo, anggap menu itu
+ * tidak pernah ada, karena digabung di menu klaim nya masing-masing") - padanan `modulTanpaMenu` penjaga Go. Barisnya
+ * dibuang migrasi inti 949; modulnya (bila berlayar) memakai `layar.ts`, bukan `menu.ts`.
+ */
+export const MODUL_TANPA_MENU: readonly (keyof typeof FOLDER_KORPUS)[] = [
+  'komiteClaimFacIn',
+  'komiteClaimLife',
+  'komiteClaimNonProp',
+  'komiteClaimProp',
+]
+
+/** Nama folder korpus `MODUL_TANPA_MENU` - tanpa tombol sidebar maupun entri palet, termasuk sebagai tombol nonaktif. */
+export const FOLDER_TANPA_MENU: readonly string[] = MODUL_TANPA_MENU.map((k) => FOLDER_KORPUS[k])
+
 export const LABEL_MENU = {
   ...Object.fromEntries(
-    Object.entries(FOLDER_KORPUS).map(([k, v]) => [k, LABEL_TAMPIL[k as keyof typeof FOLDER_KORPUS] ?? v]),
+    Object.entries(FOLDER_KORPUS)
+      .filter(([k]) => !MODUL_TANPA_MENU.includes(k as keyof typeof FOLDER_KORPUS))
+      .map(([k, v]) => [k, LABEL_TAMPIL[k as keyof typeof FOLDER_KORPUS] ?? v]),
   ),
   ...MODUL_LUAR_KORPUS,
 } as Readonly<Record<keyof typeof FOLDER_KORPUS | keyof typeof MODUL_LUAR_KORPUS, string>>

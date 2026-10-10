@@ -27,9 +27,11 @@ package services
 // MASTERID `ID + AkhiranSisiAktual` — termasuk salinan `TreatyIn` →
 // `ActualValue` `SaveTreatyIn_EDM_Act` [2]–[4] untuk EDM 1/2 (`halamanAktual`).
 //
+// ⭐ `SaveTreatyInDetailEdm_Act` saat Resolve Complete DIBANGUN 9 Oktober
+// 2026 (perintah WO, mencabut keputusan 7 Oktober) — `detail_treaty.go`,
+// sasarannya `TREATYINDETAILEDM`.
+//
 // ⚠️ Yang SENGAJA tidak dibangun:
-//   - `SaveTreatyInDetailEdm_Act` saat Resolve Complete — pemilik proses:
-//     data ditarik dari tabel tiap tab, status dari kepalanya.
 //   - (8 Oktober 2026: `TreatyRevisionCopyAttachment` KINI dibangun —
 //     `salin_lampiran_penyesuaian.go`, dikaitkan sesudah tulisan draf.)
 //   - grid Rate of Exchange: prosedur EDM tidak menulis
@@ -126,7 +128,20 @@ func (l *Layanan) KirimPenyesuaian(ctx context.Context, p inti.Pelaku, m Masukan
 	pilihan := models.PilihAccept
 	switch m.Aksi {
 	case AksiSubmit:
-		// TreatyInSubmitEDM [2]–[4] ber-`//`: nol validasi.
+		// ⛔ NOL VALIDASI, dan itu ekspornya — bukan kelalaian.
+		//
+		// `TreatyInSubmitEDM` langkah [2] (`Call TreatyInCheckID`), [3]
+		// (`call TreatyInCheckError`) dan [4] (syarat `ERRMSG==""`)
+		// KETIGANYA ber-`pyStepsBlockName == "//"`.
+		//
+		// ⚠️ Diperiksa ulang 8 Oktober 2026, dan `TreatyInCheckID` sempat
+		// masuk daftar pekerjaan sebelum penelusuran itu: ia dipanggil
+		// MATI di kedua Submit (`TreatyInSubmit` juga), dan satu-satunya
+		// pemanggil hidupnya tombol "Test Error (dev)". Membangunnya akan
+		// menambah tujuh pemeriksaan yang Pega sendiri tidak jalankan.
+		//
+		// ⭐ Bandingkan `TreatyInSubmit` cabang Treaty In: di sana [3] dan
+		// [4] HIDUP, dan `periksaGalatSubmit` memang dibangun.
 	case AksiAkseptasi:
 		pilihan = m.Pilihan
 	default:
@@ -388,6 +403,16 @@ func (l *Layanan) tulisPenyesuaian(ctx context.Context, m MasukanPenyesuaian, do
 	}
 	if adaSebelumProrata {
 		r.SebelumProrata = sebelumProrata
+	}
+	// SaveTreatyIn_EDM_Act [14] — `SaveTreatyInDetailEdm_Act` bila Resolve
+	// Complete (perintah WO 9 Oktober 2026). [13] (`SaveTreatyInDetail_Act`)
+	// ber-`//`.
+	if teksDok(doc, "StatusAkseptasi") == models.StatusTuntas {
+		baris, err := SusunDetailTreatyInEDM(doc, id)
+		if err != nil {
+			return HasilSimpan{}, err
+		}
+		r.Detail = &models.RencanaDetail{Baris: baris}
 	}
 	if err := l.gudang.SimpanPenyesuaian(ctx, r); err != nil {
 		if errors.Is(err, repository.ErrPenyesuaianSudahAda) {

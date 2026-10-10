@@ -268,6 +268,12 @@ type BarisKursWarisan struct {
 	// dulu memisahkan medan tampil dari medan isi.
 	BerlakuDariAsli   string `json:"berlakuDariAsli"`
 	BerlakuSampaiAsli string `json:"berlakuSampaiAsli"`
+	// Tetap - baris ber-ID yang TIDAK diubah di grid: tidak ditulis ke
+	// `TREATYEXCHANGEYEARLY`, hanya dicatat tetap milik kontrak (455).
+	// ⛔ Tanpanya Save hanya mengirim baris yang berubah, dan baris lain
+	// LEPAS dari kontrak — grid lalu jatuh ke kurs seluruh tahun dan tampak
+	// "bertambah" (laporan pemakai 9 Oktober 2026).
+	Tetap bool `json:"tetap,omitempty"`
 }
 
 // KursSimpan - grid Rate of Exchange yang tombol Save kirim: kurs TAHUN
@@ -275,9 +281,6 @@ type BarisKursWarisan struct {
 type KursSimpan struct {
 	Tahun string             `json:"tahun"`
 	Baris []BarisKursWarisan `json:"baris"`
-	// Hapus - pengenal baris yang dimuat grid lalu di-Delete pemakai.
-	// Services hanya meneruskan yang berada di periode kontrak.
-	Hapus []string `json:"hapus"`
 }
 
 // BarisPeriodeWarisan - satu baris grid tab Reporting Period.

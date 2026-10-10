@@ -11,6 +11,7 @@ import {
   hapusLampiran,
   ubahKategoriLampiran,
   unduhLampiran,
+  unduhSemuaLampiran,
   unggahLampiran,
   type BarisKategoriLampiran,
   type BarisLampiranWarisan,
@@ -247,6 +248,19 @@ export default function PanelLampiran({
   const kategoriDilihat = kategori.find((k) => k.kode === berkasDilihat) ?? null
   return (
     <Panel judul={LAMPIRAN.judul}>
+      {/* ⛔ PANEL LAMPIRAN PUNYA KERAPATANNYA SENDIRI — permintaan pemilik
+          proses 8 Oktober 2026: *"dynamic layout antara table attachment
+          dengan inputan yg di tab dipisah jangan di samakan"*.
+
+          Sampai hari ini keduanya memakai satu blok kerapatan, sehingga
+          setiap pengecilan kotak isian tab ikut mengecilkan kontrol panel
+          ini. Padahal keduanya berbeda urusan: tab adalah FORMULIR DATA
+          (puluhan medan, kerapatan menang), panel ini PENGELOLA BERKAS
+          (sedikit kontrol, ketepatan tekan menang).
+
+          ⭐ Kelas ini satu-satunya pengaitnya. Tanpa pengait, kedua
+          kerapatan mustahil dipisahkan tanpa menyentuh `inti`. */}
+      <div className="trin__lampiran">
       {/* Spanduk biru — ATURAN nama berkas, bukan hiasan. Ditegakkan di
           services (`NamaBerkasAman`) dan dinyatakan di sini. */}
       <span className="trin__spanduk" role="note">
@@ -254,7 +268,23 @@ export default function PanelLampiran({
       </span>
       {/* `Refresh` — `GetMasterTreatyCategory_Act` (`!pyIsMobile`).
           `Download All` ber-`pyCondition never` di ekspor: tidak dirender. */}
-      <div className="trin__aksi">
+      {/* ⭐ `Download All` (`DownloadAll_Act`, `pyVisible = ALWAYS` menimpa
+          `pyCondition never`) lalu `Refresh` — DI KANAN atas grid, gambar
+          Pega pemakai 8 Oktober 2026. */}
+      <div className="trin__aksi trin__lampiran-aksi">
+        <button
+          type="button"
+          className="btn btn--sm"
+          disabled={sibuk || idKontrak === ''}
+          onClick={() => {
+            setGalatPanel('')
+            unduhSemuaLampiran(idKontrak).catch((e: unknown) => {
+              setGalatPanel(pesanGalat(e) ?? (e instanceof Error ? e.message : LAMPIRAN.gagal))
+            })
+          }}
+        >
+          {LAMPIRAN.unduhSemua}
+        </button>
         <button type="button" className="btn btn--sm" disabled={sibuk || idKontrak === ''} onClick={segarkan}>
           {LAMPIRAN.segarkan}
         </button>
@@ -267,11 +297,19 @@ export default function PanelLampiran({
       {bisaUnggah && idKontrak === '' && <p className="trin__redup">{LAMPIRAN.simpanDulu}</p>}
 
       <div className="table-wrap">
-        <table className="trin__tabel">
+        <table className="trin__tabel trin__tabel--pega trin__lampiran-grid">
+          {/* Lebar kolom dari gambar Pega: Category ±64%, tiga kolom sisanya
+              ±12% masing-masing. */}
+          <colgroup>
+            <col style={{ width: '64%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '12%' }} />
+          </colgroup>
           <thead>
             <tr>
-              {KOLOM_LAMPIRAN.map((k) => (
-                <th key={k} scope="col">
+              {KOLOM_LAMPIRAN.map((k, i) => (
+                <th key={k} scope="col" className={i > 0 ? 'trin__lampiran-tengah' : undefined}>
                   {k}
                 </th>
               ))}
@@ -306,13 +344,18 @@ export default function PanelLampiran({
                   {bisaUnggah && (
                     <button
                       type="button"
-                      className="btn btn--sm"
+                      className="trin__lampiran-ikon trin__lampiran-ikon--unggah"
+                      aria-label={`${LAMPIRAN.unggah} ${k.nama}`}
+                      title={LAMPIRAN.unggah}
                       disabled={sibuk || idKontrak === '' || k.kode === ''}
                       onClick={() => {
                         bukaUnggah(k)
                       }}
                     >
-                      {LAMPIRAN.unggah}
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <rect x="1" y="1" width="22" height="22" rx="3" fill="currentColor" />
+                        <path d="M12 5.5 7.5 10h3v4.5h3V10h3L12 5.5Zm-5 11v2h10v-2H7Z" fill="#fff" />
+                      </svg>
                     </button>
                   )}
                 </td>
@@ -322,7 +365,9 @@ export default function PanelLampiran({
                       memang boleh lakukan. */}
                   <button
                     type="button"
-                    className="btn btn--sm"
+                    className="trin__lampiran-ikon trin__lampiran-ikon--lihat"
+                    aria-label={`${LAMPIRAN.lihatBerkas} ${k.nama}`}
+                    title={LAMPIRAN.lihatBerkas}
                     onClick={() => {
                       setGalatPanel('')
                       setGantiKategori(false)
@@ -330,7 +375,10 @@ export default function PanelLampiran({
                       setBerkasDilihat(k.kode)
                     }}
                   >
-                    {LAMPIRAN.lihatBerkas}
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <rect x="1" y="1" width="22" height="22" rx="3" fill="currentColor" />
+                      <path d="M12 15 7.5 10.5h3V6h3v4.5h3L12 15Zm-5 1.5v2h10v-2H7Z" fill="#fff" />
+                    </svg>
                   </button>
                 </td>
               </tr>
@@ -461,7 +509,7 @@ export default function PanelLampiran({
             </div>
           )}
           <div className="table-wrap">
-            <table className="trin__tabel trin__lihat-berkas">
+            <table className="trin__tabel trin__tabel--pega trin__lihat-berkas">
               {/* ⭐ Dirapikan 8 Oktober 2026 (permintaan pemakai): nama
                   berkas lebar, sel Type memuat jenis + tombolnya sebaris. */}
               <colgroup>
@@ -567,6 +615,7 @@ export default function PanelLampiran({
           <iframe ref={bingkai} title={penampil.nama} className="trin__penampil" />
         </Modal>
       )}
+      </div>
     </Panel>
   )
 }

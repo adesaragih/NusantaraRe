@@ -218,3 +218,32 @@ func TestBesaranSatuElemenMemberiKeduaKosong(t *testing.T) {
 		t.Errorf("MDPKedua = %q, mau kosong", got[0].MDPKedua)
 	}
 }
+
+// ⭐ 454 — `BreakDownSprdList` terpasang ke baris spreading INDUKNYA
+// (`IDINDUK` = ID baris `T_TREATY_LIMIT_SPREADING`), bukan ke Detail.
+func TestPohonLimitsMemasangPecahanSpreading(t *testing.T) {
+	pohon := RangkaiPohonLimitsPeta(map[string][]barisPendaratan{
+		"T_TREATY_LIMITS":       {baris(1, 0, map[string]string{"TREATYTYPE": "QUOTA SHARE"})},
+		"T_TREATY_LIMIT_DETAIL": {baris(10, 1, map[string]string{"TREATYGROUP": "HOSPITAL"})},
+		"T_TREATY_LIMIT_SPREADING": {
+			baris(100, 10, map[string]string{"REINSTYPEID": "10263", "REINSTYPENAME": "2025 QS 181M TRT", "PCT": "25"}),
+			baris(101, 10, map[string]string{"REINSTYPEID": "10007", "REINSTYPENAME": "ORS", "PCT": "0"}),
+		},
+		"T_TREATY_LIMIT_SPRD_BREAKDOWN": {
+			baris(1000, 100, map[string]string{"REINSNAME": "QS (OR)", "CURRENCY": "IDR", "SHAREPCT": "40", "AMOUNT": "22500000"}),
+			baris(1001, 100, map[string]string{"REINSNAME": "QS (R/I)", "CURRENCY": "IDR", "SHAREPCT": "60", "AMOUNT": "33750000"}),
+		},
+	})
+	sebar := pohon[0]["Detail"].([]map[string]any)[0]["SpreadingList"].([]map[string]any)
+	if len(sebar) != 2 || sebar[0]["ReinsTypeName"] != "2025 QS 181M TRT" {
+		t.Fatalf("SpreadingList %v", sebar)
+	}
+	pecah := sebar[0]["BreakDownSprdList"].([]map[string]any)
+	if len(pecah) != 2 || pecah[0]["ReinsName"] != "QS (OR)" || pecah[1]["Amount"] != "33750000" || pecah[0]["SharePct"] != "40" {
+		t.Errorf("BreakDownSprdList baris 1 %v", pecah)
+	}
+	// Baris tanpa pecahan — larik KOSONG, bukan nihil (layar membaca `.length`).
+	if kosong, ok := sebar[1]["BreakDownSprdList"].([]map[string]any); !ok || len(kosong) != 0 {
+		t.Errorf("BreakDownSprdList baris 2 %v", sebar[1]["BreakDownSprdList"])
+	}
+}

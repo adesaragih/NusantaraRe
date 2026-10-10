@@ -22,9 +22,8 @@ const FORM = baca('pages', 'FormKontrakTreatyIn.tsx')
 describe('tombol Copy — TreatyInCopy', () => {
   it('syarat tampil cell 993 SAMA dengan cell 994 (Revision)', () => {
     // `(WB = 'ReasTreatyInAdmin' && .Position = '' && .StatusAkseptasi = 'Resolve Complete')`
-    expect(DAFTAR).toContain(
-      '.filter((a) => (a !== DAFTAR_KONTRAK.revisi && a !== DAFTAR_KONTRAK.salin) || bolehRevisi(b, workbasket))',
-    )
+    // Sejak 9 Oktober 2026 penyaringnya di `aksiBaris` (bersama syarat Edit).
+    expect(DAFTAR).toContain('if (a === DAFTAR_KONTRAK.revisi || a === DAFTAR_KONTRAK.salin) return bolehRevisi(b, workbasket)')
     const tuntas = { statusAkseptasi: 'Resolve Complete', posisi: '' }
     expect(bolehRevisi(tuntas, ['ReasTreatyInAdmin'])).toBe(true)
     expect(bolehRevisi(tuntas, ['ReasTreatyInSecHead'])).toBe(false)

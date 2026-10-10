@@ -112,12 +112,26 @@ func TestDraftPremiMenyalinEGNPIDanAddendumPremi(t *testing.T) {
 	}
 }
 
-func TestDraftViewStateMengikutiRevisionState(t *testing.T) {
+// ⛔ DIBALIK 8 Oktober 2026 — dahulu bernama `…MengikutiRevisionState` dan
+// menuntut `ViewState = 1`. Tuntutan itulah yang membuat setiap penyesuaian
+// turunan kontrak ber-`REVISIONSTATE = 1` lahir TERKUNCI, sehingga Add
+// Revision tidak menghasilkan apa-apa (laporan pemilik proses).
+//
+// `TreatyInSetEdit[2]` bercabang atas properti halaman yang disetel
+// `SetTreatyIn_Act[7]` ber-prasyarat `param.revisionstate==1` — parameter
+// TOMBOL, dan tombol Edit mengirimnya kosong. Kolom `REVISIONSTATE`
+// (migrasi 448) menyimpan hal lain: jalur revisi tangga akseptasi.
+func TestDraftTidakTerkunciOlehRevisionStateWarisan(t *testing.T) {
 	d := dokumenUji()
 	d.Medan["RevisionState"] = "1"
 	p := services.SusunDraf(d, models.MasukanDraf{ID: "1000506", InternalType: "1"}, false, "kelvin", kiniUji)
-	if p.Baru.Medan["ViewState"] != "1" {
-		t.Errorf("ViewState %q, mau 1 (TreatyInSetEdit [2])", p.Baru.Medan["ViewState"])
+	if p.Baru.Medan["ViewState"] != "0" {
+		t.Errorf("ViewState %q, mau 0 — draf baru harus dapat disunting", p.Baru.Medan["ViewState"])
+	}
+	// ⭐ Dan nilainya DIKOSONGKAN, pola `TreatyInCopy[1]`: tanpa itu ia
+	// terbawa ke tabel dan mengunci pembukaan berikutnya.
+	if p.Baru.Medan["RevisionState"] != "" {
+		t.Errorf("RevisionState %q, mau kosong (TreatyInCopy[1])", p.Baru.Medan["RevisionState"])
 	}
 }
 

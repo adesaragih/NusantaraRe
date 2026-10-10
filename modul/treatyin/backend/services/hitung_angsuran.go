@@ -33,6 +33,8 @@ package services
 //	    (8.1.1 dan 8.1.2 berprasyarat FacultativeShare ==0 / !=0 dan
 //	    menulis HAL YANG SAMA); REPEAT 1..InstallmentNo:
 //	      n++, pct += Percentage, baris {Installment n, DueDate hari ini, Currency}
+//	      ⛔ DueDate DI SINI dari Commencement, dibagi rata sampai
+//	      Termination - keputusan pemakai 9 Oktober 2026 (`jadwalJatuhTempo`).
 //	      n == N && pct != 100 → InstallmentPct = Percentage + (100 - pct)
 //	      n <  N || pct == 100 → InstallmentPct = Percentage
 //	      Amount = @divide(InstallmentPct, 100, 4) * value
@@ -146,6 +148,10 @@ type MasukanAngsuran struct {
 	NetPremium []NilaiMataUang `json:"netPremium"`
 	// Indeks - halaman Installment (mulai 0) untuk `total-baris`.
 	Indeks int `json:"indeks"`
+	// Commencement / Termination - `TreatyIn.Commencement`/`.Termination`
+	// TERKINI; sumber DueDate langkah 8 (`jadwalJatuhTempo`).
+	Commencement string `json:"commencement"`
+	Termination  string `json:"termination"`
 }
 
 // HasilAngsuran - keadaan tab sesudah aksi.
@@ -264,7 +270,12 @@ func nilaiAngsuran(m MasukanAngsuran, kini time.Time) (HasilAngsuran, error) {
 	}
 	// Langkah 7.
 	persen := bagiBulatDes(seratus, n, 2)
-	tanggal := kini.Format("20060102")
+	// DueDate langkah 8 - dari Commencement, dibagi rata (`jadwalJatuhTempo`).
+	jumlahBaris := 0
+	for p := int64(1); apd.New(p, 0).Cmp(n) <= 0; p++ {
+		jumlahBaris++
+	}
+	jatuhTempo := jadwalJatuhTempo(m.Commencement, m.Termination, jumlahBaris, kini)
 	// Langkah 8.
 	for i := range h.Angsuran {
 		a := &h.Angsuran[i]
@@ -283,19 +294,13 @@ func nilaiAngsuran(m MasukanAngsuran, kini time.Time) (HasilAngsuran, error) {
 			if ke.Cmp(n) == 0 && jumlah.Cmp(seratus) != 0 {
 				pctBaris = tambah(persen, kurang(seratus, jumlah)) // 8.2.2
 			}
-			baris := BarisAngsuran{
+			a.InstallmentList = append(a.InstallmentList, BarisAngsuran{
 				Installment:    teks(ke),
-				DueDate:        tanggal,
+				DueDate:        jatuhTempo[putaran-1],
 				Currency:       a.Currency,
 				InstallmentPct: teks(pctBaris),
 				Amount:         teks(kali(bagiBulat(pctBaris, 100, 4), nilai)),
-			}
-			// ⭐ Payment Date terisi sejak baris lahir (laporan pemakai
-			// 10 Oktober 2026: kolomnya kosong sesudah Update Value). Rumus
-			// `TreatyInUpdatePaymentDate` yang sama dengan sel Due Date/WPC;
-			// langkah 9/10 di bawah tetap menimpanya dengan nilai pulihan.
-			tanggalBayar(&baris)
-			a.InstallmentList = append(a.InstallmentList, baris)
+			})
 		}
 	}
 	// Langkah 9 lalu 10 - urutannya penting: OLDDATA menimpa TempDate.

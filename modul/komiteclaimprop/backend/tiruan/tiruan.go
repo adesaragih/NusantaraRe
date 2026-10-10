@@ -37,6 +37,8 @@ type Gudang struct {
 	// Dokumen - DOCUMENT_CLAIM; Storage - T_STORAGE_IMAGE (`Berkas.Catat`).
 	Dokumen []models.BarisDokumenKlaim
 	Storage []penyimpanan.Objek
+	// Ditolak - CLAIMREJECTED (KomitePost_Close S13).
+	Ditolak []models.KlaimDitolak
 	// Urut - penghitung nomor akseptasi (jenis -> urut terakhir); KodeProduksi - KODE_PRODUKSI NONLIFE.
 	Urut         map[string]int
 	KodeProduksi string
@@ -61,6 +63,7 @@ type cadangan struct {
 	efek   []string
 	dok    []models.BarisDokumenKlaim
 	stor   []penyimpanan.Objek
+	tolak  []models.KlaimDitolak
 	urut   map[string]int
 	klaim  map[string]*klaimTiruan
 }
@@ -70,7 +73,8 @@ func (g *Gudang) salin() cadangan {
 		os: append([]models.BarisOSAkseptasi{}, g.OS...), json: map[string][2]string{},
 		log: append([]models.LogLayanan{}, g.Log...), riw: append([]models.RiwayatAkseptasi{}, g.Riwayat...),
 		efek: append([]string{}, g.Efek...), dok: append([]models.BarisDokumenKlaim{}, g.Dokumen...),
-		stor: append([]penyimpanan.Objek{}, g.Storage...), urut: map[string]int{}}
+		stor: append([]penyimpanan.Objek{}, g.Storage...), tolak: append([]models.KlaimDitolak{}, g.Ditolak...),
+		urut: map[string]int{}}
 	for k, v := range g.Kasus {
 		c.kasus[k] = v
 	}
@@ -95,7 +99,7 @@ func (g *Gudang) salin() cadangan {
 func (g *Gudang) pulihkan(c cadangan) {
 	g.Kasus, g.Tangga, g.OS, g.JSONKlaim, g.Log, g.Riwayat, g.Efek, g.Urut = c.kasus, c.tangga, c.os, c.json, c.log,
 		c.riw, c.efek, c.urut
-	g.Dokumen, g.Storage, g.Posisi = c.dok, c.stor, c.posisi
+	g.Dokumen, g.Storage, g.Posisi, g.Ditolak = c.dok, c.stor, c.posisi, c.tolak
 	if g.Klaim != nil {
 		g.Klaim.mu.Lock()
 		g.Klaim.klaim = c.klaim
@@ -132,9 +136,29 @@ func (g *Gudang) Lahirkan(id, klaimID, adjID, pembuat, namaPembuat string, anggo
 	}
 	g.Kasus[id] = models.Kasus{ID: id, KlaimID: klaimID, AdjustmentID: adjID, Loop: len(t), Count: 1,
 		UsulTutup: models.UsulTidak, UsulCadang: models.UsulTidak, Tahap: models.TahapKomite, PembuatID: pembuat,
-		PembuatNama: namaPembuat, TglCreate: saat, TglUpdate: saat}
+		PembuatNama: namaPembuat, TglCreate: saat, TglUpdate: saat, TransferType: models.TransferAdjustment}
 	g.Lini[id] = models.LiniProp
 	g.Tangga[id] = t
+}
+
+// LahirkanTutup - kasus komite Close Without Payment seperti `BuatKasusKomiteTutup` Claim Prop (tanpa adjustment,
+// TRANSFER_TYPE 4, teks Chronology).
+func (g *Gudang) LahirkanTutup(id, klaimID, kronologi, pembuat, namaPembuat string, anggota []models.Anggota,
+	saat time.Time) {
+	g.Lahirkan(id, klaimID, "", pembuat, namaPembuat, anggota, saat)
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	k := g.Kasus[id]
+	k.TransferType, k.Kronologi = models.TransferTutup, kronologi
+	g.Kasus[id] = k
+}
+
+// SisipKlaimDitolak - lihat `repository.Gudang.SisipKlaimDitolak`.
+func (g *Gudang) SisipKlaimDitolak(_ context.Context, _ *db.Tx, k models.KlaimDitolak) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.Ditolak = append(g.Ditolak, k)
+	return nil
 }
 
 // BacaKasus - lihat `repository.Gudang.BacaKasus`.
@@ -461,8 +485,9 @@ func (k *klaimTiruan) salin() *klaimTiruan {
 type KlaimPalsu struct {
 	mu    sync.Mutex
 	klaim map[string]*klaimTiruan
-	// Dikunci - klaim yang pernah dikunci (S4).
+	// Dikunci - klaim yang pernah dikunci (S4); Ditutup - klaim yang ditutup Komite (KomitePost_Close S17).
 	Dikunci []string
+	Ditutup []string
 }
 
 var _ kontrak.KlaimTreatyKomite = (*KlaimPalsu)(nil)
@@ -539,10 +564,26 @@ func (p *KlaimPalsu) BacaKlaimTreaty(_ context.Context, _ *db.Tx, klaimID, adjID
 		return kontrak.KlaimTreaty{}, kontrak.ErrKlaimTreatyTidakAda
 	}
 	n := posisi(k, adjID)
-	if n == 0 {
+	if n == 0 && adjID != "" { // adjID kosong = kasus komite Close Without Payment
 		return kontrak.KlaimTreaty{}, kontrak.ErrAdjustmentTreatyTidakAda
 	}
 	return kontrak.KlaimTreaty{Nilai: k.nilai, Daftar: k.daftar, Adjustment: n, Tertutup: k.tertutup}, nil
+}
+
+// TutupKlaimTreaty - lihat `kontrak.KlaimTreatyKomite` (kasus komite lain di luar kontrak palsu).
+func (p *KlaimPalsu) TutupKlaimTreaty(_ context.Context, _ *db.Tx, klaimID, _ string, _ time.Time) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	k, ok := p.klaim[klaimID]
+	if !ok {
+		return kontrak.ErrKlaimTreatyTidakAda
+	}
+	if k.tertutup {
+		return kontrak.ErrKlaimTreatyTertutup
+	}
+	k.tertutup = true
+	p.Ditutup = append(p.Ditutup, klaimID)
+	return nil
 }
 
 // KunciKlaimTreaty - lihat `kontrak.KlaimTreatyKomite`.
@@ -583,15 +624,20 @@ func (p *KlaimPalsu) TulisBalikKlaimTreaty(_ context.Context, _ *db.Tx, klaimID,
 		return kontrak.ErrKlaimTreatyTertutup
 	}
 	n := posisi(k, adjID)
-	if n == 0 {
+	switch {
+	case adjID == "" && len(u.Adjustment) > 0:
+		return fmt.Errorf("%w: ubahan adjustment tanpa baris adjustment", kontrak.ErrUbahanKlaimTreatyTidakSah)
+	case adjID != "" && n == 0:
 		return kontrak.ErrAdjustmentTreatyTidakAda
 	}
 	for j, v := range u.Header {
 		k.nilai[j] = v
 	}
-	b := k.daftar["ClaimData.AdjustmentList"][n-1]
-	for j, v := range u.Adjustment {
-		b[j] = v
+	if n > 0 {
+		b := k.daftar["ClaimData.AdjustmentList"][n-1]
+		for j, v := range u.Adjustment {
+			b[j] = v
+		}
 	}
 	if len(u.FacRetro) > 0 && len(k.daftar["ClaimData.FacRetroList"]) == 0 {
 		k.daftar["ClaimData.FacRetroList"] = append([]map[string]string{}, u.FacRetro...)

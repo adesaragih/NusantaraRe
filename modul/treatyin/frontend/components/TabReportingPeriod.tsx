@@ -21,12 +21,16 @@
 
 import { useState } from 'react'
 
-import { Field, Kosong, Panel, Pilih } from '../../../../inti/frontend/components/ui/dasar'
+import { Field, Panel } from '../../../../inti/frontend/components/ui/dasar'
+import { PilihCari as Pilih } from '../../../../inti/frontend/components/ui/pilihSaring'
 import { hitungPeriodePelaporan, type BarisPeriodeWarisan, type OpsiPilihan } from '../api'
 import { useProperti } from '../halaman'
 import { REPORTING_PERIOD } from '../labels'
 import type { ModeForm } from '../mode'
+import { KotakTanggalKetik } from './TanggalKetik'
 import TanggalRedup from './TanggalRedup'
+import { saringAngka } from './saringAngka'
+import { SelKosongPega, TataPegaBlok } from './tataPega'
 import { keSimpan, tanggalTampil } from './tanggalIso'
 
 /** Satu baris `TreatyIn.ReportingPeriodList` — ejaan Pega, tanggal `YYYYMMDD`. */
@@ -103,46 +107,86 @@ export default function TabReportingPeriod({
 
   return (
     <Panel judul={REPORTING_PERIOD.judul}>
-      <div className="form-grid">
-        <div>
-          {/* Kotak tanggal menerima bentuk simpan; jawabannya bentuk kabel →
-              disimpan kembali `YYYYMMDD`. */}
-          <TanggalRedup
-            label={REPORTING_PERIOD.mulai}
-            value={mulai}
-            onChange={(v) => {
-              setMulai(keSimpan(v))
-            }}
-          />
-          <Pesan teks={galat.mulai} />
-        </div>
-        <div>
-          <TanggalRedup
-            label={REPORTING_PERIOD.akhir}
-            value={akhir}
-            onChange={(v) => {
-              setAkhir(keSimpan(v))
-            }}
-          />
-          <Pesan teks={galat.akhir} />
-        </div>
-        <Pilih
-          label={REPORTING_PERIOD.periode}
-          value={periode}
-          onChange={setPeriode}
-          opsi={opsiPeriode.map((o) => ({ value: o.value, label: o.label }))}
-        />
-        {lain && <Field label={REPORTING_PERIOD.interval} value={interval} onChange={setSelang} error={galat.interval} />}
-        {/* Label tanpa "(Days)" — layar Pega tidak menuliskannya. */}
-        <Field label={REPORTING_PERIOD.penyerahan} value={penyerahan} onChange={setPenyerahan} error={galat.penyerahan} />
-        <Field label={REPORTING_PERIOD.konfirmasi} value={konfirmasi} onChange={setKonfirmasi} error={galat.konfirmasi} />
-        <Field label={REPORTING_PERIOD.pelunasan} value={pelunasan} onChange={setPelunasan} error={galat.pelunasan} />
-      </div>
+      {/* ⭐ TATA LETAK PEGA (8 Oktober 2026) — `Section/TreatyInTabsProportional.xml`,
+          badan `Default` L1231 (bertumpuk):
 
+            1. `Inline grid double` L2282 — SATU sel, separuh kanan kosong →
+               `Stacked with labels left` L2581: [`Inline grid double` L2880:
+               Start Date (`Inline labels left` L3178) | End Date (L3907)],
+               Period, Interval (`ReportingPeriod='other'`).
+            2. `Inline grid triple` L5749 — Submission | Confirmation |
+               Settlement, masing-masing `Inline labels left` (L6047, L6780,
+               L7513).
+            3. `Inline labels left` L8487 — tombol Apply + kalimat wajib isi.
+            4. Grid `ReportingPeriodList` L10306.
+
+          Satu medan `Inline labels left` digambar `kiri` — label di KIRI
+          medan, sama dengan Pega.
+
+          ⛔ Sel `g2`/`g3` di bawah memakai `div.trin__tata--kiri` telanjang,
+          BUKAN `TataPegaBlok`: aturan `.trin__tata-wadah + .trin__tata-wadah`
+          (jarak antarblok bertumpuk) ikut mengenai sel kedua dan ketiga grid,
+          sehingga End Date, Confirmation, dan Settlement turun 12px dari
+          teman sebarisnya. Di gambar Pega 01 ketiganya SEGARIS. */}
+      {/* `trin__rp` — pengait jarak rapi KHUSUS tab ini (`treatyin.css` "TAB
+          REPORTING PERIOD — RAPI"); `Panel` tidak menerima `className`. */}
+      <div className="trin__rp">
+      <TataPegaBlok tata="tumpuk">
+      <TataPegaBlok tata="g2">
+        <TataPegaBlok tata="kiri">
+          <TataPegaBlok tata="g2">
+            <div className="trin__tata trin__tata--kiri">
+              {/* Kotak tanggal menerima bentuk simpan; jawabannya bentuk kabel →
+                  disimpan kembali `YYYYMMDD`. */}
+              <TanggalRedup
+                label={REPORTING_PERIOD.mulai}
+                value={mulai}
+                onChange={(v) => {
+                  setMulai(keSimpan(v))
+                }}
+              />
+              <Pesan teks={galat.mulai} />
+            </div>
+            <div className="trin__tata trin__tata--kiri">
+              <TanggalRedup
+                label={REPORTING_PERIOD.akhir}
+                value={akhir}
+                onChange={(v) => {
+                  setAkhir(keSimpan(v))
+                }}
+              />
+              <Pesan teks={galat.akhir} />
+            </div>
+          </TataPegaBlok>
+          <Pilih
+            label={REPORTING_PERIOD.periode}
+            value={periode}
+            onChange={setPeriode}
+            opsi={opsiPeriode.map((o) => ({ value: o.value, label: o.label }))}
+          />
+          {lain && <Field label={REPORTING_PERIOD.interval} value={interval} onChange={(v) => { setSelang(saringAngka(v, true)) }} error={galat.interval} />}
+        </TataPegaBlok>
+        <SelKosongPega />
+      </TataPegaBlok>
+      <TataPegaBlok tata="g3">
+        {/* Label tanpa "(Days)" — layar Pega tidak menuliskannya. */}
+        <div className="trin__tata trin__tata--kiri">
+          <Field label={REPORTING_PERIOD.penyerahan} value={penyerahan} onChange={(v) => { setPenyerahan(saringAngka(v, true)) }} error={galat.penyerahan} />
+        </div>
+        <div className="trin__tata trin__tata--kiri">
+          <Field label={REPORTING_PERIOD.konfirmasi} value={konfirmasi} onChange={(v) => { setKonfirmasi(saringAngka(v, true)) }} error={galat.konfirmasi} />
+        </div>
+        <div className="trin__tata trin__tata--kiri">
+          <Field label={REPORTING_PERIOD.pelunasan} value={pelunasan} onChange={(v) => { setPelunasan(saringAngka(v, true)) }} error={galat.pelunasan} />
+        </div>
+      </TataPegaBlok>
+      </TataPegaBlok>
+
+      {/* `Inline labels left` L8487 — tombol dan kalimatnya mengalir sebaris. */}
       <div className="trin__aksi">
         <button
           type="button"
-          className="btn"
+          className="btn btn--sm"
           onClick={() => {
             terapkan()
           }}
@@ -151,8 +195,10 @@ export default function TabReportingPeriod({
           {REPORTING_PERIOD.terapkan}
         </button>
         {/* Sel label @270162/@274479/@279526 — tampil SELALU di samping tombol,
-            seperti di layar Pega; `, and Interval` hanya bila Period `other`. */}
-        <span>{lain ? REPORTING_PERIOD.galatKosongInterval : REPORTING_PERIOD.galatKosong}</span>
+            seperti di layar Pega; `, and Interval` hanya bila Period `other`.
+            Huruf KECIL `.trin__catatan` — di gambar Pega 01 kalimat ini seukuran
+            label medan, bukan seukuran isi. */}
+        <span className="trin__catatan">{lain ? REPORTING_PERIOD.galatKosongInterval : REPORTING_PERIOD.galatKosong}</span>
       </div>
       {gagal !== '' && (
         <p className="trin__galat" role="alert">
@@ -160,11 +206,10 @@ export default function TabReportingPeriod({
         </p>
       )}
 
-      {baris.length === 0 ? (
-        <Kosong pesan={REPORTING_PERIOD.tanpaBaris} />
-      ) : (
-        <div className="table-wrap">
-          <table className="trin__tabel">
+      {/* ⭐ Bentuk Pega (8 Oktober 2026): grid tetap tampil tanpa baris —
+          kepala kolom + satu sel "No items". */}
+      <div className="table-wrap">
+          <table className="trin__tabel trin__tabel--pega">
             <thead>
               <tr>
                 <th scope="col">{REPORTING_PERIOD.kolomPeriode}</th>
@@ -177,6 +222,13 @@ export default function TabReportingPeriod({
               </tr>
             </thead>
             <tbody>
+              {baris.length === 0 && (
+                <tr>
+                  <td colSpan={bisaUbah ? 6 : 5} className="trin__kosong-pega">
+                    {REPORTING_PERIOD.tanpaBaris}
+                  </td>
+                </tr>
+              )}
               {baris.map((b, i) => (
                 <tr key={i}>
                   <td>{b.Period}</td>
@@ -204,7 +256,9 @@ export default function TabReportingPeriod({
                       {bisaUbah ? (
                         // ⛔ Kotak tanggal diisi nilai TERSIMPAN, bukan terjemahan
                         // tampil — yang tampil membuat kotaknya kosong.
-                        <TanggalRedup
+                        // ⛔ Kotak TANPA label tampak: judul kolom sudah di kepala
+                        // grid (gambar Pega 01); `label` hanya nama pembaca layar.
+                        <KotakTanggalKetik
                           label={label}
                           value={b[kunci]}
                           onChange={(v) => {
@@ -225,7 +279,7 @@ export default function TabReportingPeriod({
             </tbody>
           </table>
         </div>
-      )}
+      </div>
     </Panel>
   )
 }

@@ -15,9 +15,14 @@ type sumberPropUji struct {
 	induk   []models.SusunanSpreading
 	anak    map[string][]models.SusunanSpreading
 	panggil [][]string
+	// grupInduk - argumen `grup` tiap panggilan `Induk`.
+	grupInduk []string
 }
 
-func (s *sumberPropUji) Induk(_, _ string) []models.SusunanSpreading { return s.induk }
+func (s *sumberPropUji) Induk(grup, _ string) []models.SusunanSpreading {
+	s.grupInduk = append(s.grupInduk, grup)
+	return s.induk
+}
 
 func (s *sumberPropUji) AnakProp(tahun, grup, desc, induk, tahunID string) []models.SusunanSpreading {
 	s.panggil = append(s.panggil, []string{tahun, grup, desc, induk, tahunID})
@@ -110,8 +115,9 @@ func TestSharePropGambar17(t *testing.T) {
 	if _, ada := larikSimpul(masukan[0], "Detail")[0]["RNMShareList"]; ada {
 		t.Error("masukan berubah")
 	}
-	// Refresh TANPA ParentReinsTypeID: RD anak dipanggil tanpa tahun (A, E dilewati).
-	if !reflect.DeepEqual(src.panggil, [][]string{{"", "10002", "10001", "P24", ""}}) {
+	// Refresh TANPA ParentReinsTypeID: RD anak dipanggil tanpa tahun (A, E
+	// dilewati) — dan tanpa grup (penyimpangan 8 Oktober 2026, lihat `fetchQS`).
+	if !reflect.DeepEqual(src.panggil, [][]string{{"", "", "10001", "P24", ""}}) {
 		t.Errorf("parameter RD anak %v", src.panggil)
 	}
 }
@@ -132,16 +138,17 @@ func TestSharePropOpsiDanQuotaShare(t *testing.T) {
 }
 
 // TestSharePropTanpaSpreadingDisalinApaAdanya - Detail tanpa Spreading Type
-// → SetSpreadName: totalnya DITAMBAHKAN dua kali (SetSpreadName [5] lalu
-// TreatyInPropshare [6]) dan pesan total spreading terpasang - bunyi Activity.
+// → SetSpreadName: pesan total spreading terpasang - bunyi Activity.
+// ⛔ RALAT 8 Oktober 2026: totalnya Σ Detail SATU kali (dulu 2x) — layar
+// Pega produksi; lihat `TestSharePropTotalSatuKaliSepertiPega`.
 func TestSharePropTanpaSpreadingDisalinApaAdanya(t *testing.T) {
 	limits := pohonUji(t, `[{"TreatyType":"SURPLUS","Detail":[{"TreatyGroup":"FIRE","TreatyType":"SURPLUS","CessionList":[{"Currency":"IDR","Value":"1000"}]}]}]`)
 	h := shareProp(t, MasukanShareProp{Aksi: AksiSharePropShare, Limits: limits, RNMShareP: "10", OptionLimit: "1"}, &sumberPropUji{})
 	if got := nilaiUji(larikSimpul(detailUji(h, 0, 0), "RNMShareList")); !reflect.DeepEqual(got, []string{"IDR 100"}) {
 		t.Errorf("RNMShareList %v", got)
 	}
-	if !reflect.DeepEqual(totalUji(h.TotalShareRnmProp), []string{"IDR 200"}) {
-		t.Errorf("total berlipat (disalin) %v", h.TotalShareRnmProp)
+	if !reflect.DeepEqual(totalUji(h.TotalShareRnmProp), []string{"IDR 100"}) {
+		t.Errorf("total %v, mau [IDR 100] — Σ Detail satu kali", h.TotalShareRnmProp)
 	}
 	if !reflect.DeepEqual(h.Pesan, []string{pesanTotalShareSpreading}) {
 		t.Errorf("pesan %v", h.Pesan)
@@ -194,7 +201,7 @@ func TestSharePropDetailDanSpreading(t *testing.T) {
 	src = sumberGambar17()
 	src.induk = []models.SusunanSpreading{{ReinsTypeID: "P24", ReinsTypeName: "2024 QS 155M TRT", TreatyYearID: "TY24", TreatyYear: "2024"}}
 	h = shareProp(t, MasukanShareProp{Aksi: AksiSharePropSpreading, Limits: h.Limits}, src)
-	if !reflect.DeepEqual(src.panggil, [][]string{{"2024", "10002", "10001", "P24", "TY24"}}) {
+	if !reflect.DeepEqual(src.panggil, [][]string{{"2024", "", "10001", "P24", "TY24"}}) {
 		t.Errorf("RD anak bertahun %v", src.panggil)
 	}
 	if got := nilaiUji(larikSimpul(detailUji(h, 0, 0), "RNMSpreadedList")); !reflect.DeepEqual(got, []string{"IDR 800000000"}) {
@@ -274,40 +281,64 @@ func TestSharePropLintasBoardTidakMenggandakan(t *testing.T) {
 	}
 }
 
-// ⭐ TOTAL BERLIPAT ITU DISENGAJA — KEPUTUSAN PEMILIK PROSES 7 Oktober 2026.
+// ⭐ TOTAL = Σ DETAIL SATU KALI — RALAT 8 Oktober 2026, menggantikan
+// keputusan 7 Oktober ("biarkan berlipat").
 //
-// Pemakai melaporkan `Total Share RNM Limit` tampil dua kali lipat. Setelah
-// ditelusuri ke ekspor dan ditanyakan dengan angkanya di tangan, jawabannya:
-// **ikuti Pega, biarkan berlipat**.
-//
-// ---------------------------------------------------------------------
-// ⛔ MENGAPA UJI INI ADA
-// ---------------------------------------------------------------------
-// Penggandaan ini TERLIHAT seperti cacat, dan siapa pun yang membuka layar
-// berikutnya akan tergoda "memperbaikinya". Komentar saja tidak cukup
-// menahan — komentar tidak merah. Uji ini merah.
-//
-// Sebabnya, dari ekspor: `SetSpreadName` langkah [5] ber-
-// `pyStepsObjectName = TreatyIn.Limits`, jadi ia menapaki SELURUH pohon,
-// bukan Detail yang sedang dikerjakan. Ia dipanggil di dalam gelung Detail
-// (`TreatyInPropshare` [5.1.4], saat `.SpreadingTypeID == ""`), lalu langkah
-// [6] menapaki pohon yang sama lagi dengan rumus yang persis sama.
-// Totalnya dikosongkan HANYA SEKALI, di langkah [3].
-//
-// ⚠️ Angkanya dari laporan pemakai — bukan karangan.
-func TestSharePropTotalBerlipatDisengaja(t *testing.T) {
-	// TANPA Spreading Type → `SetSpreadName` → BERLIPAT.
+// Bukti: layar Pega PRODUKSI pemakai — Treaty Group HOSPITAL, spreading
+// manual `2025 QS 181M TRT` Pct Share 25: RNMShareList 56.250.000 → Total
+// Share RNM Limit 56.250.000; Value Spreading OR/R/I 22.500.000 /
+// 33.750.000 → Total OR/R/I sama persis. Aplikasi sebelumnya menampilkan
+// 112.500.000 / 45.000.000 / 67.500.000 dan makin berlipat tiap perubahan.
+// Pemakai: *"perbaiki yang di aplikasi seharusnya seperti yang dipega"*.
+func TestSharePropTotalSatuKaliSepertiPega(t *testing.T) {
+	// Refresh (`TreatyInPropshare`) tanpa Spreading Type — dulu 2x.
 	tanpa := `[{"TreatyType":"QUOTA SHARE","Detail":[{"TreatyGroup":"PROPERTY","CessionList":[{"Currency":"IDR","Value":"1757675000000"}]}]}]`
 	h := shareProp(t, MasukanShareProp{
 		Aksi: AksiSharePropShare, Limits: pohonUji(t, tanpa),
 		RNMShareP: "1.28", OptionLimit: "1",
 	}, &sumberPropUji{})
-
 	if got := nilaiUji(larikSimpul(detailUji(h, 0, 0), "RNMShareList")); !reflect.DeepEqual(got, []string{"IDR 22498240000"}) {
-		t.Errorf("daftar per Detail %v, mau [IDR 22498240000] — yang INI harus tetap benar", got)
+		t.Errorf("daftar per Detail %v, mau [IDR 22498240000]", got)
 	}
-	if got := totalUji(h.TotalShareRnmProp); !reflect.DeepEqual(got, []string{"IDR 44996480000"}) {
-		t.Errorf("total %v, mau [IDR 44996480000] (2x, DISENGAJA — lihat komentar di atas)", got)
+	if got := totalUji(h.TotalShareRnmProp); !reflect.DeepEqual(got, []string{"IDR 22498240000"}) {
+		t.Errorf("total %v, mau [IDR 22498240000] — Σ Detail SATU kali, seperti layar Pega", got)
+	}
+}
+
+// Kasus layar produksi: `SetSpreadName` (Reins Type lalu Pct Share) dua kali
+// berturut-turut, dengan total yang SUDAH terisi — total tetap Σ Detail.
+func TestSharePropSebarNamaBerulangTidakMenumpuk(t *testing.T) {
+	src := &sumberPropUji{
+		induk: []models.SusunanSpreading{{ReinsTypeID: "10263", ReinsTypeName: "2025 QS 181M TRT", TreatyYearID: "1000684"}},
+		anak: map[string][]models.SusunanSpreading{"10263": {
+			{ReinsTypeID: "10028", ReinsTypeName: "QS (OR)", Pct: "40"},
+			{ReinsTypeID: "10004", ReinsTypeName: "QS (R/I)", Pct: "60"},
+		}},
+	}
+	limits := pohonUji(t, `[{"TreatyType":"QUOTA SHARE","Detail":[{"TreatyGroup":"HOSPITAL","RNMShare":"25",`+
+		`"SpreadingList":[{"ReinsTypeID":"10263","Pct":"25"}],"RNMShareList":[{"Currency":"IDR","Value":"56250000"}]}]}]`)
+	m := MasukanShareProp{Aksi: AksiSharePropSebarNama, Limits: limits}
+	h := shareProp(t, m, src)
+	// Panggilan kedua membawa total hasil panggilan pertama — seperti layar.
+	m.Limits, m.TotalShareRnmProp, m.TotalSpreadedRnmProp, m.TotalSpreadedRnmRIProp = h.Limits, h.TotalShareRnmProp, h.TotalSpreadedRnmProp, h.TotalSpreadedRnmRIProp
+	h = shareProp(t, m, src)
+
+	r := larikSimpul(detailUji(h, 0, 0), "SpreadingList")[0]
+	if got := nilaiUji(larikSimpul(r, "BreakDownSprdList")); len(got) != 2 || teksSimpul(larikSimpul(r, "BreakDownSprdList")[0], "Amount") != "22500000" {
+		t.Errorf("pecahan %v", larikSimpul(r, "BreakDownSprdList"))
+	}
+	for _, c := range []struct {
+		nama string
+		got  []NilaiMataUang
+		mau  string
+	}{
+		{"Total Share RNM Limit", h.TotalShareRnmProp, "IDR 56250000"},
+		{"Total Value Spreading OR", h.TotalSpreadedRnmProp, "IDR 22500000"},
+		{"Total Value Spreading R/I", h.TotalSpreadedRnmRIProp, "IDR 33750000"},
+	} {
+		if got := totalUji(c.got); !reflect.DeepEqual(got, []string{c.mau}) {
+			t.Errorf("%s %v, mau [%s] — seperti layar Pega produksi", c.nama, got, c.mau)
+		}
 	}
 }
 

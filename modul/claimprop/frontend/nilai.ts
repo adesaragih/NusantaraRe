@@ -106,9 +106,13 @@ export function hanyaAngka(v: string): string {
 export const DESIMAL_TAMPIL = 4
 
 /**
- * Tampilan angka: titik ribuan, koma desimal, paling banyak 4 desimal (dibulatkan setengah ke atas pada digit, bukan
- * float), nol ekor dibuang - inti `formatNumber`. Bukan angka = apa adanya. Nilai tersimpan tidak disentuh.
+ * Tampilan angka: titik ribuan, koma desimal, SELALU 4 desimal (work owner 10-10-2026: "untuk tampilannya munculkan 4
+ * angka belakang koma" - nol ekor tidak lagi dibuang), dibulatkan setengah ke atas pada digit, bukan float (inti
+ * `formatNumber`). Bukan angka = apa adanya. Nilai tersimpan tidak disentuh.
  */
 export function tampilAngka(v: string): string {
-  return formatNumber(v, DESIMAL_TAMPIL)
+  const teks = formatNumber(v, DESIMAL_TAMPIL)
+  if (!/^[+-]?(\d+\.?\d*|\.\d+)$/.test((v ?? '').trim())) return teks // bukan angka / kosong: apa adanya
+  const [bulat, pecahan = ''] = teks.split(',')
+  return `${bulat},${pecahan.padEnd(DESIMAL_TAMPIL, '0')}`
 }

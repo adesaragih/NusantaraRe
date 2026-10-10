@@ -119,6 +119,43 @@ func (g *Gudang) SisipOS(ctx context.Context, tx *db.Tx, b models.BarisOSAksepta
 	return db.PastikanSatuBaris(h, "baris OS_AKSEPTASI_KLAIM")
 }
 
+// detik - DATE Oracle bertingkat detik di jam Jakarta (`To_date(DataIn.CARI9, 'DD/MM/YYYY HH24:MI:SS')`).
+func detik(t time.Time) time.Time {
+	l := t.In(models.Jakarta)
+	return time.Date(l.Year(), l.Month(), l.Day(), l.Hour(), l.Minute(), l.Second(), 0, time.UTC)
+}
+
+// sqlSisipKlaimDitolak = InsertClaimRejected_Sql (tanpa BEGIN/COMMIT).
+func sqlSisipKlaimDitolak(tabel string) string {
+	return fmt.Sprintf(`INSERT INTO %s (INSKEY, ID, INSNAME, LABEL, STATUSWORK, CREATEOPNAME, CREATEOPERATOR, OBJCLASS,
+		UPDATEDATETIME, UPDATEOPNAME, UPDATEOPERATOR, REMARK) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12)`,
+		tabel)
+}
+
+// SisipKlaimDitolak = KomitePost_Close S13 (`InsertClaimRejected_Sql`, AcceptStatus 1).
+func (g *Gudang) SisipKlaimDitolak(ctx context.Context, tx *db.Tx, k models.KlaimDitolak) error {
+	if err := wajibTx(tx); err != nil {
+		return err
+	}
+	tabel, err := g.db.Qualify("CLAIMREJECTED")
+	if err != nil {
+		return err
+	}
+	q := sqlSisipKlaimDitolak(tabel)
+	if err := db.PeriksaSQL(q); err != nil {
+		return err
+	}
+	h, err := tx.ExecContext(ctx, q, k.InsKey, db.KosongJadiNil(k.ID), db.KosongJadiNil(k.InsName),
+		db.KosongJadiNil(k.Label), db.KosongJadiNil(k.StatusWork), db.KosongJadiNil(potong(k.PembuatNama, 512)),
+		db.KosongJadiNil(k.PembuatID), db.KosongJadiNil(k.Kelas), detik(k.Diperbarui),
+		db.KosongJadiNil(potong(k.PengubahNama, 512)), db.KosongJadiNil(k.PengubahID),
+		db.KosongJadiNil(potong(k.Remark, 1000)))
+	if err != nil {
+		return fmt.Errorf("repository: menyisipkan CLAIMREJECTED: %w", err)
+	}
+	return db.PastikanSatuBaris(h, "baris CLAIMREJECTED")
+}
+
 // sqlAdaJSONKlaim / sqlSisipJSONKlaim - isi PEGA_JSON_KLAIM_PNC tanpa DATA_JSON.
 func sqlAdaJSONKlaim(tabel string) string {
 	return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE IDPEGA = :1`, tabel)

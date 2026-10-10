@@ -54,16 +54,20 @@ func TestGerbangMenuModul(t *testing.T) {
 		if k := kodeDengan(h, "/api/klaim-life", claim); ditolak(k) {
 			t.Errorf("stub=%v: rute menunya sendiri ditolak %d", stub, k)
 		}
-		for _, j := range []string{"/api/polis-life", "/api/komite", "/api/treaty-contract-out/tahun"} {
+		for _, j := range []string{"/api/polis-life", "/api/komite-claim-prop/kasus", "/api/treaty-contract-out/tahun"} {
 			if k := kodeDengan(h, j, claim); k != http.StatusForbidden {
 				t.Errorf("stub=%v: %s tanpa menunya %d, mau 403", stub, j, k)
 			}
+		}
+		// Komite Claim Life TANPA menu (perintah work owner 09-10-2026): rutenya dipinjam pemegang menu Claim Life.
+		if k := kodeDengan(h, "/api/komite", claim); ditolak(k) {
+			t.Errorf("stub=%v: rute Komite Claim Life bagi pemegang Claim Life ditolak %d", stub, k)
 		}
 		// Dipinjam Claim Life (panel Data Polis) - BUKAN rute PremiumList lain.
 		if k := kodeDengan(h, "/api/polis-life/ringkas?nomorPolis=UJI-1", claim); ditolak(k) {
 			t.Errorf("stub=%v: rute pinjaman ditolak %d", stub, k)
 		}
-		if k := kodeDengan(h, "/api/polis-life/ringkas?nomorPolis=UJI-1", []string{"komiteclaimlife"}); k != http.StatusForbidden {
+		if k := kodeDengan(h, "/api/polis-life/ringkas?nomorPolis=UJI-1", []string{"claimprop"}); k != http.StatusForbidden {
 			t.Errorf("stub=%v: rute pinjaman bagi bukan peminjam %d, mau 403", stub, k)
 		}
 		// Sesi tanpa satu menu pun: semua rute modul 403.

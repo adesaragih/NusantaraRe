@@ -41,7 +41,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { Kosong, Panel } from '../../../../inti/frontend/components/ui/dasar'
+import { Panel } from '../../../../inti/frontend/components/ui/dasar'
 import { hitungAchievement, type RingkasanAchievement, type SimpulLimit } from '../api'
 import {
   ACHIEVEMENT,
@@ -126,11 +126,9 @@ export default function TabAchievement({
         </p>
       )}
 
-      {r.baris.length === 0 ? (
-        <Kosong pesan={ACHIEVEMENT.petunjukKosong} />
-      ) : (
-        <div className="table-wrap">
-          <table className="trin__tabel trin__ach">
+      {/* ⭐ Bentuk Pega (8 Oktober 2026): grid tetap tampil tanpa baris. */}
+      <div className="table-wrap">
+          <table className="trin__tabel trin__tabel--pega trin__ach">
             <thead>
               <tr>
                 {KOLOM_ACHIEVEMENT.map((k) => (
@@ -141,6 +139,13 @@ export default function TabAchievement({
               </tr>
             </thead>
             <tbody>
+              {r.baris.length === 0 && (
+                <tr>
+                  <td colSpan={KOLOM_ACHIEVEMENT.length} className="trin__kosong-pega">
+                    {ACHIEVEMENT.tanpaBaris}
+                  </td>
+                </tr>
+              )}
               {r.baris.map((b, i) => (
                 // ⭐ Baris terakhir adalah " Total In IDR" (`.TreatyType`),
                 // bukan data — ditandai supaya terbaca sebagai total.
@@ -172,7 +177,6 @@ export default function TabAchievement({
             </tfoot>
           </table>
         </div>
-      )}
     </Panel>
   )
 }

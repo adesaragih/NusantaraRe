@@ -53,7 +53,7 @@ export interface TempatOpsi {
 /** Rute pemuat daftar berparameter — disuntik `SisiPenyesuaian`, bukan diimpor di sini. */
 export interface PemuatOpsi {
   kelasBisnis: (treatyGroupId: string) => Promise<readonly PilihanTreatyIn[]>
-  indukSpreading: (treatyGroupId: string, mulai: string) => Promise<readonly { reinsTypeId: string; reinsTypeName: string }[]>
+  indukSpreading: (treatyGroupId: string, mulai: string, treatyDescId?: string) => Promise<readonly { reinsTypeId: string; reinsTypeName: string }[]>
 }
 
 const nama = (xs: readonly PilihanTreatyIn[] | undefined): Opsi[] | undefined =>
@@ -118,10 +118,24 @@ function opsiBerparameter(sp: SumberPilihan, d: DataOpsi, t: TempatOpsi | undefi
       )
     }
     case 'BrowseTreatyArrangement_ParentReinsMasterTrt': {
-      const grup = nilaiParam(param.TreatyGroupID ?? '.TreatyGroupID', t)
+      // ⭐ `TempSprd.TreatyGroupID` (dropdown Reins Type grid spreading
+      // manual) = Treaty Group DETAIL ini: `AddDelSpreadingTreatyin` langkah
+      // 1 (tombol Add/Delete grid itu) menyetel `TempSprd.TreatyGroupID =
+      // .TreatyGroupID`, dan `SetSpreadName` [3.2.1] hanya membuang
+      // `pyReportContentPage`, bukan `TempSprd`. Tanpa ini filter B
+      // dilewati dan `ORS` grup lain ikut tampil (laporan pemakai 9 Oktober
+      // 2026; gambar Pega: hanya susunan grup baris itu).
+      const ekspGrup = param.TreatyGroupID ?? '.TreatyGroupID'
+      const grup = nilaiParam(ekspGrup === 'TempSprd.TreatyGroupID' ? '.TreatyGroupID' : ekspGrup, t)
       const mulai = nilaiParam(param.StartDate ?? 'TreatyIn.Commencement', t)
-      const xs = berparameter(d, `spreading|${grup}|${mulai}`, () =>
-        p.indukSpreading(grup, mulai).then((ys) => ys.map((y) => ({ value: y.reinsTypeId, label: y.reinsTypeName, id: y.reinsTypeId }))),
+      // ⭐ `TreatyDescID` (`"10001"`) DIKIRIM seperti ekspor (9 Oktober 2026).
+      // Tanpa itu filter C RD dilewati dan dropdown Reins Type menawarkan
+      // `ORS` serta susunan di luar QS — laporan pemakai (gambar Pega: hanya
+      // `Choose` + susunan QS tahun itu).
+      const desc = nilaiParam(param.TreatyDescID ?? '', t)
+      const kunci = desc === '' ? `spreading|${grup}|${mulai}` : `spreading|${grup}|${mulai}|${desc}`
+      const xs = berparameter(d, kunci, () =>
+        p.indukSpreading(grup, mulai, desc).then((ys) => ys.map((y) => ({ value: y.reinsTypeId, label: y.reinsTypeName, id: y.reinsTypeId }))),
       )
       // Nilai `.ReinsTypeName` (Share Non-Prop) — yang tersimpan namanya.
       return sp.nilai === 'ReinsTypeName' ? xs.map((x) => ({ ...x, value: x.label })) : xs

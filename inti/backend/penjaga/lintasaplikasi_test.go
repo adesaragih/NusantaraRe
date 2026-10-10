@@ -670,10 +670,15 @@ func TestTCONolNamaTabelBaruDiKode(t *testing.T) {
 				// menandai tiap kotaknya `BERSAMA -> … EDM Prop, EDM Non
 				// Prop`.
 				//
+				// ⭐ Claim Prop ikut dikecualikan sejak 10 Oktober 2026:
+				// perintah work owner "jangan ambil dari json" + "kamu bisa
+				// cek dari flat table treaty in" - Choose Master membaca
+				// Bordereaux / Accounting Mode dari tabel flat Treaty In.
+				//
 				// ⚠️ Syarat NAMANYA tetap: tabel Treaty Contract Out yang
-				// disebut dari kedua modul ini tetap tertangkap.
+				// disebut dari modul-modul ini tetap tertangkap.
 				switch pemilikJalur(jalur) {
-				case "treatyin", "treatyinadjustment":
+				case "treatyin", "treatyinadjustment", "claimprop":
 					if milikTreatyIn(treatyin, m) {
 						continue
 					}

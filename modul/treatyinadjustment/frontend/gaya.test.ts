@@ -17,6 +17,18 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const AKAR = __dirname
+
+/**
+ * ⛔ Akhir baris DISERAGAMKAN sebelum dicocokkan.
+ *
+ * Penjaga di berkas ini mencari penambat yang MENYEBERANGI baris. Berkas
+ * CSS modul pernah berpindah LF ↔ CRLF tanpa satu pun perubahan isi, dan
+ * penambat yang menyebut `\n` lalu nol ketemu — uji merah tanpa ada yang
+ * rusak.
+ */
+function normalkanBarisCSS(teks: string): string {
+  return teks.split('\r\n').join('\n')
+}
 const CSS = readFileSync(join(AKAR, 'treatyinadjustment.css'), 'utf8')
 const RUTE = readFileSync(join(AKAR, 'rute.tsx'), 'utf8')
 const INTI = readFileSync(join(AKAR, '..', '..', '..', 'inti', 'frontend', 'styles.css'), 'utf8')
@@ -164,8 +176,11 @@ describe('bentuk Pega + responsif saat zoom', () => {
     expect(blok).toMatch(/\.tria__kolom \.field > :not\(\.field__label\) \{\s*grid-column: 2;/)
   })
 
-  it('kerapatan sama dengan Treaty In: kotak 34px, label 13px', () => {
-    expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.field__input \{\s*height: 34px;\s*font-size: 14px;/)
+  // ⚠️ Angkanya turun 34 → 28px pada 8 Oktober 2026 atas permintaan pemilik
+  // proses. Yang dijaga uji ini BUKAN angkanya sendiri, melainkan bahwa ia
+  // SAMA dengan Treaty In: dua layar form yang sama harus terlihat sama.
+  it('kerapatan sama dengan Treaty In: kotak 28px, label 13px', () => {
+    expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.field__input \{\s*height: 28px;\s*font-size: 13px;/)
     expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.field__label \{\s*font-size: 13px;/)
   })
 
@@ -208,5 +223,81 @@ describe('tema Treaty Exchange Yearly', () => {
   it('lapisan tema TIDAK menimpa ukuran kontrol — kerapatan tetap milik bloknya', () => {
     const tema = css.slice(css.indexOf('.treatyinadjustment > .inbox {'))
     expect(tema).not.toMatch(/\.(btn|field__input)[^{]*\{[^}]*height:/)
+  })
+})
+
+// ⛔ LABEL DI KIRI MEDAN — permintaan pemilik proses 8 Oktober 2026 atas tab
+// Account Reporting Period layar Adjustment.
+//
+// ⚠️ DUA cacat sekaligus, dan yang kedua bukan CSS:
+//
+//   1. Lebar kolom label PERSEN (`38%`) → tiap blok punya lebar sendiri,
+//      nol baris segaris. Sama dengan cacat yang sudah diperbaiki di
+//      `modul/treatyin`; 132px adalah angka yang dipakai di sana.
+//   2. `kerangka.gen.ts` melebur SELURUH `Inline*` Pega menjadi satu nilai
+//      `alir`, sehingga `Inline labels left` kehilangan "labels left"-nya.
+//      Tab itu memakai tujuh blok `alir`.
+describe('label kiri blok tata Adjustment', () => {
+  const CSS2 = readFileSync(join(AKAR, 'treatyinadjustment.css'), 'utf8')
+
+  it('⛔ lebarnya TETAP 132px, bukan persen', () => {
+    const i = CSS2.indexOf('.treatyinadjustment .tria__blok.tria__tata--kiri > .field,')
+    expect(i).toBeGreaterThan(0)
+    const aturan = CSS2.slice(i, CSS2.indexOf('}', i))
+    expect(aturan).toContain('grid-template-columns: 132px minmax(0, 1fr)')
+    expect(aturan).not.toContain('38%')
+  })
+
+  it('⛔ blok `alir` IKUT berlabel kiri — `Inline labels left` lebur ke sana', () => {
+    const i = CSS2.indexOf('.treatyinadjustment .tria__blok.tria__tata--kiri > .field,')
+    expect(CSS2.slice(i, CSS2.indexOf('{', i))).toContain('.tria__tata--alir > .field')
+  })
+
+  it('⭐ angkanya sama dengan Treaty In — satu ukuran untuk kedua layar', () => {
+    const TRIN = readFileSync(join(AKAR, '..', '..', 'treatyin', 'frontend', 'treatyin.css'), 'utf8')
+    expect(TRIN).toContain('grid-template-columns: 132px minmax(0, 1fr)')
+  })
+})
+
+// ⛔ ISI TIDAK BOLEH KELUAR DARI PANELNYA — keluhan pemilik proses
+// 8 Oktober 2026: *"jangan aneh seperti ini, buat designnya tidak keluar
+// dari container"*.
+//
+// ⚠️ Cacatnya lahir dari penggabungan selektor satu giliran sebelumnya:
+// `flex: none` milik blok `kiri` ikut terbawa ke blok `alir`. `kiri` adalah
+// KOLOM — di sana `flex: none` tidak berbahaya. `alir` adalah BARIS, dan di
+// sana ia berarti "tidak boleh menyusut": tiga medan Submission ·
+// Confirmation · Settlement menuntut ±1.400px dan meluber keluar panel.
+describe('isi tidak meluber keluar panel', () => {
+  // ⚠️ Akhir baris DISERAGAMKAN: penambat di bawah menyeberangi baris,
+  // dan berkas CSS pernah berpindah LF ↔ CRLF tanpa perubahan isi.
+  const CSS3 = normalkanBarisCSS(readFileSync(join(AKAR, 'treatyinadjustment.css'), 'utf8'))
+
+  /** Badan aturan PERTAMA yang pemilihnya cocok DAN badannya memuat `tanda`. */
+  const aturan = (pemilih: string, tanda = ''): string => {
+    for (let i = CSS3.indexOf(pemilih); i > 0; i = CSS3.indexOf(pemilih, i + 1)) {
+      const badan = CSS3.slice(i, CSS3.indexOf('}', i))
+      if (tanda === '' || badan.includes(tanda)) return badan
+    }
+    expect(CSS3).toContain(pemilih + ' … ' + tanda)
+    return ''
+  }
+
+  it('⛔ medan blok `alir` BOLEH menyusut', () => {
+    expect(aturan('.tria__tata--alir > .field {', 'flex:')).toContain('flex: 1 1 260px')
+  })
+
+  it('⛔ `flex: none` HANYA untuk blok `kiri` yang berkolom', () => {
+    expect(aturan('.tria__tata--kiri > .field {', 'flex:')).toContain('flex: none')
+    // Bentuk yang melahirkan cacatnya: satu aturan untuk keduanya.
+    expect(CSS3).not.toMatch(
+      /tria__tata--kiri > \.field,\s*\.treatyinadjustment \.tria__blok\.tria__tata--alir > \.field \{[^}]*flex: none/,
+    )
+  })
+
+  it('⭐ grid menggulir DI DALAM panelnya', () => {
+    const a = aturan('.treatyinadjustment .tria__grid {')
+    expect(a).toContain('max-width: 100%')
+    expect(a).toContain('overflow-x: auto')
   })
 })

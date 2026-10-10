@@ -12,7 +12,8 @@
 
 import { useEffect, useState } from 'react'
 
-import { Gagal, Kosong, Memuat, Panel, Pilih } from '../../../../inti/frontend/components/ui/dasar'
+import { Gagal, Kosong, Memuat, Panel } from '../../../../inti/frontend/components/ui/dasar'
+import { PilihCari as Pilih } from '../../../../inti/frontend/components/ui/pilihSaring'
 import { ambilKontrak, ambilRantaiVersi, type Kontrak, type Versi } from '../api'
 import { MENU_TREATYINADJUSTMENT, RANTAI_VERSI } from '../labels'
 

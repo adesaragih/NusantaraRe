@@ -4,7 +4,7 @@
 //
 //   mengetik      hanya angka, satu pemisah desimal (titik ATAU koma yang diketik), minus di depan, ribuan otomatis,
 //                 paling banyak 4 desimal (`ketikAngka.ts`); teks berformat yang ditempel dikenali
-//   tidak fokus   `tampilAngka` - titik ribuan, koma desimal, maks 4 desimal, nol ekor dibuang
+//   tidak fokus   `tampilAngka` - titik ribuan, koma desimal, selalu 4 desimal (work owner 10-10-2026)
 //
 // Nilai yang dikirim ke backend selalu MENTAH (`123456.678`).
 

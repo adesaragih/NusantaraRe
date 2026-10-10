@@ -105,14 +105,17 @@ describe('§0 syarat tampil tab', () => {
     expect(tabUntuk(NON_PROPORSIONAL, KOSONG)).toHaveLength(TAB_NON_PROPORSIONAL.length - 1)
   })
 
-  it('NOL tab dihapus dari kedua daftar — §0 melarangnya', () => {
+  // ⛔ RALAT 8 Oktober 2026 — satu-satunya tab yang dihapus: `RNM Share`
+  // Non-Prop, atas keputusan pemilik proses (*"di non prop tab RNM SHARE itu
+  // tidak ada"*). Pertanyaan terbukanya TERTUTUP; alasannya tercatat.
+  it('hanya RNM Share Non-Prop yang dihapus, dan keputusannya tercatat', () => {
     expect(TAB_PROPORSIONAL).toHaveLength(10)
-    // ⭐ 10 Oktober 2026: `Retro` menggantikan `RNM Share` (pertanyaan
-    // terbuka lama terjawab — di Pega `RNM Share` bukan tab). Tetap 11.
+    // ⭐ 10 Oktober 2026: `Retro` mengisi posisi `RNM Share` yang dihapus
+    // keputusan 8 Oktober (`di non prop tab RNM SHARE itu tidak ada`). Tetap 11.
     expect(TAB_NON_PROPORSIONAL).toHaveLength(11)
     expect(TAB_NON_PROPORSIONAL).toContain('Retro')
-    expect(TAB_NON_PROPORSIONAL).not.toContain('RNM Share')
-    expect(LABELS).toContain('MENGGANTIKAN `RNM Share`')
+    expect(TAB_NON_PROPORSIONAL as readonly string[]).not.toContain('RNM Share')
+    expect(LABELS).toContain('di non prop tab RNM SHARE itu tidak')
   })
 
   it('SATU tab bersyarat tersisa, dan sumbernya disebut', () => {

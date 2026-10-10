@@ -87,7 +87,8 @@ export const KOLOM_REINSTATEMENT: readonly KolomNP[] = [
   { label: 'Reinstatement Premium Amount USD (MDP x % Add Premium)', kunci: 'AdditionalAmount2', desimal: 2 },
   { label: 'Reinstatement %', kunci: 'AdditionalPct', desimal: 2 },
   { label: 'Reinstatement Amount IDR', kunci: 'ReinstatementAmount1', desimal: 2 },
-  // Tampil bila `.Limit2 != 0` @801378.
+  // XML: tampil bila `.Limit2 != 0` @801378 — tetapi SELALU ditampilkan
+  // (layar Pega produksi; keputusan pemakai 9 Oktober 2026).
   { label: 'Reinstatement Amount USD', kunci: 'ReinstatementAmount2', desimal: 2 },
 ]
 

@@ -3,6 +3,6 @@
 // `TreatyRevisionCopyAttachment`). Penanda `{…}` diisi `pesanSalinanLampiran`.
 
 export const SALINAN_LAMPIRAN = {
-  ringkas: 'Lampiran {sumber} ikut disalin: {tersalin} dari {jumlah} berkas.',
-  gagal: 'Tidak tersalin:',
+  ringkas: 'Attachments from {sumber} were copied too: {tersalin} of {jumlah} files.',
+  gagal: 'Not copied:',
 } as const

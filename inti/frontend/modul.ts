@@ -98,6 +98,24 @@ export interface MenuModul<H extends string = HalamanTerdaftar> {
   daftarBeranda?: (workbasket: string | null) => Promise<DaftarBeranda>
 }
 
+/**
+ * Bentuk ekspor `PENDAFTARAN_LAYAR` di `modul/<nama>/frontend/layar.ts` - modul TANPA MENU (perintah work owner
+ * 09-10-2026: menu Komite Claim Prop / Non Prop / Life / FacIn dihapus, "anggap menu itu tidak pernah ada" - komite
+ * digabung ke menu klaim masing-masing). Modul ini tidak punya baris `M_NAV_MENU`, tombol sidebar, maupun entri palet:
+ * ia dipasang hanya bagi pemegang menu modul peminjamnya (`MODUL_DIPINJAM` frontend/App.tsx) dan dibuka DI TEMPAT lewat
+ * `PropsRute.onBukaModul`. Sebuah folder modul punya `menu.ts` ATAU `layar.ts`, tidak keduanya.
+ */
+export interface LayarModul<H extends string = HalamanTerdaftar> {
+  /** Nama modul backend - SAMA dengan nama folder dan `const Nama` Go. */
+  nama: string
+  /** Nama modul - nama folder korpus VERBATIM (judul jendela berkas), bukan label menu. */
+  kelompok: string
+  /** Seluruh halaman modul ini. */
+  halaman: readonly H[]
+  /** Halaman yang dibuka `onBukaModul` / `onLihatBerkas` (berkasnya lewat `bukaKasus`). */
+  halamanAwal: H
+}
+
 /** Bentuk ekspor `RUTE_MODUL` di `modul/<nama>/frontend/rute.tsx`. */
 export type RuteModul<H extends string = HalamanTerdaftar> = ComponentType<PropsRute<H>>
 
@@ -163,6 +181,8 @@ export interface ModulFrontend<H extends string> {
   antreanBeranda?: () => Promise<AntreanBeranda[]>
   /** Penyedia daftar kotak masuk Beranda (lihat `MenuModul.daftarBeranda`). */
   daftarBeranda?: (workbasket: string | null) => Promise<DaftarBeranda>
+  /** Modul tanpa menu (`layar.ts`, lihat `LayarModul`): bukan entri sidebar / palet, tanpa baris `M_NAV_MENU`. */
+  tanpaMenu?: true
   /**
    * Komponen rute. ⛔ Ia TETAP terpasang selama modulnya aktif, supaya
    * keadaannya (kasus yang sedang dibuka) bertahan saat pemakai pindah

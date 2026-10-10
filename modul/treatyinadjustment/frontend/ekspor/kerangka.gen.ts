@@ -240,188 +240,300 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "syarat": [],
     "anak": [
      {
-      "t": "medan",
-      "at": 260828,
-      "label": "RSMD Limit",
-      "dari": "sisi",
-      "kunci": "CurrencyRSMD",
-      "format": "pxAutoComplete",
-      "desimal": null,
+      "t": "blok",
+      "at": 245195,
+      "judul": "",
       "syarat": [],
-      "baca": [
-       "TreatyIn.ViewState = 1",
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-      ],
-      "pilihan": {
-       "sumber": "reportdefinition",
-       "rd": "BrowseCurrencyTreatyIn_RD",
-       "nilai": "Currency",
-       "param": {
-        "Currency": ""
-       },
-       "setel": [
-        {
-         "target": "CurrencyID",
-         "dari": "ID"
-        }
-       ]
-      },
-      "aksiUbah": [
+      "anak": [
        {
-        "aksi": "postValue"
-       }
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 286560,
-      "label": "",
-      "dari": "sisi",
-      "kunci": "RSMDLimit",
-      "format": "pxTextInput",
-      "desimal": null,
-      "syarat": [],
-      "baca": [
-       "TreatyIn.ViewState = 1",
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 317490,
-      "label": "Earthquake Limit",
-      "dari": "sisi",
-      "kunci": "CurrencyEarthquake",
-      "format": "pxAutoComplete",
-      "desimal": null,
-      "syarat": [],
-      "baca": [
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-      ],
-      "pilihan": {
-       "sumber": "reportdefinition",
-       "rd": "BrowseCurrencyTreatyIn_RD",
-       "nilai": "Currency",
-       "param": {
-        "Currency": ""
+        "t": "blok",
+        "at": 254165,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "medan",
+          "at": 260828,
+          "label": "RSMD Limit",
+          "dari": "sisi",
+          "kunci": "CurrencyRSMD",
+          "format": "pxAutoComplete",
+          "desimal": null,
+          "syarat": [],
+          "baca": [
+           "TreatyIn.ViewState = 1",
+           "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+          ],
+          "pilihan": {
+           "sumber": "reportdefinition",
+           "rd": "BrowseCurrencyTreatyIn_RD",
+           "nilai": "Currency",
+           "param": {
+            "Currency": ""
+           },
+           "setel": [
+            {
+             "target": "CurrencyID",
+             "dari": "ID"
+            }
+           ]
+          },
+          "aksiUbah": [
+           {
+            "aksi": "postValue"
+           }
+          ]
+         }
+        ],
+        "tata": "kiri"
        },
-       "setel": [
-        {
-         "target": "CurrencyID",
-         "dari": "ID"
-        }
-       ]
-      },
-      "aksiUbah": [
        {
-        "aksi": "postValue"
-       }
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 343882,
-      "label": "",
-      "dari": "sisi",
-      "kunci": "Earthquake",
-      "format": "pxTextInput",
-      "desimal": null,
-      "syarat": [],
-      "baca": [
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 374771,
-      "label": "Flood Limit (Jabodetabek)",
-      "dari": "sisi",
-      "kunci": "CurrencyFloodJab",
-      "format": "pxAutoComplete",
-      "desimal": null,
-      "syarat": [],
-      "baca": [
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-      ],
-      "pilihan": {
-       "sumber": "reportdefinition",
-       "rd": "BrowseCurrencyTreatyIn_RD",
-       "nilai": "Currency",
-       "param": {
-        "Currency": ""
+        "t": "blok",
+        "at": 279897,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "medan",
+          "at": 286560,
+          "label": "",
+          "dari": "sisi",
+          "kunci": "RSMDLimit",
+          "format": "pxTextInput",
+          "desimal": null,
+          "syarat": [],
+          "baca": [
+           "TreatyIn.ViewState = 1",
+           "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+          ]
+         }
+        ],
+        "tata": "kiri"
        },
-       "setel": [
-        {
-         "target": "CurrencyID",
-         "dari": "ID"
-        }
-       ]
-      },
-      "aksiUbah": [
        {
-        "aksi": "postValue"
-       }
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 400573,
-      "label": "",
-      "dari": "sisi",
-      "kunci": "FloodJab",
-      "format": "pxTextInput",
-      "desimal": null,
-      "syarat": [],
-      "baca": [
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 431464,
-      "label": "Flood Limit (Nationwide)",
-      "dari": "sisi",
-      "kunci": "CurrencyFloodNat",
-      "format": "pxAutoComplete",
-      "desimal": null,
-      "syarat": [],
-      "baca": [
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-      ],
-      "pilihan": {
-       "sumber": "reportdefinition",
-       "rd": "BrowseCurrencyTreatyIn_RD",
-       "nilai": "Currency",
-       "param": {
-        "Currency": ""
+        "t": "kosong",
+        "at": 298880,
+        "syarat": []
        },
-       "setel": [
-        {
-         "target": "CurrencyID",
-         "dari": "ID"
-        }
-       ]
-      },
-      "aksiUbah": [
        {
-        "aksi": "postValue"
+        "t": "kosong",
+        "at": 303702,
+        "syarat": []
+       },
+       {
+        "t": "blok",
+        "at": 310827,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "medan",
+          "at": 317490,
+          "label": "Earthquake Limit",
+          "dari": "sisi",
+          "kunci": "CurrencyEarthquake",
+          "format": "pxAutoComplete",
+          "desimal": null,
+          "syarat": [],
+          "baca": [
+           "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+          ],
+          "pilihan": {
+           "sumber": "reportdefinition",
+           "rd": "BrowseCurrencyTreatyIn_RD",
+           "nilai": "Currency",
+           "param": {
+            "Currency": ""
+           },
+           "setel": [
+            {
+             "target": "CurrencyID",
+             "dari": "ID"
+            }
+           ]
+          },
+          "aksiUbah": [
+           {
+            "aksi": "postValue"
+           }
+          ]
+         }
+        ],
+        "tata": "kiri"
+       },
+       {
+        "t": "blok",
+        "at": 337219,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "medan",
+          "at": 343882,
+          "label": "",
+          "dari": "sisi",
+          "kunci": "Earthquake",
+          "format": "pxTextInput",
+          "desimal": null,
+          "syarat": [],
+          "baca": [
+           "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+          ]
+         }
+        ],
+        "tata": "kiri"
+       },
+       {
+        "t": "kosong",
+        "at": 356161,
+        "syarat": []
+       },
+       {
+        "t": "kosong",
+        "at": 360983,
+        "syarat": []
+       },
+       {
+        "t": "blok",
+        "at": 368108,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "medan",
+          "at": 374771,
+          "label": "Flood Limit (Jabodetabek)",
+          "dari": "sisi",
+          "kunci": "CurrencyFloodJab",
+          "format": "pxAutoComplete",
+          "desimal": null,
+          "syarat": [],
+          "baca": [
+           "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+          ],
+          "pilihan": {
+           "sumber": "reportdefinition",
+           "rd": "BrowseCurrencyTreatyIn_RD",
+           "nilai": "Currency",
+           "param": {
+            "Currency": ""
+           },
+           "setel": [
+            {
+             "target": "CurrencyID",
+             "dari": "ID"
+            }
+           ]
+          },
+          "aksiUbah": [
+           {
+            "aksi": "postValue"
+           }
+          ]
+         }
+        ],
+        "tata": "kiri"
+       },
+       {
+        "t": "blok",
+        "at": 393910,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "medan",
+          "at": 400573,
+          "label": "",
+          "dari": "sisi",
+          "kunci": "FloodJab",
+          "format": "pxTextInput",
+          "desimal": null,
+          "syarat": [],
+          "baca": [
+           "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+          ]
+         }
+        ],
+        "tata": "kiri"
+       },
+       {
+        "t": "kosong",
+        "at": 412848,
+        "syarat": []
+       },
+       {
+        "t": "kosong",
+        "at": 417672,
+        "syarat": []
+       },
+       {
+        "t": "blok",
+        "at": 424801,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "medan",
+          "at": 431464,
+          "label": "Flood Limit (Nationwide)",
+          "dari": "sisi",
+          "kunci": "CurrencyFloodNat",
+          "format": "pxAutoComplete",
+          "desimal": null,
+          "syarat": [],
+          "baca": [
+           "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+          ],
+          "pilihan": {
+           "sumber": "reportdefinition",
+           "rd": "BrowseCurrencyTreatyIn_RD",
+           "nilai": "Currency",
+           "param": {
+            "Currency": ""
+           },
+           "setel": [
+            {
+             "target": "CurrencyID",
+             "dari": "ID"
+            }
+           ]
+          },
+          "aksiUbah": [
+           {
+            "aksi": "postValue"
+           }
+          ]
+         }
+        ],
+        "tata": "kiri"
+       },
+       {
+        "t": "blok",
+        "at": 450624,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "medan",
+          "at": 457287,
+          "label": "",
+          "dari": "sisi",
+          "kunci": "FloodNation",
+          "format": "pxTextInput",
+          "desimal": null,
+          "syarat": [],
+          "baca": [
+           "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+          ]
+         }
+        ],
+        "tata": "kiri"
        }
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 457287,
-      "label": "",
-      "dari": "sisi",
-      "kunci": "FloodNation",
-      "format": "pxTextInput",
-      "desimal": null,
-      "syarat": [],
-      "baca": [
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-      ]
+      ],
+      "tata": "t3070"
      }
-    ]
+    ],
+    "tata": "kiri"
    }
   ]
  },
@@ -652,81 +764,160 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
    },
    {
-    "t": "teks",
-    "at": 733571,
-    "teks": "Total Amount in IDR",
-    "syarat": []
-   },
-   {
-    "t": "teks",
-    "at": 753273,
-    "teks": "IDR",
-    "syarat": []
-   },
-   {
-    "t": "medan",
-    "at": 757649,
-    "label": "",
-    "dari": "sisi",
-    "kunci": "TotalEgnpiAmount",
-    "format": "pxNumber",
-    "desimal": null,
+    "t": "blok",
+    "at": 708975,
+    "judul": "",
     "syarat": [],
-    "baca": "selalu"
-   },
-   {
-    "t": "teks",
-    "at": 790523,
-    "teks": "Total Proportion %",
-    "syarat": []
-   },
-   {
-    "t": "medan",
-    "at": 801254,
-    "label": "",
-    "dari": "sisi",
-    "kunci": "TotalEgnpiProportion",
-    "format": "pxNumber",
-    "desimal": 2,
-    "syarat": [],
-    "baca": "selalu"
-   },
-   {
-    "t": "tombol",
-    "at": 840132,
-    "label": "Update Total",
-    "syarat": [
-     "TreatyIn.ViewState !='1'"
-    ],
-    "aksi": [
+    "anak": [
      {
-      "aksi": "refresh",
-      "aktivitas": "TreatyInNPSetTotal",
-      "param": {
-       "type": "egnpi"
-      }
+      "t": "blok",
+      "at": 717944,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "blok",
+        "at": 726914,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "teks",
+          "at": 733571,
+          "teks": "Total Amount in IDR",
+          "syarat": []
+         }
+        ],
+        "tata": "alir"
+       },
+       {
+        "t": "blok",
+        "at": 746606,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "teks",
+          "at": 753273,
+          "teks": "IDR",
+          "syarat": []
+         },
+         {
+          "t": "medan",
+          "at": 757649,
+          "label": "",
+          "dari": "sisi",
+          "kunci": "TotalEgnpiAmount",
+          "format": "pxNumber",
+          "desimal": null,
+          "syarat": [],
+          "baca": "selalu"
+         }
+        ],
+        "tata": "t3070"
+       },
+       {
+        "t": "kosong",
+        "at": 769045,
+        "syarat": []
+       },
+       {
+        "t": "kosong",
+        "at": 775304,
+        "syarat": []
+       },
+       {
+        "t": "blok",
+        "at": 783866,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "teks",
+          "at": 790523,
+          "teks": "Total Proportion %",
+          "syarat": []
+         }
+        ],
+        "tata": "alir"
+       },
+       {
+        "t": "medan",
+        "at": 801254,
+        "label": "",
+        "dari": "sisi",
+        "kunci": "TotalEgnpiProportion",
+        "format": "pxNumber",
+        "desimal": 2,
+        "syarat": [],
+        "baca": "selalu"
+       }
+      ],
+      "tata": "t3070"
+     },
+     {
+      "t": "kosong",
+      "at": 812396,
+      "syarat": []
+     },
+     {
+      "t": "kosong",
+      "at": 818655,
+      "syarat": []
+     },
+     {
+      "t": "kosong",
+      "at": 824914,
+      "syarat": []
+     },
+     {
+      "t": "blok",
+      "at": 833476,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "tombol",
+        "at": 840132,
+        "label": "Update Total",
+        "syarat": [
+         "TreatyIn.ViewState !='1'"
+        ],
+        "aksi": [
+         {
+          "aksi": "refresh",
+          "aktivitas": "TreatyInNPSetTotal",
+          "param": {
+           "type": "egnpi"
+          }
+         }
+        ],
+        "nonaktif": [
+         "TreatyIn.EDMMaterialType = 2"
+        ]
+       },
+       {
+        "t": "tombol",
+        "at": 849212,
+        "label": "Update EGNPI Value",
+        "syarat": [
+         "TreatyIn.ViewState !='1' && TreatyMasterInEDM"
+        ],
+        "aksi": [
+         {
+          "aksi": "refresh",
+          "aktivitas": "TreatyInEGNPIListValue"
+         }
+        ],
+        "nonaktif": [
+         "TreatyIn.EDMMaterialType = 2"
+        ]
+       }
+      ],
+      "tata": "g2"
      }
     ],
-    "nonaktif": [
-     "TreatyIn.EDMMaterialType = 2"
-    ]
-   },
-   {
-    "t": "tombol",
-    "at": 849212,
-    "label": "Update EGNPI Value",
-    "syarat": [
-     "TreatyIn.ViewState !='1' && TreatyMasterInEDM"
-    ],
-    "aksi": [
-     {
-      "aksi": "refresh",
-      "aktivitas": "TreatyInEGNPIListValue"
-     }
-    ],
-    "nonaktif": [
-     "TreatyIn.EDMMaterialType = 2"
-    ]
+    "tata": "g2"
    }
   ]
  },
@@ -1312,66 +1503,117 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
-      "t": "teks",
-      "at": 1588332,
-      "teks": "Total ROL",
-      "syarat": []
-     },
-     {
-      "t": "medan",
-      "at": 1599054,
-      "label": "",
-      "dari": "sisi",
-      "kunci": "TotalLimitsROL",
-      "format": "pxNumber",
-      "desimal": 2,
+      "t": "blok",
+      "at": 1563737,
+      "judul": "",
       "syarat": [],
-      "baca": "selalu"
-     },
-     {
-      "t": "tombol",
-      "at": 1638126,
-      "label": "Update Total",
-      "syarat": [
-       "TreatyIn.ViewState !='1'"
-      ],
-      "aksi": [
+      "anak": [
        {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInNPSetTotal",
-        "param": {
-         "type": "limits"
-        }
+        "t": "blok",
+        "at": 1572707,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "blok",
+          "at": 1581675,
+          "judul": "",
+          "syarat": [],
+          "anak": [
+           {
+            "t": "teks",
+            "at": 1588332,
+            "teks": "Total ROL",
+            "syarat": []
+           }
+          ],
+          "tata": "alir"
+         },
+         {
+          "t": "medan",
+          "at": 1599054,
+          "label": "",
+          "dari": "sisi",
+          "kunci": "TotalLimitsROL",
+          "format": "pxNumber",
+          "desimal": 2,
+          "syarat": [],
+          "baca": "selalu"
+         }
+        ],
+        "tata": "t3070"
        },
        {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInSummaryMDP"
+        "t": "kosong",
+        "at": 1610389,
+        "syarat": []
        },
        {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInSummaryLimit"
-       }
-      ],
-      "nonaktif": [
-       "TreatyIn.EDMMaterialType = 2"
-      ]
-     },
-     {
-      "t": "tombol",
-      "at": 1652282,
-      "label": "Update Value in List",
-      "syarat": [
-       "TreatyIn.ViewState !='1' && TreatyMasterInEDM"
-      ],
-      "aksi": [
+        "t": "kosong",
+        "at": 1616648,
+        "syarat": []
+       },
        {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInLimitsListValue"
+        "t": "kosong",
+        "at": 1622907,
+        "syarat": []
+       },
+       {
+        "t": "blok",
+        "at": 1631469,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "tombol",
+          "at": 1638126,
+          "label": "Update Total",
+          "syarat": [
+           "TreatyIn.ViewState !='1'"
+          ],
+          "aksi": [
+           {
+            "aksi": "refresh",
+            "aktivitas": "TreatyInNPSetTotal",
+            "param": {
+             "type": "limits"
+            }
+           },
+           {
+            "aksi": "refresh",
+            "aktivitas": "TreatyInSummaryMDP"
+           },
+           {
+            "aksi": "refresh",
+            "aktivitas": "TreatyInSummaryLimit"
+           }
+          ],
+          "nonaktif": [
+           "TreatyIn.EDMMaterialType = 2"
+          ]
+         },
+         {
+          "t": "tombol",
+          "at": 1652282,
+          "label": "Update Value in List",
+          "syarat": [
+           "TreatyIn.ViewState !='1' && TreatyMasterInEDM"
+          ],
+          "aksi": [
+           {
+            "aksi": "refresh",
+            "aktivitas": "TreatyInLimitsListValue"
+           }
+          ],
+          "nonaktif": [
+           "TreatyIn.EDMMaterialType = 2"
+          ]
+         }
+        ],
+        "tata": "g2"
        }
       ],
-      "nonaktif": [
-       "TreatyIn.EDMMaterialType = 2"
-      ]
+      "tata": "g2"
      }
     ]
    }
@@ -1396,112 +1638,148 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
       ]
      },
      {
-      "t": "medan",
-      "at": 1741623,
-      "label": "% RNM Share",
-      "dari": "sisi",
-      "kunci": "RNMShare",
-      "format": "pxTextInput",
-      "desimal": null,
+      "t": "blok",
+      "at": 1716947,
+      "judul": "",
       "syarat": [],
-      "baca": [
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-      ],
-      "aksiUbah": [
+      "anak": [
        {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInXOLAddSpreading"
-       }
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 1750505,
-      "label": "% Brokerage",
-      "dari": "sisi",
-      "kunci": "BrokeragePercent",
-      "format": "pxTextInput",
-      "desimal": null,
-      "syarat": [],
-      "baca": [
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-      ],
-      "aksiUbah": [
-       {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInSetBrokerage"
+        "t": "blok",
+        "at": 1725946,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "blok",
+          "at": 1734945,
+          "judul": "",
+          "syarat": [],
+          "anak": [
+           {
+            "t": "medan",
+            "at": 1741623,
+            "label": "% RNM Share",
+            "dari": "sisi",
+            "kunci": "RNMShare",
+            "format": "pxTextInput",
+            "desimal": null,
+            "syarat": [],
+            "baca": [
+             "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+            ],
+            "aksiUbah": [
+             {
+              "aksi": "refresh",
+              "aktivitas": "TreatyInXOLAddSpreading"
+             }
+            ]
+           },
+           {
+            "t": "medan",
+            "at": 1750505,
+            "label": "% Brokerage",
+            "dari": "sisi",
+            "kunci": "BrokeragePercent",
+            "format": "pxTextInput",
+            "desimal": null,
+            "syarat": [],
+            "baca": [
+             "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+            ],
+            "aksiUbah": [
+             {
+              "aksi": "refresh",
+              "aktivitas": "TreatyInSetBrokerage"
+             },
+             {
+              "aksi": "refresh",
+              "aktivitas": "TreatyInXOLAddSpreading"
+             }
+            ]
+           }
+          ],
+          "tata": "kiri"
+         },
+         {
+          "t": "medan",
+          "at": 1768828,
+          "label": "",
+          "dari": "sisi",
+          "kunci": "RNMShareAcrossTheBoard",
+          "format": "pxCheckbox",
+          "desimal": null,
+          "syarat": [],
+          "caption": "Share Across The Board",
+          "baca": [
+           "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+          ],
+          "aksiUbah": [
+           {
+            "aksi": "refresh",
+            "aktivitas": "TreatyInXOLAddSpreading",
+            "syarat": "TreatyIn.RNMShareAcrossTheBoard = 'true'"
+           },
+           {
+            "aksi": "refresh",
+            "aktivitas": "TreatyInSetBrokerage",
+            "syarat": "TreatyIn.BrokeragePercent > 0"
+           }
+          ]
+         }
+        ],
+        "tata": "g2"
        },
        {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInXOLAddSpreading"
+        "t": "blok",
+        "at": 1790436,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "medan",
+          "at": 1797115,
+          "label": "Share to Other Retro",
+          "dari": "sisi",
+          "kunci": "FacultativeShare",
+          "format": "pxTextInput",
+          "desimal": null,
+          "syarat": [],
+          "baca": [
+           "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+          ],
+          "aksiUbah": [
+           {
+            "aksi": "refresh",
+            "aktivitas": "TreatyInXOLAddSpreading"
+           }
+          ]
+         },
+         {
+          "t": "medan",
+          "at": 1806086,
+          "label": "Brokerage From Other Retro",
+          "dari": "sisi",
+          "kunci": "FacultativeShareBrokerage",
+          "format": "pxTextInput",
+          "desimal": null,
+          "syarat": [
+           "TreatyIn.FacultativeShare >0"
+          ],
+          "baca": [
+           "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+          ],
+          "aksiUbah": [
+           {
+            "aksi": "refresh",
+            "aktivitas": "TreatyInXOLAddSpreading"
+           }
+          ]
+         }
+        ],
+        "tata": "kiri"
        }
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 1768828,
-      "label": "",
-      "dari": "sisi",
-      "kunci": "RNMShareAcrossTheBoard",
-      "format": "pxCheckbox",
-      "desimal": null,
-      "syarat": [],
-      "caption": "Share Across The Board",
-      "baca": [
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
       ],
-      "aksiUbah": [
-       {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInXOLAddSpreading",
-        "syarat": "TreatyIn.RNMShareAcrossTheBoard = 'true'"
-       },
-       {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInSetBrokerage",
-        "syarat": "TreatyIn.BrokeragePercent > 0"
-       }
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 1797115,
-      "label": "Share to Other Retro",
-      "dari": "sisi",
-      "kunci": "FacultativeShare",
-      "format": "pxTextInput",
-      "desimal": null,
-      "syarat": [],
-      "baca": [
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-      ],
-      "aksiUbah": [
-       {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInXOLAddSpreading"
-       }
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 1806086,
-      "label": "Brokerage From Other Retro",
-      "dari": "sisi",
-      "kunci": "FacultativeShareBrokerage",
-      "format": "pxTextInput",
-      "desimal": null,
-      "syarat": [
-       "TreatyIn.FacultativeShare >0"
-      ],
-      "baca": [
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-      ],
-      "aksiUbah": [
-       {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInXOLAddSpreading"
-       }
-      ]
+      "tata": "g2"
      },
      {
       "t": "tombol",
@@ -1544,154 +1822,20 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
       ]
      },
      {
-      "t": "grid",
-      "at": 1878628,
-      "prop": "TreatyIn.ShareReins",
-      "dari": "sisi",
-      "larik": "ShareReins",
-      "syarat": [],
-      "kolom": [
-       "Reinsurer Name",
-       "Layer",
-       "% Share",
-       ""
-      ],
-      "kunci": [
-       "ReinsName",
-       "Layer",
-       "SharePct",
-       ""
-      ],
-      "lebar": [
-       424,
-       180,
-       188,
-       159
-      ],
-      "desimal": [
-       null,
-       null,
-       2,
-       null
-      ],
-      "format": [
-       "pxAutoComplete",
-       "pxTextInput",
-       "pxNumber",
-       "pxButton"
-      ],
-      "syaratSel": [
-       null,
-       null,
-       null,
-       "TreatyIn.ViewState !='1'"
-      ],
-      "atSel": [
-       1904195,
-       1912259,
-       1918452,
-       1923992
-      ],
-      "baca": [
-       [
-        "TreatyIn.ViewState = 1"
-       ],
-       [
-        "TreatyIn.ViewState = 1"
-       ],
-       [
-        "TreatyIn.ViewState = 1"
-       ],
-       "selalu"
-      ],
-      "tombol": [
-       null,
-       null,
-       null,
-       {
-        "t": "tombol",
-        "at": 1923992,
-        "label": "Delete",
-        "syarat": [
-         "TreatyIn.ViewState !='1'"
-        ],
-        "aksi": [
-         {
-          "aksi": "deleteRow"
-         }
-        ]
-       }
-      ],
-      "tombolKepala": [
-       null,
-       null,
-       null,
-       {
-        "t": "tombol",
-        "at": 1894484,
-        "label": "Add",
-        "syarat": [
-         "TreatyIn.ViewState !='1'"
-        ],
-        "aksi": [
-         {
-          "aksi": "refresh",
-          "aktivitas": "TreatyInNonAddItem",
-          "param": {
-           "Type": "sharereins"
-          }
-         }
-        ],
-        "ikon": "rpadd.gif"
-       }
-      ],
-      "pilihan": [
-       {
-        "sumber": "reportdefinition",
-        "rd": "BrowseAgentNusaRe_RD",
-        "nilai": "ClientName",
-        "param": {
-         "StatusActive": "",
-         "ChildCount": "",
-         "Name": ""
-        },
-        "setel": [
-         {
-          "target": "ReinsID",
-          "dari": "ID"
-         }
-        ]
-       },
-       null,
-       null,
-       null
-      ],
-      "aksiUbah": [
-       null,
-       null,
-       null,
-       null
-      ],
-      "modeBaris": "row",
-      "templatBaris": "ASM-FW-GISFW-Data-TreatyInShareReins!pyGridModalTemplate"
-     },
-     {
       "t": "blok",
-      "at": 1958098,
+      "at": 1852339,
       "judul": "",
-      "syarat": [
-       "TreatyIn.FacultativeShare >0"
-      ],
+      "syarat": [],
       "anak": [
        {
         "t": "grid",
-        "at": 1975456,
-        "prop": "TreatyIn.ShareFacultativeReinsurers",
+        "at": 1878628,
+        "prop": "TreatyIn.ShareReins",
         "dari": "sisi",
-        "larik": "ShareFacultativeReinsurers",
+        "larik": "ShareReins",
         "syarat": [],
         "kolom": [
-         "Facultative Reinsurers",
+         "Reinsurer Name",
          "Layer",
          "% Share",
          ""
@@ -1703,10 +1847,10 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
          ""
         ],
         "lebar": [
-         428,
-         182,
-         189,
-         160
+         424,
+         180,
+         188,
+         159
         ],
         "desimal": [
          null,
@@ -1727,10 +1871,10 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
          "TreatyIn.ViewState !='1'"
         ],
         "atSel": [
-         2001074,
-         2009138,
-         2015331,
-         2020871
+         1904195,
+         1912259,
+         1918452,
+         1923992
         ],
         "baca": [
          [
@@ -1750,7 +1894,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
          null,
          {
           "t": "tombol",
-          "at": 2020871,
+          "at": 1923992,
           "label": "Delete",
           "syarat": [
            "TreatyIn.ViewState !='1'"
@@ -1768,7 +1912,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
          null,
          {
           "t": "tombol",
-          "at": 1991359,
+          "at": 1894484,
           "label": "Add",
           "syarat": [
            "TreatyIn.ViewState !='1'"
@@ -1778,7 +1922,7 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
             "aksi": "refresh",
             "aktivitas": "TreatyInNonAddItem",
             "param": {
-             "Type": "sharefacname"
+             "Type": "sharereins"
             }
            }
           ],
@@ -1814,8 +1958,151 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
         ],
         "modeBaris": "row",
         "templatBaris": "ASM-FW-GISFW-Data-TreatyInShareReins!pyGridModalTemplate"
+       },
+       {
+        "t": "blok",
+        "at": 1958098,
+        "judul": "",
+        "syarat": [
+         "TreatyIn.FacultativeShare >0"
+        ],
+        "anak": [
+         {
+          "t": "grid",
+          "at": 1975456,
+          "prop": "TreatyIn.ShareFacultativeReinsurers",
+          "dari": "sisi",
+          "larik": "ShareFacultativeReinsurers",
+          "syarat": [],
+          "kolom": [
+           "Facultative Reinsurers",
+           "Layer",
+           "% Share",
+           ""
+          ],
+          "kunci": [
+           "ReinsName",
+           "Layer",
+           "SharePct",
+           ""
+          ],
+          "lebar": [
+           428,
+           182,
+           189,
+           160
+          ],
+          "desimal": [
+           null,
+           null,
+           2,
+           null
+          ],
+          "format": [
+           "pxAutoComplete",
+           "pxTextInput",
+           "pxNumber",
+           "pxButton"
+          ],
+          "syaratSel": [
+           null,
+           null,
+           null,
+           "TreatyIn.ViewState !='1'"
+          ],
+          "atSel": [
+           2001074,
+           2009138,
+           2015331,
+           2020871
+          ],
+          "baca": [
+           [
+            "TreatyIn.ViewState = 1"
+           ],
+           [
+            "TreatyIn.ViewState = 1"
+           ],
+           [
+            "TreatyIn.ViewState = 1"
+           ],
+           "selalu"
+          ],
+          "tombol": [
+           null,
+           null,
+           null,
+           {
+            "t": "tombol",
+            "at": 2020871,
+            "label": "Delete",
+            "syarat": [
+             "TreatyIn.ViewState !='1'"
+            ],
+            "aksi": [
+             {
+              "aksi": "deleteRow"
+             }
+            ]
+           }
+          ],
+          "tombolKepala": [
+           null,
+           null,
+           null,
+           {
+            "t": "tombol",
+            "at": 1991359,
+            "label": "Add",
+            "syarat": [
+             "TreatyIn.ViewState !='1'"
+            ],
+            "aksi": [
+             {
+              "aksi": "refresh",
+              "aktivitas": "TreatyInNonAddItem",
+              "param": {
+               "Type": "sharefacname"
+              }
+             }
+            ],
+            "ikon": "rpadd.gif"
+           }
+          ],
+          "pilihan": [
+           {
+            "sumber": "reportdefinition",
+            "rd": "BrowseAgentNusaRe_RD",
+            "nilai": "ClientName",
+            "param": {
+             "StatusActive": "",
+             "ChildCount": "",
+             "Name": ""
+            },
+            "setel": [
+             {
+              "target": "ReinsID",
+              "dari": "ID"
+             }
+            ]
+           },
+           null,
+           null,
+           null
+          ],
+          "aksiUbah": [
+           null,
+           null,
+           null,
+           null
+          ],
+          "modeBaris": "row",
+          "templatBaris": "ASM-FW-GISFW-Data-TreatyInShareReins!pyGridModalTemplate"
+         }
+        ]
        }
-      ]
+      ],
+      "tata": "g2"
      },
      {
       "t": "blok",
@@ -1848,7 +2135,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
           "teks": "%",
           "syarat": []
          }
-        ]
+        ],
+        "tata": "alir"
        },
        {
         "t": "blok",
@@ -2213,7 +2501,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        }
       ]
      }
-    ]
+    ],
+    "tata": "kiri"
    },
    {
     "t": "blok",
@@ -2222,310 +2511,20 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "syarat": [],
     "anak": [
      {
-      "t": "grid",
-      "at": 2519171,
-      "prop": "TreatyIn.TotalShareRnmNP",
-      "dari": "sisi",
-      "larik": "TotalShareRnmNP",
-      "syarat": [],
-      "kolom": [
-       "Total RNM Limit (RNM Share)",
-       "Value"
-      ],
-      "kunci": [
-       "Currency",
-       "Value"
-      ],
-      "lebar": [
-       194,
-       352
-      ],
-      "desimal": [
-       null,
-       2
-      ],
-      "format": [
-       "pxNumber",
-       "pxNumber"
-      ],
-      "syaratSel": [
-       null,
-       null
-      ],
-      "atSel": [
-       2531152,
-       2536109
-      ],
-      "baca": [
-       "selalu",
-       "selalu"
-      ],
-      "tombol": [
-       null,
-       null
-      ],
-      "tombolKepala": [
-       null,
-       null
-      ],
-      "pilihan": [
-       null,
-       null
-      ],
-      "aksiUbah": [
-       null,
-       null
-      ],
-      "modeBaris": "readOnly",
-      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-     },
-     {
-      "t": "grid",
-      "at": 2584196,
-      "prop": "TreatyIn.TotalSpreadedRnmProp",
-      "dari": "sisi",
-      "larik": "TotalSpreadedRnmProp",
-      "syarat": [],
-      "kolom": [
-       "Total OR Limit",
-       "Value"
-      ],
-      "kunci": [
-       "Currency",
-       "Value"
-      ],
-      "lebar": [
-       192,
-       350
-      ],
-      "desimal": [
-       null,
-       2
-      ],
-      "format": [
-       "pxNumber",
-       "pxNumber"
-      ],
-      "syaratSel": [
-       null,
-       null
-      ],
-      "atSel": [
-       2596169,
-       2601126
-      ],
-      "baca": [
-       "selalu",
-       "selalu"
-      ],
-      "tombol": [
-       null,
-       null
-      ],
-      "tombolKepala": [
-       null,
-       null
-      ],
-      "pilihan": [
-       null,
-       null
-      ],
-      "aksiUbah": [
-       null,
-       null
-      ],
-      "modeBaris": "readOnly",
-      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-     },
-     {
-      "t": "grid",
-      "at": 2649233,
-      "prop": "TreatyIn.TotalSpreadedRnmRIProp",
-      "dari": "sisi",
-      "larik": "TotalSpreadedRnmRIProp",
-      "syarat": [],
-      "kolom": [
-       "Total R/I Limit",
-       "Value"
-      ],
-      "kunci": [
-       "Currency",
-       "Value"
-      ],
-      "lebar": [
-       192,
-       350
-      ],
-      "desimal": [
-       null,
-       2
-      ],
-      "format": [
-       "pxNumber",
-       "pxNumber"
-      ],
-      "syaratSel": [
-       null,
-       null
-      ],
-      "atSel": [
-       2661210,
-       2666167
-      ],
-      "baca": [
-       "selalu",
-       "selalu"
-      ],
-      "tombol": [
-       null,
-       null
-      ],
-      "tombolKepala": [
-       null,
-       null
-      ],
-      "pilihan": [
-       null,
-       null
-      ],
-      "aksiUbah": [
-       null,
-       null
-      ],
-      "modeBaris": "readOnly",
-      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-     },
-     {
-      "t": "grid",
-      "at": 2729593,
-      "prop": "TreatyIn.TotalShareGrossMinNP",
-      "dari": "sisi",
-      "larik": "TotalShareGrossMinNP",
-      "syarat": [],
-      "kolom": [
-       "Total Gross Min Premium",
-       "Value"
-      ],
-      "kunci": [
-       "Currency",
-       "Value"
-      ],
-      "lebar": [
-       194,
-       350
-      ],
-      "desimal": [
-       null,
-       2
-      ],
-      "format": [
-       "pxNumber",
-       "pxNumber"
-      ],
-      "syaratSel": [
-       null,
-       null
-      ],
-      "atSel": [
-       2741575,
-       2746532
-      ],
-      "baca": [
-       "selalu",
-       "selalu"
-      ],
-      "tombol": [
-       null,
-       null
-      ],
-      "tombolKepala": [
-       null,
-       null
-      ],
-      "pilihan": [
-       null,
-       null
-      ],
-      "aksiUbah": [
-       null,
-       null
-      ],
-      "modeBaris": "readOnly",
-      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-     },
-     {
-      "t": "grid",
-      "at": 2809958,
-      "prop": "TreatyIn.TotalShareGrossNP",
-      "dari": "sisi",
-      "larik": "TotalShareGrossNP",
-      "syarat": [],
-      "kolom": [
-       "Total Gross Premium (MDP)",
-       "Value"
-      ],
-      "kunci": [
-       "Currency",
-       "Value"
-      ],
-      "lebar": [
-       194,
-       350
-      ],
-      "desimal": [
-       null,
-       2
-      ],
-      "format": [
-       "pxNumber",
-       "pxNumber"
-      ],
-      "syaratSel": [
-       null,
-       null
-      ],
-      "atSel": [
-       2821939,
-       2826896
-      ],
-      "baca": [
-       "selalu",
-       "selalu"
-      ],
-      "tombol": [
-       null,
-       null
-      ],
-      "tombolKepala": [
-       null,
-       null
-      ],
-      "pilihan": [
-       null,
-       null
-      ],
-      "aksiUbah": [
-       null,
-       null
-      ],
-      "modeBaris": "readOnly",
-      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-     },
-     {
       "t": "blok",
-      "at": 2873031,
+      "at": 2492881,
       "judul": "",
       "syarat": [],
       "anak": [
        {
         "t": "grid",
-        "at": 2890324,
-        "prop": "TreatyIn.TotalShareDeductionNP",
+        "at": 2519171,
+        "prop": "TreatyIn.TotalShareRnmNP",
         "dari": "sisi",
-        "larik": "TotalShareDeductionNP",
+        "larik": "TotalShareRnmNP",
         "syarat": [],
         "kolom": [
-         "Total Deduction",
+         "Total RNM Limit (RNM Share)",
          "Value"
         ],
         "kunci": [
@@ -2549,8 +2548,124 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
          null
         ],
         "atSel": [
-         2902299,
-         2907256
+         2531152,
+         2536109
+        ],
+        "baca": [
+         "selalu",
+         "selalu"
+        ],
+        "tombol": [
+         null,
+         null
+        ],
+        "tombolKepala": [
+         null,
+         null
+        ],
+        "pilihan": [
+         null,
+         null
+        ],
+        "aksiUbah": [
+         null,
+         null
+        ],
+        "modeBaris": "readOnly",
+        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       },
+       {
+        "t": "grid",
+        "at": 2584196,
+        "prop": "TreatyIn.TotalSpreadedRnmProp",
+        "dari": "sisi",
+        "larik": "TotalSpreadedRnmProp",
+        "syarat": [],
+        "kolom": [
+         "Total OR Limit",
+         "Value"
+        ],
+        "kunci": [
+         "Currency",
+         "Value"
+        ],
+        "lebar": [
+         192,
+         350
+        ],
+        "desimal": [
+         null,
+         2
+        ],
+        "format": [
+         "pxNumber",
+         "pxNumber"
+        ],
+        "syaratSel": [
+         null,
+         null
+        ],
+        "atSel": [
+         2596169,
+         2601126
+        ],
+        "baca": [
+         "selalu",
+         "selalu"
+        ],
+        "tombol": [
+         null,
+         null
+        ],
+        "tombolKepala": [
+         null,
+         null
+        ],
+        "pilihan": [
+         null,
+         null
+        ],
+        "aksiUbah": [
+         null,
+         null
+        ],
+        "modeBaris": "readOnly",
+        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       },
+       {
+        "t": "grid",
+        "at": 2649233,
+        "prop": "TreatyIn.TotalSpreadedRnmRIProp",
+        "dari": "sisi",
+        "larik": "TotalSpreadedRnmRIProp",
+        "syarat": [],
+        "kolom": [
+         "Total R/I Limit",
+         "Value"
+        ],
+        "kunci": [
+         "Currency",
+         "Value"
+        ],
+        "lebar": [
+         192,
+         350
+        ],
+        "desimal": [
+         null,
+         2
+        ],
+        "format": [
+         "pxNumber",
+         "pxNumber"
+        ],
+        "syaratSel": [
+         null,
+         null
+        ],
+        "atSel": [
+         2661210,
+         2666167
         ],
         "baca": [
          "selalu",
@@ -2575,226 +2690,463 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
         "modeBaris": "readOnly",
         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
        }
-      ]
+      ],
+      "tata": "g3"
      },
      {
-      "t": "grid",
-      "at": 2970722,
-      "prop": "TreatyIn.TotalShareNetNP",
-      "dari": "sisi",
-      "larik": "TotalShareNetNP",
+      "t": "blok",
+      "at": 2703303,
+      "judul": "",
       "syarat": [],
-      "kolom": [
-       "Total Net Premium",
-       "Value"
-      ],
-      "kunci": [
-       "Currency",
-       "Value"
-      ],
-      "lebar": [
-       193,
-       349
-      ],
-      "desimal": [
-       null,
-       2
-      ],
-      "format": [
-       "pxNumber",
-       "pxNumber"
-      ],
-      "syaratSel": [
-       null,
-       null
-      ],
-      "atSel": [
-       2982693,
-       2987650
-      ],
-      "baca": [
-       "selalu",
-       "selalu"
-      ],
-      "tombol": [
-       null,
-       null
-      ],
-      "tombolKepala": [
-       null,
-       null
-      ],
-      "pilihan": [
-       null,
-       null
-      ],
-      "aksiUbah": [
-       null,
-       null
-      ],
-      "modeBaris": "readOnly",
-      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-     },
-     {
-      "t": "grid",
-      "at": 3035737,
-      "prop": "TreatyIn.TotalSpreadedNetPremi",
-      "dari": "sisi",
-      "larik": "TotalSpreadedNetPremi",
-      "syarat": [],
-      "kolom": [
-       "Total OR Net Premium",
-       "Value"
-      ],
-      "kunci": [
-       "Currency",
-       "Value"
-      ],
-      "lebar": [
-       192,
-       348
-      ],
-      "desimal": [
-       null,
-       2
-      ],
-      "format": [
-       "pxNumber",
-       "pxNumber"
-      ],
-      "syaratSel": [
-       null,
-       null
-      ],
-      "atSel": [
-       3047717,
-       3052674
-      ],
-      "baca": [
-       "selalu",
-       "selalu"
-      ],
-      "tombol": [
-       null,
-       null
-      ],
-      "tombolKepala": [
-       null,
-       null
-      ],
-      "pilihan": [
-       null,
-       null
-      ],
-      "aksiUbah": [
-       null,
-       null
-      ],
-      "modeBaris": "readOnly",
-      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-     },
-     {
-      "t": "grid",
-      "at": 3099627,
-      "prop": "TreatyIn.TotalSpreadedNetPremiRI",
-      "dari": "sisi",
-      "larik": "TotalSpreadedNetPremiRI",
-      "syarat": [],
-      "kolom": [
-       "Total R/I Net Premium",
-       "Value"
-      ],
-      "kunci": [
-       "Currency",
-       "Value"
-      ],
-      "lebar": [
-       192,
-       348
-      ],
-      "desimal": [
-       null,
-       2
-      ],
-      "format": [
-       "pxNumber",
-       "pxNumber"
-      ],
-      "syaratSel": [
-       null,
-       null
-      ],
-      "atSel": [
-       3111610,
-       3116567
-      ],
-      "baca": [
-       "selalu",
-       "selalu"
-      ],
-      "tombol": [
-       null,
-       null
-      ],
-      "tombolKepala": [
-       null,
-       null
-      ],
-      "pilihan": [
-       null,
-       null
-      ],
-      "aksiUbah": [
-       null,
-       null
-      ],
-      "modeBaris": "readOnly",
-      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-     },
-     {
-      "t": "tombol",
-      "at": 3184690,
-      "label": "Update Total",
-      "syarat": [
-       "TreatyIn.ViewState !='1'"
-      ],
-      "aksi": [
+      "anak": [
        {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInNPSetTotal",
-        "param": {
-         "type": "share"
-        }
-       },
-       {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInSummaryLimitShare"
-       },
-       {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInSummaryLimitFacShare"
+        "t": "grid",
+        "at": 2729593,
+        "prop": "TreatyIn.TotalShareGrossMinNP",
+        "dari": "sisi",
+        "larik": "TotalShareGrossMinNP",
+        "syarat": [],
+        "kolom": [
+         "Total Gross Min Premium",
+         "Value"
+        ],
+        "kunci": [
+         "Currency",
+         "Value"
+        ],
+        "lebar": [
+         194,
+         350
+        ],
+        "desimal": [
+         null,
+         2
+        ],
+        "format": [
+         "pxNumber",
+         "pxNumber"
+        ],
+        "syaratSel": [
+         null,
+         null
+        ],
+        "atSel": [
+         2741575,
+         2746532
+        ],
+        "baca": [
+         "selalu",
+         "selalu"
+        ],
+        "tombol": [
+         null,
+         null
+        ],
+        "tombolKepala": [
+         null,
+         null
+        ],
+        "pilihan": [
+         null,
+         null
+        ],
+        "aksiUbah": [
+         null,
+         null
+        ],
+        "modeBaris": "readOnly",
+        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
        }
       ],
-      "nonaktif": [
-       "TreatyIn.EDMMaterialType = 2"
-      ]
+      "tata": "g3"
      },
      {
-      "t": "tombol",
-      "at": 3198699,
-      "label": "Update Value in Share",
-      "syarat": [
-       "TreatyIn.ViewState !='1' && TreatyMasterInEDM"
-      ],
-      "aksi": [
+      "t": "blok",
+      "at": 2783668,
+      "judul": "",
+      "syarat": [],
+      "anak": [
        {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInShareListValue"
+        "t": "grid",
+        "at": 2809958,
+        "prop": "TreatyIn.TotalShareGrossNP",
+        "dari": "sisi",
+        "larik": "TotalShareGrossNP",
+        "syarat": [],
+        "kolom": [
+         "Total Gross Premium (MDP)",
+         "Value"
+        ],
+        "kunci": [
+         "Currency",
+         "Value"
+        ],
+        "lebar": [
+         194,
+         350
+        ],
+        "desimal": [
+         null,
+         2
+        ],
+        "format": [
+         "pxNumber",
+         "pxNumber"
+        ],
+        "syaratSel": [
+         null,
+         null
+        ],
+        "atSel": [
+         2821939,
+         2826896
+        ],
+        "baca": [
+         "selalu",
+         "selalu"
+        ],
+        "tombol": [
+         null,
+         null
+        ],
+        "tombolKepala": [
+         null,
+         null
+        ],
+        "pilihan": [
+         null,
+         null
+        ],
+        "aksiUbah": [
+         null,
+         null
+        ],
+        "modeBaris": "readOnly",
+        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
        }
       ],
-      "nonaktif": [
-       "TreatyIn.EDMMaterialType = 2"
-      ]
+      "tata": "g3"
+     },
+     {
+      "t": "blok",
+      "at": 2864032,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "blok",
+        "at": 2873031,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "grid",
+          "at": 2890324,
+          "prop": "TreatyIn.TotalShareDeductionNP",
+          "dari": "sisi",
+          "larik": "TotalShareDeductionNP",
+          "syarat": [],
+          "kolom": [
+           "Total Deduction",
+           "Value"
+          ],
+          "kunci": [
+           "Currency",
+           "Value"
+          ],
+          "lebar": [
+           194,
+           352
+          ],
+          "desimal": [
+           null,
+           2
+          ],
+          "format": [
+           "pxNumber",
+           "pxNumber"
+          ],
+          "syaratSel": [
+           null,
+           null
+          ],
+          "atSel": [
+           2902299,
+           2907256
+          ],
+          "baca": [
+           "selalu",
+           "selalu"
+          ],
+          "tombol": [
+           null,
+           null
+          ],
+          "tombolKepala": [
+           null,
+           null
+          ],
+          "pilihan": [
+           null,
+           null
+          ],
+          "aksiUbah": [
+           null,
+           null
+          ],
+          "modeBaris": "readOnly",
+          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+         }
+        ]
+       }
+      ],
+      "tata": "g3"
+     },
+     {
+      "t": "blok",
+      "at": 2944432,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "grid",
+        "at": 2970722,
+        "prop": "TreatyIn.TotalShareNetNP",
+        "dari": "sisi",
+        "larik": "TotalShareNetNP",
+        "syarat": [],
+        "kolom": [
+         "Total Net Premium",
+         "Value"
+        ],
+        "kunci": [
+         "Currency",
+         "Value"
+        ],
+        "lebar": [
+         193,
+         349
+        ],
+        "desimal": [
+         null,
+         2
+        ],
+        "format": [
+         "pxNumber",
+         "pxNumber"
+        ],
+        "syaratSel": [
+         null,
+         null
+        ],
+        "atSel": [
+         2982693,
+         2987650
+        ],
+        "baca": [
+         "selalu",
+         "selalu"
+        ],
+        "tombol": [
+         null,
+         null
+        ],
+        "tombolKepala": [
+         null,
+         null
+        ],
+        "pilihan": [
+         null,
+         null
+        ],
+        "aksiUbah": [
+         null,
+         null
+        ],
+        "modeBaris": "readOnly",
+        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       },
+       {
+        "t": "grid",
+        "at": 3035737,
+        "prop": "TreatyIn.TotalSpreadedNetPremi",
+        "dari": "sisi",
+        "larik": "TotalSpreadedNetPremi",
+        "syarat": [],
+        "kolom": [
+         "Total OR Net Premium",
+         "Value"
+        ],
+        "kunci": [
+         "Currency",
+         "Value"
+        ],
+        "lebar": [
+         192,
+         348
+        ],
+        "desimal": [
+         null,
+         2
+        ],
+        "format": [
+         "pxNumber",
+         "pxNumber"
+        ],
+        "syaratSel": [
+         null,
+         null
+        ],
+        "atSel": [
+         3047717,
+         3052674
+        ],
+        "baca": [
+         "selalu",
+         "selalu"
+        ],
+        "tombol": [
+         null,
+         null
+        ],
+        "tombolKepala": [
+         null,
+         null
+        ],
+        "pilihan": [
+         null,
+         null
+        ],
+        "aksiUbah": [
+         null,
+         null
+        ],
+        "modeBaris": "readOnly",
+        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       },
+       {
+        "t": "grid",
+        "at": 3099627,
+        "prop": "TreatyIn.TotalSpreadedNetPremiRI",
+        "dari": "sisi",
+        "larik": "TotalSpreadedNetPremiRI",
+        "syarat": [],
+        "kolom": [
+         "Total R/I Net Premium",
+         "Value"
+        ],
+        "kunci": [
+         "Currency",
+         "Value"
+        ],
+        "lebar": [
+         192,
+         348
+        ],
+        "desimal": [
+         null,
+         2
+        ],
+        "format": [
+         "pxNumber",
+         "pxNumber"
+        ],
+        "syaratSel": [
+         null,
+         null
+        ],
+        "atSel": [
+         3111610,
+         3116567
+        ],
+        "baca": [
+         "selalu",
+         "selalu"
+        ],
+        "tombol": [
+         null,
+         null
+        ],
+        "tombolKepala": [
+         null,
+         null
+        ],
+        "pilihan": [
+         null,
+         null
+        ],
+        "aksiUbah": [
+         null,
+         null
+        ],
+        "modeBaris": "readOnly",
+        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       }
+      ],
+      "tata": "g3"
+     },
+     {
+      "t": "blok",
+      "at": 3169018,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "blok",
+        "at": 3178017,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "tombol",
+          "at": 3184690,
+          "label": "Update Total",
+          "syarat": [
+           "TreatyIn.ViewState !='1'"
+          ],
+          "aksi": [
+           {
+            "aksi": "refresh",
+            "aktivitas": "TreatyInNPSetTotal",
+            "param": {
+             "type": "share"
+            }
+           },
+           {
+            "aksi": "refresh",
+            "aktivitas": "TreatyInSummaryLimitShare"
+           },
+           {
+            "aksi": "refresh",
+            "aktivitas": "TreatyInSummaryLimitFacShare"
+           }
+          ],
+          "nonaktif": [
+           "TreatyIn.EDMMaterialType = 2"
+          ]
+         },
+         {
+          "t": "tombol",
+          "at": 3198699,
+          "label": "Update Value in Share",
+          "syarat": [
+           "TreatyIn.ViewState !='1' && TreatyMasterInEDM"
+          ],
+          "aksi": [
+           {
+            "aksi": "refresh",
+            "aktivitas": "TreatyInShareListValue"
+           }
+          ],
+          "nonaktif": [
+           "TreatyIn.EDMMaterialType = 2"
+          ]
+         }
+        ],
+        "tata": "g2"
+       }
+      ],
+      "tata": "g2"
      },
      {
       "t": "tombol",
@@ -2822,24 +3174,33 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
   "syarat": [],
   "isi": [
    {
-    "t": "medan",
-    "at": 3305948,
-    "label": "Has share to retro:",
-    "dari": "sisi",
-    "kunci": "IsMultipleRetro",
-    "format": "pxCheckbox",
-    "desimal": null,
+    "t": "blok",
+    "at": 3299297,
+    "judul": "",
     "syarat": [],
-    "caption": "Has Share To Retro:",
-    "baca": [
-     "TreatyIn.ProportionType = \"Proportional\"",
-     "TreatyIn.ViewState = 1"
-    ],
-    "aksiUbah": [
+    "anak": [
      {
-      "aksi": "refresh"
+      "t": "medan",
+      "at": 3305948,
+      "label": "Has share to retro:",
+      "dari": "sisi",
+      "kunci": "IsMultipleRetro",
+      "format": "pxCheckbox",
+      "desimal": null,
+      "syarat": [],
+      "caption": "Has Share To Retro:",
+      "baca": [
+       "TreatyIn.ProportionType = \"Proportional\"",
+       "TreatyIn.ViewState = 1"
+      ],
+      "aksiUbah": [
+       {
+        "aksi": "refresh"
+       }
+      ]
      }
-    ]
+    ],
+    "tata": "g2"
    },
    {
     "t": "blok",
@@ -2864,50 +3225,68 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
   "syarat": [],
   "isi": [
    {
-    "t": "medan",
-    "at": 3489051,
-    "label": "Installment",
-    "dari": "sisi",
-    "kunci": "InstallmentNo",
-    "format": "pxTextInput",
-    "desimal": null,
+    "t": "blok",
+    "at": 3473466,
+    "judul": "",
     "syarat": [],
-    "baca": [
-     "TreatyIn.ViewState =='1' || TreatyIn.EDMMaterialType = 2"
-    ],
-    "aksiUbah": [
+    "anak": [
      {
-      "aksi": "postValue"
+      "t": "blok",
+      "at": 3482439,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "medan",
+        "at": 3489051,
+        "label": "Installment",
+        "dari": "sisi",
+        "kunci": "InstallmentNo",
+        "format": "pxTextInput",
+        "desimal": null,
+        "syarat": [],
+        "baca": [
+         "TreatyIn.ViewState =='1' || TreatyIn.EDMMaterialType = 2"
+        ],
+        "aksiUbah": [
+         {
+          "aksi": "postValue"
+         },
+         {
+          "aksi": "refresh",
+          "aktivitas": "TreatyInSetValueInstallment",
+          "param": {
+           "Installment": "TreatyIn.InstallmentNo"
+          }
+         }
+        ]
+       }
+      ],
+      "tata": "kiri"
      },
      {
-      "aksi": "refresh",
-      "aktivitas": "TreatyInSetValueInstallment",
-      "param": {
-       "Installment": "TreatyIn.InstallmentNo"
-      }
-     }
-    ]
-   },
-   {
-    "t": "tombol",
-    "at": 3516400,
-    "label": "Update Value",
-    "syarat": [
-     "TreatyIn.ViewState !='1'"
-    ],
-    "aksi": [
-     {
-      "aksi": "refresh",
-      "aktivitas": "TreatyInSetValueInstallment",
-      "param": {
-       "Installment": "TreatyIn.InstallmentNo",
-       "status": "update"
-      }
+      "t": "tombol",
+      "at": 3516400,
+      "label": "Update Value",
+      "syarat": [
+       "TreatyIn.ViewState !='1'"
+      ],
+      "aksi": [
+       {
+        "aksi": "refresh",
+        "aktivitas": "TreatyInSetValueInstallment",
+        "param": {
+         "Installment": "TreatyIn.InstallmentNo",
+         "status": "update"
+        }
+       }
+      ],
+      "nonaktif": [
+       "TreatyIn.EDMMaterialType = 2"
+      ]
      }
     ],
-    "nonaktif": [
-     "TreatyIn.EDMMaterialType = 2"
-    ]
+    "tata": "g4"
    },
    {
     "t": "grid",
@@ -3073,7 +3452,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        "TreatyIn.IsEditData= 1 || TreatyIn.EDMMaterialType = 1"
       ]
      }
-    ]
+    ],
+    "tata": "g2"
    }
   ]
  },
@@ -3100,7 +3480,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        "TreatyIn.IsEditData= 1 || TreatyIn.EDMMaterialType = 1"
       ]
      }
-    ]
+    ],
+    "tata": "g2"
    }
   ]
  },
@@ -3452,44 +3833,114 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
    },
    {
-    "t": "teks",
-    "at": 432765,
-    "teks": "Total Amount in IDR",
-    "syarat": []
-   },
-   {
-    "t": "teks",
-    "at": 452509,
-    "teks": "IDR",
-    "syarat": []
-   },
-   {
-    "t": "medan",
-    "at": 456898,
-    "label": "",
-    "dari": "sisi",
-    "kunci": "TotalEgnpiAmount",
-    "format": "pxNumber",
-    "desimal": null,
+    "t": "blok",
+    "at": 408095,
+    "judul": "",
     "syarat": [],
-    "baca": "selalu"
-   },
-   {
-    "t": "teks",
-    "at": 489848,
-    "teks": "Total Proportion %",
-    "syarat": []
-   },
-   {
-    "t": "medan",
-    "at": 500592,
-    "label": "",
-    "dari": "sisi",
-    "kunci": "TotalEgnpiProportion",
-    "format": "pxNumber",
-    "desimal": 2,
-    "syarat": [],
-    "baca": "selalu"
+    "anak": [
+     {
+      "t": "blok",
+      "at": 417093,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "blok",
+        "at": 426092,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "teks",
+          "at": 432765,
+          "teks": "Total Amount in IDR",
+          "syarat": []
+         }
+        ],
+        "tata": "alir"
+       },
+       {
+        "t": "blok",
+        "at": 445826,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "teks",
+          "at": 452509,
+          "teks": "IDR",
+          "syarat": []
+         },
+         {
+          "t": "medan",
+          "at": 456898,
+          "label": "",
+          "dari": "sisi",
+          "kunci": "TotalEgnpiAmount",
+          "format": "pxNumber",
+          "desimal": null,
+          "syarat": [],
+          "baca": "selalu"
+         }
+        ],
+        "tata": "t3070"
+       },
+       {
+        "t": "kosong",
+        "at": 468315,
+        "syarat": []
+       },
+       {
+        "t": "kosong",
+        "at": 474587,
+        "syarat": []
+       },
+       {
+        "t": "blok",
+        "at": 483175,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "teks",
+          "at": 489848,
+          "teks": "Total Proportion %",
+          "syarat": []
+         }
+        ],
+        "tata": "alir"
+       },
+       {
+        "t": "medan",
+        "at": 500592,
+        "label": "",
+        "dari": "sisi",
+        "kunci": "TotalEgnpiProportion",
+        "format": "pxNumber",
+        "desimal": 2,
+        "syarat": [],
+        "baca": "selalu"
+       }
+      ],
+      "tata": "t3070"
+     },
+     {
+      "t": "kosong",
+      "at": 512108,
+      "syarat": []
+     },
+     {
+      "t": "kosong",
+      "at": 518380,
+      "syarat": []
+     },
+     {
+      "t": "kosong",
+      "at": 524652,
+      "syarat": []
+     }
+    ],
+    "tata": "g2"
    }
   ]
  },
@@ -4017,21 +4468,48 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
      },
      {
-      "t": "teks",
-      "at": 1230751,
-      "teks": "Total ROL",
-      "syarat": []
-     },
-     {
-      "t": "medan",
-      "at": 1241486,
-      "label": "",
-      "dari": "sisi",
-      "kunci": "TotalLimitsROL",
-      "format": "pxNumber",
-      "desimal": 2,
+      "t": "blok",
+      "at": 1206082,
+      "judul": "",
       "syarat": [],
-      "baca": "selalu"
+      "anak": [
+       {
+        "t": "blok",
+        "at": 1215081,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "blok",
+          "at": 1224078,
+          "judul": "",
+          "syarat": [],
+          "anak": [
+           {
+            "t": "teks",
+            "at": 1230751,
+            "teks": "Total ROL",
+            "syarat": []
+           }
+          ],
+          "tata": "alir"
+         },
+         {
+          "t": "medan",
+          "at": 1241486,
+          "label": "",
+          "dari": "sisi",
+          "kunci": "TotalLimitsROL",
+          "format": "pxNumber",
+          "desimal": 2,
+          "syarat": [],
+          "baca": "selalu"
+         }
+        ],
+        "tata": "t3070"
+       }
+      ],
+      "tata": "g2"
      }
     ]
    }
@@ -4076,27 +4554,45 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
   "syarat": [],
   "isi": [
    {
-    "t": "medan",
-    "at": 1430204,
-    "label": "Installment",
-    "dari": "sisi",
-    "kunci": "InstallmentNo",
-    "format": "pxTextInput",
-    "desimal": null,
+    "t": "blok",
+    "at": 1414574,
+    "judul": "",
     "syarat": [],
-    "baca": "selalu",
-    "aksiUbah": [
+    "anak": [
      {
-      "aksi": "postValue"
-     },
-     {
-      "aksi": "refresh",
-      "aktivitas": "TreatyInSetValueInstallment",
-      "param": {
-       "Installment": "TreatyIn.InstallmentNo"
-      }
+      "t": "blok",
+      "at": 1423576,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "medan",
+        "at": 1430204,
+        "label": "Installment",
+        "dari": "sisi",
+        "kunci": "InstallmentNo",
+        "format": "pxTextInput",
+        "desimal": null,
+        "syarat": [],
+        "baca": "selalu",
+        "aksiUbah": [
+         {
+          "aksi": "postValue"
+         },
+         {
+          "aksi": "refresh",
+          "aktivitas": "TreatyInSetValueInstallment",
+          "param": {
+           "Installment": "TreatyIn.InstallmentNo"
+          }
+         }
+        ]
+       }
+      ],
+      "tata": "kiri"
      }
-    ]
+    ],
+    "tata": "g4"
    },
    {
     "t": "grid",
@@ -4226,7 +4722,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
       "syarat": [],
       "baca": "selalu"
      }
-    ]
+    ],
+    "tata": "g2"
    }
   ]
  },
@@ -4251,7 +4748,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
       "syarat": [],
       "baca": "selalu"
      }
-    ]
+    ],
+    "tata": "g2"
    }
   ]
  },
@@ -4264,103 +4762,185 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "at": 43323,
     "judul": "Account Reporting Period",
     "syarat": [],
-    "anak": []
+    "anak": [],
+    "tata": "alir"
    },
    {
-    "t": "medan",
-    "at": 98997,
-    "label": "Start Date",
-    "dari": "sisi",
-    "kunci": "ReportingStart",
-    "format": "pxDateTime",
-    "desimal": null,
+    "t": "blok",
+    "at": 65329,
+    "judul": "",
     "syarat": [],
-    "baca": [
-     "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-    ]
-   },
-   {
-    "t": "medan",
-    "at": 120405,
-    "label": "End Date",
-    "dari": "sisi",
-    "kunci": "ReportingEnd",
-    "format": "pxDateTime",
-    "desimal": null,
-    "syarat": [],
-    "baca": [
-     "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-    ]
-   },
-   {
-    "t": "medan",
-    "at": 139204,
-    "label": "Period",
-    "dari": "sisi",
-    "kunci": "ReportingPeriod",
-    "format": "pxDropdown",
-    "desimal": null,
-    "syarat": [],
-    "baca": [
-     "TreatyIn.ViewState = 1"
+    "anak": [
+     {
+      "t": "blok",
+      "at": 74326,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "blok",
+        "at": 83328,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "blok",
+          "at": 92325,
+          "judul": "",
+          "syarat": [],
+          "anak": [
+           {
+            "t": "medan",
+            "at": 98997,
+            "label": "Start Date",
+            "dari": "sisi",
+            "kunci": "ReportingStart",
+            "format": "pxDateTime",
+            "desimal": null,
+            "syarat": [],
+            "baca": [
+             "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+            ]
+           }
+          ],
+          "tata": "alir"
+         },
+         {
+          "t": "blok",
+          "at": 113733,
+          "judul": "",
+          "syarat": [],
+          "anak": [
+           {
+            "t": "medan",
+            "at": 120405,
+            "label": "End Date",
+            "dari": "sisi",
+            "kunci": "ReportingEnd",
+            "format": "pxDateTime",
+            "desimal": null,
+            "syarat": [],
+            "baca": [
+             "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+            ]
+           }
+          ],
+          "tata": "alir"
+         }
+        ],
+        "tata": "g2"
+       },
+       {
+        "t": "medan",
+        "at": 139204,
+        "label": "Period",
+        "dari": "sisi",
+        "kunci": "ReportingPeriod",
+        "format": "pxDropdown",
+        "desimal": null,
+        "syarat": [],
+        "baca": [
+         "TreatyIn.ViewState = 1"
+        ],
+        "pilihan": {
+         "sumber": "associated"
+        }
+       },
+       {
+        "t": "medan",
+        "at": 144723,
+        "label": "Interval",
+        "dari": "sisi",
+        "kunci": "ReportingInterval",
+        "format": "pxTextInput",
+        "desimal": null,
+        "syarat": [
+         "TreatyIn.ReportingPeriod='other'"
+        ],
+        "baca": [
+         "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+        ]
+       }
+      ],
+      "tata": "kiri"
+     }
     ],
-    "pilihan": {
-     "sumber": "associated"
-    }
+    "tata": "g2"
    },
    {
-    "t": "medan",
-    "at": 144723,
-    "label": "Interval",
-    "dari": "sisi",
-    "kunci": "ReportingInterval",
-    "format": "pxTextInput",
-    "desimal": null,
-    "syarat": [
-     "TreatyIn.ReportingPeriod='other'"
+    "t": "blok",
+    "at": 166624,
+    "judul": "",
+    "syarat": [],
+    "anak": [
+     {
+      "t": "blok",
+      "at": 175622,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "medan",
+        "at": 182295,
+        "label": "Submission",
+        "dari": "sisi",
+        "kunci": "ReportingSubmission",
+        "format": "pxTextInput",
+        "desimal": null,
+        "syarat": [],
+        "baca": [
+         "TreatyIn.IsEditData= 1 || TreatyIn.EDMMaterialType = 2"
+        ]
+       }
+      ],
+      "tata": "alir"
+     },
+     {
+      "t": "blok",
+      "at": 197602,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "medan",
+        "at": 204274,
+        "label": "Confirmation",
+        "dari": "sisi",
+        "kunci": "ReportingConfirmation",
+        "format": "pxTextInput",
+        "desimal": null,
+        "syarat": [],
+        "baca": [
+         "TreatyIn.IsEditData= 1 || TreatyIn.EDMMaterialType = 2"
+        ]
+       }
+      ],
+      "tata": "alir"
+     },
+     {
+      "t": "blok",
+      "at": 219589,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "medan",
+        "at": 226262,
+        "label": "Settlement",
+        "dari": "sisi",
+        "kunci": "ReportingSettlement",
+        "format": "pxTextInput",
+        "desimal": null,
+        "syarat": [],
+        "baca": [
+         "TreatyIn.IsEditData= 1 || TreatyIn.EDMMaterialType = 2"
+        ]
+       }
+      ],
+      "tata": "alir"
+     }
     ],
-    "baca": [
-     "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-    ]
-   },
-   {
-    "t": "medan",
-    "at": 182295,
-    "label": "Submission",
-    "dari": "sisi",
-    "kunci": "ReportingSubmission",
-    "format": "pxTextInput",
-    "desimal": null,
-    "syarat": [],
-    "baca": [
-     "TreatyIn.IsEditData= 1 || TreatyIn.EDMMaterialType = 2"
-    ]
-   },
-   {
-    "t": "medan",
-    "at": 204274,
-    "label": "Confirmation",
-    "dari": "sisi",
-    "kunci": "ReportingConfirmation",
-    "format": "pxTextInput",
-    "desimal": null,
-    "syarat": [],
-    "baca": [
-     "TreatyIn.IsEditData= 1 || TreatyIn.EDMMaterialType = 2"
-    ]
-   },
-   {
-    "t": "medan",
-    "at": 226262,
-    "label": "Settlement",
-    "dari": "sisi",
-    "kunci": "ReportingSettlement",
-    "format": "pxTextInput",
-    "desimal": null,
-    "syarat": [],
-    "baca": [
-     "TreatyIn.IsEditData= 1 || TreatyIn.EDMMaterialType = 2"
-    ]
+    "tata": "g3"
    },
    {
     "t": "blok",
@@ -4409,7 +4989,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
       "teks": ". Must Not Be Empty",
       "syarat": []
      }
-    ]
+    ],
+    "tata": "alir"
    },
    {
     "t": "grid",
@@ -4815,271 +5396,335 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "syarat": [],
     "anak": [
      {
-      "t": "tombol",
-      "at": 684428,
-      "label": "Refresh",
-      "syarat": [
-       "TreatyIn.ViewState !='1'"
-      ],
-      "aksi": [
-       {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInPropshare"
-       }
-      ],
-      "nonaktif": [
-       "TreatyIn.EDMMaterialType = 2"
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 711242,
-      "label": "% RNM Share",
-      "dari": "sisi",
-      "kunci": "RNMShareP",
-      "format": "pxNumber",
-      "desimal": 2,
-      "syarat": [],
-      "baca": [
-       "TreatyIn.ViewState =='1' || TreatyIn.EDMMaterialType = 2"
-      ],
-      "aksiUbah": [
-       {
-        "aksi": "postValue"
-       },
-       {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInPropshare"
-       }
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 717944,
-      "label": "% Brokerage",
-      "dari": "sisi",
-      "kunci": "BrokeragePercentP",
-      "format": "pxNumber",
-      "desimal": 2,
-      "syarat": [],
-      "baca": [
-       "TreatyIn.ViewState =='1' || TreatyIn.EDMMaterialType = 2"
-      ],
-      "aksiUbah": [
-       {
-        "aksi": "postValue"
-       }
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 723387,
-      "label": "Option",
-      "dari": "sisi",
-      "kunci": "OptionLimit",
-      "format": "pxDropdown",
-      "desimal": null,
-      "syarat": [],
-      "baca": [
-       "TreatyIn.ViewState =='1' || TreatyIn.EDMMaterialType = 2"
-      ],
-      "pilihan": {
-       "sumber": "associated"
-      },
-      "aksiUbah": [
-       {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInPropshare"
-       }
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 780884,
-      "label": "Share to Other Retro",
-      "dari": "sisi",
-      "kunci": "FacShare",
-      "format": "pxTextInput",
-      "desimal": null,
-      "syarat": [
-       "TreatyIn.IsMultipleRetro"
-      ],
-      "baca": [
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-      ],
-      "aksiUbah": [
-       {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInPropshare"
-       }
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 790889,
-      "label": "Brokerage From Other Retro",
-      "dari": "sisi",
-      "kunci": "FacShareBrokerage",
-      "format": "pxTextInput",
-      "desimal": null,
-      "syarat": [
-       "TreatyIn.IsMultipleRetro"
-      ],
-      "baca": [
-       "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-      ],
-      "aksiUbah": [
-       {
-        "aksi": "refresh"
-       }
-      ]
-     },
-     {
       "t": "blok",
-      "at": 842608,
+      "at": 668740,
       "judul": "",
-      "syarat": [
-       "TreatyIn.IsMultipleRetro"
-      ],
+      "syarat": [],
       "anak": [
        {
-        "t": "grid",
-        "at": 860338,
-        "prop": "TreatyIn.ShareFacultativeReinsurers",
-        "dari": "sisi",
-        "larik": "ShareFacultativeReinsurers",
+        "t": "blok",
+        "at": 677739,
+        "judul": "",
         "syarat": [],
-        "kolom": [
-         "Facultative Reinsurers",
-         "Broker",
-         "% Share",
-         ""
-        ],
-        "kunci": [
-         "ReinsName",
-         "BrokerName",
-         "SharePct",
-         ""
-        ],
-        "lebar": [
-         323,
-         204,
-         148,
-         80
-        ],
-        "desimal": [
-         null,
-         null,
-         2,
-         null
-        ],
-        "format": [
-         "pxLink",
-         "pxLink",
-         "pxNumber",
-         "pxButton"
-        ],
-        "syaratSel": [
-         null,
-         null,
-         null,
-         "TreatyIn.ViewState !='1'"
-        ],
-        "atSel": [
-         886836,
-         904928,
-         922680,
-         941807
-        ],
-        "baca": [
-         [
-          "TreatyIn.ViewState = 1"
-         ],
-         [
-          "TreatyIn.ViewState = 1"
-         ],
-         [
-          "TreatyIn.ViewState = 1"
-         ],
-         "selalu"
-        ],
-        "tombol": [
-         null,
-         null,
-         null,
+        "anak": [
          {
           "t": "tombol",
-          "at": 941807,
-          "label": "Delete",
-          "syarat": [
-           "TreatyIn.ViewState !='1'"
-          ],
-          "aksi": [
-           {
-            "aksi": "deleteRow"
-           },
-           {
-            "aksi": "refresh"
-           }
-          ]
-         }
-        ],
-        "tombolKepala": [
-         null,
-         null,
-         null,
-         {
-          "t": "tombol",
-          "at": 876741,
-          "label": "Add",
+          "at": 684428,
+          "label": "Refresh",
           "syarat": [
            "TreatyIn.ViewState !='1'"
           ],
           "aksi": [
            {
             "aksi": "refresh",
-            "aktivitas": "AddFacRetroProp"
+            "aktivitas": "TreatyInPropshare"
            }
           ],
-          "ikon": "rpadd.gif"
+          "nonaktif": [
+           "TreatyIn.EDMMaterialType = 2"
+          ]
+         },
+         {
+          "t": "blok",
+          "at": 695564,
+          "judul": "",
+          "syarat": [],
+          "anak": [
+           {
+            "t": "blok",
+            "at": 704563,
+            "judul": "",
+            "syarat": [],
+            "anak": [
+             {
+              "t": "medan",
+              "at": 711242,
+              "label": "% RNM Share",
+              "dari": "sisi",
+              "kunci": "RNMShareP",
+              "format": "pxNumber",
+              "desimal": 2,
+              "syarat": [],
+              "baca": [
+               "TreatyIn.ViewState =='1' || TreatyIn.EDMMaterialType = 2"
+              ],
+              "aksiUbah": [
+               {
+                "aksi": "postValue"
+               },
+               {
+                "aksi": "refresh",
+                "aktivitas": "TreatyInPropshare"
+               }
+              ]
+             },
+             {
+              "t": "medan",
+              "at": 717944,
+              "label": "% Brokerage",
+              "dari": "sisi",
+              "kunci": "BrokeragePercentP",
+              "format": "pxNumber",
+              "desimal": 2,
+              "syarat": [],
+              "baca": [
+               "TreatyIn.ViewState =='1' || TreatyIn.EDMMaterialType = 2"
+              ],
+              "aksiUbah": [
+               {
+                "aksi": "postValue"
+               }
+              ]
+             },
+             {
+              "t": "medan",
+              "at": 723387,
+              "label": "Option",
+              "dari": "sisi",
+              "kunci": "OptionLimit",
+              "format": "pxDropdown",
+              "desimal": null,
+              "syarat": [],
+              "baca": [
+               "TreatyIn.ViewState =='1' || TreatyIn.EDMMaterialType = 2"
+              ],
+              "pilihan": {
+               "sumber": "associated"
+              },
+              "aksiUbah": [
+               {
+                "aksi": "refresh",
+                "aktivitas": "TreatyInPropshare"
+               }
+              ]
+             }
+            ],
+            "tata": "kiri"
+           },
+           {
+            "t": "kosong",
+            "at": 738460,
+            "syarat": []
+           }
+          ],
+          "tata": "g2"
          }
         ],
-        "pilihan": [
-         null,
-         null,
-         null,
-         null
+        "tata": "kiri"
+       },
+       {
+        "t": "blok",
+        "at": 762864,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "medan",
+          "at": 780884,
+          "label": "Share to Other Retro",
+          "dari": "sisi",
+          "kunci": "FacShare",
+          "format": "pxTextInput",
+          "desimal": null,
+          "syarat": [
+           "TreatyIn.IsMultipleRetro"
+          ],
+          "baca": [
+           "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+          ],
+          "aksiUbah": [
+           {
+            "aksi": "refresh",
+            "aktivitas": "TreatyInPropshare"
+           }
+          ]
+         },
+         {
+          "t": "medan",
+          "at": 790889,
+          "label": "Brokerage From Other Retro",
+          "dari": "sisi",
+          "kunci": "FacShareBrokerage",
+          "format": "pxTextInput",
+          "desimal": null,
+          "syarat": [
+           "TreatyIn.IsMultipleRetro"
+          ],
+          "baca": [
+           "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+          ],
+          "aksiUbah": [
+           {
+            "aksi": "refresh"
+           }
+          ]
+         }
         ],
-        "aksiUbah": [
-         null,
-         null,
-         [
-          {
-           "aksi": "postValue"
-          },
-          {
-           "aksi": "runActivity",
-           "aktivitas": "CountRetroShare_Act"
-          },
-          {
-           "aksi": "refreshRowItem"
-          },
-          {
-           "aksi": "refresh"
-          },
-          {
-           "aksi": "refresh"
-          },
-          {
-           "aksi": "refresh"
-          }
-         ],
-         null
-        ],
-        "modeBaris": "row",
-        "templatBaris": "ASM-FW-GISFW-Data-TreatyInShareReins!pyGridModalTemplate"
+        "tata": "kiri"
        }
-      ]
+      ],
+      "tata": "g2"
+     },
+     {
+      "t": "blok",
+      "at": 816452,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "kosong",
+        "at": 823135,
+        "syarat": []
+       },
+       {
+        "t": "blok",
+        "at": 842608,
+        "judul": "",
+        "syarat": [
+         "TreatyIn.IsMultipleRetro"
+        ],
+        "anak": [
+         {
+          "t": "grid",
+          "at": 860338,
+          "prop": "TreatyIn.ShareFacultativeReinsurers",
+          "dari": "sisi",
+          "larik": "ShareFacultativeReinsurers",
+          "syarat": [],
+          "kolom": [
+           "Facultative Reinsurers",
+           "Broker",
+           "% Share",
+           ""
+          ],
+          "kunci": [
+           "ReinsName",
+           "BrokerName",
+           "SharePct",
+           ""
+          ],
+          "lebar": [
+           323,
+           204,
+           148,
+           80
+          ],
+          "desimal": [
+           null,
+           null,
+           2,
+           null
+          ],
+          "format": [
+           "pxLink",
+           "pxLink",
+           "pxNumber",
+           "pxButton"
+          ],
+          "syaratSel": [
+           null,
+           null,
+           null,
+           "TreatyIn.ViewState !='1'"
+          ],
+          "atSel": [
+           886836,
+           904928,
+           922680,
+           941807
+          ],
+          "baca": [
+           [
+            "TreatyIn.ViewState = 1"
+           ],
+           [
+            "TreatyIn.ViewState = 1"
+           ],
+           [
+            "TreatyIn.ViewState = 1"
+           ],
+           "selalu"
+          ],
+          "tombol": [
+           null,
+           null,
+           null,
+           {
+            "t": "tombol",
+            "at": 941807,
+            "label": "Delete",
+            "syarat": [
+             "TreatyIn.ViewState !='1'"
+            ],
+            "aksi": [
+             {
+              "aksi": "deleteRow"
+             },
+             {
+              "aksi": "refresh"
+             }
+            ]
+           }
+          ],
+          "tombolKepala": [
+           null,
+           null,
+           null,
+           {
+            "t": "tombol",
+            "at": 876741,
+            "label": "Add",
+            "syarat": [
+             "TreatyIn.ViewState !='1'"
+            ],
+            "aksi": [
+             {
+              "aksi": "refresh",
+              "aktivitas": "AddFacRetroProp"
+             }
+            ],
+            "ikon": "rpadd.gif"
+           }
+          ],
+          "pilihan": [
+           null,
+           null,
+           null,
+           null
+          ],
+          "aksiUbah": [
+           null,
+           null,
+           [
+            {
+             "aksi": "postValue"
+            },
+            {
+             "aksi": "runActivity",
+             "aktivitas": "CountRetroShare_Act"
+            },
+            {
+             "aksi": "refreshRowItem"
+            },
+            {
+             "aksi": "refresh"
+            },
+            {
+             "aksi": "refresh"
+            },
+            {
+             "aksi": "refresh"
+            }
+           ],
+           null
+          ],
+          "modeBaris": "row",
+          "templatBaris": "ASM-FW-GISFW-Data-TreatyInShareReins!pyGridModalTemplate"
+         }
+        ]
+       }
+      ],
+      "tata": "g2"
      }
     ]
    },
@@ -5221,42 +5866,51 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInCoInScaleDetails!pyGridModalTemplate"
    },
    {
-    "t": "medan",
-    "at": 1190828,
-    "label": "Max Co-Insurance Panel (Non Group)",
-    "dari": "sisi",
-    "kunci": "MaxCoNonGroup",
-    "format": "pxNumber",
-    "desimal": null,
+    "t": "blok",
+    "at": 1184149,
+    "judul": "",
     "syarat": [],
-    "baca": [
-     "TreatyIn.ViewState ='1'",
-     "TreatyIn.IsEditData ='1'"
-    ],
-    "aksiUbah": [
+    "anak": [
      {
-      "aksi": "postValue"
-     }
-    ]
-   },
-   {
-    "t": "medan",
-    "at": 1198436,
-    "label": "Max Co-Insurance Panel (Group)",
-    "dari": "sisi",
-    "kunci": "MaxCoGroup",
-    "format": "pxNumber",
-    "desimal": null,
-    "syarat": [],
-    "baca": [
-     "TreatyIn.ViewState ='1'",
-     "TreatyIn.IsEditData ='1'"
-    ],
-    "aksiUbah": [
+      "t": "medan",
+      "at": 1190828,
+      "label": "Max Co-Insurance Panel (Non Group)",
+      "dari": "sisi",
+      "kunci": "MaxCoNonGroup",
+      "format": "pxNumber",
+      "desimal": null,
+      "syarat": [],
+      "baca": [
+       "TreatyIn.ViewState ='1'",
+       "TreatyIn.IsEditData ='1'"
+      ],
+      "aksiUbah": [
+       {
+        "aksi": "postValue"
+       }
+      ]
+     },
      {
-      "aksi": "postValue"
+      "t": "medan",
+      "at": 1198436,
+      "label": "Max Co-Insurance Panel (Group)",
+      "dari": "sisi",
+      "kunci": "MaxCoGroup",
+      "format": "pxNumber",
+      "desimal": null,
+      "syarat": [],
+      "baca": [
+       "TreatyIn.ViewState ='1'",
+       "TreatyIn.IsEditData ='1'"
+      ],
+      "aksiUbah": [
+       {
+        "aksi": "postValue"
+       }
+      ]
      }
-    ]
+    ],
+    "tata": "kiri"
    }
   ]
  },
@@ -5269,7 +5923,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "at": 1247565,
     "judul": "Accumulation Control",
     "syarat": [],
-    "anak": []
+    "anak": [],
+    "tata": "alir"
    },
    {
     "t": "blok",
@@ -5301,7 +5956,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        }
       ]
      }
-    ]
+    ],
+    "tata": "alir"
    },
    {
     "t": "grid",
@@ -5476,7 +6132,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        }
       ]
      }
-    ]
+    ],
+    "tata": "g2"
    }
   ]
  },
@@ -5509,7 +6166,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        }
       ]
      }
-    ]
+    ],
+    "tata": "g2"
    }
   ]
  },
@@ -5609,89 +6267,171 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "at": 39911,
     "judul": "Account Reporting Period",
     "syarat": [],
-    "anak": []
+    "anak": [],
+    "tata": "alir"
    },
    {
-    "t": "medan",
-    "at": 95609,
-    "label": "Start Date",
-    "dari": "sisi",
-    "kunci": "ReportingStart",
-    "format": "pxDateTime",
-    "desimal": null,
+    "t": "blok",
+    "at": 61929,
+    "judul": "",
     "syarat": [],
-    "baca": "selalu"
-   },
-   {
-    "t": "medan",
-    "at": 116989,
-    "label": "End Date",
-    "dari": "sisi",
-    "kunci": "ReportingEnd",
-    "format": "pxDateTime",
-    "desimal": null,
-    "syarat": [],
-    "baca": "selalu"
-   },
-   {
-    "t": "medan",
-    "at": 135711,
-    "label": "Period",
-    "dari": "sisi",
-    "kunci": "ReportingPeriod",
-    "format": "pxDropdown",
-    "desimal": null,
-    "syarat": [],
-    "baca": "selalu",
-    "pilihan": {
-     "sumber": "associated"
-    }
-   },
-   {
-    "t": "medan",
-    "at": 141196,
-    "label": "Interval",
-    "dari": "sisi",
-    "kunci": "ReportingInterval",
-    "format": "pxTextInput",
-    "desimal": null,
-    "syarat": [
-     "TreatyIn.ReportingPeriod='other'"
+    "anak": [
+     {
+      "t": "blok",
+      "at": 70929,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "blok",
+        "at": 79935,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "blok",
+          "at": 88935,
+          "judul": "",
+          "syarat": [],
+          "anak": [
+           {
+            "t": "medan",
+            "at": 95609,
+            "label": "Start Date",
+            "dari": "sisi",
+            "kunci": "ReportingStart",
+            "format": "pxDateTime",
+            "desimal": null,
+            "syarat": [],
+            "baca": "selalu"
+           }
+          ],
+          "tata": "alir"
+         },
+         {
+          "t": "blok",
+          "at": 110315,
+          "judul": "",
+          "syarat": [],
+          "anak": [
+           {
+            "t": "medan",
+            "at": 116989,
+            "label": "End Date",
+            "dari": "sisi",
+            "kunci": "ReportingEnd",
+            "format": "pxDateTime",
+            "desimal": null,
+            "syarat": [],
+            "baca": "selalu"
+           }
+          ],
+          "tata": "alir"
+         }
+        ],
+        "tata": "g2"
+       },
+       {
+        "t": "medan",
+        "at": 135711,
+        "label": "Period",
+        "dari": "sisi",
+        "kunci": "ReportingPeriod",
+        "format": "pxDropdown",
+        "desimal": null,
+        "syarat": [],
+        "baca": "selalu",
+        "pilihan": {
+         "sumber": "associated"
+        }
+       },
+       {
+        "t": "medan",
+        "at": 141196,
+        "label": "Interval",
+        "dari": "sisi",
+        "kunci": "ReportingInterval",
+        "format": "pxTextInput",
+        "desimal": null,
+        "syarat": [
+         "TreatyIn.ReportingPeriod='other'"
+        ],
+        "baca": "selalu"
+       }
+      ],
+      "tata": "kiri"
+     }
     ],
-    "baca": "selalu"
+    "tata": "g2"
    },
    {
-    "t": "medan",
-    "at": 178702,
-    "label": "Submission",
-    "dari": "sisi",
-    "kunci": "ReportingSubmission",
-    "format": "pxTextInput",
-    "desimal": null,
+    "t": "blok",
+    "at": 163028,
+    "judul": "",
     "syarat": [],
-    "baca": "selalu"
-   },
-   {
-    "t": "medan",
-    "at": 200222,
-    "label": "Confirmation",
-    "dari": "sisi",
-    "kunci": "ReportingConfirmation",
-    "format": "pxTextInput",
-    "desimal": null,
-    "syarat": [],
-    "baca": "selalu"
-   },
-   {
-    "t": "medan",
-    "at": 221750,
-    "label": "Settlement",
-    "dari": "sisi",
-    "kunci": "ReportingSettlement",
-    "format": "pxTextInput",
-    "desimal": null,
-    "syarat": [],
-    "baca": "selalu"
+    "anak": [
+     {
+      "t": "blok",
+      "at": 172028,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "medan",
+        "at": 178702,
+        "label": "Submission",
+        "dari": "sisi",
+        "kunci": "ReportingSubmission",
+        "format": "pxTextInput",
+        "desimal": null,
+        "syarat": [],
+        "baca": "selalu"
+       }
+      ],
+      "tata": "alir"
+     },
+     {
+      "t": "blok",
+      "at": 193548,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "medan",
+        "at": 200222,
+        "label": "Confirmation",
+        "dari": "sisi",
+        "kunci": "ReportingConfirmation",
+        "format": "pxTextInput",
+        "desimal": null,
+        "syarat": [],
+        "baca": "selalu"
+       }
+      ],
+      "tata": "alir"
+     },
+     {
+      "t": "blok",
+      "at": 215076,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "medan",
+        "at": 221750,
+        "label": "Settlement",
+        "dari": "sisi",
+        "kunci": "ReportingSettlement",
+        "format": "pxTextInput",
+        "desimal": null,
+        "syarat": [],
+        "baca": "selalu"
+       }
+      ],
+      "tata": "alir"
+     }
+    ],
+    "tata": "g3"
    },
    {
     "t": "grid",
@@ -5980,40 +6720,58 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "syarat": [],
     "anak": [
      {
-      "t": "medan",
-      "at": 589556,
-      "label": "% RNM Share",
-      "dari": "sisi",
-      "kunci": "RNMShareP",
-      "format": "pxNumber",
-      "desimal": 2,
+      "t": "blok",
+      "at": 573876,
+      "judul": "",
       "syarat": [],
-      "baca": "selalu",
-      "aksiUbah": [
+      "anak": [
        {
-        "aksi": "postValue"
-       },
-       {
-        "aksi": "refresh",
-        "aktivitas": "TreatyInPropshare"
+        "t": "blok",
+        "at": 582876,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "medan",
+          "at": 589556,
+          "label": "% RNM Share",
+          "dari": "sisi",
+          "kunci": "RNMShareP",
+          "format": "pxNumber",
+          "desimal": 2,
+          "syarat": [],
+          "baca": "selalu",
+          "aksiUbah": [
+           {
+            "aksi": "postValue"
+           },
+           {
+            "aksi": "refresh",
+            "aktivitas": "TreatyInPropshare"
+           }
+          ]
+         },
+         {
+          "t": "medan",
+          "at": 599000,
+          "label": "% Brokerage",
+          "dari": "sisi",
+          "kunci": "BrokeragePercentP",
+          "format": "pxNumber",
+          "desimal": 2,
+          "syarat": [],
+          "baca": "selalu",
+          "aksiUbah": [
+           {
+            "aksi": "postValue"
+           }
+          ]
+         }
+        ],
+        "tata": "kiri"
        }
-      ]
-     },
-     {
-      "t": "medan",
-      "at": 599000,
-      "label": "% Brokerage",
-      "dari": "sisi",
-      "kunci": "BrokeragePercentP",
-      "format": "pxNumber",
-      "desimal": 2,
-      "syarat": [],
-      "baca": "selalu",
-      "aksiUbah": [
-       {
-        "aksi": "postValue"
-       }
-      ]
+      ],
+      "tata": "g2"
      }
     ]
    },
@@ -6079,178 +6837,197 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "rincian": "TotalLimitsOldData"
    },
    {
-    "t": "grid",
-    "at": 713764,
-    "prop": "TreatyIn.OLDDATA.TotalShareRnmProp",
-    "dari": "sisi",
-    "larik": "TotalShareRnmProp",
+    "t": "blok",
+    "at": 687473,
+    "judul": "",
     "syarat": [],
-    "kolom": [
-     "Total Share RNM Limit",
-     "Value"
+    "anak": [
+     {
+      "t": "grid",
+      "at": 713764,
+      "prop": "TreatyIn.OLDDATA.TotalShareRnmProp",
+      "dari": "sisi",
+      "larik": "TotalShareRnmProp",
+      "syarat": [],
+      "kolom": [
+       "Total Share RNM Limit",
+       "Value"
+      ],
+      "kunci": [
+       "Currency",
+       "Value"
+      ],
+      "lebar": [
+       192,
+       347
+      ],
+      "desimal": [
+       null,
+       2
+      ],
+      "format": [
+       "pxNumber",
+       "pxNumber"
+      ],
+      "syaratSel": [
+       null,
+       null
+      ],
+      "atSel": [
+       725749,
+       730706
+      ],
+      "baca": [
+       "selalu",
+       "selalu"
+      ],
+      "tombol": [
+       null,
+       null
+      ],
+      "tombolKepala": [
+       null,
+       null
+      ],
+      "pilihan": [
+       null,
+       null
+      ],
+      "aksiUbah": [
+       null,
+       null
+      ],
+      "modeBaris": "readOnly",
+      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+     },
+     {
+      "t": "kosong",
+      "at": 759233,
+      "syarat": []
+     },
+     {
+      "t": "grid",
+      "at": 784556,
+      "prop": "TreatyIn.OLDDATA.TotalSpreadedRnmProp",
+      "dari": "sisi",
+      "larik": "TotalSpreadedRnmProp",
+      "syarat": [],
+      "kolom": [
+       "Total Value Spreading OR",
+       "Value"
+      ],
+      "kunci": [
+       "Currency",
+       "Value"
+      ],
+      "lebar": [
+       192,
+       347
+      ],
+      "desimal": [
+       null,
+       2
+      ],
+      "format": [
+       "pxNumber",
+       "pxNumber"
+      ],
+      "syaratSel": [
+       null,
+       null
+      ],
+      "atSel": [
+       796547,
+       801504
+      ],
+      "baca": [
+       "selalu",
+       "selalu"
+      ],
+      "tombol": [
+       null,
+       null
+      ],
+      "tombolKepala": [
+       null,
+       null
+      ],
+      "pilihan": [
+       null,
+       null
+      ],
+      "aksiUbah": [
+       null,
+       null
+      ],
+      "modeBaris": "readOnly",
+      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+     },
+     {
+      "t": "kosong",
+      "at": 830031,
+      "syarat": []
+     },
+     {
+      "t": "grid",
+      "at": 855354,
+      "prop": "TreatyIn.OLDDATA.TotalSpreadedRnmRIProp",
+      "dari": "sisi",
+      "larik": "TotalSpreadedRnmRIProp",
+      "syarat": [],
+      "kolom": [
+       "Total Value Spreading R/I",
+       "Value"
+      ],
+      "kunci": [
+       "Currency",
+       "Value"
+      ],
+      "lebar": [
+       192,
+       347
+      ],
+      "desimal": [
+       null,
+       2
+      ],
+      "format": [
+       "pxNumber",
+       "pxNumber"
+      ],
+      "syaratSel": [
+       null,
+       null
+      ],
+      "atSel": [
+       867348,
+       872305
+      ],
+      "baca": [
+       "selalu",
+       "selalu"
+      ],
+      "tombol": [
+       null,
+       null
+      ],
+      "tombolKepala": [
+       null,
+       null
+      ],
+      "pilihan": [
+       null,
+       null
+      ],
+      "aksiUbah": [
+       null,
+       null
+      ],
+      "modeBaris": "readOnly",
+      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+     }
     ],
-    "kunci": [
-     "Currency",
-     "Value"
-    ],
-    "lebar": [
-     192,
-     347
-    ],
-    "desimal": [
-     null,
-     2
-    ],
-    "format": [
-     "pxNumber",
-     "pxNumber"
-    ],
-    "syaratSel": [
-     null,
-     null
-    ],
-    "atSel": [
-     725749,
-     730706
-    ],
-    "baca": [
-     "selalu",
-     "selalu"
-    ],
-    "tombol": [
-     null,
-     null
-    ],
-    "tombolKepala": [
-     null,
-     null
-    ],
-    "pilihan": [
-     null,
-     null
-    ],
-    "aksiUbah": [
-     null,
-     null
-    ],
-    "modeBaris": "readOnly",
-    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-   },
-   {
-    "t": "grid",
-    "at": 784556,
-    "prop": "TreatyIn.OLDDATA.TotalSpreadedRnmProp",
-    "dari": "sisi",
-    "larik": "TotalSpreadedRnmProp",
-    "syarat": [],
-    "kolom": [
-     "Total Value Spreading OR",
-     "Value"
-    ],
-    "kunci": [
-     "Currency",
-     "Value"
-    ],
-    "lebar": [
-     192,
-     347
-    ],
-    "desimal": [
-     null,
-     2
-    ],
-    "format": [
-     "pxNumber",
-     "pxNumber"
-    ],
-    "syaratSel": [
-     null,
-     null
-    ],
-    "atSel": [
-     796547,
-     801504
-    ],
-    "baca": [
-     "selalu",
-     "selalu"
-    ],
-    "tombol": [
-     null,
-     null
-    ],
-    "tombolKepala": [
-     null,
-     null
-    ],
-    "pilihan": [
-     null,
-     null
-    ],
-    "aksiUbah": [
-     null,
-     null
-    ],
-    "modeBaris": "readOnly",
-    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-   },
-   {
-    "t": "grid",
-    "at": 855354,
-    "prop": "TreatyIn.OLDDATA.TotalSpreadedRnmRIProp",
-    "dari": "sisi",
-    "larik": "TotalSpreadedRnmRIProp",
-    "syarat": [],
-    "kolom": [
-     "Total Value Spreading R/I",
-     "Value"
-    ],
-    "kunci": [
-     "Currency",
-     "Value"
-    ],
-    "lebar": [
-     192,
-     347
-    ],
-    "desimal": [
-     null,
-     2
-    ],
-    "format": [
-     "pxNumber",
-     "pxNumber"
-    ],
-    "syaratSel": [
-     null,
-     null
-    ],
-    "atSel": [
-     867348,
-     872305
-    ],
-    "baca": [
-     "selalu",
-     "selalu"
-    ],
-    "tombol": [
-     null,
-     null
-    ],
-    "tombolKepala": [
-     null,
-     null
-    ],
-    "pilihan": [
-     null,
-     null
-    ],
-    "aksiUbah": [
-     null,
-     null
-    ],
-    "modeBaris": "readOnly",
-    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+    "tata": "g2"
    }
   ]
  },
@@ -6263,7 +7040,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "at": 935926,
     "judul": "Accumulation Control",
     "syarat": [],
-    "anak": []
+    "anak": [],
+    "tata": "alir"
    },
    {
     "t": "blok",
@@ -6292,7 +7070,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        }
       ]
      }
-    ]
+    ],
+    "tata": "alir"
    },
    {
     "t": "grid",
@@ -6415,7 +7194,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        }
       ]
      }
-    ]
+    ],
+    "tata": "g2"
    }
   ]
  },
@@ -6446,7 +7226,8 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
        }
       ]
      }
-    ]
+    ],
+    "tata": "g2"
    }
   ]
  },
@@ -6671,61 +7452,131 @@ export const KERANGKA_TAB: Readonly<Record<string, Kerangka>> = {
     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
    },
    {
-    "t": "teks",
-    "at": 266681,
-    "teks": "Total Amount in IDR",
-    "syarat": []
-   },
-   {
-    "t": "teks",
-    "at": 286423,
-    "teks": "IDR",
-    "syarat": []
-   },
-   {
-    "t": "medan",
-    "at": 290811,
-    "label": "",
-    "dari": "sisi",
-    "kunci": "ActualValue.TotalEgnpiAmount",
-    "format": "pxNumber",
-    "desimal": null,
+    "t": "blok",
+    "at": 242014,
+    "judul": "",
     "syarat": [],
-    "baca": "selalu"
-   },
-   {
-    "t": "teks",
-    "at": 323761,
-    "teks": "Total Proportion %",
-    "syarat": []
-   },
-   {
-    "t": "medan",
-    "at": 334504,
-    "label": "",
-    "dari": "sisi",
-    "kunci": "ActualValue.TotalEgnpiProportion",
-    "format": "pxNumber",
-    "desimal": 2,
-    "syarat": [],
-    "baca": "selalu"
-   },
-   {
-    "t": "tombol",
-    "at": 364838,
-    "label": "Update Total",
-    "syarat": [
-     "TreatyIn.ViewState !='1'"
-    ],
-    "aksi": [
+    "anak": [
      {
-      "aksi": "refresh",
-      "aktivitas": "TreatyInActualUpdateValue",
-      "param": {
-       "type": ""
-      }
+      "t": "blok",
+      "at": 251011,
+      "judul": "",
+      "syarat": [],
+      "anak": [
+       {
+        "t": "blok",
+        "at": 260009,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "teks",
+          "at": 266681,
+          "teks": "Total Amount in IDR",
+          "syarat": []
+         }
+        ],
+        "tata": "alir"
+       },
+       {
+        "t": "blok",
+        "at": 279740,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "teks",
+          "at": 286423,
+          "teks": "IDR",
+          "syarat": []
+         },
+         {
+          "t": "medan",
+          "at": 290811,
+          "label": "",
+          "dari": "sisi",
+          "kunci": "ActualValue.TotalEgnpiAmount",
+          "format": "pxNumber",
+          "desimal": null,
+          "syarat": [],
+          "baca": "selalu"
+         }
+        ],
+        "tata": "t3070"
+       },
+       {
+        "t": "kosong",
+        "at": 302231,
+        "syarat": []
+       },
+       {
+        "t": "kosong",
+        "at": 308502,
+        "syarat": []
+       },
+       {
+        "t": "blok",
+        "at": 317088,
+        "judul": "",
+        "syarat": [],
+        "anak": [
+         {
+          "t": "teks",
+          "at": 323761,
+          "teks": "Total Proportion %",
+          "syarat": []
+         }
+        ],
+        "tata": "alir"
+       },
+       {
+        "t": "medan",
+        "at": 334504,
+        "label": "",
+        "dari": "sisi",
+        "kunci": "ActualValue.TotalEgnpiProportion",
+        "format": "pxNumber",
+        "desimal": 2,
+        "syarat": [],
+        "baca": "selalu"
+       }
+      ],
+      "tata": "t3070"
+     },
+     {
+      "t": "kosong",
+      "at": 346023,
+      "syarat": []
+     },
+     {
+      "t": "kosong",
+      "at": 352294,
+      "syarat": []
+     },
+     {
+      "t": "kosong",
+      "at": 358566,
+      "syarat": []
+     },
+     {
+      "t": "tombol",
+      "at": 364838,
+      "label": "Update Total",
+      "syarat": [
+       "TreatyIn.ViewState !='1'"
+      ],
+      "aksi": [
+       {
+        "aksi": "refresh",
+        "aktivitas": "TreatyInActualUpdateValue",
+        "param": {
+         "type": ""
+        }
+       }
+      ]
      }
-    ]
+    ],
+    "tata": "g2"
    }
   ]
  },
@@ -6810,76 +7661,103 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
    "syarat": [],
    "anak": [
     {
-     "t": "medan",
-     "at": 35337,
-     "label": "% RNM Share",
-     "dari": "sisi",
-     "kunci": "RNMShare",
-     "format": "pxTextInput",
-     "desimal": null,
+     "t": "blok",
+     "at": 20303,
+     "judul": "",
      "syarat": [],
-     "baca": "selalu",
-     "aksiUbah": [
+     "anak": [
       {
-       "aksi": "refresh",
-       "aktivitas": "TreatyInXOLAddSpreading"
-      }
-     ]
-    },
-    {
-     "t": "medan",
-     "at": 43965,
-     "label": "% Brokerage",
-     "dari": "sisi",
-     "kunci": "BrokeragePercent",
-     "format": "pxTextInput",
-     "desimal": null,
-     "syarat": [],
-     "baca": "selalu",
-     "aksiUbah": [
-      {
-       "aksi": "refresh",
-       "aktivitas": "TreatyInSetBrokerage"
+       "t": "blok",
+       "at": 28968,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 35337,
+         "label": "% RNM Share",
+         "dari": "sisi",
+         "kunci": "RNMShare",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "refresh",
+           "aktivitas": "TreatyInXOLAddSpreading"
+          }
+         ]
+        },
+        {
+         "t": "medan",
+         "at": 43965,
+         "label": "% Brokerage",
+         "dari": "sisi",
+         "kunci": "BrokeragePercent",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "refresh",
+           "aktivitas": "TreatyInSetBrokerage"
+          },
+          {
+           "aksi": "refresh",
+           "aktivitas": "TreatyInXOLAddSpreading"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
       },
       {
-       "aksi": "refresh",
-       "aktivitas": "TreatyInXOLAddSpreading"
+       "t": "blok",
+       "at": 64127,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 70496,
+         "label": "Facultative Share",
+         "dari": "sisi",
+         "kunci": "FacultativeShare",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "refresh",
+           "aktivitas": "TreatyInXOLAddSpreading"
+          }
+         ]
+        },
+        {
+         "t": "medan",
+         "at": 79208,
+         "label": "Fakultative Brokerage",
+         "dari": "sisi",
+         "kunci": "FacultativeShareBrokerage",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "refresh",
+           "aktivitas": "TreatyInXOLAddSpreading"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
       }
-     ]
-    },
-    {
-     "t": "medan",
-     "at": 70496,
-     "label": "Facultative Share",
-     "dari": "sisi",
-     "kunci": "FacultativeShare",
-     "format": "pxTextInput",
-     "desimal": null,
-     "syarat": [],
-     "baca": "selalu",
-     "aksiUbah": [
-      {
-       "aksi": "refresh",
-       "aktivitas": "TreatyInXOLAddSpreading"
-      }
-     ]
-    },
-    {
-     "t": "medan",
-     "at": 79208,
-     "label": "Fakultative Brokerage",
-     "dari": "sisi",
-     "kunci": "FacultativeShareBrokerage",
-     "format": "pxTextInput",
-     "desimal": null,
-     "syarat": [],
-     "baca": "selalu",
-     "aksiUbah": [
-      {
-       "aksi": "refresh",
-       "aktivitas": "TreatyInXOLAddSpreading"
-      }
-     ]
+     ],
+     "tata": "g2"
     },
     {
      "t": "grid",
@@ -6997,7 +7875,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
          "teks": "%",
          "syarat": []
         }
-       ]
+       ],
+       "tata": "alir"
       },
       {
        "t": "blok",
@@ -7350,7 +8229,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
       }
      ]
     }
-   ]
+   ],
+   "tata": "kiri"
   },
   {
    "t": "blok",
@@ -7359,252 +8239,20 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
    "syarat": [],
    "anak": [
     {
-     "t": "grid",
-     "at": 586202,
-     "prop": "TreatyIn.OLDDATA.TotalShareRnmNP",
-     "dari": "sisi",
-     "larik": "TotalShareRnmNP",
-     "syarat": [],
-     "kolom": [
-      "Total RNM Limit (RNM Share)",
-      "Value"
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      194,
-      352
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      597774,
-      602488
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 649772,
-     "prop": "TreatyIn.OLDDATA.TotalSpreadedRnmProp",
-     "dari": "sisi",
-     "larik": "TotalSpreadedRnmProp",
-     "syarat": [],
-     "kolom": [
-      "Total OR Limit",
-      "Value"
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      192,
-      350
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      661336,
-      666050
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 713334,
-     "prop": "TreatyIn.OLDDATA.TotalSpreadedRnmRIProp",
-     "dari": "sisi",
-     "larik": "TotalSpreadedRnmRIProp",
-     "syarat": [],
-     "kolom": [
-      "Total R/I Limit",
-      "Value"
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      192,
-      350
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      724902,
-      729616
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 792221,
-     "prop": "TreatyIn.OLDDATA.TotalShareGrossNP",
-     "dari": "sisi",
-     "larik": "TotalShareGrossNP",
-     "syarat": [],
-     "kolom": [
-      "Total Gross Premium (MDP)",
-      "Value"
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      194,
-      350
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      803794,
-      808508
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
      "t": "blok",
-     "at": 854379,
+     "at": 560828,
      "judul": "",
      "syarat": [],
      "anak": [
       {
        "t": "grid",
-       "at": 871088,
-       "prop": "TreatyIn.OLDDATA.TotalShareDeductionNP",
+       "at": 586202,
+       "prop": "TreatyIn.OLDDATA.TotalShareRnmNP",
        "dari": "sisi",
-       "larik": "TotalShareDeductionNP",
+       "larik": "TotalShareRnmNP",
        "syarat": [],
        "kolom": [
-        "Total Deduction",
+        "Total RNM Limit (RNM Share)",
         "Value"
        ],
        "kunci": [
@@ -7628,8 +8276,124 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null
        ],
        "atSel": [
-        882655,
-        887369
+        597774,
+        602488
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 649772,
+       "prop": "TreatyIn.OLDDATA.TotalSpreadedRnmProp",
+       "dari": "sisi",
+       "larik": "TotalSpreadedRnmProp",
+       "syarat": [],
+       "kolom": [
+        "Total OR Limit",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        192,
+        350
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        661336,
+        666050
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 713334,
+       "prop": "TreatyIn.OLDDATA.TotalSpreadedRnmRIProp",
+       "dari": "sisi",
+       "larik": "TotalSpreadedRnmRIProp",
+       "syarat": [],
+       "kolom": [
+        "Total R/I Limit",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        192,
+        350
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        724902,
+        729616
        ],
        "baca": [
         "selalu",
@@ -7654,181 +8418,333 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
        "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
-     ]
+     ],
+     "tata": "g3"
     },
     {
-     "t": "grid",
-     "at": 949966,
-     "prop": "TreatyIn.OLDDATA.TotalShareNetNP",
-     "dari": "sisi",
-     "larik": "TotalShareNetNP",
+     "t": "blok",
+     "at": 766846,
+     "judul": "",
      "syarat": [],
-     "kolom": [
-      "Total Net Premium",
-      "Value"
+     "anak": [
+      {
+       "t": "grid",
+       "at": 792221,
+       "prop": "TreatyIn.OLDDATA.TotalShareGrossNP",
+       "dari": "sisi",
+       "larik": "TotalShareGrossNP",
+       "syarat": [],
+       "kolom": [
+        "Total Gross Premium (MDP)",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        194,
+        350
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        803794,
+        808508
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      }
      ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      193,
-      349
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      961528,
-      966242
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+     "tata": "g3"
     },
     {
-     "t": "grid",
-     "at": 1013526,
-     "prop": "TreatyIn.OLDDATA.TotalSpreadedNetPremi",
-     "dari": "sisi",
-     "larik": "TotalSpreadedNetPremi",
+     "t": "blok",
+     "at": 845711,
+     "judul": "",
      "syarat": [],
-     "kolom": [
-      "Total OR Net Premium",
-      "Value"
+     "anak": [
+      {
+       "t": "blok",
+       "at": 854379,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "grid",
+         "at": 871088,
+         "prop": "TreatyIn.OLDDATA.TotalShareDeductionNP",
+         "dari": "sisi",
+         "larik": "TotalShareDeductionNP",
+         "syarat": [],
+         "kolom": [
+          "Total Deduction",
+          "Value"
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          194,
+          352
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          882655,
+          887369
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
+       ]
+      }
      ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      192,
-      348
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      1025097,
-      1029811
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+     "tata": "g3"
     },
     {
-     "t": "grid",
-     "at": 1075941,
-     "prop": "TreatyIn.OLDDATA.TotalSpreadedNetPremiRI",
-     "dari": "sisi",
-     "larik": "TotalSpreadedNetPremiRI",
+     "t": "blok",
+     "at": 924592,
+     "judul": "",
      "syarat": [],
-     "kolom": [
-      "Total R/I Net Premium",
-      "Value"
+     "anak": [
+      {
+       "t": "grid",
+       "at": 949966,
+       "prop": "TreatyIn.OLDDATA.TotalShareNetNP",
+       "dari": "sisi",
+       "larik": "TotalShareNetNP",
+       "syarat": [],
+       "kolom": [
+        "Total Net Premium",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        193,
+        349
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        961528,
+        966242
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 1013526,
+       "prop": "TreatyIn.OLDDATA.TotalSpreadedNetPremi",
+       "dari": "sisi",
+       "larik": "TotalSpreadedNetPremi",
+       "syarat": [],
+       "kolom": [
+        "Total OR Net Premium",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        192,
+        348
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        1025097,
+        1029811
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 1075941,
+       "prop": "TreatyIn.OLDDATA.TotalSpreadedNetPremiRI",
+       "dari": "sisi",
+       "larik": "TotalSpreadedNetPremiRI",
+       "syarat": [],
+       "kolom": [
+        "Total R/I Net Premium",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        192,
+        348
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        1087515,
+        1092229
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      }
      ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      192,
-      348
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      1087515,
-      1092229
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+     "tata": "g3"
     },
     {
      "t": "tombol",
@@ -8242,136 +9158,20 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
        "syarat": [],
        "anak": [
         {
-         "t": "grid",
-         "at": 1578012,
-         "prop": "TreatyIn.TotalFacShareRnmNP",
-         "dari": "akar",
-         "larik": "TotalFacShareRnmNP",
-         "syarat": [],
-         "kolom": [
-          "Total RNM Limit (RNM Share)",
-          "Value"
-         ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          194,
-          352
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          1589580,
-          1594294
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-        },
-        {
-         "t": "grid",
-         "at": 1656531,
-         "prop": "TreatyIn.TotalFacShareGrossNP",
-         "dari": "akar",
-         "larik": "TotalFacShareGrossNP",
-         "syarat": [],
-         "kolom": [
-          "Total Gross Premium (MDP)",
-          "Value"
-         ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          194,
-          350
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          1668099,
-          1672813
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-        },
-        {
          "t": "blok",
-         "at": 1718323,
+         "at": 1552637,
          "judul": "",
          "syarat": [],
          "anak": [
           {
            "t": "grid",
-           "at": 1735032,
-           "prop": "TreatyIn.TotalFacShareDeductionNP",
+           "at": 1578012,
+           "prop": "TreatyIn.TotalFacShareRnmNP",
            "dari": "akar",
-           "larik": "TotalFacShareDeductionNP",
+           "larik": "TotalFacShareRnmNP",
            "syarat": [],
            "kolom": [
-            "Total Deduction",
+            "Total RNM Limit (RNM Share)",
             "Value"
            ],
            "kunci": [
@@ -8395,8 +9195,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             null
            ],
            "atSel": [
-            1746594,
-            1751308
+            1589580,
+            1594294
            ],
            "baca": [
             "selalu",
@@ -8421,65 +9221,217 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
            "modeBaris": "readOnly",
            "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
           }
-         ]
+         ],
+         "tata": "g3"
         },
         {
-         "t": "grid",
-         "at": 1813565,
-         "prop": "TreatyIn.TotalFacShareNetNP",
-         "dari": "akar",
-         "larik": "TotalFacShareNetNP",
+         "t": "blok",
+         "at": 1631156,
+         "judul": "",
          "syarat": [],
-         "kolom": [
-          "Total Net Premium",
-          "Value"
+         "anak": [
+          {
+           "t": "grid",
+           "at": 1656531,
+           "prop": "TreatyIn.TotalFacShareGrossNP",
+           "dari": "akar",
+           "larik": "TotalFacShareGrossNP",
+           "syarat": [],
+           "kolom": [
+            "Total Gross Premium (MDP)",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            194,
+            350
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            1668099,
+            1672813
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          }
          ],
-         "kunci": [
-          "Currency",
-          "Value"
+         "tata": "g3"
+        },
+        {
+         "t": "blok",
+         "at": 1709655,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "blok",
+           "at": 1718323,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "grid",
+             "at": 1735032,
+             "prop": "TreatyIn.TotalFacShareDeductionNP",
+             "dari": "akar",
+             "larik": "TotalFacShareDeductionNP",
+             "syarat": [],
+             "kolom": [
+              "Total Deduction",
+              "Value"
+             ],
+             "kunci": [
+              "Currency",
+              "Value"
+             ],
+             "lebar": [
+              194,
+              352
+             ],
+             "desimal": [
+              null,
+              2
+             ],
+             "format": [
+              "pxNumber",
+              "pxNumber"
+             ],
+             "syaratSel": [
+              null,
+              null
+             ],
+             "atSel": [
+              1746594,
+              1751308
+             ],
+             "baca": [
+              "selalu",
+              "selalu"
+             ],
+             "tombol": [
+              null,
+              null
+             ],
+             "tombolKepala": [
+              null,
+              null
+             ],
+             "pilihan": [
+              null,
+              null
+             ],
+             "aksiUbah": [
+              null,
+              null
+             ],
+             "modeBaris": "readOnly",
+             "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+            }
+           ]
+          }
          ],
-         "lebar": [
-          193,
-          349
+         "tata": "g3"
+        },
+        {
+         "t": "blok",
+         "at": 1788190,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "grid",
+           "at": 1813565,
+           "prop": "TreatyIn.TotalFacShareNetNP",
+           "dari": "akar",
+           "larik": "TotalFacShareNetNP",
+           "syarat": [],
+           "kolom": [
+            "Total Net Premium",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            193,
+            349
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            1825123,
+            1829837
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          }
          ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          1825123,
-          1829837
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+         "tata": "g3"
         }
        ]
       }
@@ -8520,7 +9472,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
        "teks": "%",
        "syarat": []
       }
-     ]
+     ],
+     "tata": "alir"
     },
     {
      "t": "grid",
@@ -8584,220 +9537,291 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      "rincian": "TotalLimits"
     },
     {
-     "t": "grid",
-     "at": 147065,
-     "prop": "TreatyIn.TotalShareRnmProp",
-     "dari": "sisi",
-     "larik": "TotalShareRnmProp",
+     "t": "blok",
+     "at": 120786,
+     "judul": "",
      "syarat": [],
-     "kolom": [
-      "Total Share RNM Limit",
-      "Value"
+     "anak": [
+      {
+       "t": "grid",
+       "at": 147065,
+       "prop": "TreatyIn.TotalShareRnmProp",
+       "dari": "sisi",
+       "larik": "TotalShareRnmProp",
+       "syarat": [],
+       "kolom": [
+        "Total Share RNM Limit",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        192,
+        347
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        159037,
+        163993
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "kosong",
+       "at": 192509,
+       "syarat": []
+      },
+      {
+       "t": "grid",
+       "at": 217821,
+       "prop": "TreatyIn.TotalSpreadedRnmProp",
+       "dari": "sisi",
+       "larik": "TotalSpreadedRnmProp",
+       "syarat": [],
+       "kolom": [
+        "Total Value Spreading OR",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        192,
+        347
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        229799,
+        234755
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "kosong",
+       "at": 263271,
+       "syarat": []
+      },
+      {
+       "t": "grid",
+       "at": 288583,
+       "prop": "TreatyIn.TotalSpreadedRnmRIProp",
+       "dari": "sisi",
+       "larik": "TotalSpreadedRnmRIProp",
+       "syarat": [],
+       "kolom": [
+        "Total Value Spreading R/I",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        192,
+        347
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        300568,
+        305525
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      }
      ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      192,
-      347
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      159037,
-      163993
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 217821,
-     "prop": "TreatyIn.TotalSpreadedRnmProp",
-     "dari": "sisi",
-     "larik": "TotalSpreadedRnmProp",
-     "syarat": [],
-     "kolom": [
-      "Total Value Spreading OR",
-      "Value"
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      192,
-      347
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      229799,
-      234755
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 288583,
-     "prop": "TreatyIn.TotalSpreadedRnmRIProp",
-     "dari": "sisi",
-     "larik": "TotalSpreadedRnmRIProp",
-     "syarat": [],
-     "kolom": [
-      "Total Value Spreading R/I",
-      "Value"
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      192,
-      347
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      300568,
-      305525
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+     "tata": "g2"
     }
    ]
   }
  ],
  "TreatyInfoSubmit": [
   {
-   "t": "medan",
-   "at": 36657,
-   "label": "Additional Information",
-   "dari": "sisi",
-   "kunci": "Information",
-   "format": "pxTextArea",
-   "desimal": null,
+   "t": "blok",
+   "at": 21004,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1"
-   ],
-   "aksiUbah": [
+   "anak": [
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 64606,
-   "label": "Comment",
-   "dari": "sisi",
-   "kunci": "Comment",
-   "format": "pxTextArea",
-   "desimal": null,
-   "syarat": [
-    "TreatyIn.ViewState != 1 ||TreatyIn.RevisionState=1"
-   ],
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
+     "t": "blok",
+     "at": 29979,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "medan",
+       "at": 36657,
+       "label": "Additional Information",
+       "dari": "sisi",
+       "kunci": "Information",
+       "format": "pxTextArea",
+       "desimal": null,
+       "syarat": [],
+       "baca": [
+        "TreatyIn.ViewState = 1"
+       ],
+       "aksiUbah": [
+        {
+         "aksi": "postValue"
+        }
+       ]
+      }
+     ],
+     "tata": "kiri"
     },
     {
-     "aksi": "refresh"
+     "t": "kosong",
+     "at": 50147,
+     "syarat": []
+    },
+    {
+     "t": "blok",
+     "at": 57928,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "medan",
+       "at": 64606,
+       "label": "Comment",
+       "dari": "sisi",
+       "kunci": "Comment",
+       "format": "pxTextArea",
+       "desimal": null,
+       "syarat": [
+        "TreatyIn.ViewState != 1 ||TreatyIn.RevisionState=1"
+       ],
+       "aksiUbah": [
+        {
+         "aksi": "postValue"
+        },
+        {
+         "aksi": "refresh"
+        }
+       ]
+      }
+     ],
+     "tata": "kiri"
+    },
+    {
+     "t": "kosong",
+     "at": 81615,
+     "syarat": []
+    },
+    {
+     "t": "kosong",
+     "at": 86779,
+     "syarat": []
+    },
+    {
+     "t": "kosong",
+     "at": 91943,
+     "syarat": []
+    },
+    {
+     "t": "kosong",
+     "at": 134677,
+     "syarat": []
     }
-   ]
+   ],
+   "tata": "g2"
   },
   {
    "t": "blok",
@@ -8808,42 +9832,50 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
    ],
    "anak": [
     {
-     "t": "tombol",
-     "at": 164660,
-     "label": "Submit",
-     "syarat": [
-      "(TreatyIn.ViewState !='1' && TreatyIn.StatusAkseptasi != 'Resolve Complete')"
-     ],
-     "aksi": [
+     "t": "blok",
+     "at": 155684,
+     "judul": "",
+     "syarat": [],
+     "anak": [
       {
-       "aksi": "runActivity",
-       "aktivitas": "TreatyInSubmit"
+       "t": "tombol",
+       "at": 164660,
+       "label": "Submit",
+       "syarat": [
+        "(TreatyIn.ViewState !='1' && TreatyIn.StatusAkseptasi != 'Resolve Complete')"
+       ],
+       "aksi": [
+        {
+         "aksi": "runActivity",
+         "aktivitas": "TreatyInSubmit"
+        },
+        {
+         "aksi": "refresh"
+        },
+        {
+         "aksi": "refresh"
+        }
+       ]
       },
       {
-       "aksi": "refresh"
-      },
-      {
-       "aksi": "refresh"
-      }
-     ]
-    },
-    {
-     "t": "tombol",
-     "at": 179405,
-     "label": "Submit",
-     "syarat": [
-      "TreatyIn.RevisionState='1'"
-     ],
-     "aksi": [
-      {
-       "aksi": "runActivity",
-       "aktivitas": "TreatyInSubmit"
-      },
-      {
-       "aksi": "refresh"
-      },
-      {
-       "aksi": "refresh"
+       "t": "tombol",
+       "at": 179405,
+       "label": "Submit",
+       "syarat": [
+        "TreatyIn.RevisionState='1'"
+       ],
+       "aksi": [
+        {
+         "aksi": "runActivity",
+         "aktivitas": "TreatyInSubmit"
+        },
+        {
+         "aksi": "refresh"
+        },
+        {
+         "aksi": "refresh"
+        }
+       ]
       }
      ]
     },
@@ -8864,8 +9896,14 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      "nonaktif": [
       "TreatyIn.ID = ''"
      ]
+    },
+    {
+     "t": "kosong",
+     "at": 209160,
+     "syarat": []
     }
-   ]
+   ],
+   "tata": "g2"
   },
   {
    "t": "blok",
@@ -8912,8 +9950,14 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      "nonaktif": [
       "TreatyIn.ID = ''"
      ]
+    },
+    {
+     "t": "kosong",
+     "at": 253707,
+     "syarat": []
     }
-   ]
+   ],
+   "tata": "g2"
   }
  ],
  "TreatyInTabsAchievement": [],
@@ -9011,57 +10055,76 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      ],
      "anak": [
       {
-       "t": "teks",
-       "at": 34946,
-       "teks": "Pro Rate:",
-       "syarat": []
-      },
-      {
-       "t": "medan",
-       "at": 43386,
-       "label": "",
-       "dari": "sisi",
-       "kunci": "ProRateDays",
-       "format": "pxTextInput",
-       "desimal": null,
+       "t": "blok",
+       "at": 28593,
+       "judul": "",
        "syarat": [],
-       "baca": "selalu"
+       "anak": [
+        {
+         "t": "teks",
+         "at": 34946,
+         "teks": "Pro Rate:",
+         "syarat": []
+        },
+        {
+         "t": "medan",
+         "at": 43386,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "ProRateDays",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu"
+        },
+        {
+         "t": "teks",
+         "at": 53144,
+         "teks": "/",
+         "syarat": []
+        },
+        {
+         "t": "medan",
+         "at": 61576,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "ProRateTotalDays",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu"
+        }
+       ],
+       "tata": "alir"
       },
       {
-       "t": "teks",
-       "at": 53144,
-       "teks": "/",
-       "syarat": []
-      },
-      {
-       "t": "medan",
-       "at": 61576,
-       "label": "",
-       "dari": "sisi",
-       "kunci": "ProRateTotalDays",
-       "format": "pxTextInput",
-       "desimal": null,
+       "t": "blok",
+       "at": 75459,
+       "judul": "",
        "syarat": [],
-       "baca": "selalu"
-      },
-      {
-       "t": "medan",
-       "at": 81824,
-       "label": "Pro Rate Percentage",
-       "dari": "sisi",
-       "kunci": "ProRatePercent",
-       "format": "pxTextInput",
-       "desimal": 4,
-       "syarat": [],
-       "baca": "selalu"
-      },
-      {
-       "t": "teks",
-       "at": 92027,
-       "teks": "%",
-       "syarat": []
+       "anak": [
+        {
+         "t": "medan",
+         "at": 81824,
+         "label": "Pro Rate Percentage",
+         "dari": "sisi",
+         "kunci": "ProRatePercent",
+         "format": "pxTextInput",
+         "desimal": 4,
+         "syarat": [],
+         "baca": "selalu"
+        },
+        {
+         "t": "teks",
+         "at": 92027,
+         "teks": "%",
+         "syarat": []
+        }
+       ],
+       "tata": "alir"
       }
-     ]
+     ],
+     "tata": "kiri"
     },
     {
      "t": "blok",
@@ -9070,63 +10133,90 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "medan",
-       "at": 135023,
-       "label": "% RNM Share",
-       "dari": "sisi",
-       "kunci": "ValueDifference.RNMShare",
-       "format": "pxTextInput",
-       "desimal": null,
+       "t": "blok",
+       "at": 119982,
+       "judul": "",
        "syarat": [],
-       "baca": "selalu",
-       "aksiUbah": [
+       "anak": [
         {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInXOLAddSpreading"
-        }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 143662,
-       "label": "% Brokerage",
-       "dari": "sisi",
-       "kunci": "ValueDifference.BrokeragePercent",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": "selalu",
-       "aksiUbah": [
-        {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInSetBrokerage"
+         "t": "blok",
+         "at": 128652,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 135023,
+           "label": "% RNM Share",
+           "dari": "sisi",
+           "kunci": "ValueDifference.RNMShare",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu",
+           "aksiUbah": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInXOLAddSpreading"
+            }
+           ]
+          },
+          {
+           "t": "medan",
+           "at": 143662,
+           "label": "% Brokerage",
+           "dari": "sisi",
+           "kunci": "ValueDifference.BrokeragePercent",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu",
+           "aksiUbah": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInSetBrokerage"
+            },
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInXOLAddSpreading"
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
         },
         {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInXOLAddSpreading"
+         "t": "blok",
+         "at": 163836,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 179127,
+           "label": "Brokerage From Other Retro",
+           "dari": "sisi",
+           "kunci": "FacultativeShareBrokerage",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [
+            "TreatyIn.FacultativeShare >0"
+           ],
+           "baca": [
+            "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+           ],
+           "aksiUbah": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInXOLAddSpreading"
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
         }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 179127,
-       "label": "Brokerage From Other Retro",
-       "dari": "sisi",
-       "kunci": "FacultativeShareBrokerage",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [
-        "TreatyIn.FacultativeShare >0"
        ],
-       "baca": [
-        "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-       ],
-       "aksiUbah": [
-        {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInXOLAddSpreading"
-        }
-       ]
+       "tata": "g2"
       },
       {
        "t": "blok",
@@ -9159,7 +10249,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
            "teks": "%",
            "syarat": []
           }
-         ]
+         ],
+         "tata": "alir"
         },
         {
          "t": "blok",
@@ -9519,252 +10610,20 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
        "syarat": [],
        "anak": [
         {
-         "t": "grid",
-         "at": 834649,
-         "prop": "TreatyIn.ValueDifference.TotalShareRnmNP",
-         "dari": "sisi",
-         "larik": "ValueDifference.TotalShareRnmNP",
-         "syarat": [],
-         "kolom": [
-          "Total RNM Limit (RNM Share)",
-          "Value"
-         ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          194,
-          352
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          846235,
-          850950
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-        },
-        {
-         "t": "grid",
-         "at": 898209,
-         "prop": "TreatyIn.ValueDifference.TotalSpreadedRnmProp",
-         "dari": "sisi",
-         "larik": "ValueDifference.TotalSpreadedRnmProp",
-         "syarat": [],
-         "kolom": [
-          "Total OR Limit",
-          "Value"
-         ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          192,
-          350
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          909787,
-          914502
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-        },
-        {
-         "t": "grid",
-         "at": 961761,
-         "prop": "TreatyIn.ValueDifference.TotalSpreadedRnmRIProp",
-         "dari": "sisi",
-         "larik": "ValueDifference.TotalSpreadedRnmRIProp",
-         "syarat": [],
-         "kolom": [
-          "Total R/I Limit",
-          "Value"
-         ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          192,
-          350
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          973343,
-          978058
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-        },
-        {
-         "t": "grid",
-         "at": 1040298,
-         "prop": "TreatyIn.ValueDifference.TotalShareGrossNP",
-         "dari": "sisi",
-         "larik": "ValueDifference.TotalShareGrossNP",
-         "syarat": [],
-         "kolom": [
-          "Total Gross Premium (MDP)",
-          "Value"
-         ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          194,
-          350
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          1051884,
-          1056599
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-        },
-        {
          "t": "blok",
-         "at": 1102143,
+         "at": 809263,
          "judul": "",
          "syarat": [],
          "anak": [
           {
            "t": "grid",
-           "at": 1118861,
-           "prop": "TreatyIn.ValueDifference.TotalShareDeductionNP",
+           "at": 834649,
+           "prop": "TreatyIn.ValueDifference.TotalShareRnmNP",
            "dari": "sisi",
-           "larik": "ValueDifference.TotalShareDeductionNP",
+           "larik": "ValueDifference.TotalShareRnmNP",
            "syarat": [],
            "kolom": [
-            "Total Deduction",
+            "Total RNM Limit (RNM Share)",
             "Value"
            ],
            "kunci": [
@@ -9788,8 +10647,124 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             null
            ],
            "atSel": [
-            1130441,
-            1135156
+            846235,
+            850950
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          },
+          {
+           "t": "grid",
+           "at": 898209,
+           "prop": "TreatyIn.ValueDifference.TotalSpreadedRnmProp",
+           "dari": "sisi",
+           "larik": "ValueDifference.TotalSpreadedRnmProp",
+           "syarat": [],
+           "kolom": [
+            "Total OR Limit",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            192,
+            350
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            909787,
+            914502
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          },
+          {
+           "t": "grid",
+           "at": 961761,
+           "prop": "TreatyIn.ValueDifference.TotalSpreadedRnmRIProp",
+           "dari": "sisi",
+           "larik": "ValueDifference.TotalSpreadedRnmRIProp",
+           "syarat": [],
+           "kolom": [
+            "Total R/I Limit",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            192,
+            350
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            973343,
+            978058
            ],
            "baca": [
             "selalu",
@@ -9814,185 +10789,338 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
            "modeBaris": "readOnly",
            "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
           }
-         ]
+         ],
+         "tata": "g3"
         },
         {
-         "t": "grid",
-         "at": 1197436,
-         "prop": "TreatyIn.ValueDifference.TotalShareNetNP",
-         "dari": "sisi",
-         "larik": "ValueDifference.TotalShareNetNP",
+         "t": "blok",
+         "at": 1014912,
+         "judul": "",
          "syarat": [],
-         "kolom": [
-          "Total Net Premium",
-          "Value"
+         "anak": [
+          {
+           "t": "grid",
+           "at": 1040298,
+           "prop": "TreatyIn.ValueDifference.TotalShareGrossNP",
+           "dari": "sisi",
+           "larik": "ValueDifference.TotalShareGrossNP",
+           "syarat": [],
+           "kolom": [
+            "Total Gross Premium (MDP)",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            194,
+            350
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            1051884,
+            1056599
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          }
          ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          193,
-          349
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          1209012,
-          1213727
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+         "tata": "g3"
         },
         {
-         "t": "grid",
-         "at": 1261006,
-         "prop": "TreatyIn.ValueDifference.TotalSpreadedNetPremi",
-         "dari": "sisi",
-         "larik": "ValueDifference.TotalSpreadedNetPremi",
+         "t": "blok",
+         "at": 1093473,
+         "judul": "",
          "syarat": [],
-         "kolom": [
-          "Total OR Net Premium",
-          "Value"
+         "anak": [
+          {
+           "t": "blok",
+           "at": 1102143,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "grid",
+             "at": 1118861,
+             "prop": "TreatyIn.ValueDifference.TotalShareDeductionNP",
+             "dari": "sisi",
+             "larik": "ValueDifference.TotalShareDeductionNP",
+             "syarat": [],
+             "kolom": [
+              "Total Deduction",
+              "Value"
+             ],
+             "kunci": [
+              "Currency",
+              "Value"
+             ],
+             "lebar": [
+              194,
+              352
+             ],
+             "desimal": [
+              null,
+              2
+             ],
+             "format": [
+              "pxNumber",
+              "pxNumber"
+             ],
+             "syaratSel": [
+              null,
+              null
+             ],
+             "atSel": [
+              1130441,
+              1135156
+             ],
+             "baca": [
+              "selalu",
+              "selalu"
+             ],
+             "tombol": [
+              null,
+              null
+             ],
+             "tombolKepala": [
+              null,
+              null
+             ],
+             "pilihan": [
+              null,
+              null
+             ],
+             "aksiUbah": [
+              null,
+              null
+             ],
+             "modeBaris": "readOnly",
+             "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+            }
+           ]
+          }
          ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          192,
-          348
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          1272591,
-          1277306
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+         "tata": "g3"
         },
         {
-         "t": "grid",
-         "at": 1323411,
-         "prop": "TreatyIn.ValueDifference.TotalSpreadedNetPremiRI",
-         "dari": "sisi",
-         "larik": "ValueDifference.TotalSpreadedNetPremiRI",
+         "t": "blok",
+         "at": 1172050,
+         "judul": "",
          "syarat": [],
-         "kolom": [
-          "Total R/I Net Premium",
-          "Value"
+         "anak": [
+          {
+           "t": "grid",
+           "at": 1197436,
+           "prop": "TreatyIn.ValueDifference.TotalShareNetNP",
+           "dari": "sisi",
+           "larik": "ValueDifference.TotalShareNetNP",
+           "syarat": [],
+           "kolom": [
+            "Total Net Premium",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            193,
+            349
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            1209012,
+            1213727
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          },
+          {
+           "t": "grid",
+           "at": 1261006,
+           "prop": "TreatyIn.ValueDifference.TotalSpreadedNetPremi",
+           "dari": "sisi",
+           "larik": "ValueDifference.TotalSpreadedNetPremi",
+           "syarat": [],
+           "kolom": [
+            "Total OR Net Premium",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            192,
+            348
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            1272591,
+            1277306
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          },
+          {
+           "t": "grid",
+           "at": 1323411,
+           "prop": "TreatyIn.ValueDifference.TotalSpreadedNetPremiRI",
+           "dari": "sisi",
+           "larik": "ValueDifference.TotalSpreadedNetPremiRI",
+           "syarat": [],
+           "kolom": [
+            "Total R/I Net Premium",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            192,
+            348
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            1334999,
+            1339714
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          }
          ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          192,
-          348
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          1334999,
-          1339714
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+         "tata": "g3"
         }
        ]
       }
-     ]
+     ],
+     "tata": "kiri"
     },
     {
      "t": "blok",
@@ -10001,27 +11129,45 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "medan",
-       "at": 1419847,
-       "label": "Installment",
-       "dari": "sisi",
-       "kunci": "InstallmentNo",
-       "format": "pxTextInput",
-       "desimal": null,
+       "t": "blok",
+       "at": 1404811,
+       "judul": "",
        "syarat": [],
-       "baca": "selalu",
-       "aksiUbah": [
+       "anak": [
         {
-         "aksi": "postValue"
-        },
-        {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInSetValueInstallment",
-         "param": {
-          "Installment": "TreatyIn.InstallmentNo"
-         }
+         "t": "blok",
+         "at": 1413484,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 1419847,
+           "label": "Installment",
+           "dari": "sisi",
+           "kunci": "InstallmentNo",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu",
+           "aksiUbah": [
+            {
+             "aksi": "postValue"
+            },
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInSetValueInstallment",
+             "param": {
+              "Installment": "TreatyIn.InstallmentNo"
+             }
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
         }
-       ]
+       ],
+       "tata": "g4"
       },
       {
        "t": "grid",
@@ -10147,63 +11293,90 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "medan",
-       "at": 43907,
-       "label": "% RNM Share",
-       "dari": "sisi",
-       "kunci": "ValueBeforeProrate.RNMShare",
-       "format": "pxTextInput",
-       "desimal": null,
+       "t": "blok",
+       "at": 28873,
+       "judul": "",
        "syarat": [],
-       "baca": "selalu",
-       "aksiUbah": [
+       "anak": [
         {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInXOLAddSpreading"
-        }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 52547,
-       "label": "% Brokerage",
-       "dari": "sisi",
-       "kunci": "ValueBeforeProrate.BrokeragePercent",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": "selalu",
-       "aksiUbah": [
-        {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInSetBrokerage"
+         "t": "blok",
+         "at": 37538,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 43907,
+           "label": "% RNM Share",
+           "dari": "sisi",
+           "kunci": "ValueBeforeProrate.RNMShare",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu",
+           "aksiUbah": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInXOLAddSpreading"
+            }
+           ]
+          },
+          {
+           "t": "medan",
+           "at": 52547,
+           "label": "% Brokerage",
+           "dari": "sisi",
+           "kunci": "ValueBeforeProrate.BrokeragePercent",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu",
+           "aksiUbah": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInSetBrokerage"
+            },
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInXOLAddSpreading"
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
         },
         {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInXOLAddSpreading"
+         "t": "blok",
+         "at": 72720,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 88007,
+           "label": "Brokerage From Other Retro",
+           "dari": "sisi",
+           "kunci": "FacultativeShareBrokerage",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [
+            "TreatyIn.FacultativeShare >0"
+           ],
+           "baca": [
+            "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+           ],
+           "aksiUbah": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInXOLAddSpreading"
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
         }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 88007,
-       "label": "Brokerage From Other Retro",
-       "dari": "sisi",
-       "kunci": "FacultativeShareBrokerage",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [
-        "TreatyIn.FacultativeShare >0"
        ],
-       "baca": [
-        "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-       ],
-       "aksiUbah": [
-        {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInXOLAddSpreading"
-        }
-       ]
+       "tata": "g2"
       },
       {
        "t": "blok",
@@ -10236,7 +11409,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
            "teks": "%",
            "syarat": []
           }
-         ]
+         ],
+         "tata": "alir"
         },
         {
          "t": "blok",
@@ -10596,252 +11770,20 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
        "syarat": [],
        "anak": [
         {
-         "t": "grid",
-         "at": 748092,
-         "prop": "TreatyIn.ValueBeforeProrate.TotalShareRnmNP",
-         "dari": "sisi",
-         "larik": "ValueBeforeProrate.TotalShareRnmNP",
-         "syarat": [],
-         "kolom": [
-          "Total RNM Limit (RNM Share)",
-          "Value"
-         ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          194,
-          352
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          759676,
-          764390
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-        },
-        {
-         "t": "grid",
-         "at": 811628,
-         "prop": "TreatyIn.ValueBeforeProrate.TotalSpreadedRnmProp",
-         "dari": "sisi",
-         "larik": "ValueBeforeProrate.TotalSpreadedRnmProp",
-         "syarat": [],
-         "kolom": [
-          "Total OR Limit",
-          "Value"
-         ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          192,
-          350
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          823204,
-          827918
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-        },
-        {
-         "t": "grid",
-         "at": 875156,
-         "prop": "TreatyIn.ValueBeforeProrate.TotalSpreadedRnmRIProp",
-         "dari": "sisi",
-         "larik": "ValueBeforeProrate.TotalSpreadedRnmRIProp",
-         "syarat": [],
-         "kolom": [
-          "Total R/I Limit",
-          "Value"
-         ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          192,
-          350
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          886736,
-          891450
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-        },
-        {
-         "t": "grid",
-         "at": 953667,
-         "prop": "TreatyIn.ValueBeforeProrate.TotalShareGrossNP",
-         "dari": "sisi",
-         "larik": "ValueBeforeProrate.TotalShareGrossNP",
-         "syarat": [],
-         "kolom": [
-          "Total Gross Premium (MDP)",
-          "Value"
-         ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          194,
-          350
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          965251,
-          969965
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-        },
-        {
          "t": "blok",
-         "at": 1015495,
+         "at": 722717,
          "judul": "",
          "syarat": [],
          "anak": [
           {
            "t": "grid",
-           "at": 1032204,
-           "prop": "TreatyIn.ValueBeforeProrate.TotalShareDeductionNP",
+           "at": 748092,
+           "prop": "TreatyIn.ValueBeforeProrate.TotalShareRnmNP",
            "dari": "sisi",
-           "larik": "ValueBeforeProrate.TotalShareDeductionNP",
+           "larik": "ValueBeforeProrate.TotalShareRnmNP",
            "syarat": [],
            "kolom": [
-            "Total Deduction",
+            "Total RNM Limit (RNM Share)",
             "Value"
            ],
            "kunci": [
@@ -10865,8 +11807,124 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
             null
            ],
            "atSel": [
-            1043782,
-            1048496
+            759676,
+            764390
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          },
+          {
+           "t": "grid",
+           "at": 811628,
+           "prop": "TreatyIn.ValueBeforeProrate.TotalSpreadedRnmProp",
+           "dari": "sisi",
+           "larik": "ValueBeforeProrate.TotalSpreadedRnmProp",
+           "syarat": [],
+           "kolom": [
+            "Total OR Limit",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            192,
+            350
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            823204,
+            827918
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          },
+          {
+           "t": "grid",
+           "at": 875156,
+           "prop": "TreatyIn.ValueBeforeProrate.TotalSpreadedRnmRIProp",
+           "dari": "sisi",
+           "larik": "ValueBeforeProrate.TotalSpreadedRnmRIProp",
+           "syarat": [],
+           "kolom": [
+            "Total R/I Limit",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            192,
+            350
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            886736,
+            891450
            ],
            "baca": [
             "selalu",
@@ -10891,185 +11949,338 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
            "modeBaris": "readOnly",
            "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
           }
-         ]
+         ],
+         "tata": "g3"
         },
         {
-         "t": "grid",
-         "at": 1110733,
-         "prop": "TreatyIn.ValueBeforeProrate.TotalShareNetNP",
-         "dari": "sisi",
-         "larik": "ValueBeforeProrate.TotalShareNetNP",
+         "t": "blok",
+         "at": 928292,
+         "judul": "",
          "syarat": [],
-         "kolom": [
-          "Total Net Premium",
-          "Value"
+         "anak": [
+          {
+           "t": "grid",
+           "at": 953667,
+           "prop": "TreatyIn.ValueBeforeProrate.TotalShareGrossNP",
+           "dari": "sisi",
+           "larik": "ValueBeforeProrate.TotalShareGrossNP",
+           "syarat": [],
+           "kolom": [
+            "Total Gross Premium (MDP)",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            194,
+            350
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            965251,
+            969965
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          }
          ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          193,
-          349
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          1122307,
-          1127021
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+         "tata": "g3"
         },
         {
-         "t": "grid",
-         "at": 1174259,
-         "prop": "TreatyIn.ValueBeforeProrate.TotalSpreadedNetPremi",
-         "dari": "sisi",
-         "larik": "ValueBeforeProrate.TotalSpreadedNetPremi",
+         "t": "blok",
+         "at": 1006827,
+         "judul": "",
          "syarat": [],
-         "kolom": [
-          "Total OR Net Premium",
-          "Value"
+         "anak": [
+          {
+           "t": "blok",
+           "at": 1015495,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "grid",
+             "at": 1032204,
+             "prop": "TreatyIn.ValueBeforeProrate.TotalShareDeductionNP",
+             "dari": "sisi",
+             "larik": "ValueBeforeProrate.TotalShareDeductionNP",
+             "syarat": [],
+             "kolom": [
+              "Total Deduction",
+              "Value"
+             ],
+             "kunci": [
+              "Currency",
+              "Value"
+             ],
+             "lebar": [
+              194,
+              352
+             ],
+             "desimal": [
+              null,
+              2
+             ],
+             "format": [
+              "pxNumber",
+              "pxNumber"
+             ],
+             "syaratSel": [
+              null,
+              null
+             ],
+             "atSel": [
+              1043782,
+              1048496
+             ],
+             "baca": [
+              "selalu",
+              "selalu"
+             ],
+             "tombol": [
+              null,
+              null
+             ],
+             "tombolKepala": [
+              null,
+              null
+             ],
+             "pilihan": [
+              null,
+              null
+             ],
+             "aksiUbah": [
+              null,
+              null
+             ],
+             "modeBaris": "readOnly",
+             "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+            }
+           ]
+          }
          ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          192,
-          348
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          1185842,
-          1190556
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+         "tata": "g3"
         },
         {
-         "t": "grid",
-         "at": 1236640,
-         "prop": "TreatyIn.ValueBeforeProrate.TotalSpreadedNetPremiRI",
-         "dari": "sisi",
-         "larik": "ValueBeforeProrate.TotalSpreadedNetPremiRI",
+         "t": "blok",
+         "at": 1085358,
+         "judul": "",
          "syarat": [],
-         "kolom": [
-          "Total R/I Net Premium",
-          "Value"
+         "anak": [
+          {
+           "t": "grid",
+           "at": 1110733,
+           "prop": "TreatyIn.ValueBeforeProrate.TotalShareNetNP",
+           "dari": "sisi",
+           "larik": "ValueBeforeProrate.TotalShareNetNP",
+           "syarat": [],
+           "kolom": [
+            "Total Net Premium",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            193,
+            349
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            1122307,
+            1127021
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          },
+          {
+           "t": "grid",
+           "at": 1174259,
+           "prop": "TreatyIn.ValueBeforeProrate.TotalSpreadedNetPremi",
+           "dari": "sisi",
+           "larik": "ValueBeforeProrate.TotalSpreadedNetPremi",
+           "syarat": [],
+           "kolom": [
+            "Total OR Net Premium",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            192,
+            348
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            1185842,
+            1190556
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          },
+          {
+           "t": "grid",
+           "at": 1236640,
+           "prop": "TreatyIn.ValueBeforeProrate.TotalSpreadedNetPremiRI",
+           "dari": "sisi",
+           "larik": "ValueBeforeProrate.TotalSpreadedNetPremiRI",
+           "syarat": [],
+           "kolom": [
+            "Total R/I Net Premium",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            192,
+            348
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            1248226,
+            1252940
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          }
          ],
-         "kunci": [
-          "Currency",
-          "Value"
-         ],
-         "lebar": [
-          192,
-          348
-         ],
-         "desimal": [
-          null,
-          2
-         ],
-         "format": [
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null
-         ],
-         "atSel": [
-          1248226,
-          1252940
-         ],
-         "baca": [
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+         "tata": "g3"
         }
        ]
       }
-     ]
+     ],
+     "tata": "kiri"
     },
     {
      "t": "blok",
@@ -11078,27 +12289,45 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "medan",
-       "at": 1333051,
-       "label": "Installment",
-       "dari": "sisi",
-       "kunci": "InstallmentNo",
-       "format": "pxTextInput",
-       "desimal": null,
+       "t": "blok",
+       "at": 1318018,
+       "judul": "",
        "syarat": [],
-       "baca": "selalu",
-       "aksiUbah": [
+       "anak": [
         {
-         "aksi": "postValue"
-        },
-        {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInSetValueInstallment",
-         "param": {
-          "Installment": "TreatyIn.InstallmentNo"
-         }
+         "t": "blok",
+         "at": 1326689,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 1333051,
+           "label": "Installment",
+           "dari": "sisi",
+           "kunci": "InstallmentNo",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu",
+           "aksiUbah": [
+            {
+             "aksi": "postValue"
+            },
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInSetValueInstallment",
+             "param": {
+              "Installment": "TreatyIn.InstallmentNo"
+             }
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
         }
-       ]
+       ],
+       "tata": "g4"
       },
       {
        "t": "grid",
@@ -11521,21 +12750,48 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       },
       {
-       "t": "teks",
-       "at": 370473,
-       "teks": "Total ROL",
-       "syarat": []
-      },
-      {
-       "t": "medan",
-       "at": 381156,
-       "label": "",
-       "dari": "sisi",
-       "kunci": "ActualValue.TotalLimitsROL",
-       "format": "pxNumber",
-       "desimal": 2,
+       "t": "blok",
+       "at": 346774,
+       "judul": "",
        "syarat": [],
-       "baca": "selalu"
+       "anak": [
+        {
+         "t": "blok",
+         "at": 355442,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "blok",
+           "at": 364109,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "teks",
+             "at": 370473,
+             "teks": "Total ROL",
+             "syarat": []
+            }
+           ],
+           "tata": "alir"
+          },
+          {
+           "t": "medan",
+           "at": 381156,
+           "label": "",
+           "dari": "sisi",
+           "kunci": "ActualValue.TotalLimitsROL",
+           "format": "pxNumber",
+           "desimal": 2,
+           "syarat": [],
+           "baca": "selalu"
+          }
+         ],
+         "tata": "t3070"
+        }
+       ],
+       "tata": "g2"
       },
       {
        "t": "tombol",
@@ -11581,76 +12837,103 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "medan",
-       "at": 61884,
-       "label": "% RNM Share",
-       "dari": "sisi",
-       "kunci": "ActualValue.RNMShare",
-       "format": "pxTextInput",
-       "desimal": null,
+       "t": "blok",
+       "at": 46849,
+       "judul": "",
        "syarat": [],
-       "baca": "selalu",
-       "aksiUbah": [
+       "anak": [
         {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInXOLAddSpreading"
-        }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 70213,
-       "label": "% Brokerage",
-       "dari": "sisi",
-       "kunci": "ActualValue.BrokeragePercent",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": "selalu",
-       "aksiUbah": [
-        {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInSetBrokerage"
+         "t": "blok",
+         "at": 55515,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 61884,
+           "label": "% RNM Share",
+           "dari": "sisi",
+           "kunci": "ActualValue.RNMShare",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu",
+           "aksiUbah": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInXOLAddSpreading"
+            }
+           ]
+          },
+          {
+           "t": "medan",
+           "at": 70213,
+           "label": "% Brokerage",
+           "dari": "sisi",
+           "kunci": "ActualValue.BrokeragePercent",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu",
+           "aksiUbah": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInSetBrokerage"
+            },
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInXOLAddSpreading"
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
         },
         {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInXOLAddSpreading"
+         "t": "blok",
+         "at": 90379,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 96748,
+           "label": "Facultative Share",
+           "dari": "sisi",
+           "kunci": "FacultativeShare",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu",
+           "aksiUbah": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInXOLAddSpreading"
+            }
+           ]
+          },
+          {
+           "t": "medan",
+           "at": 105452,
+           "label": "Fakultative Brokerage",
+           "dari": "sisi",
+           "kunci": "FacultativeShareBrokerage",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu",
+           "aksiUbah": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "TreatyInXOLAddSpreading"
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
         }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 96748,
-       "label": "Facultative Share",
-       "dari": "sisi",
-       "kunci": "FacultativeShare",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": "selalu",
-       "aksiUbah": [
-        {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInXOLAddSpreading"
-        }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 105452,
-       "label": "Fakultative Brokerage",
-       "dari": "sisi",
-       "kunci": "FacultativeShareBrokerage",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": "selalu",
-       "aksiUbah": [
-        {
-         "aksi": "refresh",
-         "aktivitas": "TreatyInXOLAddSpreading"
-        }
-       ]
+       ],
+       "tata": "g2"
       },
       {
        "t": "tombol",
@@ -12052,7 +13335,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         }
        ]
       }
-     ]
+     ],
+     "tata": "kiri"
     },
     {
      "t": "blok",
@@ -12061,78 +13345,20 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "grid",
-       "at": 541568,
-       "prop": "TreatyIn.ActualValue.TotalShareGrossNP",
-       "dari": "sisi",
-       "larik": "ActualValue.TotalShareGrossNP",
-       "syarat": [],
-       "kolom": [
-        "Total Gross Premium (MDP)",
-        "Value"
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        194,
-        350
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        553145,
-        557859
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
        "t": "blok",
-       "at": 603389,
+       "at": 516193,
        "judul": "",
        "syarat": [],
        "anak": [
         {
          "t": "grid",
-         "at": 620098,
-         "prop": "TreatyIn.ActualValue.TotalShareDeductionNP",
+         "at": 541568,
+         "prop": "TreatyIn.ActualValue.TotalShareGrossNP",
          "dari": "sisi",
-         "larik": "ActualValue.TotalShareDeductionNP",
+         "larik": "ActualValue.TotalShareGrossNP",
          "syarat": [],
          "kolom": [
-          "Total Deduction",
+          "Total Gross Premium (MDP)",
           "Value"
          ],
          "kunci": [
@@ -12141,7 +13367,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
          ],
          "lebar": [
           194,
-          352
+          350
          ],
          "desimal": [
           null,
@@ -12156,8 +13382,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null
          ],
          "atSel": [
-          631669,
-          636383
+          553145,
+          557859
          ],
          "baca": [
           "selalu",
@@ -12182,181 +13408,266 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
          "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         }
-       ]
+       ],
+       "tata": "g3"
       },
       {
-       "t": "grid",
-       "at": 698620,
-       "prop": "TreatyIn.ActualValue.TotalShareNetNP",
-       "dari": "sisi",
-       "larik": "ActualValue.TotalShareNetNP",
+       "t": "blok",
+       "at": 594721,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "Total Net Premium",
-        "Value"
+       "anak": [
+        {
+         "t": "blok",
+         "at": 603389,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "grid",
+           "at": 620098,
+           "prop": "TreatyIn.ActualValue.TotalShareDeductionNP",
+           "dari": "sisi",
+           "larik": "ActualValue.TotalShareDeductionNP",
+           "syarat": [],
+           "kolom": [
+            "Total Deduction",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            194,
+            352
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            631669,
+            636383
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          }
+         ]
+        }
        ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        193,
-        349
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        710187,
-        714901
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "g3"
       },
       {
-       "t": "grid",
-       "at": 762159,
-       "prop": "TreatyIn.ActualValue.TotalSpreadedNetPremi",
-       "dari": "sisi",
-       "larik": "ActualValue.TotalSpreadedNetPremi",
+       "t": "blok",
+       "at": 673245,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "Total OR Net Premium",
-        "Value"
+       "anak": [
+        {
+         "t": "grid",
+         "at": 698620,
+         "prop": "TreatyIn.ActualValue.TotalShareNetNP",
+         "dari": "sisi",
+         "larik": "ActualValue.TotalShareNetNP",
+         "syarat": [],
+         "kolom": [
+          "Total Net Premium",
+          "Value"
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          193,
+          349
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          710187,
+          714901
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 762159,
+         "prop": "TreatyIn.ActualValue.TotalSpreadedNetPremi",
+         "dari": "sisi",
+         "larik": "ActualValue.TotalSpreadedNetPremi",
+         "syarat": [],
+         "kolom": [
+          "Total OR Net Premium",
+          "Value"
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          192,
+          348
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          773735,
+          778449
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 824553,
+         "prop": "TreatyIn.ActualValue.TotalSpreadedNetPremiRI",
+         "dari": "sisi",
+         "larik": "ActualValue.TotalSpreadedNetPremiRI",
+         "syarat": [],
+         "kolom": [
+          "Total R/I Net Premium",
+          "Value"
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          192,
+          348
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          836132,
+          840846
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        192,
-        348
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        773735,
-        778449
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
-       "t": "grid",
-       "at": 824553,
-       "prop": "TreatyIn.ActualValue.TotalSpreadedNetPremiRI",
-       "dari": "sisi",
-       "larik": "ActualValue.TotalSpreadedNetPremiRI",
-       "syarat": [],
-       "kolom": [
-        "Total R/I Net Premium",
-        "Value"
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        192,
-        348
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        836132,
-        840846
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "g3"
       },
       {
        "t": "tombol",
@@ -12906,21 +14217,48 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
     },
     {
-     "t": "teks",
-     "at": 611244,
-     "teks": "Total ROL",
-     "syarat": []
-    },
-    {
-     "t": "medan",
-     "at": 621979,
-     "label": "",
-     "dari": "sisi",
-     "kunci": "ValueDifference.TotalLimitsROL",
-     "format": "pxNumber",
-     "desimal": 2,
+     "t": "blok",
+     "at": 586574,
+     "judul": "",
      "syarat": [],
-     "baca": "selalu"
+     "anak": [
+      {
+       "t": "blok",
+       "at": 595573,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "blok",
+         "at": 604571,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "teks",
+           "at": 611244,
+           "teks": "Total ROL",
+           "syarat": []
+          }
+         ],
+         "tata": "alir"
+        },
+        {
+         "t": "medan",
+         "at": 621979,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "ValueDifference.TotalLimitsROL",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [],
+         "baca": "selalu"
+        }
+       ],
+       "tata": "t3070"
+      }
+     ],
+     "tata": "g2"
     }
    ]
   },
@@ -13216,78 +14554,20 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
    "syarat": [],
    "anak": [
     {
-     "t": "grid",
-     "at": 965823,
-     "prop": "TreatyIn.ValueDifference.TotalShareGrossNP",
-     "dari": "sisi",
-     "larik": "ValueDifference.TotalShareGrossNP",
-     "syarat": [],
-     "kolom": [
-      "Total Gross Premium (MDP)",
-      "Value"
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      194,
-      350
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      977820,
-      982777
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
      "t": "blok",
-     "at": 1028911,
+     "at": 939533,
      "judul": "",
      "syarat": [],
      "anak": [
       {
        "t": "grid",
-       "at": 1046204,
-       "prop": "TreatyIn.ValueDifference.TotalShareDeductionNP",
+       "at": 965823,
+       "prop": "TreatyIn.ValueDifference.TotalShareGrossNP",
        "dari": "sisi",
-       "larik": "ValueDifference.TotalShareDeductionNP",
+       "larik": "ValueDifference.TotalShareGrossNP",
        "syarat": [],
        "kolom": [
-        "Total Deduction",
+        "Total Gross Premium (MDP)",
         "Value"
        ],
        "kunci": [
@@ -13296,7 +14576,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
        ],
        "lebar": [
         194,
-        352
+        350
        ],
        "desimal": [
         null,
@@ -13311,8 +14591,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
         null
        ],
        "atSel": [
-        1058195,
-        1063152
+        977820,
+        982777
        ],
        "baca": [
         "selalu",
@@ -13337,181 +14617,266 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
        "modeBaris": "readOnly",
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
-     ]
+     ],
+     "tata": "g3"
     },
     {
-     "t": "grid",
-     "at": 1126618,
-     "prop": "TreatyIn.ValueDifference.TotalShareNetNP",
-     "dari": "sisi",
-     "larik": "ValueDifference.TotalShareNetNP",
+     "t": "blok",
+     "at": 1019913,
+     "judul": "",
      "syarat": [],
-     "kolom": [
-      "Total Net Premium",
-      "Value"
+     "anak": [
+      {
+       "t": "blok",
+       "at": 1028911,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "grid",
+         "at": 1046204,
+         "prop": "TreatyIn.ValueDifference.TotalShareDeductionNP",
+         "dari": "sisi",
+         "larik": "ValueDifference.TotalShareDeductionNP",
+         "syarat": [],
+         "kolom": [
+          "Total Deduction",
+          "Value"
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          194,
+          352
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1058195,
+          1063152
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
+       ]
+      }
      ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      193,
-      349
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      1138605,
-      1143562
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+     "tata": "g3"
     },
     {
-     "t": "grid",
-     "at": 1191649,
-     "prop": "TreatyIn.ValueDifference.TotalSpreadedNetPremi",
-     "dari": "sisi",
-     "larik": "ValueDifference.TotalSpreadedNetPremi",
+     "t": "blok",
+     "at": 1100328,
+     "judul": "",
      "syarat": [],
-     "kolom": [
-      "Total OR Net Premium",
-      "Value"
+     "anak": [
+      {
+       "t": "grid",
+       "at": 1126618,
+       "prop": "TreatyIn.ValueDifference.TotalShareNetNP",
+       "dari": "sisi",
+       "larik": "ValueDifference.TotalShareNetNP",
+       "syarat": [],
+       "kolom": [
+        "Total Net Premium",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        193,
+        349
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        1138605,
+        1143562
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 1191649,
+       "prop": "TreatyIn.ValueDifference.TotalSpreadedNetPremi",
+       "dari": "sisi",
+       "larik": "ValueDifference.TotalSpreadedNetPremi",
+       "syarat": [],
+       "kolom": [
+        "Total OR Net Premium",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        192,
+        348
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        1203645,
+        1208602
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 1255535,
+       "prop": "TreatyIn.ValueDifference.TotalSpreadedNetPremiRI",
+       "dari": "sisi",
+       "larik": "ValueDifference.TotalSpreadedNetPremiRI",
+       "syarat": [],
+       "kolom": [
+        "Total R/I Net Premium",
+        "Value"
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        192,
+        348
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        1267534,
+        1272491
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      }
      ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      192,
-      348
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      1203645,
-      1208602
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 1255535,
-     "prop": "TreatyIn.ValueDifference.TotalSpreadedNetPremiRI",
-     "dari": "sisi",
-     "larik": "ValueDifference.TotalSpreadedNetPremiRI",
-     "syarat": [],
-     "kolom": [
-      "Total R/I Net Premium",
-      "Value"
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      192,
-      348
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      1267534,
-      1272491
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+     "tata": "g3"
     },
     {
      "t": "tombol",
@@ -13862,78 +15227,20 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "grid",
-       "at": 1688928,
-       "prop": "TreatyIn.ValueDifference.TotalFacShareGrossNP",
-       "dari": "sisi",
-       "larik": "ValueDifference.TotalFacShareGrossNP",
-       "syarat": [],
-       "kolom": [
-        "Total Gross Premium (MDP)",
-        "Value"
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        194,
-        350
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        1700928,
-        1705885
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
        "t": "blok",
-       "at": 1752020,
+       "at": 1662638,
        "judul": "",
        "syarat": [],
        "anak": [
         {
          "t": "grid",
-         "at": 1769313,
-         "prop": "TreatyIn.ValueDifference.TotalFacShareDeductionNP",
+         "at": 1688928,
+         "prop": "TreatyIn.ValueDifference.TotalFacShareGrossNP",
          "dari": "sisi",
-         "larik": "ValueDifference.TotalFacShareDeductionNP",
+         "larik": "ValueDifference.TotalFacShareGrossNP",
          "syarat": [],
          "kolom": [
-          "Total Deduction",
+          "Total Gross Premium (MDP)",
           "Value"
          ],
          "kunci": [
@@ -13942,7 +15249,7 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
          ],
          "lebar": [
           194,
-          352
+          350
          ],
          "desimal": [
           null,
@@ -13957,8 +15264,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null
          ],
          "atSel": [
-          1781307,
-          1786264
+          1700928,
+          1705885
          ],
          "baca": [
           "selalu",
@@ -13983,65 +15290,150 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
          "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         }
-       ]
+       ],
+       "tata": "g3"
       },
       {
-       "t": "grid",
-       "at": 1849710,
-       "prop": "TreatyIn.ValueDifference.TotalFacShareNetNP",
-       "dari": "sisi",
-       "larik": "ValueDifference.TotalFacShareNetNP",
+       "t": "blok",
+       "at": 1743021,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "Total Net Premium",
-        "Value"
+       "anak": [
+        {
+         "t": "blok",
+         "at": 1752020,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "grid",
+           "at": 1769313,
+           "prop": "TreatyIn.ValueDifference.TotalFacShareDeductionNP",
+           "dari": "sisi",
+           "larik": "ValueDifference.TotalFacShareDeductionNP",
+           "syarat": [],
+           "kolom": [
+            "Total Deduction",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            194,
+            352
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            1781307,
+            1786264
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          }
+         ]
+        }
        ],
-       "kunci": [
-        "Currency",
-        "Value"
+       "tata": "g3"
+      },
+      {
+       "t": "blok",
+       "at": 1823420,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "grid",
+         "at": 1849710,
+         "prop": "TreatyIn.ValueDifference.TotalFacShareNetNP",
+         "dari": "sisi",
+         "larik": "ValueDifference.TotalFacShareNetNP",
+         "syarat": [],
+         "kolom": [
+          "Total Net Premium",
+          "Value"
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          193,
+          349
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1861700,
+          1866657
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "lebar": [
-        193,
-        349
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        1861700,
-        1866657
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "g3"
       }
      ]
     }
@@ -14419,136 +15811,20 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "grid",
-       "at": 357885,
-       "prop": "TreatyIn.ActualValue.TotalFacShareRnmNP",
-       "dari": "sisi",
-       "larik": "ActualValue.TotalFacShareRnmNP",
-       "syarat": [],
-       "kolom": [
-        "Total RNM Limit (RNM Share)",
-        "Value"
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        194,
-        352
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        369465,
-        374179
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
-       "t": "grid",
-       "at": 436416,
-       "prop": "TreatyIn.ActualValue.TotalFacShareGrossNP",
-       "dari": "sisi",
-       "larik": "ActualValue.TotalFacShareGrossNP",
-       "syarat": [],
-       "kolom": [
-        "Total Gross Premium (MDP)",
-        "Value"
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        194,
-        350
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        447996,
-        452710
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
        "t": "blok",
-       "at": 498240,
+       "at": 332510,
        "judul": "",
        "syarat": [],
        "anak": [
         {
          "t": "grid",
-         "at": 514949,
-         "prop": "TreatyIn.ActualValue.TotalFacShareDeductionNP",
+         "at": 357885,
+         "prop": "TreatyIn.ActualValue.TotalFacShareRnmNP",
          "dari": "sisi",
-         "larik": "ActualValue.TotalFacShareDeductionNP",
+         "larik": "ActualValue.TotalFacShareRnmNP",
          "syarat": [],
          "kolom": [
-          "Total Deduction",
+          "Total RNM Limit (RNM Share)",
           "Value"
          ],
          "kunci": [
@@ -14572,8 +15848,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null
          ],
          "atSel": [
-          526523,
-          531237
+          369465,
+          374179
          ],
          "baca": [
           "selalu",
@@ -14598,65 +15874,217 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
          "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         }
-       ]
+       ],
+       "tata": "g3"
       },
       {
-       "t": "grid",
-       "at": 593494,
-       "prop": "TreatyIn.ActualValue.TotalFacShareNetNP",
-       "dari": "sisi",
-       "larik": "ActualValue.TotalFacShareNetNP",
+       "t": "blok",
+       "at": 411041,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "Total Net Premium",
-        "Value"
+       "anak": [
+        {
+         "t": "grid",
+         "at": 436416,
+         "prop": "TreatyIn.ActualValue.TotalFacShareGrossNP",
+         "dari": "sisi",
+         "larik": "ActualValue.TotalFacShareGrossNP",
+         "syarat": [],
+         "kolom": [
+          "Total Gross Premium (MDP)",
+          "Value"
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          194,
+          350
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          447996,
+          452710
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "kunci": [
-        "Currency",
-        "Value"
+       "tata": "g3"
+      },
+      {
+       "t": "blok",
+       "at": 489572,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "blok",
+         "at": 498240,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "grid",
+           "at": 514949,
+           "prop": "TreatyIn.ActualValue.TotalFacShareDeductionNP",
+           "dari": "sisi",
+           "larik": "ActualValue.TotalFacShareDeductionNP",
+           "syarat": [],
+           "kolom": [
+            "Total Deduction",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            194,
+            352
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            526523,
+            531237
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          }
+         ]
+        }
        ],
-       "lebar": [
-        193,
-        349
+       "tata": "g3"
+      },
+      {
+       "t": "blok",
+       "at": 568119,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "grid",
+         "at": 593494,
+         "prop": "TreatyIn.ActualValue.TotalFacShareNetNP",
+         "dari": "sisi",
+         "larik": "ActualValue.TotalFacShareNetNP",
+         "syarat": [],
+         "kolom": [
+          "Total Net Premium",
+          "Value"
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          193,
+          349
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          605064,
+          609778
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        605064,
-        609778
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "g3"
       }
      ]
     }
@@ -15034,136 +16462,20 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "grid",
-       "at": 358192,
-       "prop": "TreatyIn.OLDDATA.TotalFacShareRnmNP",
-       "dari": "sisi",
-       "larik": "TotalFacShareRnmNP",
-       "syarat": [],
-       "kolom": [
-        "Total RNM Limit (RNM Share)",
-        "Value"
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        194,
-        352
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        369768,
-        374482
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
-       "t": "grid",
-       "at": 436719,
-       "prop": "TreatyIn.OLDDATA.TotalFacShareGrossNP",
-       "dari": "sisi",
-       "larik": "TotalFacShareGrossNP",
-       "syarat": [],
-       "kolom": [
-        "Total Gross Premium (MDP)",
-        "Value"
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        194,
-        350
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        448295,
-        453009
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
        "t": "blok",
-       "at": 498539,
+       "at": 332817,
        "judul": "",
        "syarat": [],
        "anak": [
         {
          "t": "grid",
-         "at": 515248,
-         "prop": "TreatyIn.OLDDATA.TotalFacShareDeductionNP",
+         "at": 358192,
+         "prop": "TreatyIn.OLDDATA.TotalFacShareRnmNP",
          "dari": "sisi",
-         "larik": "TotalFacShareDeductionNP",
+         "larik": "TotalFacShareRnmNP",
          "syarat": [],
          "kolom": [
-          "Total Deduction",
+          "Total RNM Limit (RNM Share)",
           "Value"
          ],
          "kunci": [
@@ -15187,8 +16499,8 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
           null
          ],
          "atSel": [
-          526818,
-          531532
+          369768,
+          374482
          ],
          "baca": [
           "selalu",
@@ -15213,65 +16525,217 @@ export const KERANGKA_INCLUDE: Readonly<Record<string, readonly ButirKerangka[]>
          "modeBaris": "readOnly",
          "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         }
-       ]
+       ],
+       "tata": "g3"
       },
       {
-       "t": "grid",
-       "at": 593789,
-       "prop": "TreatyIn.OLDDATA.TotalFacShareNetNP",
-       "dari": "sisi",
-       "larik": "TotalFacShareNetNP",
+       "t": "blok",
+       "at": 411344,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "Total Net Premium",
-        "Value"
+       "anak": [
+        {
+         "t": "grid",
+         "at": 436719,
+         "prop": "TreatyIn.OLDDATA.TotalFacShareGrossNP",
+         "dari": "sisi",
+         "larik": "TotalFacShareGrossNP",
+         "syarat": [],
+         "kolom": [
+          "Total Gross Premium (MDP)",
+          "Value"
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          194,
+          350
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          448295,
+          453009
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "kunci": [
-        "Currency",
-        "Value"
+       "tata": "g3"
+      },
+      {
+       "t": "blok",
+       "at": 489871,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "blok",
+         "at": 498539,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "grid",
+           "at": 515248,
+           "prop": "TreatyIn.OLDDATA.TotalFacShareDeductionNP",
+           "dari": "sisi",
+           "larik": "TotalFacShareDeductionNP",
+           "syarat": [],
+           "kolom": [
+            "Total Deduction",
+            "Value"
+           ],
+           "kunci": [
+            "Currency",
+            "Value"
+           ],
+           "lebar": [
+            194,
+            352
+           ],
+           "desimal": [
+            null,
+            2
+           ],
+           "format": [
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            526818,
+            531532
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+          }
+         ]
+        }
        ],
-       "lebar": [
-        193,
-        349
+       "tata": "g3"
+      },
+      {
+       "t": "blok",
+       "at": 568414,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "grid",
+         "at": 593789,
+         "prop": "TreatyIn.OLDDATA.TotalFacShareNetNP",
+         "dari": "sisi",
+         "larik": "TotalFacShareNetNP",
+         "syarat": [],
+         "kolom": [
+          "Total Net Premium",
+          "Value"
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          193,
+          349
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          605355,
+          610069
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        605355,
-        610069
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "g3"
       }
      ]
     }
@@ -15978,1088 +17442,1316 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
  ],
  "DetailEGNPI": [
   {
-   "t": "medan",
-   "at": 16166,
-   "label": "Treaty Group",
-   "dari": "sisi",
-   "kunci": "TreatyGroup",
-   "format": "pxAutoComplete",
-   "desimal": null,
+   "t": "blok",
+   "at": 8599,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1",
-    "TreatyIn.EDMMaterialType = 2"
-   ],
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseTreatyGroup_RD",
-    "nilai": "TreatyGroupName",
-    "param": {
-     "ID": ""
-    },
-    "setel": [
-     {
-      "target": "TreatyGroupID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
+   "anak": [
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 26530,
-   "label": "As At",
-   "dari": "sisi",
-   "kunci": "AsDate",
-   "format": "pxDateTime",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1",
-    "TreatyIn.EDMMaterialType = 2"
-   ],
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 52955,
-   "label": "Amount",
-   "dari": "sisi",
-   "kunci": "Currency",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 16166,
+     "label": "Treaty Group",
+     "dari": "sisi",
+     "kunci": "TreatyGroup",
+     "format": "pxAutoComplete",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1",
+      "TreatyIn.EDMMaterialType = 2"
+     ],
+     "pilihan": {
+      "sumber": "reportdefinition",
+      "rd": "BrowseTreatyGroup_RD",
+      "nilai": "TreatyGroupName",
+      "param": {
+       "ID": ""
+      },
+      "setel": [
+       {
+        "target": "TreatyGroupID",
+        "dari": "ID"
+       }
+      ]
+     },
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
     },
     {
-     "aksi": "refresh",
-     "aktivitas": "SetAmountConversion"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 90365,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Amount",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 26530,
+     "label": "As At",
+     "dari": "sisi",
+     "kunci": "AsDate",
+     "format": "pxDateTime",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1",
+      "TreatyIn.EDMMaterialType = 2"
+     ],
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
     },
     {
-     "aksi": "refresh",
-     "aktivitas": "SetAmountConversion"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 102409,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "AmountIDR",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
+     "t": "blok",
+     "at": 37922,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 46586,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 52955,
+         "label": "Amount",
+         "dari": "sisi",
+         "kunci": "Currency",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          },
+          {
+           "aksi": "refresh",
+           "aktivitas": "SetAmountConversion"
+          }
+         ]
+        },
+        {
+         "t": "satuan",
+         "at": 66677,
+         "label": "Amount in IDR",
+         "teks": "IDR",
+         "syarat": []
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 83996,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 90365,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Amount",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          },
+          {
+           "aksi": "refresh",
+           "aktivitas": "SetAmountConversion"
+          }
+         ]
+        },
+        {
+         "t": "medan",
+         "at": 102409,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "AmountIDR",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      }
+     ],
+     "tata": "t3070"
+    },
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 124120,
-   "label": "Proportion %",
-   "dari": "sisi",
-   "kunci": "Proportion",
-   "format": "pxTextInput",
-   "desimal": 10,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
+     "t": "medan",
+     "at": 124120,
+     "label": "Proportion %",
+     "dari": "sisi",
+     "kunci": "Proportion",
+     "format": "pxTextInput",
+     "desimal": 10,
+     "syarat": [],
+     "baca": "selalu",
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    },
     {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 132880,
+     "label": "Note",
+     "dari": "sisi",
+     "kunci": "Note",
+     "format": "pxTextArea",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1"
+     ],
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
     }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 132880,
-   "label": "Text Area",
-   "dari": "sisi",
-   "kunci": "Note",
-   "format": "pxTextArea",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1"
    ],
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
+   "tata": "kiri"
   }
  ],
  "DetailEGNPIOldData": [
   {
-   "t": "medan",
-   "at": 15294,
-   "label": "Treaty Group",
-   "dari": "sisi",
-   "kunci": "TreatyGroup",
-   "format": "pxAutoComplete",
-   "desimal": null,
+   "t": "blok",
+   "at": 7727,
+   "judul": "",
    "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseTreatyGroup_RD",
-    "nilai": "TreatyGroupName",
-    "param": {
-     "ID": ""
-    },
-    "setel": [
-     {
-      "target": "TreatyGroupID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
+   "anak": [
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 25524,
-   "label": "As At",
-   "dari": "sisi",
-   "kunci": "AsDate",
-   "format": "pxDateTime",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 51795,
-   "label": "Amount",
-   "dari": "sisi",
-   "kunci": "Currency",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 15294,
+     "label": "Treaty Group",
+     "dari": "sisi",
+     "kunci": "TreatyGroup",
+     "format": "pxAutoComplete",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu",
+     "pilihan": {
+      "sumber": "reportdefinition",
+      "rd": "BrowseTreatyGroup_RD",
+      "nilai": "TreatyGroupName",
+      "param": {
+       "ID": ""
+      },
+      "setel": [
+       {
+        "target": "TreatyGroupID",
+        "dari": "ID"
+       }
+      ]
+     },
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
     },
     {
-     "aksi": "refresh",
-     "aktivitas": "SetAmountConversion"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 89119,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Amount",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 25524,
+     "label": "As At",
+     "dari": "sisi",
+     "kunci": "AsDate",
+     "format": "pxDateTime",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu",
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
     },
     {
-     "aksi": "refresh",
-     "aktivitas": "SetAmountConversion"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 101077,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "AmountIDR",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
+     "t": "blok",
+     "at": 36762,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 45426,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 51795,
+         "label": "Amount",
+         "dari": "sisi",
+         "kunci": "Currency",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          },
+          {
+           "aksi": "refresh",
+           "aktivitas": "SetAmountConversion"
+          }
+         ]
+        },
+        {
+         "t": "satuan",
+         "at": 65431,
+         "label": "Amount in IDR",
+         "teks": "IDR",
+         "syarat": []
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 82750,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 89119,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Amount",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          },
+          {
+           "aksi": "refresh",
+           "aktivitas": "SetAmountConversion"
+          }
+         ]
+        },
+        {
+         "t": "medan",
+         "at": 101077,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "AmountIDR",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      }
+     ],
+     "tata": "t3070"
+    },
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 122788,
-   "label": "Proportion %",
-   "dari": "sisi",
-   "kunci": "Proportion",
-   "format": "pxTextInput",
-   "desimal": 10,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
+     "t": "medan",
+     "at": 122788,
+     "label": "Proportion %",
+     "dari": "sisi",
+     "kunci": "Proportion",
+     "format": "pxTextInput",
+     "desimal": 10,
+     "syarat": [],
+     "baca": "selalu",
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    },
     {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 131548,
+     "label": "Note",
+     "dari": "sisi",
+     "kunci": "Note",
+     "format": "pxTextArea",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu",
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
     }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 131548,
-   "label": "Text Area",
-   "dari": "sisi",
-   "kunci": "Note",
-   "format": "pxTextArea",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
+   ],
+   "tata": "kiri"
   }
  ],
  "DetailLimits": [
   {
-   "t": "medan",
-   "at": 33452,
-   "label": "Treaty Group",
-   "dari": "sisi",
-   "kunci": "TreatyGroupID",
-   "format": "pxDropdown",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1",
-    "TreatyIn.EDMMaterialType = 2"
-   ],
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseTreatyGroup_RD",
-    "nilai": "ID",
-    "tampil": "TreatyGroupName",
-    "param": {
-     "ID": ""
-    }
-   },
-   "aksiUbah": [
-    {
-     "aksi": "refresh",
-     "aktivitas": "SetTreatyGroupName_Act"
-    },
-    {
-     "aksi": "refresh"
-    },
-    {
-     "aksi": "refresh",
-     "aktivitas": "FetchQSfromMaster",
-     "transformasi": "SetDetailsID",
-     "param": {
-      "ParentReinsTypeID": ""
-     },
-     "syarat": ".TreatyType = 'QUOTA SHARE'"
-    },
-    {
-     "aksi": "refresh",
-     "aktivitas": "LimitCalculation",
-     "param": {
-      "kindoftreaty": "surplus",
-      "add": "",
-      "autocalculate": "true"
-     },
-     "syarat": ".TreatyType = 'SURPLUS'"
-    }
-   ]
-  },
-  {
-   "t": "grid",
-   "at": 86887,
-   "prop": ".COBList",
-   "dari": "sisi",
-   "larik": "COBList",
-   "syarat": [],
-   "kolom": [
-    "Class of Business"
-   ],
-   "kunci": [
-    "ClassOfBusiness"
-   ],
-   "lebar": [
-    272
-   ],
-   "desimal": [
-    null
-   ],
-   "format": [
-    "pxAutoComplete"
-   ],
-   "syaratSel": [
-    null
-   ],
-   "atSel": [
-    104472
-   ],
-   "baca": [
-    [
-     "TreatyIn.ViewState = 1",
-     "TreatyIn.EDMMaterialType = 2"
-    ]
-   ],
-   "tombol": [
-    null
-   ],
-   "tombolKepala": [
-    null
-   ],
-   "pilihan": [
-    {
-     "sumber": "reportdefinition",
-     "rd": "BrowseTreatyBusinessWOType_RD",
-     "nilai": "BIZNAME",
-     "param": {
-      "pTreatyGroupId": ".TreatyGroupID"
-     },
-     "setel": [
-      {
-       "target": "ClassOfBusinessID",
-       "dari": "BizCode"
-      }
-     ]
-    }
-   ],
-   "aksiUbah": [
-    [
-     {
-      "aksi": "runDataTransform",
-      "transformasi": "SetCoBID",
-      "paramDT": {
-       "id": ".ClassOfBusinessID"
-      }
-     },
-     {
-      "aksi": "postValue"
-     }
-    ]
-   ],
-   "modeBaris": "row",
-   "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails"
-  },
-  {
    "t": "blok",
-   "at": 170234,
+   "at": 16325,
    "judul": "",
-   "syarat": [
-    ".TreatyType = 'QUOTA SHARE'"
-   ],
+   "syarat": [],
    "anak": [
     {
-     "t": "medan",
-     "at": 185962,
-     "label": "QS %",
-     "dari": "sisi",
-     "kunci": "QSPct",
-     "format": "pxNumber",
-     "desimal": 2,
+     "t": "blok",
+     "at": 26774,
+     "judul": "",
      "syarat": [],
-     "baca": [
-      "TreatyIn.ViewState = 1",
-      "TreatyIn.EDMMaterialType = 2"
-     ],
-     "aksiUbah": [
+     "anak": [
       {
-       "aksi": "postValue"
-      },
-      {
-       "aksi": "refresh",
-       "aktivitas": "LimitCalculation",
-       "param": {
-        "kindoftreaty": "qs",
-        "add": "",
-        "autocalculate": "true"
-       }
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "t": "blok",
-   "at": 212267,
-   "judul": "",
-   "syarat": [
-    ".TreatyType = 'SURPLUS' || .TreatyType = '2ND SURPLUS' || .TreatyType = '3RD SURPLUS' || .TreatyType = 'SPECIAL SURPLUS'"
-   ],
-   "anak": [
-    {
-     "t": "medan",
-     "at": 228088,
-     "label": "Lines",
-     "dari": "sisi",
-     "kunci": "Surplus",
-     "format": "pxNumber",
-     "desimal": 2,
-     "syarat": [],
-     "baca": [
-      "TreatyIn.ViewState = 1",
-      "TreatyIn.EDMMaterialType = 2"
-     ],
-     "aksiUbah": [
-      {
-       "aksi": "postValue"
-      },
-      {
-       "aksi": "refresh",
-       "aktivitas": "LimitCalculation",
-       "param": {
-        "kindoftreaty": "surplus",
-        "add": "",
-        "autocalculate": "true"
-       }
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "t": "teks",
-   "at": 283497,
-   "teks": "100% Limit",
-   "syarat": []
-  },
-  {
-   "t": "teks",
-   "at": 297544,
-   "teks": "100",
-   "syarat": [
-    ".TreatyType = 'QUOTA SHARE'"
-   ]
-  },
-  {
-   "t": "teks",
-   "at": 302320,
-   "teks": "%",
-   "syarat": [
-    ".TreatyType = 'QUOTA SHARE'"
-   ]
-  },
-  {
-   "t": "grid",
-   "at": 345241,
-   "prop": ".IOOLimitList",
-   "dari": "sisi",
-   "larik": "IOOLimitList",
-   "syarat": [],
-   "kolom": [
-    "",
-    "",
-    "",
-    ""
-   ],
-   "kunci": [
-    "Currency",
-    "Value",
-    "",
-    "Layer"
-   ],
-   "lebar": [
-    194,
-    361,
-    102,
-    128
-   ],
-   "desimal": [
-    null,
-    2,
-    null,
-    null
-   ],
-   "format": [
-    "pxDropdown",
-    "pxNumber",
-    "pxButton",
-    "pxCheckbox"
-   ],
-   "syaratSel": [
-    null,
-    null,
-    "TreatyIn.ViewState !='1'",
-    ".Note = 'QUOTA SHARE'"
-   ],
-   "atSel": [
-    369627,
-    385320,
-    395493,
-    407837
-   ],
-   "baca": [
-    [
-     "TreatyIn.ViewState = 1",
-     "TreatyIn.EDMMaterialType = 2"
-    ],
-    [
-     "TreatyIn.ViewState = 1",
-     "TreatyIn.EDMMaterialType = 2"
-    ],
-    "selalu",
-    [
-     "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-    ]
-   ],
-   "tombol": [
-    null,
-    null,
-    {
-     "t": "tombol",
-     "at": 395493,
-     "label": "Remove",
-     "syarat": [
-      "TreatyIn.ViewState !='1'"
-     ],
-     "aksi": [
-      {
-       "aksi": "deleteRow"
-      },
-      {
-       "aksi": "refresh",
-       "aktivitas": "LimitCalculation",
-       "param": {
-        "kindoftreaty": "qs",
-        "add": "",
-        "autocalculate": ".Layer"
+       "t": "medan",
+       "at": 33452,
+       "label": "Treaty Group",
+       "dari": "sisi",
+       "kunci": "TreatyGroupID",
+       "format": "pxDropdown",
+       "desimal": null,
+       "syarat": [],
+       "baca": [
+        "TreatyIn.ViewState = 1",
+        "TreatyIn.EDMMaterialType = 2"
+       ],
+       "pilihan": {
+        "sumber": "reportdefinition",
+        "rd": "BrowseTreatyGroup_RD",
+        "nilai": "ID",
+        "tampil": "TreatyGroupName",
+        "param": {
+         "ID": ""
+        }
        },
-       "syarat": ".Note = 'QUOTA SHARE'"
+       "aksiUbah": [
+        {
+         "aksi": "refresh",
+         "aktivitas": "SetTreatyGroupName_Act"
+        },
+        {
+         "aksi": "refresh"
+        },
+        {
+         "aksi": "refresh",
+         "aktivitas": "FetchQSfromMaster",
+         "transformasi": "SetDetailsID",
+         "param": {
+          "ParentReinsTypeID": ""
+         },
+         "syarat": ".TreatyType = 'QUOTA SHARE'"
+        },
+        {
+         "aksi": "refresh",
+         "aktivitas": "LimitCalculation",
+         "param": {
+          "kindoftreaty": "surplus",
+          "add": "",
+          "autocalculate": "true"
+         },
+         "syarat": ".TreatyType = 'SURPLUS'"
+        }
+       ]
       }
      ],
-     "nonaktif": [
-      "TreatyIn.EDMMaterialType = 2"
-     ]
+     "tata": "kiri"
     },
-    null
-   ],
-   "tombolKepala": [
-    null,
-    null,
     {
-     "t": "tombol",
-     "at": 356966,
-     "label": "Add",
-     "syarat": [
-      "TreatyIn.ViewState !='1'"
+     "t": "kosong",
+     "at": 61842,
+     "syarat": []
+    },
+    {
+     "t": "grid",
+     "at": 86887,
+     "prop": ".COBList",
+     "dari": "sisi",
+     "larik": "COBList",
+     "syarat": [],
+     "kolom": [
+      "Class of Business"
      ],
-     "aksi": [
-      {
-       "aksi": "refresh",
-       "transformasi": "AddLimitRetentionCession",
-       "paramDT": {
-        "type": "limit"
-       }
-      }
+     "kunci": [
+      "ClassOfBusiness"
      ],
-     "nonaktif": [
-      "TreatyIn.EDMMaterialType = 2"
-     ]
-    },
-    null
-   ],
-   "pilihan": [
-    {
-     "sumber": "reportdefinition",
-     "rd": "BrowseCurrencyTreatyIn_RD",
-     "nilai": "Currency",
-     "tampil": "Currency",
-     "param": {
-      "Currency": ""
-     }
-    },
-    null,
-    null,
-    null
-   ],
-   "aksiUbah": [
-    [
-     {
-      "aksi": "postValue"
-     },
-     {
-      "aksi": "runActivity",
-      "aktivitas": "SetCurrName_Act"
-     },
-     {
-      "aksi": "refresh",
-      "aktivitas": "LimitCalculation",
-      "param": {
-       "kindoftreaty": "QS",
-       "add": "",
-       "autocalculate": ".Layer"
-      },
-      "syarat": ".Note = 'QUOTA SHARE'"
-     }
-    ],
-    [
-     {
-      "aksi": "refresh",
-      "aktivitas": "LimitCalculation",
-      "param": {
-       "kindoftreaty": "qs",
-       "add": "",
-       "autocalculate": ".Layer"
-      },
-      "syarat": ".Note = 'QUOTA SHARE'"
-     }
-    ],
-    null,
-    null
-   ],
-   "modeBaris": "row",
-   "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-  },
-  {
-   "t": "teks",
-   "at": 460405,
-   "teks": "Retention",
-   "syarat": []
-  },
-  {
-   "t": "medan",
-   "at": 474451,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "RetentionPct",
-   "format": "pxNumber",
-   "desimal": null,
-   "syarat": [
-    ".TreatyType = 'QUOTA SHARE'"
-   ],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    },
-    {
-     "aksi": "refresh",
-     "aktivitas": "LimitCalculation",
-     "param": {
-      "kindoftreaty": "qs",
-      "ioo": ".IOOLimit"
-     }
-    }
-   ]
-  },
-  {
-   "t": "teks",
-   "at": 481479,
-   "teks": "%",
-   "syarat": [
-    ".TreatyType = 'QUOTA SHARE'"
-   ]
-  },
-  {
-   "t": "grid",
-   "at": 524406,
-   "prop": ".RetentionList",
-   "dari": "sisi",
-   "larik": "RetentionList",
-   "syarat": [],
-   "kolom": [
-    "",
-    "",
-    "",
-    ""
-   ],
-   "kunci": [
-    "Currency",
-    "Value",
-    "",
-    "Layer"
-   ],
-   "lebar": [
-    196,
-    363,
-    104,
-    128
-   ],
-   "desimal": [
-    null,
-    2,
-    null,
-    null
-   ],
-   "format": [
-    "pxDropdown",
-    "pxNumber",
-    "pxButton",
-    "pxCheckbox"
-   ],
-   "syaratSel": [
-    null,
-    null,
-    "TreatyIn.ViewState !='1'",
-    ".Note = 'SURPLUS' || .Note = '2ND SURPLUS' || .Note = '3RD SURPLUS' || .Note = 'SPECIAL SURPLUS'"
-   ],
-   "atSel": [
-    548441,
-    566006,
-    578978,
-    590393
-   ],
-   "baca": [
-    [
-     "TreatyIn.ViewState = 1",
-     "TreatyIn.EDMMaterialType = 2"
-    ],
-    [
-     "TreatyIn.ViewState = 1",
-     "TreatyIn.EDMMaterialType = 2"
-    ],
-    "selalu",
-    [
-     "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-    ]
-   ],
-   "tombol": [
-    null,
-    null,
-    {
-     "t": "tombol",
-     "at": 578978,
-     "label": "Remove",
-     "syarat": [
-      "TreatyIn.ViewState !='1'"
+     "lebar": [
+      272
      ],
-     "aksi": [
+     "desimal": [
+      null
+     ],
+     "format": [
+      "pxAutoComplete"
+     ],
+     "syaratSel": [
+      null
+     ],
+     "atSel": [
+      104472
+     ],
+     "baca": [
+      [
+       "TreatyIn.ViewState = 1",
+       "TreatyIn.EDMMaterialType = 2"
+      ]
+     ],
+     "tombol": [
+      null
+     ],
+     "tombolKepala": [
+      null
+     ],
+     "pilihan": [
       {
-       "aksi": "deleteRow"
-      },
-      {
-       "aksi": "refresh",
-       "aktivitas": "LimitCalculation",
+       "sumber": "reportdefinition",
+       "rd": "BrowseTreatyBusinessWOType_RD",
+       "nilai": "BIZNAME",
        "param": {
-        "kindoftreaty": "surplus",
-        "add": "man",
-        "autocalculate": ".Layer"
-       }
+        "pTreatyGroupId": ".TreatyGroupID"
+       },
+       "setel": [
+        {
+         "target": "ClassOfBusinessID",
+         "dari": "BizCode"
+        }
+       ]
       }
      ],
-     "nonaktif": [
-      "TreatyIn.EDMMaterialType = 2"
-     ]
-    },
-    null
-   ],
-   "tombolKepala": [
-    null,
-    null,
-    {
-     "t": "tombol",
-     "at": 536135,
-     "label": "Add",
-     "syarat": [
-      "TreatyIn.ViewState !='1'"
-     ],
-     "aksi": [
-      {
-       "aksi": "refresh",
-       "transformasi": "AddLimitRetentionCession",
-       "paramDT": {
-        "type": "retention"
+     "aksiUbah": [
+      [
+       {
+        "aksi": "runDataTransform",
+        "transformasi": "SetCoBID",
+        "paramDT": {
+         "id": ".ClassOfBusinessID"
+        }
+       },
+       {
+        "aksi": "postValue"
        }
-      }
+      ]
      ],
-     "nonaktif": [
-      "TreatyIn.EDMMaterialType = 2"
-     ]
-    },
-    null
-   ],
-   "pilihan": [
-    {
-     "sumber": "reportdefinition",
-     "rd": "BrowseCurrencyTreatyIn_RD",
-     "nilai": "Currency",
-     "tampil": "Currency",
-     "param": {
-      "Currency": ""
-     }
-    },
-    null,
-    null,
-    null
-   ],
-   "aksiUbah": [
-    [
-     {
-      "aksi": "postValue"
-     },
-     {
-      "aksi": "runActivity",
-      "aktivitas": "SetCurrName_Act"
-     },
-     {
-      "aksi": "refresh",
-      "aktivitas": "LimitCalculation",
-      "param": {
-       "kindoftreaty": "surplus",
-       "add": "man",
-       "autocalculate": ".Layer"
-      },
-      "syarat": ".Note = 'SURPLUS' || .Note = '2ND SURPLUS' || .Note = '3RD SURPLUS'"
-     }
-    ],
-    [
-     {
-      "aksi": "refresh",
-      "aktivitas": "LimitCalculation",
-      "param": {
-       "kindoftreaty": "surplus",
-       "add": "man",
-       "autocalculate": ".Layer"
-      },
-      "syarat": ".Note = 'SURPLUS' || .Note = '2ND SURPLUS' || .Note = '3RD SURPLUS' || .Note = 'SPECIAL SURPLUS'"
-     }
-    ],
-    null,
-    null
-   ],
-   "modeBaris": "row",
-   "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-  },
-  {
-   "t": "teks",
-   "at": 642766,
-   "teks": "Cession to R/I",
-   "syarat": []
-  },
-  {
-   "t": "medan",
-   "at": 656819,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "CessionPct",
-   "format": "pxNumber",
-   "desimal": null,
-   "syarat": [
-    ".TreatyType = 'QUOTA SHARE'"
-   ],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    },
-    {
-     "aksi": "refresh",
-     "aktivitas": "LimitCalculation",
-     "param": {
-      "kindoftreaty": "qs",
-      "ioo": ".IOOLimit"
-     }
+     "modeBaris": "row",
+     "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails"
     }
-   ]
+   ],
+   "tata": "g2"
   },
   {
-   "t": "teks",
-   "at": 663861,
-   "teks": "%",
-   "syarat": [
-    ".TreatyType = 'QUOTA SHARE'"
-   ]
-  },
-  {
-   "t": "grid",
-   "at": 706791,
-   "prop": ".CessionList",
-   "dari": "sisi",
-   "larik": "CessionList",
+   "t": "blok",
+   "at": 154552,
+   "judul": "",
    "syarat": [],
-   "kolom": [
-    "",
-    "",
-    ""
-   ],
-   "kunci": [
-    "Currency",
-    "Value",
-    ""
-   ],
-   "lebar": [
-    193,
-    352,
-    102
-   ],
-   "desimal": [
-    null,
-    2,
-    null
-   ],
-   "format": [
-    "pxDropdown",
-    "pxNumber",
-    "pxButton"
-   ],
-   "syaratSel": [
-    null,
-    null,
-    "TreatyIn.ViewState !='1'"
-   ],
-   "atSel": [
-    728136,
-    741842,
-    747116
-   ],
-   "baca": [
-    [
-     "TreatyIn.ViewState = 1",
-     "TreatyIn.EDMMaterialType = 2"
-    ],
-    [
-     "TreatyIn.ViewState = 1",
-     "TreatyIn.EDMMaterialType = 2"
-    ],
-    "selalu"
-   ],
-   "tombol": [
-    null,
-    null,
+   "anak": [
     {
-     "t": "tombol",
-     "at": 747116,
-     "label": "Remove",
+     "t": "blok",
+     "at": 170234,
+     "judul": "",
      "syarat": [
-      "TreatyIn.ViewState !='1'"
+      ".TreatyType = 'QUOTA SHARE'"
      ],
-     "aksi": [
+     "anak": [
       {
-       "aksi": "deleteRow"
+       "t": "blok",
+       "at": 179284,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 185962,
+         "label": "QS %",
+         "dari": "sisi",
+         "kunci": "QSPct",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1",
+          "TreatyIn.EDMMaterialType = 2"
+         ],
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          },
+          {
+           "aksi": "refresh",
+           "aktivitas": "LimitCalculation",
+           "param": {
+            "kindoftreaty": "qs",
+            "add": "",
+            "autocalculate": "true"
+           }
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
       }
      ],
-     "nonaktif": [
-      "TreatyIn.EDMMaterialType = 2"
-     ]
-    }
-   ],
-   "tombolKepala": [
-    null,
-    null,
-    {
-     "t": "tombol",
-     "at": 718518,
-     "label": "Add",
-     "syarat": [
-      "TreatyIn.ViewState !='1'"
-     ],
-     "aksi": [
-      {
-       "aksi": "refresh",
-       "transformasi": "AddLimitRetentionCession",
-       "paramDT": {
-        "type": "cession"
-       }
-      }
-     ],
-     "nonaktif": [
-      "TreatyIn.EDMMaterialType = 2"
-     ]
-    }
-   ],
-   "pilihan": [
-    {
-     "sumber": "reportdefinition",
-     "rd": "BrowseCurrencyTreatyIn_RD",
-     "nilai": "Currency",
-     "tampil": "Currency",
-     "param": {
-      "Currency": ""
-     }
+     "tata": "g2"
     },
-    null,
-    null
+    {
+     "t": "blok",
+     "at": 212267,
+     "judul": "",
+     "syarat": [
+      ".TreatyType = 'SURPLUS' || .TreatyType = '2ND SURPLUS' || .TreatyType = '3RD SURPLUS' || .TreatyType = 'SPECIAL SURPLUS'"
+     ],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 221410,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 228088,
+         "label": "Lines",
+         "dari": "sisi",
+         "kunci": "Surplus",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1",
+          "TreatyIn.EDMMaterialType = 2"
+         ],
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          },
+          {
+           "aksi": "refresh",
+           "aktivitas": "LimitCalculation",
+           "param": {
+            "kindoftreaty": "surplus",
+            "add": "",
+            "autocalculate": "true"
+           }
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      }
+     ],
+     "tata": "g2"
+    },
+    {
+     "t": "blok",
+     "at": 254537,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 263534,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "blok",
+         "at": 276813,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "teks",
+           "at": 283497,
+           "teks": "100% Limit",
+           "syarat": []
+          },
+          {
+           "t": "blok",
+           "at": 290883,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "teks",
+             "at": 297544,
+             "teks": "100",
+             "syarat": [
+              ".TreatyType = 'QUOTA SHARE'"
+             ]
+            },
+            {
+             "t": "teks",
+             "at": 302320,
+             "teks": "%",
+             "syarat": [
+              ".TreatyType = 'QUOTA SHARE'"
+             ]
+            }
+           ],
+           "tata": "alir"
+          }
+         ],
+         "tata": "g2"
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "grid",
+       "at": 345241,
+       "prop": ".IOOLimitList",
+       "dari": "sisi",
+       "larik": "IOOLimitList",
+       "syarat": [],
+       "kolom": [
+        "",
+        "",
+        "",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value",
+        "",
+        "Layer"
+       ],
+       "lebar": [
+        194,
+        361,
+        102,
+        128
+       ],
+       "desimal": [
+        null,
+        2,
+        null,
+        null
+       ],
+       "format": [
+        "pxDropdown",
+        "pxNumber",
+        "pxButton",
+        "pxCheckbox"
+       ],
+       "syaratSel": [
+        null,
+        null,
+        "TreatyIn.ViewState !='1'",
+        ".Note = 'QUOTA SHARE'"
+       ],
+       "atSel": [
+        369627,
+        385320,
+        395493,
+        407837
+       ],
+       "baca": [
+        [
+         "TreatyIn.ViewState = 1",
+         "TreatyIn.EDMMaterialType = 2"
+        ],
+        [
+         "TreatyIn.ViewState = 1",
+         "TreatyIn.EDMMaterialType = 2"
+        ],
+        "selalu",
+        [
+         "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+        ]
+       ],
+       "tombol": [
+        null,
+        null,
+        {
+         "t": "tombol",
+         "at": 395493,
+         "label": "Remove",
+         "syarat": [
+          "TreatyIn.ViewState !='1'"
+         ],
+         "aksi": [
+          {
+           "aksi": "deleteRow"
+          },
+          {
+           "aksi": "refresh",
+           "aktivitas": "LimitCalculation",
+           "param": {
+            "kindoftreaty": "qs",
+            "add": "",
+            "autocalculate": ".Layer"
+           },
+           "syarat": ".Note = 'QUOTA SHARE'"
+          }
+         ],
+         "nonaktif": [
+          "TreatyIn.EDMMaterialType = 2"
+         ]
+        },
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null,
+        {
+         "t": "tombol",
+         "at": 356966,
+         "label": "Add",
+         "syarat": [
+          "TreatyIn.ViewState !='1'"
+         ],
+         "aksi": [
+          {
+           "aksi": "refresh",
+           "transformasi": "AddLimitRetentionCession",
+           "paramDT": {
+            "type": "limit"
+           }
+          }
+         ],
+         "nonaktif": [
+          "TreatyIn.EDMMaterialType = 2"
+         ]
+        },
+        null
+       ],
+       "pilihan": [
+        {
+         "sumber": "reportdefinition",
+         "rd": "BrowseCurrencyTreatyIn_RD",
+         "nilai": "Currency",
+         "tampil": "Currency",
+         "param": {
+          "Currency": ""
+         }
+        },
+        null,
+        null,
+        null
+       ],
+       "aksiUbah": [
+        [
+         {
+          "aksi": "postValue"
+         },
+         {
+          "aksi": "runActivity",
+          "aktivitas": "SetCurrName_Act"
+         },
+         {
+          "aksi": "refresh",
+          "aktivitas": "LimitCalculation",
+          "param": {
+           "kindoftreaty": "QS",
+           "add": "",
+           "autocalculate": ".Layer"
+          },
+          "syarat": ".Note = 'QUOTA SHARE'"
+         }
+        ],
+        [
+         {
+          "aksi": "refresh",
+          "aktivitas": "LimitCalculation",
+          "param": {
+           "kindoftreaty": "qs",
+           "add": "",
+           "autocalculate": ".Layer"
+          },
+          "syarat": ".Note = 'QUOTA SHARE'"
+         }
+        ],
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "blok",
+       "at": 440136,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "blok",
+         "at": 453721,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "teks",
+           "at": 460405,
+           "teks": "Retention",
+           "syarat": []
+          },
+          {
+           "t": "blok",
+           "at": 467790,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "medan",
+             "at": 474451,
+             "label": "",
+             "dari": "sisi",
+             "kunci": "RetentionPct",
+             "format": "pxNumber",
+             "desimal": null,
+             "syarat": [
+              ".TreatyType = 'QUOTA SHARE'"
+             ],
+             "baca": "selalu",
+             "aksiUbah": [
+              {
+               "aksi": "postValue"
+              },
+              {
+               "aksi": "refresh",
+               "aktivitas": "LimitCalculation",
+               "param": {
+                "kindoftreaty": "qs",
+                "ioo": ".IOOLimit"
+               }
+              }
+             ]
+            },
+            {
+             "t": "teks",
+             "at": 481479,
+             "teks": "%",
+             "syarat": [
+              ".TreatyType = 'QUOTA SHARE'"
+             ]
+            }
+           ],
+           "tata": "alir"
+          }
+         ],
+         "tata": "g2"
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "grid",
+       "at": 524406,
+       "prop": ".RetentionList",
+       "dari": "sisi",
+       "larik": "RetentionList",
+       "syarat": [],
+       "kolom": [
+        "",
+        "",
+        "",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value",
+        "",
+        "Layer"
+       ],
+       "lebar": [
+        196,
+        363,
+        104,
+        128
+       ],
+       "desimal": [
+        null,
+        2,
+        null,
+        null
+       ],
+       "format": [
+        "pxDropdown",
+        "pxNumber",
+        "pxButton",
+        "pxCheckbox"
+       ],
+       "syaratSel": [
+        null,
+        null,
+        "TreatyIn.ViewState !='1'",
+        ".Note = 'SURPLUS' || .Note = '2ND SURPLUS' || .Note = '3RD SURPLUS' || .Note = 'SPECIAL SURPLUS'"
+       ],
+       "atSel": [
+        548441,
+        566006,
+        578978,
+        590393
+       ],
+       "baca": [
+        [
+         "TreatyIn.ViewState = 1",
+         "TreatyIn.EDMMaterialType = 2"
+        ],
+        [
+         "TreatyIn.ViewState = 1",
+         "TreatyIn.EDMMaterialType = 2"
+        ],
+        "selalu",
+        [
+         "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+        ]
+       ],
+       "tombol": [
+        null,
+        null,
+        {
+         "t": "tombol",
+         "at": 578978,
+         "label": "Remove",
+         "syarat": [
+          "TreatyIn.ViewState !='1'"
+         ],
+         "aksi": [
+          {
+           "aksi": "deleteRow"
+          },
+          {
+           "aksi": "refresh",
+           "aktivitas": "LimitCalculation",
+           "param": {
+            "kindoftreaty": "surplus",
+            "add": "man",
+            "autocalculate": ".Layer"
+           }
+          }
+         ],
+         "nonaktif": [
+          "TreatyIn.EDMMaterialType = 2"
+         ]
+        },
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null,
+        {
+         "t": "tombol",
+         "at": 536135,
+         "label": "Add",
+         "syarat": [
+          "TreatyIn.ViewState !='1'"
+         ],
+         "aksi": [
+          {
+           "aksi": "refresh",
+           "transformasi": "AddLimitRetentionCession",
+           "paramDT": {
+            "type": "retention"
+           }
+          }
+         ],
+         "nonaktif": [
+          "TreatyIn.EDMMaterialType = 2"
+         ]
+        },
+        null
+       ],
+       "pilihan": [
+        {
+         "sumber": "reportdefinition",
+         "rd": "BrowseCurrencyTreatyIn_RD",
+         "nilai": "Currency",
+         "tampil": "Currency",
+         "param": {
+          "Currency": ""
+         }
+        },
+        null,
+        null,
+        null
+       ],
+       "aksiUbah": [
+        [
+         {
+          "aksi": "postValue"
+         },
+         {
+          "aksi": "runActivity",
+          "aktivitas": "SetCurrName_Act"
+         },
+         {
+          "aksi": "refresh",
+          "aktivitas": "LimitCalculation",
+          "param": {
+           "kindoftreaty": "surplus",
+           "add": "man",
+           "autocalculate": ".Layer"
+          },
+          "syarat": ".Note = 'SURPLUS' || .Note = '2ND SURPLUS' || .Note = '3RD SURPLUS'"
+         }
+        ],
+        [
+         {
+          "aksi": "refresh",
+          "aktivitas": "LimitCalculation",
+          "param": {
+           "kindoftreaty": "surplus",
+           "add": "man",
+           "autocalculate": ".Layer"
+          },
+          "syarat": ".Note = 'SURPLUS' || .Note = '2ND SURPLUS' || .Note = '3RD SURPLUS' || .Note = 'SPECIAL SURPLUS'"
+         }
+        ],
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "blok",
+       "at": 622494,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "blok",
+         "at": 636082,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "teks",
+           "at": 642766,
+           "teks": "Cession to R/I",
+           "syarat": []
+          },
+          {
+           "t": "blok",
+           "at": 650158,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "medan",
+             "at": 656819,
+             "label": "",
+             "dari": "sisi",
+             "kunci": "CessionPct",
+             "format": "pxNumber",
+             "desimal": null,
+             "syarat": [
+              ".TreatyType = 'QUOTA SHARE'"
+             ],
+             "baca": "selalu",
+             "aksiUbah": [
+              {
+               "aksi": "postValue"
+              },
+              {
+               "aksi": "refresh",
+               "aktivitas": "LimitCalculation",
+               "param": {
+                "kindoftreaty": "qs",
+                "ioo": ".IOOLimit"
+               }
+              }
+             ]
+            },
+            {
+             "t": "teks",
+             "at": 663861,
+             "teks": "%",
+             "syarat": [
+              ".TreatyType = 'QUOTA SHARE'"
+             ]
+            }
+           ],
+           "tata": "alir"
+          }
+         ],
+         "tata": "g2"
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "grid",
+       "at": 706791,
+       "prop": ".CessionList",
+       "dari": "sisi",
+       "larik": "CessionList",
+       "syarat": [],
+       "kolom": [
+        "",
+        "",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value",
+        ""
+       ],
+       "lebar": [
+        193,
+        352,
+        102
+       ],
+       "desimal": [
+        null,
+        2,
+        null
+       ],
+       "format": [
+        "pxDropdown",
+        "pxNumber",
+        "pxButton"
+       ],
+       "syaratSel": [
+        null,
+        null,
+        "TreatyIn.ViewState !='1'"
+       ],
+       "atSel": [
+        728136,
+        741842,
+        747116
+       ],
+       "baca": [
+        [
+         "TreatyIn.ViewState = 1",
+         "TreatyIn.EDMMaterialType = 2"
+        ],
+        [
+         "TreatyIn.ViewState = 1",
+         "TreatyIn.EDMMaterialType = 2"
+        ],
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null,
+        {
+         "t": "tombol",
+         "at": 747116,
+         "label": "Remove",
+         "syarat": [
+          "TreatyIn.ViewState !='1'"
+         ],
+         "aksi": [
+          {
+           "aksi": "deleteRow"
+          }
+         ],
+         "nonaktif": [
+          "TreatyIn.EDMMaterialType = 2"
+         ]
+        }
+       ],
+       "tombolKepala": [
+        null,
+        null,
+        {
+         "t": "tombol",
+         "at": 718518,
+         "label": "Add",
+         "syarat": [
+          "TreatyIn.ViewState !='1'"
+         ],
+         "aksi": [
+          {
+           "aksi": "refresh",
+           "transformasi": "AddLimitRetentionCession",
+           "paramDT": {
+            "type": "cession"
+           }
+          }
+         ],
+         "nonaktif": [
+          "TreatyIn.EDMMaterialType = 2"
+         ]
+        }
+       ],
+       "pilihan": [
+        {
+         "sumber": "reportdefinition",
+         "rd": "BrowseCurrencyTreatyIn_RD",
+         "nilai": "Currency",
+         "tampil": "Currency",
+         "param": {
+          "Currency": ""
+         }
+        },
+        null,
+        null
+       ],
+       "aksiUbah": [
+        [
+         {
+          "aksi": "postValue"
+         },
+         {
+          "aksi": "runActivity",
+          "aktivitas": "SetCurrName_Act"
+         },
+         {
+          "aksi": "refresh"
+         }
+        ],
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      }
+     ],
+     "tata": "t3070"
+    }
    ],
-   "aksiUbah": [
-    [
-     {
-      "aksi": "postValue"
-     },
-     {
-      "aksi": "runActivity",
-      "aktivitas": "SetCurrName_Act"
-     },
-     {
-      "aksi": "refresh"
-     }
-    ],
-    null,
-    null
-   ],
-   "modeBaris": "row",
-   "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+   "tata": "kiri"
   },
   {
    "t": "blok",
@@ -17074,171 +18766,283 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "medan",
-       "at": 828145,
-       "label": "RSMD Limit",
-       "dari": "sisi",
-       "kunci": "CurrencyRSMD",
-       "format": "pxDropdown",
-       "desimal": null,
+       "t": "blok",
+       "at": 812512,
+       "judul": "",
        "syarat": [],
-       "baca": [
-        "TreatyIn.ViewState = 1",
-        "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-       ],
-       "pilihan": {
-        "sumber": "reportdefinition",
-        "rd": "BrowseCurrencyTreatyIn_RD",
-        "nilai": "Currency",
-        "tampil": "Currency",
-        "param": {
-         "Currency": ""
-        }
-       },
-       "aksiUbah": [
+       "anak": [
         {
-         "aksi": "postValue"
-        }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 853160,
-       "label": "",
-       "dari": "sisi",
-       "kunci": "RSMDLimit",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": [
-        "TreatyIn.ViewState = 1",
-        "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 884088,
-       "label": "Earthquake Limit",
-       "dari": "sisi",
-       "kunci": "CurrencyEarthquake",
-       "format": "pxDropdown",
-       "desimal": null,
-       "syarat": [],
-       "baca": [
-        "TreatyIn.ViewState = 1",
-        "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-       ],
-       "pilihan": {
-        "sumber": "reportdefinition",
-        "rd": "BrowseCurrencyTreatyIn_RD",
-        "nilai": "Currency",
-        "tampil": "Currency",
-        "param": {
-         "Currency": ""
-        }
-       },
-       "aksiUbah": [
+         "t": "blok",
+         "at": 821482,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 828145,
+           "label": "RSMD Limit",
+           "dari": "sisi",
+           "kunci": "CurrencyRSMD",
+           "format": "pxDropdown",
+           "desimal": null,
+           "syarat": [],
+           "baca": [
+            "TreatyIn.ViewState = 1",
+            "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+           ],
+           "pilihan": {
+            "sumber": "reportdefinition",
+            "rd": "BrowseCurrencyTreatyIn_RD",
+            "nilai": "Currency",
+            "tampil": "Currency",
+            "param": {
+             "Currency": ""
+            }
+           },
+           "aksiUbah": [
+            {
+             "aksi": "postValue"
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
+        },
         {
-         "aksi": "postValue"
-        }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 909906,
-       "label": "",
-       "dari": "sisi",
-       "kunci": "Earthquake",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": [
-        "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 940793,
-       "label": "Flood Limit (Jabodetabek)",
-       "dari": "sisi",
-       "kunci": "CurrencyFloodJab",
-       "format": "pxDropdown",
-       "desimal": null,
-       "syarat": [],
-       "baca": [
-        "TreatyIn.ViewState = 1",
-        "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-       ],
-       "pilihan": {
-        "sumber": "reportdefinition",
-        "rd": "BrowseCurrencyTreatyIn_RD",
-        "nilai": "Currency",
-        "tampil": "Currency",
-        "param": {
-         "Currency": ""
-        }
-       },
-       "aksiUbah": [
+         "t": "blok",
+         "at": 846497,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 853160,
+           "label": "",
+           "dari": "sisi",
+           "kunci": "RSMDLimit",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": [
+            "TreatyIn.ViewState = 1",
+            "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+           ]
+          }
+         ],
+         "tata": "kiri"
+        },
         {
-         "aksi": "postValue"
-        }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 966619,
-       "label": "",
-       "dari": "sisi",
-       "kunci": "FloodJab",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": [
-        "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 997509,
-       "label": "Flood Limit (Nationwide)",
-       "dari": "sisi",
-       "kunci": "CurrencyFloodNat",
-       "format": "pxDropdown",
-       "desimal": null,
-       "syarat": [],
-       "baca": [
-        "TreatyIn.ViewState = 1",
-        "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-       ],
-       "pilihan": {
-        "sumber": "reportdefinition",
-        "rd": "BrowseCurrencyTreatyIn_RD",
-        "nilai": "Currency",
-        "tampil": "Currency",
-        "param": {
-         "Currency": ""
-        }
-       },
-       "aksiUbah": [
+         "t": "kosong",
+         "at": 865479,
+         "syarat": []
+        },
         {
-         "aksi": "postValue"
+         "t": "kosong",
+         "at": 870301,
+         "syarat": []
+        },
+        {
+         "t": "blok",
+         "at": 877426,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 884088,
+           "label": "Earthquake Limit",
+           "dari": "sisi",
+           "kunci": "CurrencyEarthquake",
+           "format": "pxDropdown",
+           "desimal": null,
+           "syarat": [],
+           "baca": [
+            "TreatyIn.ViewState = 1",
+            "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+           ],
+           "pilihan": {
+            "sumber": "reportdefinition",
+            "rd": "BrowseCurrencyTreatyIn_RD",
+            "nilai": "Currency",
+            "tampil": "Currency",
+            "param": {
+             "Currency": ""
+            }
+           },
+           "aksiUbah": [
+            {
+             "aksi": "postValue"
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
+        },
+        {
+         "t": "blok",
+         "at": 903244,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 909906,
+           "label": "",
+           "dari": "sisi",
+           "kunci": "Earthquake",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": [
+            "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+           ]
+          }
+         ],
+         "tata": "kiri"
+        },
+        {
+         "t": "kosong",
+         "at": 922184,
+         "syarat": []
+        },
+        {
+         "t": "kosong",
+         "at": 927006,
+         "syarat": []
+        },
+        {
+         "t": "blok",
+         "at": 934131,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 940793,
+           "label": "Flood Limit (Jabodetabek)",
+           "dari": "sisi",
+           "kunci": "CurrencyFloodJab",
+           "format": "pxDropdown",
+           "desimal": null,
+           "syarat": [],
+           "baca": [
+            "TreatyIn.ViewState = 1",
+            "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+           ],
+           "pilihan": {
+            "sumber": "reportdefinition",
+            "rd": "BrowseCurrencyTreatyIn_RD",
+            "nilai": "Currency",
+            "tampil": "Currency",
+            "param": {
+             "Currency": ""
+            }
+           },
+           "aksiUbah": [
+            {
+             "aksi": "postValue"
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
+        },
+        {
+         "t": "blok",
+         "at": 959956,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 966619,
+           "label": "",
+           "dari": "sisi",
+           "kunci": "FloodJab",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": [
+            "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+           ]
+          }
+         ],
+         "tata": "kiri"
+        },
+        {
+         "t": "kosong",
+         "at": 978893,
+         "syarat": []
+        },
+        {
+         "t": "kosong",
+         "at": 983717,
+         "syarat": []
+        },
+        {
+         "t": "blok",
+         "at": 990846,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 997509,
+           "label": "Flood Limit (Nationwide)",
+           "dari": "sisi",
+           "kunci": "CurrencyFloodNat",
+           "format": "pxDropdown",
+           "desimal": null,
+           "syarat": [],
+           "baca": [
+            "TreatyIn.ViewState = 1",
+            "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+           ],
+           "pilihan": {
+            "sumber": "reportdefinition",
+            "rd": "BrowseCurrencyTreatyIn_RD",
+            "nilai": "Currency",
+            "tampil": "Currency",
+            "param": {
+             "Currency": ""
+            }
+           },
+           "aksiUbah": [
+            {
+             "aksi": "postValue"
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
+        },
+        {
+         "t": "blok",
+         "at": 1016671,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 1023334,
+           "label": "",
+           "dari": "sisi",
+           "kunci": "FloodNation",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": [
+            "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+           ]
+          }
+         ],
+         "tata": "kiri"
         }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 1023334,
-       "label": "",
-       "dari": "sisi",
-       "kunci": "FloodNation",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": [
-        "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-       ]
+       ],
+       "tata": "t3070"
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ],
    "tab": true
@@ -17281,7 +19085,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
        ]
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ],
    "tab": true
@@ -17574,157 +19379,194 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "medan",
-       "at": 1337879,
-       "label": "% Premium Reserve",
-       "dari": "sisi",
-       "kunci": "PremiumReservePct",
-       "format": "pxTextInput",
-       "desimal": null,
+       "t": "blok",
+       "at": 1331223,
+       "judul": "",
        "syarat": [],
-       "baca": [
-        "TreatyIn.ViewState ='1' || TreatyIn.EDMMaterialType = 2"
-       ],
-       "aksiUbah": [
+       "anak": [
         {
-         "aksi": "refresh",
-         "aktivitas": "PremiumReserveCalculate"
-        }
-       ]
-      },
-      {
-       "t": "teks",
-       "at": 1389912,
-       "teks": "Premium Reserve",
-       "syarat": []
-      },
-      {
-       "t": "grid",
-       "at": 1427153,
-       "prop": ".ReserveList",
-       "dari": "sisi",
-       "larik": "ReserveList",
-       "syarat": [],
-       "kolom": [
-        "",
-        "",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value",
-        ""
-       ],
-       "lebar": [
-        198,
-        363,
-        101
-       ],
-       "desimal": [
-        null,
-        2,
-        null
-       ],
-       "format": [
-        "pxDropdown",
-        "pxNumber",
-        "pxButton"
-       ],
-       "syaratSel": [
-        null,
-        null,
-        "TreatyIn.ViewState !='1'"
-       ],
-       "atSel": [
-        1448396,
-        1459946,
-        1465633
-       ],
-       "baca": [
-        [
-         "TreatyIn.ViewState = 1",
-         "TreatyIn.EDMMaterialType = 2"
-        ],
-        [
-         "TreatyIn.ViewState = 1",
-         "TreatyIn.EDMMaterialType = 2"
-        ],
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null,
-        {
-         "t": "tombol",
-         "at": 1465633,
-         "label": "Remove",
-         "syarat": [
-          "TreatyIn.ViewState !='1'"
+         "t": "medan",
+         "at": 1337879,
+         "label": "% Premium Reserve",
+         "dari": "sisi",
+         "kunci": "PremiumReservePct",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState ='1' || TreatyIn.EDMMaterialType = 2"
          ],
-         "aksi": [
-          {
-           "aksi": "deleteRow"
-          }
-         ],
-         "nonaktif": [
-          "TreatyIn.EDMMaterialType = 2"
-         ]
-        }
-       ],
-       "tombolKepala": [
-        null,
-        null,
-        {
-         "t": "tombol",
-         "at": 1438825,
-         "label": "Add",
-         "syarat": [
-          "TreatyIn.ViewState !='1'"
-         ],
-         "aksi": [
+         "aksiUbah": [
           {
            "aksi": "refresh",
-           "aktivitas": "AddValue",
-           "param": {
-            "type": "\"reserve\""
-           }
+           "aktivitas": "PremiumReserveCalculate"
           }
-         ],
-         "nonaktif": [
-          "TreatyIn.EDMMaterialType = 2"
          ]
         }
        ],
-       "pilihan": [
+       "tata": "g2"
+      },
+      {
+       "t": "blok",
+       "at": 1361058,
+       "judul": "",
+       "syarat": [],
+       "anak": [
         {
-         "sumber": "reportdefinition",
-         "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency",
-         "tampil": "Currency",
-         "param": {
-          "Currency": ""
-         }
+         "t": "blok",
+         "at": 1370027,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "blok",
+           "at": 1383266,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "teks",
+             "at": 1389912,
+             "teks": "Premium Reserve",
+             "syarat": []
+            }
+           ],
+           "tata": "alir"
+          }
+         ],
+         "tata": "kiri"
         },
-        null,
-        null
+        {
+         "t": "grid",
+         "at": 1427153,
+         "prop": ".ReserveList",
+         "dari": "sisi",
+         "larik": "ReserveList",
+         "syarat": [],
+         "kolom": [
+          "",
+          "",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value",
+          ""
+         ],
+         "lebar": [
+          198,
+          363,
+          101
+         ],
+         "desimal": [
+          null,
+          2,
+          null
+         ],
+         "format": [
+          "pxDropdown",
+          "pxNumber",
+          "pxButton"
+         ],
+         "syaratSel": [
+          null,
+          null,
+          "TreatyIn.ViewState !='1'"
+         ],
+         "atSel": [
+          1448396,
+          1459946,
+          1465633
+         ],
+         "baca": [
+          [
+           "TreatyIn.ViewState = 1",
+           "TreatyIn.EDMMaterialType = 2"
+          ],
+          [
+           "TreatyIn.ViewState = 1",
+           "TreatyIn.EDMMaterialType = 2"
+          ],
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null,
+          {
+           "t": "tombol",
+           "at": 1465633,
+           "label": "Remove",
+           "syarat": [
+            "TreatyIn.ViewState !='1'"
+           ],
+           "aksi": [
+            {
+             "aksi": "deleteRow"
+            }
+           ],
+           "nonaktif": [
+            "TreatyIn.EDMMaterialType = 2"
+           ]
+          }
+         ],
+         "tombolKepala": [
+          null,
+          null,
+          {
+           "t": "tombol",
+           "at": 1438825,
+           "label": "Add",
+           "syarat": [
+            "TreatyIn.ViewState !='1'"
+           ],
+           "aksi": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "AddValue",
+             "param": {
+              "type": "\"reserve\""
+             }
+            }
+           ],
+           "nonaktif": [
+            "TreatyIn.EDMMaterialType = 2"
+           ]
+          }
+         ],
+         "pilihan": [
+          {
+           "sumber": "reportdefinition",
+           "rd": "BrowseCurrencyTreatyIn_RD",
+           "nilai": "Currency",
+           "tampil": "Currency",
+           "param": {
+            "Currency": ""
+           }
+          },
+          null,
+          null
+         ],
+         "aksiUbah": [
+          [
+           {
+            "aksi": "postValue"
+           },
+           {
+            "aksi": "runActivity",
+            "aktivitas": "SetCurrName_Act"
+           }
+          ],
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "aksiUbah": [
-        [
-         {
-          "aksi": "postValue"
-         },
-         {
-          "aksi": "runActivity",
-          "aktivitas": "SetCurrName_Act"
-         }
-        ],
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "t3070"
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ],
    "tab": true
@@ -17799,7 +19641,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        "teks": "YDCF = Years Deficit Carried Forward",
        "syarat": []
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ],
    "tab": true
@@ -17817,138 +19660,166 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "teks",
-       "at": 1636337,
-       "teks": "PLA",
-       "syarat": []
-      },
-      {
-       "t": "grid",
-       "at": 1673566,
-       "prop": ".PLAList",
-       "dari": "sisi",
-       "larik": "PLAList",
+       "t": "blok",
+       "at": 1607483,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "",
-        "",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value",
-        ""
-       ],
-       "lebar": [
-        197,
-        361,
-        101
-       ],
-       "desimal": [
-        null,
-        2,
-        null
-       ],
-       "format": [
-        "pxDropdown",
-        "pxNumber",
-        "pxButton"
-       ],
-       "syaratSel": [
-        null,
-        null,
-        "TreatyIn.ViewState !='1'"
-       ],
-       "atSel": [
-        1694797,
-        1705957,
-        1711644
-       ],
-       "baca": [
-        [
-         "TreatyIn.ViewState = 1",
-         "TreatyIn.EDMMaterialType = 2"
-        ],
-        [
-         "TreatyIn.ViewState = 1",
-         "TreatyIn.EDMMaterialType = 2"
-        ],
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null,
+       "anak": [
         {
-         "t": "tombol",
-         "at": 1711644,
-         "label": "Remove",
-         "syarat": [
-          "TreatyIn.ViewState !='1'"
-         ],
-         "aksi": [
+         "t": "blok",
+         "at": 1616452,
+         "judul": "",
+         "syarat": [],
+         "anak": [
           {
-           "aksi": "deleteRow"
+           "t": "blok",
+           "at": 1629691,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "teks",
+             "at": 1636337,
+             "teks": "PLA",
+             "syarat": []
+            }
+           ],
+           "tata": "alir"
           }
          ],
-         "nonaktif": [
-          "TreatyIn.EDMMaterialType = 2"
-         ]
-        }
-       ],
-       "tombolKepala": [
-        null,
-        null,
-        {
-         "t": "tombol",
-         "at": 1685234,
-         "label": "Add",
-         "syarat": [
-          "TreatyIn.ViewState !='1'"
-         ],
-         "aksi": [
-          {
-           "aksi": "refresh",
-           "aktivitas": "AddValue",
-           "param": {
-            "type": "\"pla\""
-           }
-          }
-         ],
-         "nonaktif": [
-          "TreatyIn.EDMMaterialType = 2"
-         ]
-        }
-       ],
-       "pilihan": [
-        {
-         "sumber": "reportdefinition",
-         "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency",
-         "tampil": "Currency",
-         "param": {
-          "Currency": ""
-         }
+         "tata": "kiri"
         },
-        null,
-        null
+        {
+         "t": "grid",
+         "at": 1673566,
+         "prop": ".PLAList",
+         "dari": "sisi",
+         "larik": "PLAList",
+         "syarat": [],
+         "kolom": [
+          "",
+          "",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value",
+          ""
+         ],
+         "lebar": [
+          197,
+          361,
+          101
+         ],
+         "desimal": [
+          null,
+          2,
+          null
+         ],
+         "format": [
+          "pxDropdown",
+          "pxNumber",
+          "pxButton"
+         ],
+         "syaratSel": [
+          null,
+          null,
+          "TreatyIn.ViewState !='1'"
+         ],
+         "atSel": [
+          1694797,
+          1705957,
+          1711644
+         ],
+         "baca": [
+          [
+           "TreatyIn.ViewState = 1",
+           "TreatyIn.EDMMaterialType = 2"
+          ],
+          [
+           "TreatyIn.ViewState = 1",
+           "TreatyIn.EDMMaterialType = 2"
+          ],
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null,
+          {
+           "t": "tombol",
+           "at": 1711644,
+           "label": "Remove",
+           "syarat": [
+            "TreatyIn.ViewState !='1'"
+           ],
+           "aksi": [
+            {
+             "aksi": "deleteRow"
+            }
+           ],
+           "nonaktif": [
+            "TreatyIn.EDMMaterialType = 2"
+           ]
+          }
+         ],
+         "tombolKepala": [
+          null,
+          null,
+          {
+           "t": "tombol",
+           "at": 1685234,
+           "label": "Add",
+           "syarat": [
+            "TreatyIn.ViewState !='1'"
+           ],
+           "aksi": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "AddValue",
+             "param": {
+              "type": "\"pla\""
+             }
+            }
+           ],
+           "nonaktif": [
+            "TreatyIn.EDMMaterialType = 2"
+           ]
+          }
+         ],
+         "pilihan": [
+          {
+           "sumber": "reportdefinition",
+           "rd": "BrowseCurrencyTreatyIn_RD",
+           "nilai": "Currency",
+           "tampil": "Currency",
+           "param": {
+            "Currency": ""
+           }
+          },
+          null,
+          null
+         ],
+         "aksiUbah": [
+          [
+           {
+            "aksi": "postValue"
+           },
+           {
+            "aksi": "runActivity",
+            "aktivitas": "SetCurrName_Act"
+           }
+          ],
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "aksiUbah": [
-        [
-         {
-          "aksi": "postValue"
-         },
-         {
-          "aksi": "runActivity",
-          "aktivitas": "SetCurrName_Act"
-         }
-        ],
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "t3070"
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ],
    "tab": true
@@ -17966,138 +19837,166 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "teks",
-       "at": 1814504,
-       "teks": "Cash Loss Limit",
-       "syarat": []
-      },
-      {
-       "t": "grid",
-       "at": 1851745,
-       "prop": ".CashLossList",
-       "dari": "sisi",
-       "larik": "CashLossList",
+       "t": "blok",
+       "at": 1785651,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "",
-        "",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value",
-        ""
-       ],
-       "lebar": [
-        197,
-        361,
-        101
-       ],
-       "desimal": [
-        null,
-        2,
-        null
-       ],
-       "format": [
-        "pxDropdown",
-        "pxNumber",
-        "pxButton"
-       ],
-       "syaratSel": [
-        null,
-        null,
-        "TreatyIn.ViewState !='1'"
-       ],
-       "atSel": [
-        1872991,
-        1884151,
-        1889838
-       ],
-       "baca": [
-        [
-         "TreatyIn.ViewState = 1",
-         "TreatyIn.EDMMaterialType = 2"
-        ],
-        [
-         "TreatyIn.ViewState = 1",
-         "TreatyIn.EDMMaterialType = 2"
-        ],
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null,
+       "anak": [
         {
-         "t": "tombol",
-         "at": 1889838,
-         "label": "Remove",
-         "syarat": [
-          "TreatyIn.ViewState !='1'"
-         ],
-         "aksi": [
+         "t": "blok",
+         "at": 1794619,
+         "judul": "",
+         "syarat": [],
+         "anak": [
           {
-           "aksi": "deleteRow"
+           "t": "blok",
+           "at": 1807858,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "teks",
+             "at": 1814504,
+             "teks": "Cash Loss Limit",
+             "syarat": []
+            }
+           ],
+           "tata": "alir"
           }
          ],
-         "nonaktif": [
-          "TreatyIn.EDMMaterialType = 2"
-         ]
-        }
-       ],
-       "tombolKepala": [
-        null,
-        null,
-        {
-         "t": "tombol",
-         "at": 1863418,
-         "label": "Add",
-         "syarat": [
-          "TreatyIn.ViewState !='1'"
-         ],
-         "aksi": [
-          {
-           "aksi": "refresh",
-           "aktivitas": "AddValue",
-           "param": {
-            "type": "\"cashloss\""
-           }
-          }
-         ],
-         "nonaktif": [
-          "TreatyIn.EDMMaterialType = 2"
-         ]
-        }
-       ],
-       "pilihan": [
-        {
-         "sumber": "reportdefinition",
-         "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency",
-         "tampil": "Currency",
-         "param": {
-          "Currency": ""
-         }
+         "tata": "kiri"
         },
-        null,
-        null
+        {
+         "t": "grid",
+         "at": 1851745,
+         "prop": ".CashLossList",
+         "dari": "sisi",
+         "larik": "CashLossList",
+         "syarat": [],
+         "kolom": [
+          "",
+          "",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value",
+          ""
+         ],
+         "lebar": [
+          197,
+          361,
+          101
+         ],
+         "desimal": [
+          null,
+          2,
+          null
+         ],
+         "format": [
+          "pxDropdown",
+          "pxNumber",
+          "pxButton"
+         ],
+         "syaratSel": [
+          null,
+          null,
+          "TreatyIn.ViewState !='1'"
+         ],
+         "atSel": [
+          1872991,
+          1884151,
+          1889838
+         ],
+         "baca": [
+          [
+           "TreatyIn.ViewState = 1",
+           "TreatyIn.EDMMaterialType = 2"
+          ],
+          [
+           "TreatyIn.ViewState = 1",
+           "TreatyIn.EDMMaterialType = 2"
+          ],
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null,
+          {
+           "t": "tombol",
+           "at": 1889838,
+           "label": "Remove",
+           "syarat": [
+            "TreatyIn.ViewState !='1'"
+           ],
+           "aksi": [
+            {
+             "aksi": "deleteRow"
+            }
+           ],
+           "nonaktif": [
+            "TreatyIn.EDMMaterialType = 2"
+           ]
+          }
+         ],
+         "tombolKepala": [
+          null,
+          null,
+          {
+           "t": "tombol",
+           "at": 1863418,
+           "label": "Add",
+           "syarat": [
+            "TreatyIn.ViewState !='1'"
+           ],
+           "aksi": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "AddValue",
+             "param": {
+              "type": "\"cashloss\""
+             }
+            }
+           ],
+           "nonaktif": [
+            "TreatyIn.EDMMaterialType = 2"
+           ]
+          }
+         ],
+         "pilihan": [
+          {
+           "sumber": "reportdefinition",
+           "rd": "BrowseCurrencyTreatyIn_RD",
+           "nilai": "Currency",
+           "tampil": "Currency",
+           "param": {
+            "Currency": ""
+           }
+          },
+          null,
+          null
+         ],
+         "aksiUbah": [
+          [
+           {
+            "aksi": "postValue"
+           },
+           {
+            "aksi": "runActivity",
+            "aktivitas": "SetCurrName_Act"
+           }
+          ],
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "aksiUbah": [
-        [
-         {
-          "aksi": "postValue"
-         },
-         {
-          "aksi": "runActivity",
-          "aktivitas": "SetCurrName_Act"
-         }
-        ],
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "t3070"
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ],
    "tab": true
@@ -18115,138 +20014,166 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "teks",
-       "at": 1992703,
-       "teks": "Claim Cooperation",
-       "syarat": []
-      },
-      {
-       "t": "grid",
-       "at": 2029946,
-       "prop": ".ClaimCoopList",
-       "dari": "sisi",
-       "larik": "ClaimCoopList",
+       "t": "blok",
+       "at": 1963850,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "",
-        "",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value",
-        ""
-       ],
-       "lebar": [
-        197,
-        361,
-        101
-       ],
-       "desimal": [
-        null,
-        2,
-        null
-       ],
-       "format": [
-        "pxDropdown",
-        "pxNumber",
-        "pxButton"
-       ],
-       "syaratSel": [
-        null,
-        null,
-        "TreatyIn.ViewState !='1'"
-       ],
-       "atSel": [
-        2051195,
-        2062355,
-        2068042
-       ],
-       "baca": [
-        [
-         "TreatyIn.ViewState = 1",
-         "TreatyIn.EDMMaterialType = 2"
-        ],
-        [
-         "TreatyIn.ViewState = 1",
-         "TreatyIn.EDMMaterialType = 2"
-        ],
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null,
+       "anak": [
         {
-         "t": "tombol",
-         "at": 2068042,
-         "label": "Remove",
-         "syarat": [
-          "TreatyIn.ViewState !='1'"
-         ],
-         "aksi": [
+         "t": "blok",
+         "at": 1972819,
+         "judul": "",
+         "syarat": [],
+         "anak": [
           {
-           "aksi": "deleteRow"
+           "t": "blok",
+           "at": 1986058,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "teks",
+             "at": 1992703,
+             "teks": "Claim Cooperation",
+             "syarat": []
+            }
+           ],
+           "tata": "alir"
           }
          ],
-         "nonaktif": [
-          "TreatyIn.EDMMaterialType = 2"
-         ]
-        }
-       ],
-       "tombolKepala": [
-        null,
-        null,
-        {
-         "t": "tombol",
-         "at": 2041620,
-         "label": "Add",
-         "syarat": [
-          "TreatyIn.ViewState !='1'"
-         ],
-         "aksi": [
-          {
-           "aksi": "refresh",
-           "aktivitas": "AddValue",
-           "param": {
-            "type": "\"claimcoop\""
-           }
-          }
-         ],
-         "nonaktif": [
-          "TreatyIn.EDMMaterialType = 2"
-         ]
-        }
-       ],
-       "pilihan": [
-        {
-         "sumber": "reportdefinition",
-         "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency",
-         "tampil": "Currency",
-         "param": {
-          "Currency": ""
-         }
+         "tata": "kiri"
         },
-        null,
-        null
+        {
+         "t": "grid",
+         "at": 2029946,
+         "prop": ".ClaimCoopList",
+         "dari": "sisi",
+         "larik": "ClaimCoopList",
+         "syarat": [],
+         "kolom": [
+          "",
+          "",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value",
+          ""
+         ],
+         "lebar": [
+          197,
+          361,
+          101
+         ],
+         "desimal": [
+          null,
+          2,
+          null
+         ],
+         "format": [
+          "pxDropdown",
+          "pxNumber",
+          "pxButton"
+         ],
+         "syaratSel": [
+          null,
+          null,
+          "TreatyIn.ViewState !='1'"
+         ],
+         "atSel": [
+          2051195,
+          2062355,
+          2068042
+         ],
+         "baca": [
+          [
+           "TreatyIn.ViewState = 1",
+           "TreatyIn.EDMMaterialType = 2"
+          ],
+          [
+           "TreatyIn.ViewState = 1",
+           "TreatyIn.EDMMaterialType = 2"
+          ],
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null,
+          {
+           "t": "tombol",
+           "at": 2068042,
+           "label": "Remove",
+           "syarat": [
+            "TreatyIn.ViewState !='1'"
+           ],
+           "aksi": [
+            {
+             "aksi": "deleteRow"
+            }
+           ],
+           "nonaktif": [
+            "TreatyIn.EDMMaterialType = 2"
+           ]
+          }
+         ],
+         "tombolKepala": [
+          null,
+          null,
+          {
+           "t": "tombol",
+           "at": 2041620,
+           "label": "Add",
+           "syarat": [
+            "TreatyIn.ViewState !='1'"
+           ],
+           "aksi": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "AddValue",
+             "param": {
+              "type": "\"claimcoop\""
+             }
+            }
+           ],
+           "nonaktif": [
+            "TreatyIn.EDMMaterialType = 2"
+           ]
+          }
+         ],
+         "pilihan": [
+          {
+           "sumber": "reportdefinition",
+           "rd": "BrowseCurrencyTreatyIn_RD",
+           "nilai": "Currency",
+           "tampil": "Currency",
+           "param": {
+            "Currency": ""
+           }
+          },
+          null,
+          null
+         ],
+         "aksiUbah": [
+          [
+           {
+            "aksi": "postValue"
+           },
+           {
+            "aksi": "runActivity",
+            "aktivitas": "SetCurrName_Act"
+           }
+          ],
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "aksiUbah": [
-        [
-         {
-          "aksi": "postValue"
-         },
-         {
-          "aksi": "runActivity",
-          "aktivitas": "SetCurrName_Act"
-         }
-        ],
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "t3070"
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ],
    "tab": true
@@ -18264,76 +20191,85 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": []
     },
     {
-     "t": "medan",
-     "at": 2147571,
-     "label": "Lower Band",
-     "dari": "sisi",
-     "kunci": "LowerBand",
-     "format": "pxNumber",
-     "desimal": null,
+     "t": "blok",
+     "at": 2140926,
+     "judul": "",
      "syarat": [],
-     "baca": [
-      "TreatyIn.ViewState ='1'"
-     ],
-     "aksiUbah": [
+     "anak": [
       {
-       "aksi": "postValue"
-      }
-     ]
-    },
-    {
-     "t": "medan",
-     "at": 2154546,
-     "label": "Upper Band",
-     "dari": "sisi",
-     "kunci": "UpperBand",
-     "format": "pxNumber",
-     "desimal": null,
-     "syarat": [],
-     "baca": [
-      "TreatyIn.ViewState ='1'"
-     ],
-     "aksiUbah": [
+       "t": "medan",
+       "at": 2147571,
+       "label": "Lower Band",
+       "dari": "sisi",
+       "kunci": "LowerBand",
+       "format": "pxNumber",
+       "desimal": null,
+       "syarat": [],
+       "baca": [
+        "TreatyIn.ViewState ='1'"
+       ],
+       "aksiUbah": [
+        {
+         "aksi": "postValue"
+        }
+       ]
+      },
       {
-       "aksi": "postValue"
-      }
-     ]
-    },
-    {
-     "t": "medan",
-     "at": 2161521,
-     "label": "Reisured Participant",
-     "dari": "sisi",
-     "kunci": "ReisuredParticipant",
-     "format": "pxNumber",
-     "desimal": null,
-     "syarat": [],
-     "baca": [
-      "TreatyIn.ViewState ='1'"
-     ],
-     "aksiUbah": [
+       "t": "medan",
+       "at": 2154546,
+       "label": "Upper Band",
+       "dari": "sisi",
+       "kunci": "UpperBand",
+       "format": "pxNumber",
+       "desimal": null,
+       "syarat": [],
+       "baca": [
+        "TreatyIn.ViewState ='1'"
+       ],
+       "aksiUbah": [
+        {
+         "aksi": "postValue"
+        }
+       ]
+      },
       {
-       "aksi": "postValue"
-      }
-     ]
-    },
-    {
-     "t": "medan",
-     "at": 2168472,
-     "label": "Period (Month)",
-     "dari": "sisi",
-     "kunci": "Periode",
-     "format": "pxNumber",
-     "desimal": null,
-     "syarat": [],
-     "baca": [
-      "TreatyIn.ViewState ='1'"
-     ],
-     "aksiUbah": [
+       "t": "medan",
+       "at": 2161521,
+       "label": "Reisured Participant",
+       "dari": "sisi",
+       "kunci": "ReisuredParticipant",
+       "format": "pxNumber",
+       "desimal": null,
+       "syarat": [],
+       "baca": [
+        "TreatyIn.ViewState ='1'"
+       ],
+       "aksiUbah": [
+        {
+         "aksi": "postValue"
+        }
+       ]
+      },
       {
-       "aksi": "postValue"
+       "t": "medan",
+       "at": 2168472,
+       "label": "Period (Month)",
+       "dari": "sisi",
+       "kunci": "Periode",
+       "format": "pxNumber",
+       "desimal": null,
+       "syarat": [],
+       "baca": [
+        "TreatyIn.ViewState ='1'"
+       ],
+       "aksiUbah": [
+        {
+         "aksi": "postValue"
+        }
+       ]
       }
-     ]
+     ],
+     "tata": "alir"
     }
    ],
    "tab": true
@@ -18351,138 +20287,166 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "teks",
-       "at": 2247000,
-       "teks": "EPI",
-       "syarat": []
-      },
-      {
-       "t": "grid",
-       "at": 2284378,
-       "prop": ".EPIList",
-       "dari": "sisi",
-       "larik": "EPIList",
+       "t": "blok",
+       "at": 2218059,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "",
-        "",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value",
-        ""
-       ],
-       "lebar": [
-        197,
-        361,
-        101
-       ],
-       "desimal": [
-        null,
-        2,
-        null
-       ],
-       "format": [
-        "pxDropdown",
-        "pxNumber",
-        "pxButton"
-       ],
-       "syaratSel": [
-        null,
-        null,
-        "TreatyIn.ViewState !='1'"
-       ],
-       "atSel": [
-        2305690,
-        2316863,
-        2322563
-       ],
-       "baca": [
-        [
-         "TreatyIn.ViewState = 1",
-         "TreatyIn.EDMMaterialType = 2"
-        ],
-        [
-         "TreatyIn.ViewState = 1",
-         "TreatyIn.EDMMaterialType = 2"
-        ],
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null,
+       "anak": [
         {
-         "t": "tombol",
-         "at": 2322563,
-         "label": "Remove",
-         "syarat": [
-          "TreatyIn.ViewState !='1'"
-         ],
-         "aksi": [
+         "t": "blok",
+         "at": 2227057,
+         "judul": "",
+         "syarat": [],
+         "anak": [
           {
-           "aksi": "deleteRow"
+           "t": "blok",
+           "at": 2240338,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "teks",
+             "at": 2247000,
+             "teks": "EPI",
+             "syarat": []
+            }
+           ],
+           "tata": "alir"
           }
          ],
-         "nonaktif": [
-          "TreatyIn.EDMMaterialType = 2"
-         ]
-        }
-       ],
-       "tombolKepala": [
-        null,
-        null,
-        {
-         "t": "tombol",
-         "at": 2296101,
-         "label": "Add",
-         "syarat": [
-          "TreatyIn.ViewState !='1'"
-         ],
-         "aksi": [
-          {
-           "aksi": "refresh",
-           "aktivitas": "AddValue",
-           "param": {
-            "type": "\"epi\""
-           }
-          }
-         ],
-         "nonaktif": [
-          "TreatyIn.EDMMaterialType = 2"
-         ]
-        }
-       ],
-       "pilihan": [
-        {
-         "sumber": "reportdefinition",
-         "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency",
-         "tampil": "Currency",
-         "param": {
-          "Currency": ""
-         }
+         "tata": "kiri"
         },
-        null,
-        null
+        {
+         "t": "grid",
+         "at": 2284378,
+         "prop": ".EPIList",
+         "dari": "sisi",
+         "larik": "EPIList",
+         "syarat": [],
+         "kolom": [
+          "",
+          "",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value",
+          ""
+         ],
+         "lebar": [
+          197,
+          361,
+          101
+         ],
+         "desimal": [
+          null,
+          2,
+          null
+         ],
+         "format": [
+          "pxDropdown",
+          "pxNumber",
+          "pxButton"
+         ],
+         "syaratSel": [
+          null,
+          null,
+          "TreatyIn.ViewState !='1'"
+         ],
+         "atSel": [
+          2305690,
+          2316863,
+          2322563
+         ],
+         "baca": [
+          [
+           "TreatyIn.ViewState = 1",
+           "TreatyIn.EDMMaterialType = 2"
+          ],
+          [
+           "TreatyIn.ViewState = 1",
+           "TreatyIn.EDMMaterialType = 2"
+          ],
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null,
+          {
+           "t": "tombol",
+           "at": 2322563,
+           "label": "Remove",
+           "syarat": [
+            "TreatyIn.ViewState !='1'"
+           ],
+           "aksi": [
+            {
+             "aksi": "deleteRow"
+            }
+           ],
+           "nonaktif": [
+            "TreatyIn.EDMMaterialType = 2"
+           ]
+          }
+         ],
+         "tombolKepala": [
+          null,
+          null,
+          {
+           "t": "tombol",
+           "at": 2296101,
+           "label": "Add",
+           "syarat": [
+            "TreatyIn.ViewState !='1'"
+           ],
+           "aksi": [
+            {
+             "aksi": "refresh",
+             "aktivitas": "AddValue",
+             "param": {
+              "type": "\"epi\""
+             }
+            }
+           ],
+           "nonaktif": [
+            "TreatyIn.EDMMaterialType = 2"
+           ]
+          }
+         ],
+         "pilihan": [
+          {
+           "sumber": "reportdefinition",
+           "rd": "BrowseCurrencyTreatyIn_RD",
+           "nilai": "Currency",
+           "tampil": "Currency",
+           "param": {
+            "Currency": ""
+           }
+          },
+          null,
+          null
+         ],
+         "aksiUbah": [
+          [
+           {
+            "aksi": "postValue"
+           },
+           {
+            "aksi": "runActivity",
+            "aktivitas": "SetCurrName_Act"
+           }
+          ],
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "aksiUbah": [
-        [
-         {
-          "aksi": "postValue"
-         },
-         {
-          "aksi": "runActivity",
-          "aktivitas": "SetCurrName_Act"
-         }
-        ],
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "t3070"
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ],
    "tab": true
@@ -18760,47 +20724,56 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        "templatBaris": "Data-!pyGridModalTemplate"
       },
       {
-       "t": "medan",
-       "at": 2929803,
-       "label": "As At Quarter",
-       "dari": "sesi",
-       "kunci": "SearchData.CARI1",
-       "format": "pxDropdown",
-       "desimal": null,
+       "t": "blok",
+       "at": 2923146,
+       "judul": "",
        "syarat": [],
-       "pilihan": {
-        "sumber": "pageList",
-        "halaman": "TempQuarter.pxResults"
-       },
-       "aksiUbah": [
+       "anak": [
         {
-         "aksi": "refresh",
-         "transformasi": "Reset_DT"
-        }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 2939138,
-       "label": "Quarter Year",
-       "dari": "sesi",
-       "kunci": "SearchData.CARI2",
-       "format": "pxDropdown",
-       "desimal": null,
-       "syarat": [],
-       "pilihan": {
-        "sumber": "pageList",
-        "halaman": "TempQuarterYear.pxResults"
-       },
-       "aksiUbah": [
+         "t": "medan",
+         "at": 2929803,
+         "label": "As At Quarter",
+         "dari": "sesi",
+         "kunci": "SearchData.CARI1",
+         "format": "pxDropdown",
+         "desimal": null,
+         "syarat": [],
+         "pilihan": {
+          "sumber": "pageList",
+          "halaman": "TempQuarter.pxResults"
+         },
+         "aksiUbah": [
+          {
+           "aksi": "refresh",
+           "transformasi": "Reset_DT"
+          }
+         ]
+        },
         {
-         "aksi": "refresh",
-         "aktivitas": "GetAchievement",
-         "param": {
-          "search": "\"search\""
-         }
+         "t": "medan",
+         "at": 2939138,
+         "label": "Quarter Year",
+         "dari": "sesi",
+         "kunci": "SearchData.CARI2",
+         "format": "pxDropdown",
+         "desimal": null,
+         "syarat": [],
+         "pilihan": {
+          "sumber": "pageList",
+          "halaman": "TempQuarterYear.pxResults"
+         },
+         "aksiUbah": [
+          {
+           "aksi": "refresh",
+           "aktivitas": "GetAchievement",
+           "param": {
+            "search": "\"search\""
+           }
+          }
+         ]
         }
-       ]
+       ],
+       "tata": "alir"
       },
       {
        "t": "teks",
@@ -18809,47 +20782,57 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        "syarat": []
       },
       {
-       "t": "tombol",
-       "at": 2976066,
-       "label": "Refresh",
+       "t": "blok",
+       "at": 2968218,
+       "judul": "",
        "syarat": [],
-       "aksi": [
+       "anak": [
         {
-         "aksi": "refresh",
-         "aktivitas": "GetAchievement"
+         "t": "tombol",
+         "at": 2976066,
+         "label": "Refresh",
+         "syarat": [],
+         "aksi": [
+          {
+           "aksi": "refresh",
+           "aktivitas": "GetAchievement"
+          }
+         ]
+        },
+        {
+         "t": "tombol",
+         "at": 2982462,
+         "label": "Generate Excel",
+         "syarat": [
+          "FlagExcel.CARI1=='1'"
+         ],
+         "aksi": [
+          {
+           "aksi": "showHarness",
+           "aktivitas": "GenerateCSVTreaty",
+           "harness": "ActivityStatusSuccess"
+          }
+         ]
+        },
+        {
+         "t": "tombol",
+         "at": 2997863,
+         "label": "Submit",
+         "syarat": [
+          "FlagExcel.CARI1=='1'"
+         ],
+         "aksi": [
+          {
+           "aksi": "refresh",
+           "aktivitas": "InsertToLogAchievement"
+          }
+         ]
         }
-       ]
-      },
-      {
-       "t": "tombol",
-       "at": 2982462,
-       "label": "Generate Excel",
-       "syarat": [
-        "FlagExcel.CARI1=='1'"
        ],
-       "aksi": [
-        {
-         "aksi": "showHarness",
-         "aktivitas": "GenerateCSVTreaty",
-         "harness": "ActivityStatusSuccess"
-        }
-       ]
-      },
-      {
-       "t": "tombol",
-       "at": 2997863,
-       "label": "Submit",
-       "syarat": [
-        "FlagExcel.CARI1=='1'"
-       ],
-       "aksi": [
-        {
-         "aksi": "refresh",
-         "aktivitas": "InsertToLogAchievement"
-        }
-       ]
+       "tata": "alir"
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ],
    "tab": true
@@ -18857,594 +20840,736 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
  ],
  "DetailLimitsOldData": [
   {
-   "t": "medan",
-   "at": 26708,
-   "label": "Treaty Group",
-   "dari": "sisi",
-   "kunci": "TreatyGroup",
-   "format": "pxAutoComplete",
-   "desimal": null,
+   "t": "blok",
+   "at": 9581,
+   "judul": "",
    "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseTreatyGroup_RD",
-    "nilai": "TreatyGroupName",
-    "param": {
-     "ID": ""
-    },
-    "setel": [
-     {
-      "target": "TreatyGroupID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
+   "anak": [
     {
-     "aksi": "runDataTransform",
-     "transformasi": "SetTreatyGroupID",
-     "paramDT": {
-      "treatygroup": ".TreatyGroup",
-      "treatygroupid": ".TreatyGroupID"
-     }
-    },
-    {
-     "aksi": "postValue"
-    },
-    {
-     "aksi": "refresh",
-     "aktivitas": "FetchQSfromMaster",
-     "transformasi": "SetDetailsID",
-     "syarat": ".TreatyType = 'QUOTA SHARE'"
-    },
-    {
-     "aksi": "refresh",
-     "aktivitas": "LimitCalculation",
-     "param": {
-      "kindoftreaty": "surplus",
-      "add": "",
-      "autocalculate": "true"
-     },
-     "syarat": ".TreatyType = 'SURPLUS'"
-    }
-   ]
-  },
-  {
-   "t": "grid",
-   "at": 84825,
-   "prop": ".COBList",
-   "dari": "sisi",
-   "larik": "COBList",
-   "syarat": [],
-   "kolom": [
-    "Class of Business"
-   ],
-   "kunci": [
-    "ClassOfBusiness"
-   ],
-   "lebar": [
-    270
-   ],
-   "desimal": [
-    null
-   ],
-   "format": [
-    "pxAutoComplete"
-   ],
-   "syaratSel": [
-    null
-   ],
-   "atSel": [
-    92932
-   ],
-   "baca": [
-    "selalu"
-   ],
-   "tombol": [
-    null
-   ],
-   "tombolKepala": [
-    null
-   ],
-   "pilihan": [
-    {
-     "sumber": "reportdefinition",
-     "rd": "BrowseTreatyBusinessWOType_RD",
-     "nilai": "BIZNAME",
-     "param": {
-      "pTreatyGroupId": ".TreatyGroupID"
-     },
-     "setel": [
+     "t": "blok",
+     "at": 20030,
+     "judul": "",
+     "syarat": [],
+     "anak": [
       {
-       "target": "ClassOfBusinessID",
-       "dari": "BizCode"
+       "t": "medan",
+       "at": 26708,
+       "label": "Treaty Group",
+       "dari": "sisi",
+       "kunci": "TreatyGroup",
+       "format": "pxAutoComplete",
+       "desimal": null,
+       "syarat": [],
+       "baca": "selalu",
+       "pilihan": {
+        "sumber": "reportdefinition",
+        "rd": "BrowseTreatyGroup_RD",
+        "nilai": "TreatyGroupName",
+        "param": {
+         "ID": ""
+        },
+        "setel": [
+         {
+          "target": "TreatyGroupID",
+          "dari": "ID"
+         }
+        ]
+       },
+       "aksiUbah": [
+        {
+         "aksi": "runDataTransform",
+         "transformasi": "SetTreatyGroupID",
+         "paramDT": {
+          "treatygroup": ".TreatyGroup",
+          "treatygroupid": ".TreatyGroupID"
+         }
+        },
+        {
+         "aksi": "postValue"
+        },
+        {
+         "aksi": "refresh",
+         "aktivitas": "FetchQSfromMaster",
+         "transformasi": "SetDetailsID",
+         "syarat": ".TreatyType = 'QUOTA SHARE'"
+        },
+        {
+         "aksi": "refresh",
+         "aktivitas": "LimitCalculation",
+         "param": {
+          "kindoftreaty": "surplus",
+          "add": "",
+          "autocalculate": "true"
+         },
+         "syarat": ".TreatyType = 'SURPLUS'"
+        }
+       ]
       }
-     ]
+     ],
+     "tata": "kiri"
+    },
+    {
+     "t": "kosong",
+     "at": 59779,
+     "syarat": []
+    },
+    {
+     "t": "grid",
+     "at": 84825,
+     "prop": ".COBList",
+     "dari": "sisi",
+     "larik": "COBList",
+     "syarat": [],
+     "kolom": [
+      "Class of Business"
+     ],
+     "kunci": [
+      "ClassOfBusiness"
+     ],
+     "lebar": [
+      270
+     ],
+     "desimal": [
+      null
+     ],
+     "format": [
+      "pxAutoComplete"
+     ],
+     "syaratSel": [
+      null
+     ],
+     "atSel": [
+      92932
+     ],
+     "baca": [
+      "selalu"
+     ],
+     "tombol": [
+      null
+     ],
+     "tombolKepala": [
+      null
+     ],
+     "pilihan": [
+      {
+       "sumber": "reportdefinition",
+       "rd": "BrowseTreatyBusinessWOType_RD",
+       "nilai": "BIZNAME",
+       "param": {
+        "pTreatyGroupId": ".TreatyGroupID"
+       },
+       "setel": [
+        {
+         "target": "ClassOfBusinessID",
+         "dari": "BizCode"
+        }
+       ]
+      }
+     ],
+     "aksiUbah": [
+      [
+       {
+        "aksi": "runDataTransform",
+        "transformasi": "SetCoBID",
+        "paramDT": {
+         "id": ".ClassOfBusinessID"
+        }
+       },
+       {
+        "aksi": "postValue"
+       }
+      ]
+     ],
+     "modeBaris": "readOnly",
+     "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails"
     }
    ],
-   "aksiUbah": [
-    [
-     {
-      "aksi": "runDataTransform",
-      "transformasi": "SetCoBID",
-      "paramDT": {
-       "id": ".ClassOfBusinessID"
-      }
-     },
-     {
-      "aksi": "postValue"
-     }
-    ]
-   ],
-   "modeBaris": "readOnly",
-   "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimits!pyGridRowDetails"
+   "tata": "g2"
   },
   {
    "t": "blok",
-   "at": 149173,
+   "at": 133491,
    "judul": "",
-   "syarat": [
-    ".TreatyType = 'QUOTA SHARE'"
-   ],
+   "syarat": [],
    "anak": [
     {
-     "t": "medan",
-     "at": 164901,
-     "label": "QS %",
-     "dari": "sisi",
-     "kunci": "QSPct",
-     "format": "pxNumber",
-     "desimal": 2,
+     "t": "blok",
+     "at": 149173,
+     "judul": "",
+     "syarat": [
+      ".TreatyType = 'QUOTA SHARE'"
+     ],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 158223,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 164901,
+         "label": "QS %",
+         "dari": "sisi",
+         "kunci": "QSPct",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          },
+          {
+           "aksi": "refresh",
+           "aktivitas": "LimitCalculation",
+           "param": {
+            "kindoftreaty": "qs",
+            "add": "",
+            "autocalculate": "true"
+           }
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      }
+     ],
+     "tata": "g2"
+    },
+    {
+     "t": "blok",
+     "at": 190970,
+     "judul": "",
+     "syarat": [
+      ".TreatyType = 'SURPLUS' || .TreatyType = '2ND SURPLUS' || .TreatyType = '3RD SURPLUS'"
+     ],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 200079,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 206758,
+         "label": "Lines",
+         "dari": "sisi",
+         "kunci": "Surplus",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          },
+          {
+           "aksi": "refresh",
+           "aktivitas": "LimitCalculation",
+           "param": {
+            "kindoftreaty": "surplus",
+            "add": "",
+            "autocalculate": "true"
+           }
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      }
+     ],
+     "tata": "g2"
+    },
+    {
+     "t": "blok",
+     "at": 232971,
+     "judul": "",
      "syarat": [],
-     "baca": "selalu",
-     "aksiUbah": [
+     "anak": [
       {
-       "aksi": "postValue"
+       "t": "blok",
+       "at": 241968,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "blok",
+         "at": 255247,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "teks",
+           "at": 261931,
+           "teks": "100% Limit",
+           "syarat": []
+          },
+          {
+           "t": "blok",
+           "at": 269317,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "teks",
+             "at": 275978,
+             "teks": "100",
+             "syarat": [
+              ".TreatyType = 'QUOTA SHARE'"
+             ]
+            },
+            {
+             "t": "teks",
+             "at": 280256,
+             "teks": "%",
+             "syarat": [
+              ".TreatyType = 'QUOTA SHARE'"
+             ]
+            }
+           ],
+           "tata": "alir"
+          }
+         ],
+         "tata": "g2"
+        }
+       ],
+       "tata": "kiri"
       },
       {
-       "aksi": "refresh",
-       "aktivitas": "LimitCalculation",
-       "param": {
-        "kindoftreaty": "qs",
-        "add": "",
-        "autocalculate": "true"
-       }
+       "t": "grid",
+       "at": 323177,
+       "prop": ".IOOLimitList",
+       "dari": "sisi",
+       "larik": "IOOLimitList",
+       "syarat": [],
+       "kolom": [
+        "",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        193,
+        355
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxAutoComplete",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        335260,
+        351571
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        {
+         "sumber": "reportdefinition",
+         "rd": "BrowseCurrencyTreatyIn_RD",
+         "nilai": "Currency",
+         "param": {
+          "Currency": ""
+         },
+         "setel": [
+          {
+           "target": "CurrencyID",
+           "dari": "ID"
+          }
+         ]
+        },
+        null
+       ],
+       "aksiUbah": [
+        [
+         {
+          "aksi": "runDataTransform",
+          "transformasi": "SetCurrencyID",
+          "paramDT": {
+           "Currency": ".Currency",
+           "ID": ".CurrencyID"
+          }
+         },
+         {
+          "aksi": "postValue"
+         },
+         {
+          "aksi": "refresh",
+          "aktivitas": "LimitCalculation",
+          "param": {
+           "kindoftreaty": "QS",
+           "add": "",
+           "autocalculate": ".Layer"
+          },
+          "syarat": ".Note = 'QUOTA SHARE'"
+         }
+        ],
+        [
+         {
+          "aksi": "refresh",
+          "aktivitas": "LimitCalculation",
+          "param": {
+           "kindoftreaty": "qs",
+           "add": "",
+           "autocalculate": ".Layer"
+          },
+          "syarat": ".Note = 'QUOTA SHARE'"
+         }
+        ]
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "blok",
+       "at": 387124,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "blok",
+         "at": 400710,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "teks",
+           "at": 407394,
+           "teks": "Retention",
+           "syarat": []
+          },
+          {
+           "t": "blok",
+           "at": 414779,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "medan",
+             "at": 421440,
+             "label": "",
+             "dari": "sisi",
+             "kunci": "RetentionPct",
+             "format": "pxNumber",
+             "desimal": null,
+             "syarat": [
+              ".TreatyType = 'QUOTA SHARE'"
+             ],
+             "baca": "selalu",
+             "aksiUbah": [
+              {
+               "aksi": "postValue"
+              },
+              {
+               "aksi": "refresh",
+               "aktivitas": "LimitCalculation",
+               "param": {
+                "kindoftreaty": "qs",
+                "ioo": ".IOOLimit"
+               }
+              }
+             ]
+            },
+            {
+             "t": "teks",
+             "at": 428468,
+             "teks": "%",
+             "syarat": [
+              ".TreatyType = 'QUOTA SHARE'"
+             ]
+            }
+           ],
+           "tata": "alir"
+          }
+         ],
+         "tata": "g2"
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "grid",
+       "at": 471389,
+       "prop": ".RetentionList",
+       "dari": "sisi",
+       "larik": "RetentionList",
+       "syarat": [],
+       "kolom": [
+        "",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        193,
+        352
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxAutoComplete",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        483477,
+        501659
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        {
+         "sumber": "reportdefinition",
+         "rd": "BrowseCurrencyTreatyIn_RD",
+         "nilai": "Currency",
+         "param": {
+          "Currency": ""
+         },
+         "setel": [
+          {
+           "target": "CurrencyID",
+           "dari": "ID"
+          }
+         ]
+        },
+        null
+       ],
+       "aksiUbah": [
+        [
+         {
+          "aksi": "runDataTransform",
+          "transformasi": "SetCurrencyID",
+          "paramDT": {
+           "Currency": ".Currency",
+           "ID": ".CurrencyID"
+          }
+         },
+         {
+          "aksi": "postValue"
+         },
+         {
+          "aksi": "refresh",
+          "aktivitas": "LimitCalculation",
+          "param": {
+           "kindoftreaty": "surplus",
+           "add": "man",
+           "autocalculate": ".Layer"
+          },
+          "syarat": ".Note = 'SURPLUS' || .Note = '2ND SURPLUS' || .Note = '3RD SURPLUS'"
+         }
+        ],
+        [
+         {
+          "aksi": "refresh",
+          "aktivitas": "LimitCalculation",
+          "param": {
+           "kindoftreaty": "surplus",
+           "add": "man",
+           "autocalculate": ".Layer"
+          },
+          "syarat": ".Note = 'SURPLUS' || .Note = '2ND SURPLUS' || .Note = '3RD SURPLUS'"
+         }
+        ]
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "blok",
+       "at": 539090,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "blok",
+         "at": 552677,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "teks",
+           "at": 559361,
+           "teks": "Cession to R/I",
+           "syarat": []
+          },
+          {
+           "t": "blok",
+           "at": 566753,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "medan",
+             "at": 573414,
+             "label": "",
+             "dari": "sisi",
+             "kunci": "CessionPct",
+             "format": "pxNumber",
+             "desimal": null,
+             "syarat": [
+              ".TreatyType = 'QUOTA SHARE'"
+             ],
+             "baca": "selalu",
+             "aksiUbah": [
+              {
+               "aksi": "postValue"
+              },
+              {
+               "aksi": "refresh",
+               "aktivitas": "LimitCalculation",
+               "param": {
+                "kindoftreaty": "qs",
+                "ioo": ".IOOLimit"
+               }
+              }
+             ]
+            },
+            {
+             "t": "teks",
+             "at": 580456,
+             "teks": "%",
+             "syarat": [
+              ".TreatyType = 'QUOTA SHARE'"
+             ]
+            }
+           ],
+           "tata": "alir"
+          }
+         ],
+         "tata": "g2"
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "grid",
+       "at": 623386,
+       "prop": ".CessionList",
+       "dari": "sisi",
+       "larik": "CessionList",
+       "syarat": [],
+       "kolom": [
+        "",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        193,
+        350
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxAutoComplete",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        635472,
+        649796
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        {
+         "sumber": "reportdefinition",
+         "rd": "BrowseCurrencyTreatyIn_RD",
+         "nilai": "Currency",
+         "param": {
+          "Currency": ""
+         },
+         "setel": [
+          {
+           "target": "CurrencyID",
+           "dari": "ID"
+          }
+         ]
+        },
+        null
+       ],
+       "aksiUbah": [
+        [
+         {
+          "aksi": "runDataTransform",
+          "transformasi": "SetCurrencyID",
+          "paramDT": {
+           "Currency": ".Currency",
+           "ID": ".CurrencyID"
+          }
+         },
+         {
+          "aksi": "postValue"
+         },
+         {
+          "aksi": "refresh"
+         }
+        ],
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
       }
-     ]
+     ],
+     "tata": "t3070"
     }
-   ]
-  },
-  {
-   "t": "blok",
-   "at": 190970,
-   "judul": "",
-   "syarat": [
-    ".TreatyType = 'SURPLUS' || .TreatyType = '2ND SURPLUS' || .TreatyType = '3RD SURPLUS'"
    ],
-   "anak": [
-    {
-     "t": "medan",
-     "at": 206758,
-     "label": "Lines",
-     "dari": "sisi",
-     "kunci": "Surplus",
-     "format": "pxNumber",
-     "desimal": 2,
-     "syarat": [],
-     "baca": "selalu",
-     "aksiUbah": [
-      {
-       "aksi": "postValue"
-      },
-      {
-       "aksi": "refresh",
-       "aktivitas": "LimitCalculation",
-       "param": {
-        "kindoftreaty": "surplus",
-        "add": "",
-        "autocalculate": "true"
-       }
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "t": "teks",
-   "at": 261931,
-   "teks": "100% Limit",
-   "syarat": []
-  },
-  {
-   "t": "teks",
-   "at": 275978,
-   "teks": "100",
-   "syarat": [
-    ".TreatyType = 'QUOTA SHARE'"
-   ]
-  },
-  {
-   "t": "teks",
-   "at": 280256,
-   "teks": "%",
-   "syarat": [
-    ".TreatyType = 'QUOTA SHARE'"
-   ]
-  },
-  {
-   "t": "grid",
-   "at": 323177,
-   "prop": ".IOOLimitList",
-   "dari": "sisi",
-   "larik": "IOOLimitList",
-   "syarat": [],
-   "kolom": [
-    "",
-    ""
-   ],
-   "kunci": [
-    "Currency",
-    "Value"
-   ],
-   "lebar": [
-    193,
-    355
-   ],
-   "desimal": [
-    null,
-    2
-   ],
-   "format": [
-    "pxAutoComplete",
-    "pxNumber"
-   ],
-   "syaratSel": [
-    null,
-    null
-   ],
-   "atSel": [
-    335260,
-    351571
-   ],
-   "baca": [
-    "selalu",
-    "selalu"
-   ],
-   "tombol": [
-    null,
-    null
-   ],
-   "tombolKepala": [
-    null,
-    null
-   ],
-   "pilihan": [
-    {
-     "sumber": "reportdefinition",
-     "rd": "BrowseCurrencyTreatyIn_RD",
-     "nilai": "Currency",
-     "param": {
-      "Currency": ""
-     },
-     "setel": [
-      {
-       "target": "CurrencyID",
-       "dari": "ID"
-      }
-     ]
-    },
-    null
-   ],
-   "aksiUbah": [
-    [
-     {
-      "aksi": "runDataTransform",
-      "transformasi": "SetCurrencyID",
-      "paramDT": {
-       "Currency": ".Currency",
-       "ID": ".CurrencyID"
-      }
-     },
-     {
-      "aksi": "postValue"
-     },
-     {
-      "aksi": "refresh",
-      "aktivitas": "LimitCalculation",
-      "param": {
-       "kindoftreaty": "QS",
-       "add": "",
-       "autocalculate": ".Layer"
-      },
-      "syarat": ".Note = 'QUOTA SHARE'"
-     }
-    ],
-    [
-     {
-      "aksi": "refresh",
-      "aktivitas": "LimitCalculation",
-      "param": {
-       "kindoftreaty": "qs",
-       "add": "",
-       "autocalculate": ".Layer"
-      },
-      "syarat": ".Note = 'QUOTA SHARE'"
-     }
-    ]
-   ],
-   "modeBaris": "readOnly",
-   "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-  },
-  {
-   "t": "teks",
-   "at": 407394,
-   "teks": "Retention",
-   "syarat": []
-  },
-  {
-   "t": "medan",
-   "at": 421440,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "RetentionPct",
-   "format": "pxNumber",
-   "desimal": null,
-   "syarat": [
-    ".TreatyType = 'QUOTA SHARE'"
-   ],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    },
-    {
-     "aksi": "refresh",
-     "aktivitas": "LimitCalculation",
-     "param": {
-      "kindoftreaty": "qs",
-      "ioo": ".IOOLimit"
-     }
-    }
-   ]
-  },
-  {
-   "t": "teks",
-   "at": 428468,
-   "teks": "%",
-   "syarat": [
-    ".TreatyType = 'QUOTA SHARE'"
-   ]
-  },
-  {
-   "t": "grid",
-   "at": 471389,
-   "prop": ".RetentionList",
-   "dari": "sisi",
-   "larik": "RetentionList",
-   "syarat": [],
-   "kolom": [
-    "",
-    ""
-   ],
-   "kunci": [
-    "Currency",
-    "Value"
-   ],
-   "lebar": [
-    193,
-    352
-   ],
-   "desimal": [
-    null,
-    2
-   ],
-   "format": [
-    "pxAutoComplete",
-    "pxNumber"
-   ],
-   "syaratSel": [
-    null,
-    null
-   ],
-   "atSel": [
-    483477,
-    501659
-   ],
-   "baca": [
-    "selalu",
-    "selalu"
-   ],
-   "tombol": [
-    null,
-    null
-   ],
-   "tombolKepala": [
-    null,
-    null
-   ],
-   "pilihan": [
-    {
-     "sumber": "reportdefinition",
-     "rd": "BrowseCurrencyTreatyIn_RD",
-     "nilai": "Currency",
-     "param": {
-      "Currency": ""
-     },
-     "setel": [
-      {
-       "target": "CurrencyID",
-       "dari": "ID"
-      }
-     ]
-    },
-    null
-   ],
-   "aksiUbah": [
-    [
-     {
-      "aksi": "runDataTransform",
-      "transformasi": "SetCurrencyID",
-      "paramDT": {
-       "Currency": ".Currency",
-       "ID": ".CurrencyID"
-      }
-     },
-     {
-      "aksi": "postValue"
-     },
-     {
-      "aksi": "refresh",
-      "aktivitas": "LimitCalculation",
-      "param": {
-       "kindoftreaty": "surplus",
-       "add": "man",
-       "autocalculate": ".Layer"
-      },
-      "syarat": ".Note = 'SURPLUS' || .Note = '2ND SURPLUS' || .Note = '3RD SURPLUS'"
-     }
-    ],
-    [
-     {
-      "aksi": "refresh",
-      "aktivitas": "LimitCalculation",
-      "param": {
-       "kindoftreaty": "surplus",
-       "add": "man",
-       "autocalculate": ".Layer"
-      },
-      "syarat": ".Note = 'SURPLUS' || .Note = '2ND SURPLUS' || .Note = '3RD SURPLUS'"
-     }
-    ]
-   ],
-   "modeBaris": "readOnly",
-   "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-  },
-  {
-   "t": "teks",
-   "at": 559361,
-   "teks": "Cession to R/I",
-   "syarat": []
-  },
-  {
-   "t": "medan",
-   "at": 573414,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "CessionPct",
-   "format": "pxNumber",
-   "desimal": null,
-   "syarat": [
-    ".TreatyType = 'QUOTA SHARE'"
-   ],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    },
-    {
-     "aksi": "refresh",
-     "aktivitas": "LimitCalculation",
-     "param": {
-      "kindoftreaty": "qs",
-      "ioo": ".IOOLimit"
-     }
-    }
-   ]
-  },
-  {
-   "t": "teks",
-   "at": 580456,
-   "teks": "%",
-   "syarat": [
-    ".TreatyType = 'QUOTA SHARE'"
-   ]
-  },
-  {
-   "t": "grid",
-   "at": 623386,
-   "prop": ".CessionList",
-   "dari": "sisi",
-   "larik": "CessionList",
-   "syarat": [],
-   "kolom": [
-    "",
-    ""
-   ],
-   "kunci": [
-    "Currency",
-    "Value"
-   ],
-   "lebar": [
-    193,
-    350
-   ],
-   "desimal": [
-    null,
-    2
-   ],
-   "format": [
-    "pxAutoComplete",
-    "pxNumber"
-   ],
-   "syaratSel": [
-    null,
-    null
-   ],
-   "atSel": [
-    635472,
-    649796
-   ],
-   "baca": [
-    "selalu",
-    "selalu"
-   ],
-   "tombol": [
-    null,
-    null
-   ],
-   "tombolKepala": [
-    null,
-    null
-   ],
-   "pilihan": [
-    {
-     "sumber": "reportdefinition",
-     "rd": "BrowseCurrencyTreatyIn_RD",
-     "nilai": "Currency",
-     "param": {
-      "Currency": ""
-     },
-     "setel": [
-      {
-       "target": "CurrencyID",
-       "dari": "ID"
-      }
-     ]
-    },
-    null
-   ],
-   "aksiUbah": [
-    [
-     {
-      "aksi": "runDataTransform",
-      "transformasi": "SetCurrencyID",
-      "paramDT": {
-       "Currency": ".Currency",
-       "ID": ".CurrencyID"
-      }
-     },
-     {
-      "aksi": "postValue"
-     },
-     {
-      "aksi": "refresh"
-     }
-    ],
-    null
-   ],
-   "modeBaris": "readOnly",
-   "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+   "tata": "kiri"
   },
   {
    "t": "blok",
@@ -19459,170 +21584,282 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "medan",
-       "at": 738606,
-       "label": "RSMD Limit",
-       "dari": "sisi",
-       "kunci": "CurrencyRSMD",
-       "format": "pxAutoComplete",
-       "desimal": null,
+       "t": "blok",
+       "at": 722928,
+       "judul": "",
        "syarat": [],
-       "baca": "selalu",
-       "pilihan": {
-        "sumber": "reportdefinition",
-        "rd": "BrowseCurrencyTreatyIn_RD",
-        "nilai": "Currency",
-        "param": {
-         "Currency": ""
-        },
-        "setel": [
-         {
-          "target": "CurrencyID",
-          "dari": "ID"
-         }
-        ]
-       },
-       "aksiUbah": [
+       "anak": [
         {
-         "aksi": "postValue"
-        }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 764339,
-       "label": "",
-       "dari": "sisi",
-       "kunci": "RSMDLimit",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": "selalu"
-      },
-      {
-       "t": "medan",
-       "at": 795250,
-       "label": "Earthquake Limit",
-       "dari": "sisi",
-       "kunci": "CurrencyEarthquake",
-       "format": "pxAutoComplete",
-       "desimal": null,
-       "syarat": [],
-       "baca": "selalu",
-       "pilihan": {
-        "sumber": "reportdefinition",
-        "rd": "BrowseCurrencyTreatyIn_RD",
-        "nilai": "Currency",
-        "param": {
-         "Currency": ""
+         "t": "blok",
+         "at": 731927,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 738606,
+           "label": "RSMD Limit",
+           "dari": "sisi",
+           "kunci": "CurrencyRSMD",
+           "format": "pxAutoComplete",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu",
+           "pilihan": {
+            "sumber": "reportdefinition",
+            "rd": "BrowseCurrencyTreatyIn_RD",
+            "nilai": "Currency",
+            "param": {
+             "Currency": ""
+            },
+            "setel": [
+             {
+              "target": "CurrencyID",
+              "dari": "ID"
+             }
+            ]
+           },
+           "aksiUbah": [
+            {
+             "aksi": "postValue"
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
         },
-        "setel": [
-         {
-          "target": "CurrencyID",
-          "dari": "ID"
-         }
-        ]
-       },
-       "aksiUbah": [
         {
-         "aksi": "postValue"
-        }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 821643,
-       "label": "",
-       "dari": "sisi",
-       "kunci": "Earthquake",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": "selalu"
-      },
-      {
-       "t": "medan",
-       "at": 852512,
-       "label": "Flood Limit (Jabodetabek)",
-       "dari": "sisi",
-       "kunci": "CurrencyFloodJab",
-       "format": "pxAutoComplete",
-       "desimal": null,
-       "syarat": [],
-       "baca": "selalu",
-       "pilihan": {
-        "sumber": "reportdefinition",
-        "rd": "BrowseCurrencyTreatyIn_RD",
-        "nilai": "Currency",
-        "param": {
-         "Currency": ""
+         "t": "blok",
+         "at": 757660,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 764339,
+           "label": "",
+           "dari": "sisi",
+           "kunci": "RSMDLimit",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu"
+          }
+         ],
+         "tata": "kiri"
         },
-        "setel": [
-         {
-          "target": "CurrencyID",
-          "dari": "ID"
-         }
-        ]
-       },
-       "aksiUbah": [
         {
-         "aksi": "postValue"
-        }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 878315,
-       "label": "",
-       "dari": "sisi",
-       "kunci": "FloodJab",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": "selalu"
-      },
-      {
-       "t": "medan",
-       "at": 909187,
-       "label": "Flood Limit (Nationwide)",
-       "dari": "sisi",
-       "kunci": "CurrencyFloodNat",
-       "format": "pxAutoComplete",
-       "desimal": null,
-       "syarat": [],
-       "baca": "selalu",
-       "pilihan": {
-        "sumber": "reportdefinition",
-        "rd": "BrowseCurrencyTreatyIn_RD",
-        "nilai": "Currency",
-        "param": {
-         "Currency": ""
+         "t": "kosong",
+         "at": 776585,
+         "syarat": []
         },
-        "setel": [
-         {
-          "target": "CurrencyID",
-          "dari": "ID"
-         }
-        ]
-       },
-       "aksiUbah": [
         {
-         "aksi": "postValue"
+         "t": "kosong",
+         "at": 781420,
+         "syarat": []
+        },
+        {
+         "t": "blok",
+         "at": 788571,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 795250,
+           "label": "Earthquake Limit",
+           "dari": "sisi",
+           "kunci": "CurrencyEarthquake",
+           "format": "pxAutoComplete",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu",
+           "pilihan": {
+            "sumber": "reportdefinition",
+            "rd": "BrowseCurrencyTreatyIn_RD",
+            "nilai": "Currency",
+            "param": {
+             "Currency": ""
+            },
+            "setel": [
+             {
+              "target": "CurrencyID",
+              "dari": "ID"
+             }
+            ]
+           },
+           "aksiUbah": [
+            {
+             "aksi": "postValue"
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
+        },
+        {
+         "t": "blok",
+         "at": 814964,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 821643,
+           "label": "",
+           "dari": "sisi",
+           "kunci": "Earthquake",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu"
+          }
+         ],
+         "tata": "kiri"
+        },
+        {
+         "t": "kosong",
+         "at": 833848,
+         "syarat": []
+        },
+        {
+         "t": "kosong",
+         "at": 838683,
+         "syarat": []
+        },
+        {
+         "t": "blok",
+         "at": 845834,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 852512,
+           "label": "Flood Limit (Jabodetabek)",
+           "dari": "sisi",
+           "kunci": "CurrencyFloodJab",
+           "format": "pxAutoComplete",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu",
+           "pilihan": {
+            "sumber": "reportdefinition",
+            "rd": "BrowseCurrencyTreatyIn_RD",
+            "nilai": "Currency",
+            "param": {
+             "Currency": ""
+            },
+            "setel": [
+             {
+              "target": "CurrencyID",
+              "dari": "ID"
+             }
+            ]
+           },
+           "aksiUbah": [
+            {
+             "aksi": "postValue"
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
+        },
+        {
+         "t": "blok",
+         "at": 871636,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 878315,
+           "label": "",
+           "dari": "sisi",
+           "kunci": "FloodJab",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu"
+          }
+         ],
+         "tata": "kiri"
+        },
+        {
+         "t": "kosong",
+         "at": 890516,
+         "syarat": []
+        },
+        {
+         "t": "kosong",
+         "at": 895353,
+         "syarat": []
+        },
+        {
+         "t": "blok",
+         "at": 902508,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 909187,
+           "label": "Flood Limit (Nationwide)",
+           "dari": "sisi",
+           "kunci": "CurrencyFloodNat",
+           "format": "pxAutoComplete",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu",
+           "pilihan": {
+            "sumber": "reportdefinition",
+            "rd": "BrowseCurrencyTreatyIn_RD",
+            "nilai": "Currency",
+            "param": {
+             "Currency": ""
+            },
+            "setel": [
+             {
+              "target": "CurrencyID",
+              "dari": "ID"
+             }
+            ]
+           },
+           "aksiUbah": [
+            {
+             "aksi": "postValue"
+            }
+           ]
+          }
+         ],
+         "tata": "kiri"
+        },
+        {
+         "t": "blok",
+         "at": 928332,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "medan",
+           "at": 935011,
+           "label": "",
+           "dari": "sisi",
+           "kunci": "FloodNation",
+           "format": "pxTextInput",
+           "desimal": null,
+           "syarat": [],
+           "baca": "selalu"
+          }
+         ],
+         "tata": "kiri"
         }
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 935011,
-       "label": "",
-       "dari": "sisi",
-       "kunci": "FloodNation",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": "selalu"
+       ],
+       "tata": "t3070"
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ]
   },
@@ -19660,7 +21897,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        "syarat": [],
        "baca": "selalu"
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ]
   },
@@ -19885,94 +22123,131 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "medan",
-       "at": 1235084,
-       "label": "% Premium Reserve",
-       "dari": "sisi",
-       "kunci": "PremiumReservePct",
-       "format": "pxTextInput",
-       "desimal": null,
+       "t": "blok",
+       "at": 1228412,
+       "judul": "",
        "syarat": [],
-       "baca": "selalu",
-       "aksiUbah": [
+       "anak": [
         {
-         "aksi": "refresh",
-         "aktivitas": "PremiumReserveCalculate"
+         "t": "medan",
+         "at": 1235084,
+         "label": "% Premium Reserve",
+         "dari": "sisi",
+         "kunci": "PremiumReservePct",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "refresh",
+           "aktivitas": "PremiumReserveCalculate"
+          }
+         ]
         }
-       ]
+       ],
+       "tata": "g2"
       },
       {
-       "t": "teks",
-       "at": 1287303,
-       "teks": "Premium Reserve",
-       "syarat": []
-      },
-      {
-       "t": "grid",
-       "at": 1324693,
-       "prop": ".ReserveList",
-       "dari": "sisi",
-       "larik": "ReserveList",
+       "t": "blok",
+       "at": 1258362,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        198,
-        362
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxAutoComplete",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        1336779,
-        1344785
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
+       "anak": [
         {
-         "sumber": "reportdefinition",
-         "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency",
-         "param": {
-          "Currency": ""
-         }
+         "t": "blok",
+         "at": 1267360,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "blok",
+           "at": 1280641,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "teks",
+             "at": 1287303,
+             "teks": "Premium Reserve",
+             "syarat": []
+            }
+           ],
+           "tata": "alir"
+          }
+         ],
+         "tata": "kiri"
         },
-        null
+        {
+         "t": "grid",
+         "at": 1324693,
+         "prop": ".ReserveList",
+         "dari": "sisi",
+         "larik": "ReserveList",
+         "syarat": [],
+         "kolom": [
+          "",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          198,
+          362
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxAutoComplete",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1336779,
+          1344785
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          {
+           "sumber": "reportdefinition",
+           "rd": "BrowseCurrencyTreatyIn_RD",
+           "nilai": "Currency",
+           "param": {
+            "Currency": ""
+           }
+          },
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "t3070"
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ]
   },
@@ -20039,7 +22314,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        "teks": "YDCF = Years Deficit Carried Forward",
        "syarat": []
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ]
   },
@@ -20056,77 +22332,105 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "teks",
-       "at": 1519968,
-       "teks": "PLA",
-       "syarat": []
-      },
-      {
-       "t": "grid",
-       "at": 1557346,
-       "prop": ".PLAList",
-       "dari": "sisi",
-       "larik": "PLAList",
+       "t": "blok",
+       "at": 1491029,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        197,
-        360
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxAutoComplete",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        1569428,
-        1577465
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
+       "anak": [
         {
-         "sumber": "reportdefinition",
-         "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency",
-         "param": {
-          "Currency": ""
-         }
+         "t": "blok",
+         "at": 1500026,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "blok",
+           "at": 1513306,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "teks",
+             "at": 1519968,
+             "teks": "PLA",
+             "syarat": []
+            }
+           ],
+           "tata": "alir"
+          }
+         ],
+         "tata": "kiri"
         },
-        null
+        {
+         "t": "grid",
+         "at": 1557346,
+         "prop": ".PLAList",
+         "dari": "sisi",
+         "larik": "PLAList",
+         "syarat": [],
+         "kolom": [
+          "",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          197,
+          360
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxAutoComplete",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1569428,
+          1577465
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          {
+           "sumber": "reportdefinition",
+           "rd": "BrowseCurrencyTreatyIn_RD",
+           "nilai": "Currency",
+           "param": {
+            "Currency": ""
+           }
+          },
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "t3070"
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ]
   },
@@ -20143,77 +22447,105 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "teks",
-       "at": 1681584,
-       "teks": "Cash Loss Limit",
-       "syarat": []
-      },
-      {
-       "t": "grid",
-       "at": 1718974,
-       "prop": ".CashLossList",
-       "dari": "sisi",
-       "larik": "CashLossList",
+       "t": "blok",
+       "at": 1652644,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        195,
-        359
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxAutoComplete",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        1731061,
-        1739067
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
+       "anak": [
         {
-         "sumber": "reportdefinition",
-         "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency",
-         "param": {
-          "Currency": ""
-         }
+         "t": "blok",
+         "at": 1661642,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "blok",
+           "at": 1674922,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "teks",
+             "at": 1681584,
+             "teks": "Cash Loss Limit",
+             "syarat": []
+            }
+           ],
+           "tata": "alir"
+          }
+         ],
+         "tata": "kiri"
         },
-        null
+        {
+         "t": "grid",
+         "at": 1718974,
+         "prop": ".CashLossList",
+         "dari": "sisi",
+         "larik": "CashLossList",
+         "syarat": [],
+         "kolom": [
+          "",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          195,
+          359
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxAutoComplete",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1731061,
+          1739067
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          {
+           "sumber": "reportdefinition",
+           "rd": "BrowseCurrencyTreatyIn_RD",
+           "nilai": "Currency",
+           "param": {
+            "Currency": ""
+           }
+          },
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "t3070"
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ]
   },
@@ -20230,77 +22562,105 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "teks",
-       "at": 1842947,
-       "teks": "Claim Cooperation",
-       "syarat": []
-      },
-      {
-       "t": "grid",
-       "at": 1880339,
-       "prop": ".ClaimCoopList",
-       "dari": "sisi",
-       "larik": "ClaimCoopList",
+       "t": "blok",
+       "at": 1814007,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        197,
-        360
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxAutoComplete",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        1892427,
-        1900433
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
+       "anak": [
         {
-         "sumber": "reportdefinition",
-         "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency",
-         "param": {
-          "Currency": ""
-         }
+         "t": "blok",
+         "at": 1823005,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "blok",
+           "at": 1836286,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "teks",
+             "at": 1842947,
+             "teks": "Claim Cooperation",
+             "syarat": []
+            }
+           ],
+           "tata": "alir"
+          }
+         ],
+         "tata": "kiri"
         },
-        null
+        {
+         "t": "grid",
+         "at": 1880339,
+         "prop": ".ClaimCoopList",
+         "dari": "sisi",
+         "larik": "ClaimCoopList",
+         "syarat": [],
+         "kolom": [
+          "",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          197,
+          360
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxAutoComplete",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1892427,
+          1900433
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          {
+           "sumber": "reportdefinition",
+           "rd": "BrowseCurrencyTreatyIn_RD",
+           "nilai": "Currency",
+           "param": {
+            "Currency": ""
+           }
+          },
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "t3070"
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ]
   },
@@ -20317,77 +22677,105 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "teks",
-       "at": 2003854,
-       "teks": "EPI",
-       "syarat": []
-      },
-      {
-       "t": "grid",
-       "at": 2041234,
-       "prop": ".EPIList",
-       "dari": "sisi",
-       "larik": "EPIList",
+       "t": "blok",
+       "at": 1974912,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        197,
-        360
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxAutoComplete",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        2053317,
-        2061323
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
+       "anak": [
         {
-         "sumber": "reportdefinition",
-         "rd": "BrowseCurrencyTreatyIn_RD",
-         "nilai": "Currency",
-         "param": {
-          "Currency": ""
-         }
+         "t": "blok",
+         "at": 1983910,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "blok",
+           "at": 1997191,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "teks",
+             "at": 2003854,
+             "teks": "EPI",
+             "syarat": []
+            }
+           ],
+           "tata": "alir"
+          }
+         ],
+         "tata": "kiri"
         },
-        null
+        {
+         "t": "grid",
+         "at": 2041234,
+         "prop": ".EPIList",
+         "dari": "sisi",
+         "larik": "EPIList",
+         "syarat": [],
+         "kolom": [
+          "",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          197,
+          360
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxAutoComplete",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          2053317,
+          2061323
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          {
+           "sumber": "reportdefinition",
+           "rd": "BrowseCurrencyTreatyIn_RD",
+           "nilai": "Currency",
+           "param": {
+            "Currency": ""
+           }
+          },
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "t3070"
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ]
   },
@@ -20546,82 +22934,91 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        "templatBaris": "ASM-FW-GISFW-Data-TreatyInAchievement!pyGridModalTemplate"
       },
       {
-       "t": "medan",
-       "at": 2365309,
-       "label": "Total Premium",
-       "dari": "sisi",
-       "kunci": "AchievementLists(1).Currency",
-       "format": "pxTextInput",
-       "desimal": null,
+       "t": "blok",
+       "at": 2337335,
+       "judul": "",
        "syarat": [],
-       "baca": [
-        "1=1"
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 2371100,
-       "label": "",
-       "dari": "sisi",
-       "kunci": "TotalAchievPremium",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": [
-        "1=1"
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 2385256,
-       "label": "Total Paid Claim",
-       "dari": "sisi",
-       "kunci": "AchievementLists(1).Currency",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": [
-        "1=1"
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 2391007,
-       "label": "",
-       "dari": "sisi",
-       "kunci": "TotalAchievPaid",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": [
-        "1=1"
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 2405163,
-       "label": "Total Outstanding",
-       "dari": "sisi",
-       "kunci": "AchievementLists(1).Currency",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": [
-        "1=1"
-       ]
-      },
-      {
-       "t": "medan",
-       "at": 2410916,
-       "label": "",
-       "dari": "sisi",
-       "kunci": "TotalAchievOuts",
-       "format": "pxTextInput",
-       "desimal": null,
-       "syarat": [],
-       "baca": [
-        "1=1"
-       ]
+       "anak": [
+        {
+         "t": "medan",
+         "at": 2365309,
+         "label": "Total Premium",
+         "dari": "sisi",
+         "kunci": "AchievementLists(1).Currency",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "1=1"
+         ]
+        },
+        {
+         "t": "medan",
+         "at": 2371100,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "TotalAchievPremium",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "1=1"
+         ]
+        },
+        {
+         "t": "medan",
+         "at": 2385256,
+         "label": "Total Paid Claim",
+         "dari": "sisi",
+         "kunci": "AchievementLists(1).Currency",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "1=1"
+         ]
+        },
+        {
+         "t": "medan",
+         "at": 2391007,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "TotalAchievPaid",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "1=1"
+         ]
+        },
+        {
+         "t": "medan",
+         "at": 2405163,
+         "label": "Total Outstanding",
+         "dari": "sisi",
+         "kunci": "AchievementLists(1).Currency",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "1=1"
+         ]
+        },
+        {
+         "t": "medan",
+         "at": 2410916,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "TotalAchievOuts",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "1=1"
+         ]
+        }
+       ],
+       "tata": "alir"
       },
       {
        "t": "medan",
@@ -20674,33 +23071,52 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         }
        ]
       }
-     ]
+     ],
+     "tata": "kiri"
     }
    ]
   }
  ],
  "DetailShare": [
   {
-   "t": "medan",
-   "at": 29678,
-   "label": "% RNM Share",
-   "dari": "sisi",
-   "kunci": "RNMShare",
-   "format": "pxNumber",
-   "desimal": 2,
+   "t": "blok",
+   "at": 12601,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState =='1' || TreatyIn.EDMMaterialType = 2"
-   ],
-   "aksiUbah": [
+   "anak": [
     {
-     "aksi": "postValue"
-    },
-    {
-     "aksi": "refresh",
-     "aktivitas": "TreatyInPropshareDetail"
+     "t": "blok",
+     "at": 23001,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "medan",
+       "at": 29678,
+       "label": "% RNM Share",
+       "dari": "sisi",
+       "kunci": "RNMShare",
+       "format": "pxNumber",
+       "desimal": 2,
+       "syarat": [],
+       "baca": [
+        "TreatyIn.ViewState =='1' || TreatyIn.EDMMaterialType = 2"
+       ],
+       "aksiUbah": [
+        {
+         "aksi": "postValue"
+        },
+        {
+         "aksi": "refresh",
+         "aktivitas": "TreatyInPropshareDetail"
+        }
+       ]
+      }
+     ],
+     "tata": "kiri"
     }
-   ]
+   ],
+   "tata": "g2"
   },
   {
    "t": "grid",
@@ -20809,7 +23225,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         }
        ]
       }
-     ]
+     ],
+     "tata": "kiri"
     },
     {
      "t": "blok",
@@ -20903,12 +23320,12 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
        "kolom": [
         "Reins Type",
         "Pct Share",
-        ".pyTemplateInputBox"
+        ""
        ],
        "kunci": [
         "ReinsTypeID",
         "Pct",
-        "pyTemplateInputBox"
+        ""
        ],
        "lebar": [
         269,
@@ -20936,19 +23353,57 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         335540
        ],
        "baca": [
-        "selalu",
-        "selalu",
+        [
+         "TreatyIn.ViewState = '1'"
+        ],
+        [
+         "TreatyIn.ViewState = '1'"
+        ],
         "selalu"
        ],
        "tombol": [
         null,
         null,
-        null
+        {
+         "t": "tombol",
+         "at": 335540,
+         "label": "Delete",
+         "syarat": [
+          "TreatyIn.ViewState != '1'"
+         ],
+         "aksi": [
+          {
+           "aksi": "refresh",
+           "aktivitas": "AddDelSpreadingTreatyin",
+           "param": {
+            "add": "false",
+            "idx": ".pxListSubscript"
+           }
+          }
+         ]
+        }
        ],
        "tombolKepala": [
         null,
         null,
-        null
+        {
+         "t": "tombol",
+         "at": 300715,
+         "label": "Add",
+         "syarat": [
+          "TreatyIn.ViewState != '1'"
+         ],
+         "aksi": [
+          {
+           "aksi": "refresh",
+           "aktivitas": "AddDelSpreadingTreatyin",
+           "param": {
+            "add": "true",
+            "idx": ""
+           }
+          }
+         ]
+        }
        ],
        "pilihan": [
         {
@@ -20989,7 +23444,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         null
        ],
        "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsSpreading!pyGridRowDetails"
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsSpreading!pyGridRowDetails",
+       "rincian": "SpreadingTPDtl"
       },
       {
        "t": "teks",
@@ -21000,30 +23456,48 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      ]
     },
     {
-     "t": "medan",
-     "at": 388630,
-     "label": "Total Spreading Pct :",
-     "dari": "sisi",
-     "kunci": "SpreadingTotalPct",
-     "format": "pxNumber",
-     "desimal": 2,
-     "syarat": [
-      ".SpreadingTypeID != ''"
+     "t": "blok",
+     "at": 372959,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 381957,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 388630,
+         "label": "Total Spreading Pct :",
+         "dari": "sisi",
+         "kunci": "SpreadingTotalPct",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [
+          ".SpreadingTypeID != ''"
+         ],
+         "baca": "selalu"
+        },
+        {
+         "t": "medan",
+         "at": 395971,
+         "label": "Total Share Pct",
+         "dari": "sisi",
+         "kunci": "SpreadingTotalPct",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [
+          ".SpreadingTypeID = ''"
+         ],
+         "baca": "selalu"
+        }
+       ],
+       "tata": "alir"
+      }
      ],
-     "baca": "selalu"
-    },
-    {
-     "t": "medan",
-     "at": 395971,
-     "label": "Total Share Pct",
-     "dari": "sisi",
-     "kunci": "SpreadingTotalPct",
-     "format": "pxNumber",
-     "desimal": 2,
-     "syarat": [
-      ".SpreadingTypeID = ''"
-     ],
-     "baca": "selalu"
+     "tata": "g2"
     },
     {
      "t": "grid",
@@ -21146,24 +23620,42 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
  ],
  "DetailShareOldData": [
   {
-   "t": "medan",
-   "at": 26614,
-   "label": "% RNM Share",
-   "dari": "sisi",
-   "kunci": "RNMShare",
-   "format": "pxNumber",
-   "desimal": 2,
+   "t": "blok",
+   "at": 9537,
+   "judul": "",
    "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
+   "anak": [
     {
-     "aksi": "postValue"
-    },
-    {
-     "aksi": "refresh",
-     "aktivitas": "TreatyInPropshareDetail"
+     "t": "blok",
+     "at": 19937,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "medan",
+       "at": 26614,
+       "label": "% RNM Share",
+       "dari": "sisi",
+       "kunci": "RNMShare",
+       "format": "pxNumber",
+       "desimal": 2,
+       "syarat": [],
+       "baca": "selalu",
+       "aksiUbah": [
+        {
+         "aksi": "postValue"
+        },
+        {
+         "aksi": "refresh",
+         "aktivitas": "TreatyInPropshareDetail"
+        }
+       ]
+      }
+     ],
+     "tata": "kiri"
     }
-   ]
+   ],
+   "tata": "g2"
   },
   {
    "t": "grid",
@@ -21272,7 +23764,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
         }
        ]
       }
-     ]
+     ],
+     "tata": "kiri"
     },
     {
      "t": "blok",
@@ -21451,30 +23944,48 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      ]
     },
     {
-     "t": "medan",
-     "at": 386766,
-     "label": "Total Spreading Pct :",
-     "dari": "sisi",
-     "kunci": "SpreadingTotalPct",
-     "format": "pxNumber",
-     "desimal": 2,
-     "syarat": [
-      ".SpreadingTypeID != ''"
+     "t": "blok",
+     "at": 371095,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 380093,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 386766,
+         "label": "Total Spreading Pct :",
+         "dari": "sisi",
+         "kunci": "SpreadingTotalPct",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [
+          ".SpreadingTypeID != ''"
+         ],
+         "baca": "selalu"
+        },
+        {
+         "t": "medan",
+         "at": 394107,
+         "label": "Total Share Pct",
+         "dari": "sisi",
+         "kunci": "SpreadingTotalPct",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [
+          ".SpreadingTypeID = ''"
+         ],
+         "baca": "selalu"
+        }
+       ],
+       "tata": "alir"
+      }
      ],
-     "baca": "selalu"
-    },
-    {
-     "t": "medan",
-     "at": 394107,
-     "label": "Total Share Pct",
-     "dari": "sisi",
-     "kunci": "SpreadingTotalPct",
-     "format": "pxNumber",
-     "desimal": 2,
-     "syarat": [
-      ".SpreadingTypeID = ''"
-     ],
-     "baca": "selalu"
+     "tata": "g2"
     },
     {
      "t": "grid",
@@ -21738,26 +24249,35 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInInstallment!pyGridModalTemplate"
   },
   {
-   "t": "medan",
-   "at": 143775,
-   "label": "% Total",
-   "dari": "sisi",
-   "kunci": "PctTotal",
-   "format": "pxNumber",
-   "desimal": 4,
+   "t": "blok",
+   "at": 136142,
+   "judul": "",
    "syarat": [],
-   "baca": "selalu"
-  },
-  {
-   "t": "medan",
-   "at": 149318,
-   "label": "Total",
-   "dari": "sisi",
-   "kunci": "AmountTotal",
-   "format": "pxNumber",
-   "desimal": 2,
-   "syarat": [],
-   "baca": "selalu"
+   "anak": [
+    {
+     "t": "medan",
+     "at": 143775,
+     "label": "% Total",
+     "dari": "sisi",
+     "kunci": "PctTotal",
+     "format": "pxNumber",
+     "desimal": 4,
+     "syarat": [],
+     "baca": "selalu"
+    },
+    {
+     "t": "medan",
+     "at": 149318,
+     "label": "Total",
+     "dari": "sisi",
+     "kunci": "AmountTotal",
+     "format": "pxNumber",
+     "desimal": 2,
+     "syarat": [],
+     "baca": "selalu"
+    }
+   ],
+   "tata": "kiri"
   }
  ],
  "Installments_ReadOnly": [
@@ -21868,112 +24388,130 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInInstallment!pyGridModalTemplate"
   },
   {
-   "t": "medan",
-   "at": 128803,
-   "label": "% Total",
-   "dari": "sisi",
-   "kunci": "PctTotal",
-   "format": "pxNumber",
-   "desimal": 4,
+   "t": "blok",
+   "at": 121186,
+   "judul": "",
    "syarat": [],
-   "baca": "selalu"
-  },
-  {
-   "t": "medan",
-   "at": 134346,
-   "label": "Total",
-   "dari": "sisi",
-   "kunci": "AmountTotal",
-   "format": "pxNumber",
-   "desimal": 2,
-   "syarat": [],
-   "baca": "selalu"
+   "anak": [
+    {
+     "t": "medan",
+     "at": 128803,
+     "label": "% Total",
+     "dari": "sisi",
+     "kunci": "PctTotal",
+     "format": "pxNumber",
+     "desimal": 4,
+     "syarat": [],
+     "baca": "selalu"
+    },
+    {
+     "t": "medan",
+     "at": 134346,
+     "label": "Total",
+     "dari": "sisi",
+     "kunci": "AmountTotal",
+     "format": "pxNumber",
+     "desimal": 2,
+     "syarat": [],
+     "baca": "selalu"
+    }
+   ],
+   "tata": "kiri"
   }
  ],
  "Layers": [
   {
-   "t": "medan",
-   "at": 19542,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerType",
-   "format": "pxDropdown",
-   "desimal": null,
+   "t": "blok",
+   "at": 11943,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1"
-   ],
-   "pilihan": {
-    "sumber": "associated"
-   },
-   "aksiUbah": [
+   "anak": [
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 27061,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Layer",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1"
-   ],
-   "aksiUbah": [
+     "t": "medan",
+     "at": 19542,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerType",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1"
+     ],
+     "pilihan": {
+      "sumber": "associated"
+     },
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    },
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "teks",
-   "at": 34562,
-   "teks": "Part of",
-   "syarat": []
-  },
-  {
-   "t": "medan",
-   "at": 39230,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerPartType",
-   "format": "pxDropdown",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1"
-   ],
-   "pilihan": {
-    "sumber": "associated"
-   },
-   "aksiUbah": [
+     "t": "medan",
+     "at": 27061,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "Layer",
+     "format": "pxTextInput",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1"
+     ],
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    },
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 46737,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerPart",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1"
-   ],
-   "aksiUbah": [
+     "t": "teks",
+     "at": 34562,
+     "teks": "Part of",
+     "syarat": []
+    },
     {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 39230,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerPartType",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1"
+     ],
+     "pilihan": {
+      "sumber": "associated"
+     },
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    },
+    {
+     "t": "medan",
+     "at": 46737,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerPart",
+     "format": "pxTextInput",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1"
+     ],
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
     }
-   ]
+   ],
+   "tata": "alir"
   },
   {
    "t": "blok",
@@ -22182,392 +24720,614 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridRowDetails"
   },
   {
-   "t": "medan",
-   "at": 258061,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Cover",
-   "format": "pxDropdown",
-   "desimal": null,
+   "t": "blok",
+   "at": 251691,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1"
-   ],
-   "pilihan": {
-    "sumber": "associated"
-   },
-   "aksiUbah": [
+   "anak": [
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 263935,
-   "label": "Currency Relation",
-   "dari": "sisi",
-   "kunci": "CurrencyRelation",
-   "format": "pxDropdown",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1",
-    "TreatyIn.EDMMaterialType = 2"
-   ],
-   "pilihan": {
-    "sumber": "associated"
-   },
-   "aksiUbah": [
-    {
-     "aksi": "refresh"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 305127,
-   "label": "100 % Limit",
-   "dari": "sisi",
-   "kunci": "Currency",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1",
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
+     "t": "medan",
+     "at": 258061,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "Cover",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1"
+     ],
+     "pilihan": {
+      "sumber": "associated"
+     },
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
     },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
     {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 263935,
+     "label": "Currency Relation",
+     "dari": "sisi",
+     "kunci": "CurrencyRelation",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1",
+      "TreatyIn.EDMMaterialType = 2"
+     ],
+     "pilihan": {
+      "sumber": "associated"
+     },
+     "aksiUbah": [
+      {
+       "aksi": "refresh"
+      }
+     ]
     }
-   ]
+   ],
+   "tata": "kiri"
   },
   {
-   "t": "medan",
-   "at": 330498,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Limit",
-   "format": "pxTextInput",
-   "desimal": null,
+   "t": "blok",
+   "at": 281423,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "aksiUbah": [
+   "anak": [
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 364116,
-   "label": "Agregate Year Limit",
-   "dari": "sisi",
-   "kunci": "Currency",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
+     "t": "blok",
+     "at": 290090,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 298757,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 305127,
+         "label": "100 % Limit",
+         "dari": "sisi",
+         "kunci": "Currency",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1",
+          "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 324128,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 330498,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Limit",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 345431,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 350741,
+       "syarat": []
+      },
+      {
+       "t": "blok",
+       "at": 357746,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 364116,
+         "label": "Agregate Year Limit",
+         "dari": "sisi",
+         "kunci": "Currency",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 383090,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 389460,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "AgregateLimit",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 404406,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 409118,
+       "syarat": []
+      },
+      {
+       "t": "blok",
+       "at": 416123,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 422493,
+         "label": "Deductible",
+         "dari": "sisi",
+         "kunci": "Currency",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 441432,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 447802,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Deductible",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 461752,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 466466,
+       "syarat": []
+      }
+     ],
+     "tata": "g2"
     },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
     {
-     "aksi": "postValue"
+     "t": "blok",
+     "at": 479784,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 488451,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 494821,
+         "label": "100 % Limit",
+         "dari": "sisi",
+         "kunci": "Currency2",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 513781,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 520151,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Limit2",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 535083,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 540394,
+       "syarat": []
+      },
+      {
+       "t": "blok",
+       "at": 547401,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 553771,
+         "label": "Agregate Year Limit",
+         "dari": "sisi",
+         "kunci": "Currency2",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 572749,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 579119,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "AgregateLimit2",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 594068,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 598781,
+       "syarat": []
+      },
+      {
+       "t": "blok",
+       "at": 605788,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 612158,
+         "label": "Deductible",
+         "dari": "sisi",
+         "kunci": "Currency2",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 631101,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 637471,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Deductible2",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 651470,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 656185,
+       "syarat": []
+      }
+     ],
+     "tata": "g2"
     }
-   ]
+   ],
+   "tata": "g2"
   },
   {
-   "t": "medan",
-   "at": 389460,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "AgregateLimit",
-   "format": "pxTextInput",
-   "desimal": null,
+   "t": "blok",
+   "at": 676157,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "aksiUbah": [
+   "anak": [
     {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 682521,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "NoRIPCalculation",
+     "format": "pxCheckbox",
+     "desimal": null,
+     "syarat": [],
+     "caption": "No Reinstatement Premium Calculation",
+     "baca": [
+      "TreatyIn.ViewState = 1"
+     ],
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
     }
-   ]
+   ],
+   "tata": "alir"
   },
   {
-   "t": "medan",
-   "at": 422493,
-   "label": "Deductible",
-   "dari": "sisi",
-   "kunci": "Currency",
-   "format": "pxAutoComplete",
-   "desimal": null,
+   "t": "blok",
+   "at": 698608,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
+   "anak": [
+    {
+     "t": "teks",
+     "at": 704972,
+     "teks": "Reinstatement",
+     "syarat": []
     },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
     {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 714520,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "ReinstatementValue",
+     "format": "pxNumber",
+     "desimal": 0,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+     ],
+     "aksiUbah": [
+      {
+       "aksi": "refresh",
+       "aktivitas": "SetReinstatementPct"
+      }
+     ]
     }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 447802,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Deductible",
-   "format": "pxNumber",
-   "desimal": 2,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
    ],
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 494821,
-   "label": "100 % Limit",
-   "dari": "sisi",
-   "kunci": "Currency2",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 520151,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Limit2",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 553771,
-   "label": "Agregate Year Limit",
-   "dari": "sisi",
-   "kunci": "Currency2",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 579119,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "AgregateLimit2",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 612158,
-   "label": "Deductible",
-   "dari": "sisi",
-   "kunci": "Currency2",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 637471,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Deductible2",
-   "format": "pxNumber",
-   "desimal": 2,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 682521,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "NoRIPCalculation",
-   "format": "pxCheckbox",
-   "desimal": null,
-   "syarat": [],
-   "caption": "No Reinstatement Premium Calculation",
-   "baca": [
-    "TreatyIn.ViewState = 1"
-   ],
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "teks",
-   "at": 704972,
-   "teks": "Reinstatement",
-   "syarat": []
-  },
-  {
-   "t": "medan",
-   "at": 714520,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "ReinstatementValue",
-   "format": "pxNumber",
-   "desimal": 0,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "aksiUbah": [
-    {
-     "aksi": "refresh",
-     "aktivitas": "SetReinstatementPct"
-    }
-   ]
+   "tata": "alir"
   },
   {
    "t": "grid",
@@ -23175,88 +25935,97 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
  ],
  "LayersEDM": [
   {
-   "t": "medan",
-   "at": 17792,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerType",
-   "format": "pxDropdown",
-   "desimal": null,
+   "t": "blok",
+   "at": 10193,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1"
-   ],
-   "pilihan": {
-    "sumber": "associated"
-   },
-   "aksiUbah": [
+   "anak": [
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 25311,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Layer",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1"
-   ],
-   "aksiUbah": [
+     "t": "medan",
+     "at": 17792,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerType",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1"
+     ],
+     "pilihan": {
+      "sumber": "associated"
+     },
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    },
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "teks",
-   "at": 32812,
-   "teks": "Part of",
-   "syarat": []
-  },
-  {
-   "t": "medan",
-   "at": 37480,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerPartType",
-   "format": "pxDropdown",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1"
-   ],
-   "pilihan": {
-    "sumber": "associated"
-   },
-   "aksiUbah": [
+     "t": "medan",
+     "at": 25311,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "Layer",
+     "format": "pxTextInput",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1"
+     ],
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    },
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 44987,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerPart",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1"
-   ],
-   "aksiUbah": [
+     "t": "teks",
+     "at": 32812,
+     "teks": "Part of",
+     "syarat": []
+    },
     {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 37480,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerPartType",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1"
+     ],
+     "pilihan": {
+      "sumber": "associated"
+     },
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    },
+    {
+     "t": "medan",
+     "at": 44987,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerPart",
+     "format": "pxTextInput",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1"
+     ],
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
     }
-   ]
+   ],
+   "tata": "alir"
   },
   {
    "t": "blok",
@@ -23412,341 +26181,554 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridRowDetails"
   },
   {
-   "t": "medan",
-   "at": 234045,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Cover",
-   "format": "pxDropdown",
-   "desimal": null,
+   "t": "blok",
+   "at": 227675,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1"
+   "anak": [
+    {
+     "t": "medan",
+     "at": 234045,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "Cover",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1"
+     ],
+     "pilihan": {
+      "sumber": "associated"
+     },
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    },
+    {
+     "t": "medan",
+     "at": 239919,
+     "label": "Currency Relation",
+     "dari": "sisi",
+     "kunci": "CurrencyRelation",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1",
+      "TreatyIn.EDMMaterialType = 2"
+     ],
+     "pilihan": {
+      "sumber": "associated"
+     }
+    }
    ],
-   "pilihan": {
-    "sumber": "associated"
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
+   "tata": "kiri"
   },
   {
-   "t": "medan",
-   "at": 239919,
-   "label": "Currency Relation",
-   "dari": "sisi",
-   "kunci": "CurrencyRelation",
-   "format": "pxDropdown",
-   "desimal": null,
+   "t": "blok",
+   "at": 254220,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1",
-    "TreatyIn.EDMMaterialType = 2"
+   "anak": [
+    {
+     "t": "blok",
+     "at": 262887,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 271554,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 277924,
+         "label": "100 % Limit",
+         "dari": "sisi",
+         "kunci": "Currency",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 296839,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 303209,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Limit",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 318056,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 323366,
+       "syarat": []
+      },
+      {
+       "t": "blok",
+       "at": 330371,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 336741,
+         "label": "Agregate Year Limit",
+         "dari": "sisi",
+         "kunci": "Currency",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 355629,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 361999,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "AgregateLimit",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 376859,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 381571,
+       "syarat": []
+      },
+      {
+       "t": "blok",
+       "at": 388576,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 394946,
+         "label": "Deductible",
+         "dari": "sisi",
+         "kunci": "Currency",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 413799,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 420169,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Deductible",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 434033,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 438747,
+       "syarat": []
+      }
+     ],
+     "tata": "g2"
+    },
+    {
+     "t": "blok",
+     "at": 452065,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 460732,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 467102,
+         "label": "100 % Limit",
+         "dari": "sisi",
+         "kunci": "Currency2",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 485976,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 492346,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Limit2",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 507192,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 512502,
+       "syarat": []
+      },
+      {
+       "t": "blok",
+       "at": 519507,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 525877,
+         "label": "Agregate Year Limit",
+         "dari": "sisi",
+         "kunci": "Currency2",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 544769,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 551139,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "AgregateLimit2",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 566002,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 570715,
+       "syarat": []
+      },
+      {
+       "t": "blok",
+       "at": 577722,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 584092,
+         "label": "Deductible",
+         "dari": "sisi",
+         "kunci": "Currency2",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 602949,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 609319,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Deductible2",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 623232,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 627947,
+       "syarat": []
+      }
+     ],
+     "tata": "g2"
+    }
    ],
-   "pilihan": {
-    "sumber": "associated"
-   }
+   "tata": "g2"
   },
   {
-   "t": "medan",
-   "at": 277924,
-   "label": "100 % Limit",
-   "dari": "sisi",
-   "kunci": "Currency",
-   "format": "pxAutoComplete",
-   "desimal": null,
+   "t": "blok",
+   "at": 647919,
+   "judul": "",
    "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
+   "anak": [
+    {
+     "t": "teks",
+     "at": 654283,
+     "teks": "Reinstatement",
+     "syarat": []
     },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
     {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 663831,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "ReinstatementValue",
+     "format": "pxNumber",
+     "desimal": 0,
+     "syarat": [],
+     "baca": "selalu",
+     "aksiUbah": [
+      {
+       "aksi": "refresh",
+       "aktivitas": "SetReinstatementPct"
+      }
+     ]
     }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 303209,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Limit",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 336741,
-   "label": "Agregate Year Limit",
-   "dari": "sisi",
-   "kunci": "Currency",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 361999,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "AgregateLimit",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 394946,
-   "label": "Deductible",
-   "dari": "sisi",
-   "kunci": "Currency",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 420169,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Deductible",
-   "format": "pxNumber",
-   "desimal": 2,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 467102,
-   "label": "100 % Limit",
-   "dari": "sisi",
-   "kunci": "Currency2",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 492346,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Limit2",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 525877,
-   "label": "Agregate Year Limit",
-   "dari": "sisi",
-   "kunci": "Currency2",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 551139,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "AgregateLimit2",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 584092,
-   "label": "Deductible",
-   "dari": "sisi",
-   "kunci": "Currency2",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 609319,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Deductible2",
-   "format": "pxNumber",
-   "desimal": 2,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "teks",
-   "at": 654283,
-   "teks": "Reinstatement",
-   "syarat": []
-  },
-  {
-   "t": "medan",
-   "at": 663831,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "ReinstatementValue",
-   "format": "pxNumber",
-   "desimal": 0,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "refresh",
-     "aktivitas": "SetReinstatementPct"
-    }
-   ]
+   ],
+   "tata": "alir"
   },
   {
    "t": "grid",
@@ -24053,80 +27035,89 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
  ],
  "LayersOldData": [
   {
-   "t": "medan",
-   "at": 17554,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerType",
-   "format": "pxDropdown",
-   "desimal": null,
+   "t": "blok",
+   "at": 9953,
+   "judul": "",
    "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "associated"
-   },
-   "aksiUbah": [
+   "anak": [
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 25033,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Layer",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
+     "t": "medan",
+     "at": 17554,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerType",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu",
+     "pilihan": {
+      "sumber": "associated"
+     },
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    },
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "teks",
-   "at": 32494,
-   "teks": "Part of",
-   "syarat": []
-  },
-  {
-   "t": "medan",
-   "at": 37165,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerPartType",
-   "format": "pxDropdown",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "associated"
-   },
-   "aksiUbah": [
+     "t": "medan",
+     "at": 25033,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "Layer",
+     "format": "pxTextInput",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu",
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    },
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 44632,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerPart",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
+     "t": "teks",
+     "at": 32494,
+     "teks": "Part of",
+     "syarat": []
+    },
     {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 37165,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerPartType",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu",
+     "pilihan": {
+      "sumber": "associated"
+     },
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    },
+    {
+     "t": "medan",
+     "at": 44632,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerPart",
+     "format": "pxTextInput",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu",
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
     }
-   ]
+   ],
+   "tata": "alir"
   },
   {
    "t": "blok",
@@ -24282,341 +27273,554 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
    "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridRowDetails"
   },
   {
-   "t": "medan",
-   "at": 233741,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Cover",
-   "format": "pxDropdown",
-   "desimal": null,
+   "t": "blok",
+   "at": 227370,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1"
+   "anak": [
+    {
+     "t": "medan",
+     "at": 233741,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "Cover",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1"
+     ],
+     "pilihan": {
+      "sumber": "associated"
+     },
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    },
+    {
+     "t": "medan",
+     "at": 239617,
+     "label": "Currency Relation",
+     "dari": "sisi",
+     "kunci": "CurrencyRelation",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1",
+      "TreatyIn.EDMMaterialType = 2"
+     ],
+     "pilihan": {
+      "sumber": "associated"
+     }
+    }
    ],
-   "pilihan": {
-    "sumber": "associated"
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
+   "tata": "kiri"
   },
   {
-   "t": "medan",
-   "at": 239617,
-   "label": "Currency Relation",
-   "dari": "sisi",
-   "kunci": "CurrencyRelation",
-   "format": "pxDropdown",
-   "desimal": null,
+   "t": "blok",
+   "at": 253922,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1",
-    "TreatyIn.EDMMaterialType = 2"
+   "anak": [
+    {
+     "t": "blok",
+     "at": 262592,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 271262,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 277633,
+         "label": "100 % Limit",
+         "dari": "sisi",
+         "kunci": "Currency",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 296552,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 302923,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Limit",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 317772,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 323084,
+       "syarat": []
+      },
+      {
+       "t": "blok",
+       "at": 330093,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 336464,
+         "label": "Agregate Year Limit",
+         "dari": "sisi",
+         "kunci": "Currency",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 355356,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 361727,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "AgregateLimit",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 376589,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 381303,
+       "syarat": []
+      },
+      {
+       "t": "blok",
+       "at": 388312,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 394683,
+         "label": "Deductible",
+         "dari": "sisi",
+         "kunci": "Currency",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 413540,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 419911,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Deductible",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 433777,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 438493,
+       "syarat": []
+      }
+     ],
+     "tata": "g2"
+    },
+    {
+     "t": "blok",
+     "at": 451815,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 460485,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 466856,
+         "label": "100 % Limit",
+         "dari": "sisi",
+         "kunci": "Currency2",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 485734,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 492105,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Limit2",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 506953,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 512265,
+       "syarat": []
+      },
+      {
+       "t": "blok",
+       "at": 519274,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 525645,
+         "label": "Agregate Year Limit",
+         "dari": "sisi",
+         "kunci": "Currency2",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 544539,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 550910,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "AgregateLimit2",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 565774,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 570488,
+       "syarat": []
+      },
+      {
+       "t": "blok",
+       "at": 577497,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 583868,
+         "label": "Deductible",
+         "dari": "sisi",
+         "kunci": "Currency2",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 602727,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 609098,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Deductible2",
+         "format": "pxNumber",
+         "desimal": 2,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "kosong",
+       "at": 623012,
+       "syarat": []
+      },
+      {
+       "t": "kosong",
+       "at": 627728,
+       "syarat": []
+      }
+     ],
+     "tata": "g2"
+    }
    ],
-   "pilihan": {
-    "sumber": "associated"
-   }
+   "tata": "g2"
   },
   {
-   "t": "medan",
-   "at": 277633,
-   "label": "100 % Limit",
-   "dari": "sisi",
-   "kunci": "Currency",
-   "format": "pxAutoComplete",
-   "desimal": null,
+   "t": "blok",
+   "at": 647702,
+   "judul": "",
    "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
+   "anak": [
+    {
+     "t": "teks",
+     "at": 654067,
+     "teks": "Reinstatement",
+     "syarat": []
     },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
     {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 663617,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "ReinstatementValue",
+     "format": "pxNumber",
+     "desimal": 0,
+     "syarat": [],
+     "baca": "selalu",
+     "aksiUbah": [
+      {
+       "aksi": "refresh",
+       "aktivitas": "SetReinstatementPct"
+      }
+     ]
     }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 302923,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Limit",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 336464,
-   "label": "Agregate Year Limit",
-   "dari": "sisi",
-   "kunci": "Currency",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 361727,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "AgregateLimit",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 394683,
-   "label": "Deductible",
-   "dari": "sisi",
-   "kunci": "Currency",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 419911,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Deductible",
-   "format": "pxNumber",
-   "desimal": 2,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 466856,
-   "label": "100 % Limit",
-   "dari": "sisi",
-   "kunci": "Currency2",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 492105,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Limit2",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 525645,
-   "label": "Agregate Year Limit",
-   "dari": "sisi",
-   "kunci": "Currency2",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 550910,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "AgregateLimit2",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 583868,
-   "label": "Deductible",
-   "dari": "sisi",
-   "kunci": "Currency2",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 609098,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Deductible2",
-   "format": "pxNumber",
-   "desimal": 2,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "teks",
-   "at": 654067,
-   "teks": "Reinstatement",
-   "syarat": []
-  },
-  {
-   "t": "medan",
-   "at": 663617,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "ReinstatementValue",
-   "format": "pxNumber",
-   "desimal": 0,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "refresh",
-     "aktivitas": "SetReinstatementPct"
-    }
-   ]
+   ],
+   "tata": "alir"
   },
   {
    "t": "grid",
@@ -25141,298 +28345,388 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
  ],
  "MaxRetention": [
   {
-   "t": "medan",
-   "at": 16635,
-   "label": "Treaty Group",
-   "dari": "sisi",
-   "kunci": "TreatyGroup",
-   "format": "pxAutoComplete",
-   "desimal": null,
+   "t": "blok",
+   "at": 8777,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.IsEditData = 1",
-    "TreatyIn.EDMMaterialType = 2"
-   ],
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseTreatyGroup_RD",
-    "nilai": "TreatyGroupName",
-    "param": {
-     "ID": ""
+   "anak": [
+    {
+     "t": "medan",
+     "at": 16635,
+     "label": "Treaty Group",
+     "dari": "sisi",
+     "kunci": "TreatyGroup",
+     "format": "pxAutoComplete",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.IsEditData = 1",
+      "TreatyIn.EDMMaterialType = 2"
+     ],
+     "pilihan": {
+      "sumber": "reportdefinition",
+      "rd": "BrowseTreatyGroup_RD",
+      "nilai": "TreatyGroupName",
+      "param": {
+       "ID": ""
+      },
+      "setel": [
+       {
+        "target": "TreatyGroupID",
+        "dari": "ID"
+       }
+      ]
+     },
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
     },
-    "setel": [
-     {
-      "target": "TreatyGroupID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
     {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 46342,
-   "label": "Amount",
-   "dari": "sisi",
-   "kunci": "Currency",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1",
-    "TreatyIn.IsEditData = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
+     "t": "blok",
+     "at": 30669,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 39664,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 46342,
+         "label": "Amount",
+         "dari": "sisi",
+         "kunci": "Currency",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1",
+          "TreatyIn.IsEditData = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 66371,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 73049,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Amount",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1",
+          "TreatyIn.IsEditData = 1 || TreatyIn.EDMMaterialType = 2"
+         ],
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      }
+     ],
+     "tata": "t3070"
     },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
     {
-     "aksi": "postValue"
+     "t": "medan",
+     "at": 94723,
+     "label": "Note",
+     "dari": "sisi",
+     "kunci": "Note",
+     "format": "pxTextArea",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.IsEditData = 1",
+      "TreatyIn.EDMMaterialType = 2"
+     ],
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
     }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 73049,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Amount",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1",
-    "TreatyIn.IsEditData = 1 || TreatyIn.EDMMaterialType = 2"
    ],
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 94723,
-   "label": "Text Area",
-   "dari": "sisi",
-   "kunci": "Note",
-   "format": "pxTextArea",
-   "desimal": null,
-   "syarat": [],
-   "baca": [
-    "TreatyIn.IsEditData = 1",
-    "TreatyIn.EDMMaterialType = 2"
-   ],
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
+   "tata": "kiri"
   }
  ],
  "MaxRetentionOldData": [
   {
-   "t": "medan",
-   "at": 15322,
-   "label": "Treaty Group",
-   "dari": "sisi",
-   "kunci": "TreatyGroup",
-   "format": "pxAutoComplete",
-   "desimal": null,
+   "t": "blok",
+   "at": 7755,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1"
+   "anak": [
+    {
+     "t": "medan",
+     "at": 15322,
+     "label": "Treaty Group",
+     "dari": "sisi",
+     "kunci": "TreatyGroup",
+     "format": "pxAutoComplete",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1"
+     ],
+     "pilihan": {
+      "sumber": "reportdefinition",
+      "rd": "BrowseTreatyGroup_RD",
+      "nilai": "TreatyGroupName",
+      "param": {
+       "ID": ""
+      },
+      "setel": [
+       {
+        "target": "TreatyGroupID",
+        "dari": "ID"
+       }
+      ]
+     },
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    },
+    {
+     "t": "blok",
+     "at": 28329,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 36993,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 43362,
+         "label": "Amount",
+         "dari": "sisi",
+         "kunci": "Currency",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseCurrencyTreatyIn_RD",
+          "nilai": "Currency",
+          "param": {
+           "Currency": ""
+          },
+          "setel": [
+           {
+            "target": "CurrencyID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 62125,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 68494,
+         "label": "",
+         "dari": "sisi",
+         "kunci": "Amount",
+         "format": "pxTextInput",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "aksiUbah": [
+          {
+           "aksi": "postValue"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      }
+     ],
+     "tata": "t3070"
+    },
+    {
+     "t": "medan",
+     "at": 89497,
+     "label": "Note",
+     "dari": "sisi",
+     "kunci": "Note",
+     "format": "pxTextArea",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu",
+     "aksiUbah": [
+      {
+       "aksi": "postValue"
+      }
+     ]
+    }
    ],
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseTreatyGroup_RD",
-    "nilai": "TreatyGroupName",
-    "param": {
-     "ID": ""
-    },
-    "setel": [
-     {
-      "target": "TreatyGroupID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 43362,
-   "label": "Amount",
-   "dari": "sisi",
-   "kunci": "Currency",
-   "format": "pxAutoComplete",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "reportdefinition",
-    "rd": "BrowseCurrencyTreatyIn_RD",
-    "nilai": "Currency",
-    "param": {
-     "Currency": ""
-    },
-    "setel": [
-     {
-      "target": "CurrencyID",
-      "dari": "ID"
-     }
-    ]
-   },
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 68494,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Amount",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 89497,
-   "label": "Text Area",
-   "dari": "sisi",
-   "kunci": "Note",
-   "format": "pxTextArea",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "aksiUbah": [
-    {
-     "aksi": "postValue"
-    }
-   ]
+   "tata": "kiri"
   }
  ],
  "Share": [
   {
-   "t": "medan",
-   "at": 29178,
-   "label": "% RNM Share",
-   "dari": "sisi",
-   "kunci": "RNMShare",
-   "format": "pxTextInput",
-   "desimal": null,
+   "t": "blok",
+   "at": 22506,
+   "judul": "",
    "syarat": [],
-   "baca": [
-    "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
-   ],
-   "aksiUbah": [
+   "anak": [
     {
-     "aksi": "refresh",
-     "aktivitas": "TreatyInXOLAddSpreadingDetail",
-     "param": {
-      "idx": ".pxListSubscript"
+     "t": "medan",
+     "at": 29178,
+     "label": "% RNM Share",
+     "dari": "sisi",
+     "kunci": "RNMShare",
+     "format": "pxTextInput",
+     "desimal": null,
+     "syarat": [],
+     "baca": [
+      "TreatyIn.ViewState = 1 || TreatyIn.EDMMaterialType = 2"
+     ],
+     "aksiUbah": [
+      {
+       "aksi": "refresh",
+       "aktivitas": "TreatyInXOLAddSpreadingDetail",
+       "param": {
+        "idx": ".pxListSubscript"
+       }
+      },
+      {
+       "aksi": "refresh",
+       "aktivitas": "TreatyInXOLAddSpreadingDetailActual",
+       "param": {
+        "idx": ".pxListSubscript"
+       },
+       "syarat": "TreatyIn.EDMState = 3"
+      },
+      {
+       "aksi": "refresh"
+      },
+      {
+       "aksi": "refresh"
+      }
+     ]
+    }
+   ],
+   "tata": "alir"
+  },
+  {
+   "t": "blok",
+   "at": 56570,
+   "judul": "",
+   "syarat": [],
+   "anak": [
+    {
+     "t": "medan",
+     "at": 63179,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerType",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu",
+     "pilihan": {
+      "sumber": "associated"
      }
     },
     {
-     "aksi": "refresh",
-     "aktivitas": "TreatyInXOLAddSpreadingDetailActual",
-     "param": {
-      "idx": ".pxListSubscript"
-     },
-     "syarat": "TreatyIn.EDMState = 3"
+     "t": "medan",
+     "at": 68845,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "Layer",
+     "format": "pxTextInput",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu"
     },
     {
-     "aksi": "refresh"
+     "t": "teks",
+     "at": 74845,
+     "teks": "Part of",
+     "syarat": []
     },
     {
-     "aksi": "refresh"
+     "t": "medan",
+     "at": 79347,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerPartType",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu",
+     "pilihan": {
+      "sumber": "associated"
+     }
+    },
+    {
+     "t": "medan",
+     "at": 85023,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerPart",
+     "format": "pxTextInput",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu"
     }
-   ]
-  },
-  {
-   "t": "medan",
-   "at": 63179,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerType",
-   "format": "pxDropdown",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "associated"
-   }
-  },
-  {
-   "t": "medan",
-   "at": 68845,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Layer",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu"
-  },
-  {
-   "t": "teks",
-   "at": 74845,
-   "teks": "Part of",
-   "syarat": []
-  },
-  {
-   "t": "medan",
-   "at": 79347,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerPartType",
-   "format": "pxDropdown",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "associated"
-   }
-  },
-  {
-   "t": "medan",
-   "at": 85023,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerPart",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu"
+   ],
+   "tata": "alir"
   },
   {
    "t": "blok",
@@ -25520,7 +28814,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
   {
    "t": "medan",
    "at": 162558,
-   "label": "Dropdown",
+   "label": "Cover",
    "dari": "sisi",
    "kunci": "Cover",
    "format": "pxDropdown",
@@ -25806,7 +29100,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
       }
      ]
     }
-   ]
+   ],
+   "tata": "kiri"
   },
   {
    "t": "blok",
@@ -25905,21 +29200,39 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
          ]
         },
         {
-         "t": "medan",
-         "at": 473720,
-         "label": "Spreading Total Pct",
-         "dari": "sisi",
-         "kunci": "SpreadingTotalPctXOL",
-         "format": "Decimal",
-         "desimal": null,
+         "t": "blok",
+         "at": 458048,
+         "judul": "",
          "syarat": [],
-         "baca": "selalu"
-        },
-        {
-         "t": "teks",
-         "at": 484197,
-         "teks": "%",
-         "syarat": []
+         "anak": [
+          {
+           "t": "blok",
+           "at": 467047,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "medan",
+             "at": 473720,
+             "label": "Spreading Total Pct",
+             "dari": "sisi",
+             "kunci": "SpreadingTotalPctXOL",
+             "format": "Decimal",
+             "desimal": null,
+             "syarat": [],
+             "baca": "selalu"
+            },
+            {
+             "t": "teks",
+             "at": 484197,
+             "teks": "%",
+             "syarat": []
+            }
+           ],
+           "tata": "alir"
+          }
+         ],
+         "tata": "g2"
         }
        ]
       }
@@ -25932,878 +29245,924 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
      "syarat": [],
      "anak": [
       {
-       "t": "grid",
-       "at": 551558,
-       "prop": ".RnmLimitList",
-       "dari": "sisi",
-       "larik": "RnmLimitList",
+       "t": "blok",
+       "at": 525248,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "RNM Limit",
-        ""
+       "anak": [
+        {
+         "t": "grid",
+         "at": 551558,
+         "prop": ".RnmLimitList",
+         "dari": "sisi",
+         "larik": "RnmLimitList",
+         "syarat": [],
+         "kolom": [
+          "RNM Limit",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          197,
+          355
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          563606,
+          568563
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 616908,
+         "prop": ".RNMSpreadedListXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading OR Limit",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          192,
+          347
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          629276,
+          634427
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 682835,
+         "prop": ".RNMSpreadedListRIXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListRIXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading R/I Limit",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          192,
+          347
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          695206,
+          700357
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridModalTemplate"
+        }
        ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        197,
-        355
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        563606,
-        568563
-       ],
-       "baca": [
-        null,
-        null
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "g3"
       },
       {
-       "t": "grid",
-       "at": 616908,
-       "prop": ".RNMSpreadedListXOL",
-       "dari": "sisi",
-       "larik": "RNMSpreadedListXOL",
+       "t": "blok",
+       "at": 737794,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "Spreading OR Limit",
-        ""
+       "anak": [
+        {
+         "t": "grid",
+         "at": 764104,
+         "prop": ".GrossPremiumMinList",
+         "dari": "sisi",
+         "larik": "GrossPremiumMinList",
+         "syarat": [],
+         "kolom": [
+          "Gross Min Premium",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          142,
+          247
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          776305,
+          781262
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 829607,
+         "prop": ".RNMSpreadedListGrossMinXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListGrossMinXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading OR Min Premium",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          152,
+          237
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          841684,
+          846641
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 894986,
+         "prop": ".RNMSpreadedListGrossRIMinXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListGrossRIMinXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading R/I Min Premium",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          152,
+          237
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          907066,
+          912023
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        192,
-        347
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        629276,
-        634427
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "g3"
       },
       {
-       "t": "grid",
-       "at": 682835,
-       "prop": ".RNMSpreadedListRIXOL",
-       "dari": "sisi",
-       "larik": "RNMSpreadedListRIXOL",
+       "t": "blok",
+       "at": 949397,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "Spreading R/I Limit",
-        ""
+       "anak": [
+        {
+         "t": "grid",
+         "at": 975707,
+         "prop": ".GrossPremiumList",
+         "dari": "sisi",
+         "larik": "GrossPremiumList",
+         "syarat": [],
+         "kolom": [
+          "Gross Premium (MDP)",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          195,
+          355
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          987907,
+          992864
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 1041209,
+         "prop": ".RNMSpreadedListGrossXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListGrossXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading OR MDP",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          195,
+          355
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1053275,
+          1058232
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 1106577,
+         "prop": ".RNMSpreadedListGrossRIXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListGrossRIXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading R/I MDP",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          195,
+          355
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1118646,
+          1123603
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        192,
-        347
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        695206,
-        700357
-       ],
-       "baca": [
-        "selalu",
-        "selalu"
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "readOnly",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridModalTemplate"
+       "tata": "g3"
       },
       {
-       "t": "grid",
-       "at": 764104,
-       "prop": ".GrossPremiumMinList",
-       "dari": "sisi",
-       "larik": "GrossPremiumMinList",
+       "t": "blok",
+       "at": 1160977,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "Gross Min Premium",
-        ""
+       "anak": [
+        {
+         "t": "grid",
+         "at": 1187287,
+         "prop": ".DeductionTotalList",
+         "dari": "sisi",
+         "larik": "DeductionTotalList",
+         "syarat": [],
+         "kolom": [
+          "Deductions",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          196,
+          356
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1199612,
+          1204763
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "@baseclass!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 1253369,
+         "prop": ".RNMSpreadedListDeductXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListDeductXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading OR Deductions",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          196,
+          356
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1265734,
+          1270885
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 1319491,
+         "prop": ".RNMSpreadedListDeductRIXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListDeductRIXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading R/I Deductions",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          196,
+          356
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1331859,
+          1337010
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
        ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        142,
-        247
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        776305,
-        781262
-       ],
-       "baca": [
-        null,
-        null
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "tata": "g3"
       },
       {
-       "t": "grid",
-       "at": 829607,
-       "prop": ".RNMSpreadedListGrossMinXOL",
-       "dari": "sisi",
-       "larik": "RNMSpreadedListGrossMinXOL",
+       "t": "blok",
+       "at": 1374645,
+       "judul": "",
        "syarat": [],
-       "kolom": [
-        "Spreading OR Min Premium",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        152,
-        237
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        841684,
-        846641
-       ],
-       "baca": [
-        null,
-        null
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
-       "t": "grid",
-       "at": 894986,
-       "prop": ".RNMSpreadedListGrossRIMinXOL",
-       "dari": "sisi",
-       "larik": "RNMSpreadedListGrossRIMinXOL",
-       "syarat": [],
-       "kolom": [
-        "Spreading R/I Min Premium",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        152,
-        237
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        907066,
-        912023
-       ],
-       "baca": [
-        null,
-        null
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
-       "t": "grid",
-       "at": 975707,
-       "prop": ".GrossPremiumList",
-       "dari": "sisi",
-       "larik": "GrossPremiumList",
-       "syarat": [],
-       "kolom": [
-        "Gross Premium (MDP)",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        195,
-        355
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        987907,
-        992864
-       ],
-       "baca": [
-        null,
-        null
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
-       "t": "grid",
-       "at": 1041209,
-       "prop": ".RNMSpreadedListGrossXOL",
-       "dari": "sisi",
-       "larik": "RNMSpreadedListGrossXOL",
-       "syarat": [],
-       "kolom": [
-        "Spreading OR MDP",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        195,
-        355
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        1053275,
-        1058232
-       ],
-       "baca": [
-        null,
-        null
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
-       "t": "grid",
-       "at": 1106577,
-       "prop": ".RNMSpreadedListGrossRIXOL",
-       "dari": "sisi",
-       "larik": "RNMSpreadedListGrossRIXOL",
-       "syarat": [],
-       "kolom": [
-        "Spreading R/I MDP",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        195,
-        355
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        1118646,
-        1123603
-       ],
-       "baca": [
-        null,
-        null
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
-       "t": "grid",
-       "at": 1187287,
-       "prop": ".DeductionTotalList",
-       "dari": "sisi",
-       "larik": "DeductionTotalList",
-       "syarat": [],
-       "kolom": [
-        "Deductions",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        196,
-        356
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        1199612,
-        1204763
-       ],
-       "baca": [
-        null,
-        null
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "@baseclass!pyGridModalTemplate"
-      },
-      {
-       "t": "grid",
-       "at": 1253369,
-       "prop": ".RNMSpreadedListDeductXOL",
-       "dari": "sisi",
-       "larik": "RNMSpreadedListDeductXOL",
-       "syarat": [],
-       "kolom": [
-        "Spreading OR Deductions",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        196,
-        356
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        1265734,
-        1270885
-       ],
-       "baca": [
-        null,
-        null
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
-       "t": "grid",
-       "at": 1319491,
-       "prop": ".RNMSpreadedListDeductRIXOL",
-       "dari": "sisi",
-       "larik": "RNMSpreadedListDeductRIXOL",
-       "syarat": [],
-       "kolom": [
-        "Spreading R/I Deductions",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        196,
-        356
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        1331859,
-        1337010
-       ],
-       "baca": [
-        null,
-        null
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
-       "t": "grid",
-       "at": 1400955,
-       "prop": ".NetPremiumList",
-       "dari": "sisi",
-       "larik": "NetPremiumList",
-       "syarat": [],
-       "kolom": [
-        "Net Premium",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        195,
-        354
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        1413007,
-        1417964
-       ],
-       "baca": [
-        null,
-        null
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
-       "t": "grid",
-       "at": 1466309,
-       "prop": ".RNMSpreadedListNetXOL",
-       "dari": "sisi",
-       "larik": "RNMSpreadedListNetXOL",
-       "syarat": [],
-       "kolom": [
-        "Spreading OR Net Premi",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        195,
-        354
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        1478379,
-        1483336
-       ],
-       "baca": [
-        null,
-        null
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-      },
-      {
-       "t": "grid",
-       "at": 1531681,
-       "prop": ".RNMSpreadedListNetRIXOL",
-       "dari": "sisi",
-       "larik": "RNMSpreadedListNetRIXOL",
-       "syarat": [],
-       "kolom": [
-        "Spreading R/I Net Premium",
-        ""
-       ],
-       "kunci": [
-        "Currency",
-        "Value"
-       ],
-       "lebar": [
-        195,
-        354
-       ],
-       "desimal": [
-        null,
-        2
-       ],
-       "format": [
-        "pxNumber",
-        "pxNumber"
-       ],
-       "syaratSel": [
-        null,
-        null
-       ],
-       "atSel": [
-        1543756,
-        1548713
-       ],
-       "baca": [
-        null,
-        null
-       ],
-       "tombol": [
-        null,
-        null
-       ],
-       "tombolKepala": [
-        null,
-        null
-       ],
-       "pilihan": [
-        null,
-        null
-       ],
-       "aksiUbah": [
-        null,
-        null
-       ],
-       "modeBaris": "row",
-       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+       "anak": [
+        {
+         "t": "grid",
+         "at": 1400955,
+         "prop": ".NetPremiumList",
+         "dari": "sisi",
+         "larik": "NetPremiumList",
+         "syarat": [],
+         "kolom": [
+          "Net Premium",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          195,
+          354
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1413007,
+          1417964
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 1466309,
+         "prop": ".RNMSpreadedListNetXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListNetXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading OR Net Premi",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          195,
+          354
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1478379,
+          1483336
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 1531681,
+         "prop": ".RNMSpreadedListNetRIXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListNetRIXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading R/I Net Premium",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          195,
+          354
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1543756,
+          1548713
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
+       ],
+       "tata": "g3"
       }
      ]
     }
-   ]
+   ],
+   "tata": "t3070"
   },
   {
    "t": "blok",
@@ -26845,12 +30204,12 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
            "kolom": [
             "Reins Type",
             "Pct Share",
-            ".pyTemplateInputBox"
+            ""
            ],
            "kunci": [
             "ReinsTypeID",
             "Pct",
-            "pyTemplateInputBox"
+            ""
            ],
            "lebar": [
             195,
@@ -26878,19 +30237,57 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
             1707977
            ],
            "baca": [
-            "selalu",
-            "selalu",
+            [
+             "TreatyIn.ViewState = '1'"
+            ],
+            [
+             "TreatyIn.ViewState = '1'"
+            ],
             "selalu"
            ],
            "tombol": [
             null,
             null,
-            null
+            {
+             "t": "tombol",
+             "at": 1707977,
+             "label": "Delete",
+             "syarat": [
+              "TreatyIn.ViewState != '1'"
+             ],
+             "aksi": [
+              {
+               "aksi": "refresh",
+               "aktivitas": "AddSpreadingXOL",
+               "param": {
+                "add": "false",
+                "idx": ".pxListSubscript"
+               }
+              }
+             ]
+            }
            ],
            "tombolKepala": [
             null,
             null,
-            null
+            {
+             "t": "tombol",
+             "at": 1671731,
+             "label": "Add",
+             "syarat": [
+              "TreatyIn.ViewState != '1'"
+             ],
+             "aksi": [
+              {
+               "aksi": "refresh",
+               "aktivitas": "AddSpreadingXOL",
+               "param": {
+                "add": "true",
+                "idx": ""
+               }
+              }
+             ]
+            }
            ],
            "pilihan": [
             {
@@ -26930,7 +30327,8 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
             null
            ],
            "modeBaris": "readOnly",
-           "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsSpreading!pyGridModalTemplate"
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsSpreading!pyGridModalTemplate",
+           "rincian": "SpreadingTXOLDtl"
           },
           {
            "t": "teks",
@@ -26941,30 +30339,48 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
          ]
         },
         {
-         "t": "medan",
-         "at": 1760513,
-         "label": "Total Spreading Pct :",
-         "dari": "sisi",
-         "kunci": "SpreadingTotalPctXOL",
-         "format": "pxNumber",
-         "desimal": 2,
-         "syarat": [
-          ".SpreadingTypeXOL != ''"
+         "t": "blok",
+         "at": 1744841,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "blok",
+           "at": 1753840,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "medan",
+             "at": 1760513,
+             "label": "Total Spreading Pct :",
+             "dari": "sisi",
+             "kunci": "SpreadingTotalPctXOL",
+             "format": "pxNumber",
+             "desimal": 2,
+             "syarat": [
+              ".SpreadingTypeXOL != ''"
+             ],
+             "baca": "selalu"
+            },
+            {
+             "t": "medan",
+             "at": 1767848,
+             "label": "Total Share Pct",
+             "dari": "sisi",
+             "kunci": "SpreadingTotalPctXOL",
+             "format": "pxNumber",
+             "desimal": 2,
+             "syarat": [
+              ".SpreadingTypeXOL = ''"
+             ],
+             "baca": "selalu"
+            }
+           ],
+           "tata": "alir"
+          }
          ],
-         "baca": "selalu"
-        },
-        {
-         "t": "medan",
-         "at": 1767848,
-         "label": "Total Share Pct",
-         "dari": "sisi",
-         "kunci": "SpreadingTotalPctXOL",
-         "format": "pxNumber",
-         "desimal": 2,
-         "syarat": [
-          ".SpreadingTypeXOL = ''"
-         ],
-         "baca": "selalu"
+         "tata": "g2"
         }
        ]
       }
@@ -26975,60 +30391,69 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
  ],
  "ShareOldData": [
   {
-   "t": "medan",
-   "at": 23993,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerType",
-   "format": "pxDropdown",
-   "desimal": null,
+   "t": "blok",
+   "at": 17692,
+   "judul": "",
    "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "associated"
-   }
-  },
-  {
-   "t": "medan",
-   "at": 29603,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Layer",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu"
-  },
-  {
-   "t": "teks",
-   "at": 35175,
-   "teks": "Part of",
-   "syarat": []
-  },
-  {
-   "t": "medan",
-   "at": 39656,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerPartType",
-   "format": "pxDropdown",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "associated"
-   }
-  },
-  {
-   "t": "medan",
-   "at": 45276,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerPart",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu"
+   "anak": [
+    {
+     "t": "medan",
+     "at": 23993,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerType",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu",
+     "pilihan": {
+      "sumber": "associated"
+     }
+    },
+    {
+     "t": "medan",
+     "at": 29603,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "Layer",
+     "format": "pxTextInput",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu"
+    },
+    {
+     "t": "teks",
+     "at": 35175,
+     "teks": "Part of",
+     "syarat": []
+    },
+    {
+     "t": "medan",
+     "at": 39656,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerPartType",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu",
+     "pilihan": {
+      "sumber": "associated"
+     }
+    },
+    {
+     "t": "medan",
+     "at": 45276,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerPart",
+     "format": "pxTextInput",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu"
+    }
+   ],
+   "tata": "alir"
   },
   {
    "t": "blok",
@@ -27116,7 +30541,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
   {
    "t": "medan",
    "at": 121204,
-   "label": "Dropdown",
+   "label": "Cover",
    "dari": "sisi",
    "kunci": "Cover",
    "format": "pxDropdown",
@@ -27285,80 +30710,270 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
   },
   {
    "t": "blok",
-   "at": 252022,
-   "judul": "Spreading",
+   "at": 243292,
+   "judul": "",
    "syarat": [],
    "anak": [
     {
-     "t": "medan",
-     "at": 267038,
-     "label": "Spreading Type",
-     "dari": "sisi",
-     "kunci": "SpreadingTypeXOL",
-     "format": "pxDropdown",
-     "desimal": null,
-     "syarat": [],
-     "baca": "selalu",
-     "pilihan": {
-      "sumber": "reportdefinition",
-      "rd": "BrowseTreatyArrangement_ParentReinsMasterTrt",
-      "nilai": "ReinsTypeID",
-      "tampil": "ReinsTypeName",
-      "param": {
-       "TreatyYear": "TreatyIn.TreatyYear",
-       "TreatyGroupID": ".TreatyGroupID",
-       "TreatyDescID": ""
-      }
-     }
-    },
-    {
      "t": "blok",
-     "at": 283028,
-     "judul": "",
-     "syarat": [
-      ".SpreadingTypeXOL !=''"
-     ],
+     "at": 252022,
+     "judul": "Spreading",
+     "syarat": [],
      "anak": [
       {
        "t": "blok",
-       "at": 291733,
+       "at": 260668,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 267038,
+         "label": "Spreading Type",
+         "dari": "sisi",
+         "kunci": "SpreadingTypeXOL",
+         "format": "pxDropdown",
+         "desimal": null,
+         "syarat": [],
+         "baca": "selalu",
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseTreatyArrangement_ParentReinsMasterTrt",
+          "nilai": "ReinsTypeID",
+          "tampil": "ReinsTypeName",
+          "param": {
+           "TreatyYear": "TreatyIn.TreatyYear",
+           "TreatyGroupID": ".TreatyGroupID",
+           "TreatyDescID": ""
+          }
+         }
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 283028,
+       "judul": "",
+       "syarat": [
+        ".SpreadingTypeXOL !=''"
+       ],
+       "anak": [
+        {
+         "t": "blok",
+         "at": 291733,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "grid",
+           "at": 315668,
+           "prop": ".SpreadingListXOL",
+           "dari": "sisi",
+           "larik": "SpreadingListXOL",
+           "syarat": [],
+           "kolom": [
+            "Reins Type",
+            "Pct"
+           ],
+           "kunci": [
+            "ReinsTypeName",
+            "Pct"
+           ],
+           "lebar": [
+            142,
+            192
+           ],
+           "desimal": [
+            null,
+            null
+           ],
+           "format": [
+            "pxTextInput",
+            ""
+           ],
+           "syaratSel": [
+            null,
+            null
+           ],
+           "atSel": [
+            328536,
+            331153
+           ],
+           "baca": [
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsSpreading!pyGridModalTemplate"
+          },
+          {
+           "t": "teks",
+           "at": 347978,
+           "teks": "Total Pct",
+           "syarat": []
+          }
+         ]
+        },
+        {
+         "t": "blok",
+         "at": 362957,
+         "judul": "",
+         "syarat": [],
+         "anak": [
+          {
+           "t": "blok",
+           "at": 371625,
+           "judul": "",
+           "syarat": [],
+           "anak": [
+            {
+             "t": "medan",
+             "at": 377989,
+             "label": "Spreading Total Pct",
+             "dari": "sisi",
+             "kunci": "SpreadingTotalPctXOL",
+             "format": "Decimal",
+             "desimal": null,
+             "syarat": [],
+             "baca": "selalu"
+            },
+            {
+             "t": "teks",
+             "at": 388385,
+             "teks": "%",
+             "syarat": []
+            }
+           ],
+           "tata": "alir"
+          }
+         ],
+         "tata": "g2"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "blok",
+     "at": 420262,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "blok",
+       "at": 428945,
        "judul": "",
        "syarat": [],
        "anak": [
         {
          "t": "grid",
-         "at": 315668,
-         "prop": ".SpreadingListXOL",
+         "at": 454340,
+         "prop": ".RnmLimitList",
          "dari": "sisi",
-         "larik": "SpreadingListXOL",
+         "larik": "RnmLimitList",
          "syarat": [],
          "kolom": [
-          "Reins Type",
-          "Pct"
+          "RNM Limit",
+          ""
          ],
          "kunci": [
-          "ReinsTypeName",
-          "Pct"
+          "Currency",
+          "Value"
          ],
          "lebar": [
-          142,
-          192
+          197,
+          355
          ],
          "desimal": [
           null,
-          null
+          2
          ],
          "format": [
-          "pxTextInput",
-          ""
+          "pxNumber",
+          "pxNumber"
          ],
          "syaratSel": [
           null,
           null
          ],
          "atSel": [
-          328536,
-          331153
+          465972,
+          470686
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 518184,
+         "prop": ".RNMSpreadedListXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading OR Limit",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          192,
+          347
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          530137,
+          535045
          ],
          "baca": [
           "selalu",
@@ -27381,798 +30996,689 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
           null
          ],
          "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInLimitsSpreading!pyGridModalTemplate"
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
         },
         {
-         "t": "teks",
-         "at": 347978,
-         "teks": "Total Pct",
-         "syarat": []
+         "t": "grid",
+         "at": 582607,
+         "prop": ".RNMSpreadedListRIXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListRIXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading R/I Limit",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          192,
+          347
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          594563,
+          599471
+         ],
+         "baca": [
+          "selalu",
+          "selalu"
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "readOnly",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridModalTemplate"
         }
-       ]
+       ],
+       "tata": "g3"
       },
       {
-       "t": "medan",
-       "at": 377989,
-       "label": "Spreading Total Pct",
-       "dari": "sisi",
-       "kunci": "SpreadingTotalPctXOL",
-       "format": "Decimal",
-       "desimal": null,
+       "t": "blok",
+       "at": 636615,
+       "judul": "",
        "syarat": [],
-       "baca": "selalu"
+       "anak": [
+        {
+         "t": "grid",
+         "at": 662013,
+         "prop": ".GrossPremiumList",
+         "dari": "sisi",
+         "larik": "GrossPremiumList",
+         "syarat": [],
+         "kolom": [
+          "Gross Premium (MDP)",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          195,
+          355
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          673660,
+          678374
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 725873,
+         "prop": ".RNMSpreadedListGrossXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListGrossXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading OR MDP",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          195,
+          355
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          737524,
+          742238
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 789737,
+         "prop": ".RNMSpreadedListGrossRIXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListGrossRIXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading R/I MDP",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          195,
+          355
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          801391,
+          806105
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
+       ],
+       "tata": "g3"
       },
       {
-       "t": "teks",
-       "at": 388385,
-       "teks": "%",
-       "syarat": []
+       "t": "blok",
+       "at": 843186,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "grid",
+         "at": 868584,
+         "prop": ".DeductionTotalList",
+         "dari": "sisi",
+         "larik": "DeductionTotalList",
+         "syarat": [],
+         "kolom": [
+          "Deductions",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          196,
+          356
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          880494,
+          885402
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "@baseclass!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 933162,
+         "prop": ".RNMSpreadedListDeductXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListDeductXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading OR Deductions",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          196,
+          356
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          945112,
+          950020
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 997780,
+         "prop": ".RNMSpreadedListDeductRIXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListDeductRIXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading R/I Deductions",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          196,
+          356
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1009733,
+          1014641
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
+       ],
+       "tata": "g3"
+      },
+      {
+       "t": "blok",
+       "at": 1051983,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "grid",
+         "at": 1077381,
+         "prop": ".NetPremiumList",
+         "dari": "sisi",
+         "larik": "NetPremiumList",
+         "syarat": [],
+         "kolom": [
+          "Net Premium",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          195,
+          354
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1089018,
+          1093732
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 1141231,
+         "prop": ".RNMSpreadedListNetXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListNetXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading OR Net Premi",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          195,
+          354
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1152886,
+          1157600
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        },
+        {
+         "t": "grid",
+         "at": 1205099,
+         "prop": ".RNMSpreadedListNetRIXOL",
+         "dari": "sisi",
+         "larik": "RNMSpreadedListNetRIXOL",
+         "syarat": [],
+         "kolom": [
+          "Spreading R/I Net Premium",
+          ""
+         ],
+         "kunci": [
+          "Currency",
+          "Value"
+         ],
+         "lebar": [
+          195,
+          354
+         ],
+         "desimal": [
+          null,
+          2
+         ],
+         "format": [
+          "pxNumber",
+          "pxNumber"
+         ],
+         "syaratSel": [
+          null,
+          null
+         ],
+         "atSel": [
+          1216759,
+          1221473
+         ],
+         "baca": [
+          null,
+          null
+         ],
+         "tombol": [
+          null,
+          null
+         ],
+         "tombolKepala": [
+          null,
+          null
+         ],
+         "pilihan": [
+          null,
+          null
+         ],
+         "aksiUbah": [
+          null,
+          null
+         ],
+         "modeBaris": "row",
+         "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+        }
+       ],
+       "tata": "g3"
       }
      ]
     }
-   ]
-  },
-  {
-   "t": "blok",
-   "at": 420262,
-   "judul": "",
-   "syarat": [],
-   "anak": [
-    {
-     "t": "grid",
-     "at": 454340,
-     "prop": ".RnmLimitList",
-     "dari": "sisi",
-     "larik": "RnmLimitList",
-     "syarat": [],
-     "kolom": [
-      "RNM Limit",
-      ""
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      197,
-      355
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      465972,
-      470686
-     ],
-     "baca": [
-      null,
-      null
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "row",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 518184,
-     "prop": ".RNMSpreadedListXOL",
-     "dari": "sisi",
-     "larik": "RNMSpreadedListXOL",
-     "syarat": [],
-     "kolom": [
-      "Spreading OR Limit",
-      ""
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      192,
-      347
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      530137,
-      535045
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 582607,
-     "prop": ".RNMSpreadedListRIXOL",
-     "dari": "sisi",
-     "larik": "RNMSpreadedListRIXOL",
-     "syarat": [],
-     "kolom": [
-      "Spreading R/I Limit",
-      ""
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      192,
-      347
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      594563,
-      599471
-     ],
-     "baca": [
-      "selalu",
-      "selalu"
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "readOnly",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 662013,
-     "prop": ".GrossPremiumList",
-     "dari": "sisi",
-     "larik": "GrossPremiumList",
-     "syarat": [],
-     "kolom": [
-      "Gross Premium (MDP)",
-      ""
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      195,
-      355
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      673660,
-      678374
-     ],
-     "baca": [
-      null,
-      null
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "row",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 725873,
-     "prop": ".RNMSpreadedListGrossXOL",
-     "dari": "sisi",
-     "larik": "RNMSpreadedListGrossXOL",
-     "syarat": [],
-     "kolom": [
-      "Spreading OR MDP",
-      ""
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      195,
-      355
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      737524,
-      742238
-     ],
-     "baca": [
-      null,
-      null
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "row",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 789737,
-     "prop": ".RNMSpreadedListGrossRIXOL",
-     "dari": "sisi",
-     "larik": "RNMSpreadedListGrossRIXOL",
-     "syarat": [],
-     "kolom": [
-      "Spreading R/I MDP",
-      ""
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      195,
-      355
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      801391,
-      806105
-     ],
-     "baca": [
-      null,
-      null
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "row",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 868584,
-     "prop": ".DeductionTotalList",
-     "dari": "sisi",
-     "larik": "DeductionTotalList",
-     "syarat": [],
-     "kolom": [
-      "Deductions",
-      ""
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      196,
-      356
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      880494,
-      885402
-     ],
-     "baca": [
-      null,
-      null
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "row",
-     "templatBaris": "@baseclass!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 933162,
-     "prop": ".RNMSpreadedListDeductXOL",
-     "dari": "sisi",
-     "larik": "RNMSpreadedListDeductXOL",
-     "syarat": [],
-     "kolom": [
-      "Spreading OR Deductions",
-      ""
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      196,
-      356
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      945112,
-      950020
-     ],
-     "baca": [
-      null,
-      null
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "row",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 997780,
-     "prop": ".RNMSpreadedListDeductRIXOL",
-     "dari": "sisi",
-     "larik": "RNMSpreadedListDeductRIXOL",
-     "syarat": [],
-     "kolom": [
-      "Spreading R/I Deductions",
-      ""
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      196,
-      356
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      1009733,
-      1014641
-     ],
-     "baca": [
-      null,
-      null
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "row",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 1077381,
-     "prop": ".NetPremiumList",
-     "dari": "sisi",
-     "larik": "NetPremiumList",
-     "syarat": [],
-     "kolom": [
-      "Net Premium",
-      ""
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      195,
-      354
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      1089018,
-      1093732
-     ],
-     "baca": [
-      null,
-      null
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "row",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 1141231,
-     "prop": ".RNMSpreadedListNetXOL",
-     "dari": "sisi",
-     "larik": "RNMSpreadedListNetXOL",
-     "syarat": [],
-     "kolom": [
-      "Spreading OR Net Premi",
-      ""
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      195,
-      354
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      1152886,
-      1157600
-     ],
-     "baca": [
-      null,
-      null
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "row",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    },
-    {
-     "t": "grid",
-     "at": 1205099,
-     "prop": ".RNMSpreadedListNetRIXOL",
-     "dari": "sisi",
-     "larik": "RNMSpreadedListNetRIXOL",
-     "syarat": [],
-     "kolom": [
-      "Spreading R/I Net Premium",
-      ""
-     ],
-     "kunci": [
-      "Currency",
-      "Value"
-     ],
-     "lebar": [
-      195,
-      354
-     ],
-     "desimal": [
-      null,
-      2
-     ],
-     "format": [
-      "pxNumber",
-      "pxNumber"
-     ],
-     "syaratSel": [
-      null,
-      null
-     ],
-     "atSel": [
-      1216759,
-      1221473
-     ],
-     "baca": [
-      null,
-      null
-     ],
-     "tombol": [
-      null,
-      null
-     ],
-     "tombolKepala": [
-      null,
-      null
-     ],
-     "pilihan": [
-      null,
-      null
-     ],
-     "aksiUbah": [
-      null,
-      null
-     ],
-     "modeBaris": "row",
-     "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
-    }
-   ]
+   ],
+   "tata": "t3070"
   }
  ],
  "ShareRetro": [
   {
-   "t": "medan",
-   "at": 26960,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerType",
-   "format": "pxDropdown",
-   "desimal": null,
+   "t": "blok",
+   "at": 20660,
+   "judul": "",
    "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "associated"
-   }
-  },
-  {
-   "t": "medan",
-   "at": 32568,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "Layer",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu"
-  },
-  {
-   "t": "teks",
-   "at": 38138,
-   "teks": "Part of",
-   "syarat": []
-  },
-  {
-   "t": "medan",
-   "at": 42617,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerPartType",
-   "format": "pxDropdown",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu",
-   "pilihan": {
-    "sumber": "associated"
-   }
-  },
-  {
-   "t": "medan",
-   "at": 48235,
-   "label": "",
-   "dari": "sisi",
-   "kunci": "LayerPart",
-   "format": "pxTextInput",
-   "desimal": null,
-   "syarat": [],
-   "baca": "selalu"
+   "anak": [
+    {
+     "t": "medan",
+     "at": 26960,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerType",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu",
+     "pilihan": {
+      "sumber": "associated"
+     }
+    },
+    {
+     "t": "medan",
+     "at": 32568,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "Layer",
+     "format": "pxTextInput",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu"
+    },
+    {
+     "t": "teks",
+     "at": 38138,
+     "teks": "Part of",
+     "syarat": []
+    },
+    {
+     "t": "medan",
+     "at": 42617,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerPartType",
+     "format": "pxDropdown",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu",
+     "pilihan": {
+      "sumber": "associated"
+     }
+    },
+    {
+     "t": "medan",
+     "at": 48235,
+     "label": "",
+     "dari": "sisi",
+     "kunci": "LayerPart",
+     "format": "pxTextInput",
+     "desimal": null,
+     "syarat": [],
+     "baca": "selalu"
+    }
+   ],
+   "tata": "alir"
   },
   {
    "t": "blok",
@@ -28260,7 +31766,7 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
   {
    "t": "medan",
    "at": 124136,
-   "label": "Dropdown",
+   "label": "Cover",
    "dari": "sisi",
    "kunci": "Cover",
    "format": "pxDropdown",
@@ -28480,154 +31986,1275 @@ export const KERANGKA_RINCIAN: Readonly<Record<string, readonly ButirKerangka[]>
   },
   {
    "t": "blok",
-   "at": 1310257,
-   "judul": "Spreading",
+   "at": 1301526,
+   "judul": "",
    "syarat": [],
    "anak": [
     {
-     "t": "medan",
-     "at": 1325294,
-     "label": "Spreading Type",
-     "dari": "sisi",
-     "kunci": "SpreadingTypeXOLRetro",
-     "format": "pxAutoComplete",
-     "desimal": null,
-     "syarat": [],
-     "baca": [
-      "TreatyIn.ViewState = 1"
-     ],
-     "pilihan": {
-      "sumber": "reportdefinition",
-      "rd": "BrowseReinsuranceType_RD",
-      "nilai": "Note",
-      "param": {
-       "ID": "",
-       "Note": "",
-       "Flag": "",
-       "Type": ""
-      },
-      "setel": [
-       {
-        "target": "SpreadingTypeXOLRetroID",
-        "dari": "ID"
-       }
-      ]
-     },
-     "aksiUbah": [
-      {
-       "aksi": "refresh",
-       "aktivitas": "DelSpreadingRetro"
-      },
-      {
-       "aksi": "refresh",
-       "aktivitas": "GetSpreadingRetro"
-      },
-      {
-       "aksi": "refresh"
-      }
-     ]
-    },
-    {
      "t": "blok",
-     "at": 1350522,
-     "judul": "",
-     "syarat": [
-      ".SpreadingTypeXOL !=''"
-     ],
+     "at": 1310257,
+     "judul": "Spreading",
+     "syarat": [],
      "anak": [
       {
        "t": "blok",
-       "at": 1359227,
+       "at": 1318924,
+       "judul": "",
+       "syarat": [],
+       "anak": [
+        {
+         "t": "medan",
+         "at": 1325294,
+         "label": "Spreading Type",
+         "dari": "sisi",
+         "kunci": "SpreadingTypeXOLRetro",
+         "format": "pxAutoComplete",
+         "desimal": null,
+         "syarat": [],
+         "baca": [
+          "TreatyIn.ViewState = 1"
+         ],
+         "pilihan": {
+          "sumber": "reportdefinition",
+          "rd": "BrowseReinsuranceType_RD",
+          "nilai": "Note",
+          "param": {
+           "ID": "",
+           "Note": "",
+           "Flag": "",
+           "Type": ""
+          },
+          "setel": [
+           {
+            "target": "SpreadingTypeXOLRetroID",
+            "dari": "ID"
+           }
+          ]
+         },
+         "aksiUbah": [
+          {
+           "aksi": "refresh",
+           "aktivitas": "DelSpreadingRetro"
+          },
+          {
+           "aksi": "refresh",
+           "aktivitas": "GetSpreadingRetro"
+          },
+          {
+           "aksi": "refresh"
+          }
+         ]
+        }
+       ],
+       "tata": "kiri"
+      },
+      {
+       "t": "blok",
+       "at": 1350522,
        "judul": "",
        "syarat": [
-        "TreatyIn.FacultativeShare >0"
+        ".SpreadingTypeXOL !=''"
        ],
        "anak": [
         {
-         "t": "grid",
-         "at": 1376025,
-         "prop": ".ShareFacultativeReinsurers",
-         "dari": "sisi",
-         "larik": "ShareFacultativeReinsurers",
-         "syarat": [],
-         "kolom": [
-          "Other Treaty Retro",
-          "% Share",
-          "Amount",
-          "Amount2"
+         "t": "blok",
+         "at": 1359227,
+         "judul": "",
+         "syarat": [
+          "TreatyIn.FacultativeShare >0"
          ],
-         "kunci": [
-          "ReinsName",
-          "SharePct",
-          "Amount",
-          "Amount2"
-         ],
-         "lebar": [
-          514,
-          85,
-          100,
-          100
-         ],
-         "desimal": [
-          null,
-          2,
-          2,
-          2
-         ],
-         "format": [
-          "",
-          "pxNumber",
-          "pxNumber",
-          "pxNumber"
-         ],
-         "syaratSel": [
-          null,
-          null,
-          null,
-          null
-         ],
-         "atSel": [
-          1395296,
-          1399551,
-          1404789,
-          1409597
-         ],
-         "baca": [
-          "selalu",
-          "selalu",
-          "selalu",
-          "selalu"
-         ],
-         "tombol": [
-          null,
-          null,
-          null,
-          null
-         ],
-         "tombolKepala": [
-          null,
-          null,
-          null,
-          null
-         ],
-         "pilihan": [
-          null,
-          null,
-          null,
-          null
-         ],
-         "aksiUbah": [
-          null,
-          null,
-          null,
-          null
-         ],
-         "modeBaris": "readOnly",
-         "templatBaris": "ASM-FW-GISFW-Data-TreatyInShareReins!pyGridModalTemplate"
+         "anak": [
+          {
+           "t": "grid",
+           "at": 1376025,
+           "prop": ".ShareFacultativeReinsurers",
+           "dari": "sisi",
+           "larik": "ShareFacultativeReinsurers",
+           "syarat": [],
+           "kolom": [
+            "Other Treaty Retro",
+            "% Share",
+            "Amount",
+            "Amount2"
+           ],
+           "kunci": [
+            "ReinsName",
+            "SharePct",
+            "Amount",
+            "Amount2"
+           ],
+           "lebar": [
+            514,
+            85,
+            100,
+            100
+           ],
+           "desimal": [
+            null,
+            2,
+            2,
+            2
+           ],
+           "format": [
+            "",
+            "pxNumber",
+            "pxNumber",
+            "pxNumber"
+           ],
+           "syaratSel": [
+            null,
+            null,
+            null,
+            null
+           ],
+           "atSel": [
+            1395296,
+            1399551,
+            1404789,
+            1409597
+           ],
+           "baca": [
+            "selalu",
+            "selalu",
+            "selalu",
+            "selalu"
+           ],
+           "tombol": [
+            null,
+            null,
+            null,
+            null
+           ],
+           "tombolKepala": [
+            null,
+            null,
+            null,
+            null
+           ],
+           "pilihan": [
+            null,
+            null,
+            null,
+            null
+           ],
+           "aksiUbah": [
+            null,
+            null,
+            null,
+            null
+           ],
+           "modeBaris": "readOnly",
+           "templatBaris": "ASM-FW-GISFW-Data-TreatyInShareReins!pyGridModalTemplate"
+          }
+         ]
         }
        ]
       }
      ]
+    }
+   ],
+   "tata": "g2"
+  }
+ ],
+ "SpreadingTPDtl": [
+  {
+   "t": "blok",
+   "at": 7902,
+   "judul": "",
+   "syarat": [
+    ".ReinsTypeID !=''"
+   ],
+   "anak": [
+    {
+     "t": "grid",
+     "at": 35932,
+     "prop": ".BreakDownSprdList",
+     "dari": "sisi",
+     "larik": "BreakDownSprdList",
+     "syarat": [],
+     "kolom": [
+      "Spread",
+      "Currency",
+      "Share (%)",
+      "Amount"
+     ],
+     "kunci": [
+      "ReinsName",
+      "Currency",
+      "SharePct",
+      "Amount"
+     ],
+     "lebar": [
+      102,
+      88,
+      79,
+      186
+     ],
+     "desimal": [
+      null,
+      null,
+      2,
+      2
+     ],
+     "format": [
+      "pxDisplayText",
+      "",
+      "pxNumber",
+      "pxNumber"
+     ],
+     "syaratSel": [
+      null,
+      null,
+      null,
+      null
+     ],
+     "atSel": [
+      57769,
+      63671,
+      68448,
+      74038
+     ],
+     "baca": [
+      "selalu",
+      "selalu",
+      "selalu",
+      "selalu"
+     ],
+     "tombol": [
+      null,
+      null,
+      null,
+      null
+     ],
+     "tombolKepala": [
+      null,
+      null,
+      null,
+      null
+     ],
+     "pilihan": [
+      null,
+      null,
+      null,
+      null
+     ],
+     "aksiUbah": [
+      null,
+      null,
+      null,
+      null
+     ],
+     "modeBaris": "readOnly",
+     "templatBaris": "ASM-FW-GISFW-Data-TreatyInShareReins!pyGridRowDetails",
+     "rincianBaca": true
+    }
+   ]
+  }
+ ],
+ "SpreadingTXOLDtl": [
+  {
+   "t": "grid",
+   "at": 35976,
+   "prop": ".BreakDownSprdListXOL",
+   "dari": "sisi",
+   "larik": "BreakDownSprdListXOL",
+   "syarat": [],
+   "kolom": [
+    "Spread",
+    "Currency",
+    "Share (%)",
+    "Amount"
+   ],
+   "kunci": [
+    "ReinsTypeName",
+    "Currency",
+    "SharePct",
+    "Amount"
+   ],
+   "lebar": [
+    321,
+    205,
+    165,
+    429
+   ],
+   "desimal": [
+    null,
+    null,
+    2,
+    2
+   ],
+   "format": [
+    "pxDisplayText",
+    "",
+    "pxNumber",
+    "pxNumber"
+   ],
+   "syaratSel": [
+    null,
+    null,
+    null,
+    null
+   ],
+   "atSel": [
+    57814,
+    63712,
+    68495,
+    74076
+   ],
+   "baca": [
+    "selalu",
+    "selalu",
+    "selalu",
+    "selalu"
+   ],
+   "tombol": [
+    null,
+    null,
+    null,
+    null
+   ],
+   "tombolKepala": [
+    null,
+    null,
+    null,
+    null
+   ],
+   "pilihan": [
+    null,
+    null,
+    null,
+    null
+   ],
+   "aksiUbah": [
+    null,
+    null,
+    null,
+    null
+   ],
+   "modeBaris": "readOnly",
+   "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridRowDetails",
+   "rincianBaca": true
+  },
+  {
+   "t": "blok",
+   "at": 107241,
+   "judul": "",
+   "syarat": [],
+   "anak": [
+    {
+     "t": "blok",
+     "at": 116253,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "grid",
+       "at": 142552,
+       "prop": ".RnmLimitList",
+       "dari": "sisi",
+       "larik": "RnmLimitList",
+       "syarat": [],
+       "kolom": [
+        "RNM Limit",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        197,
+        355
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        154596,
+        159552
+       ],
+       "baca": [
+        null,
+        null
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 207879,
+       "prop": ".RNMSpreadedListXOL",
+       "dari": "sisi",
+       "larik": "RNMSpreadedListXOL",
+       "syarat": [],
+       "kolom": [
+        "Spreading OR Limit",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        192,
+        347
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        220243,
+        225393
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 273783,
+       "prop": ".RNMSpreadedListRIXOL",
+       "dari": "sisi",
+       "larik": "RNMSpreadedListRIXOL",
+       "syarat": [],
+       "kolom": [
+        "Spreading R/I Limit",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        192,
+        347
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        286154,
+        291305
+       ],
+       "baca": [
+        "selalu",
+        "selalu"
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "readOnly",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInShare!pyGridModalTemplate"
+      }
+     ],
+     "tata": "g3"
+    },
+    {
+     "t": "blok",
+     "at": 328914,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "grid",
+       "at": 355588,
+       "prop": ".GrossPremiumMinList",
+       "dari": "sisi",
+       "larik": "GrossPremiumMinList",
+       "syarat": [],
+       "kolom": [
+        "Gross Min Premium",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        195,
+        355
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        368232,
+        373189
+       ],
+       "baca": [
+        null,
+        null
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 422174,
+       "prop": ".RNMSpreadedListGrossMinXOL",
+       "dari": "sisi",
+       "larik": "RNMSpreadedListGrossMinXOL",
+       "syarat": [],
+       "kolom": [
+        "Spreading OR Min Premium",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        195,
+        355
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        434694,
+        439651
+       ],
+       "baca": [
+        null,
+        null
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 488636,
+       "prop": ".RNMSpreadedListGrossRIMinXOL",
+       "dari": "sisi",
+       "larik": "RNMSpreadedListGrossRIMinXOL",
+       "syarat": [],
+       "kolom": [
+        "Spreading R/I Min Premium",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        195,
+        355
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        501159,
+        506116
+       ],
+       "baca": [
+        null,
+        null
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      }
+     ],
+     "tata": "g3"
+    },
+    {
+     "t": "blok",
+     "at": 543879,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "grid",
+       "at": 570189,
+       "prop": ".GrossPremiumList",
+       "dari": "sisi",
+       "larik": "GrossPremiumList",
+       "syarat": [],
+       "kolom": [
+        "Gross Premium (MDP)",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        195,
+        355
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        582389,
+        587346
+       ],
+       "baca": [
+        null,
+        null
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 635691,
+       "prop": ".RNMSpreadedListGrossXOL",
+       "dari": "sisi",
+       "larik": "RNMSpreadedListGrossXOL",
+       "syarat": [],
+       "kolom": [
+        "Spreading OR MDP",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        195,
+        355
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        647757,
+        652714
+       ],
+       "baca": [
+        null,
+        null
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 701059,
+       "prop": ".RNMSpreadedListGrossRIXOL",
+       "dari": "sisi",
+       "larik": "RNMSpreadedListGrossRIXOL",
+       "syarat": [],
+       "kolom": [
+        "Spreading R/I MDP",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        195,
+        355
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        713128,
+        718085
+       ],
+       "baca": [
+        null,
+        null
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      }
+     ],
+     "tata": "g3"
+    },
+    {
+     "t": "blok",
+     "at": 755459,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "grid",
+       "at": 781769,
+       "prop": ".DeductionTotalList",
+       "dari": "sisi",
+       "larik": "DeductionTotalList",
+       "syarat": [],
+       "kolom": [
+        "Deductions",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        196,
+        356
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        794094,
+        799245
+       ],
+       "baca": [
+        null,
+        null
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "@baseclass!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 847851,
+       "prop": ".RNMSpreadedListDeductXOL",
+       "dari": "sisi",
+       "larik": "RNMSpreadedListDeductXOL",
+       "syarat": [],
+       "kolom": [
+        "Spreading OR Deductions",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        196,
+        356
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        860216,
+        865367
+       ],
+       "baca": [
+        null,
+        null
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 913973,
+       "prop": ".RNMSpreadedListDeductRIXOL",
+       "dari": "sisi",
+       "larik": "RNMSpreadedListDeductRIXOL",
+       "syarat": [],
+       "kolom": [
+        "Spreading R/I Deductions",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        196,
+        356
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        926341,
+        931492
+       ],
+       "baca": [
+        null,
+        null
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      }
+     ],
+     "tata": "g3"
+    },
+    {
+     "t": "blok",
+     "at": 969127,
+     "judul": "",
+     "syarat": [],
+     "anak": [
+      {
+       "t": "grid",
+       "at": 995437,
+       "prop": ".NetPremiumList",
+       "dari": "sisi",
+       "larik": "NetPremiumList",
+       "syarat": [],
+       "kolom": [
+        "Net Premium",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        195,
+        354
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        1007489,
+        1012446
+       ],
+       "baca": [
+        null,
+        null
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 1060791,
+       "prop": ".RNMSpreadedListNetXOL",
+       "dari": "sisi",
+       "larik": "RNMSpreadedListNetXOL",
+       "syarat": [],
+       "kolom": [
+        "Spreading OR Net Premi",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        195,
+        354
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        1072861,
+        1077818
+       ],
+       "baca": [
+        null,
+        null
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      },
+      {
+       "t": "grid",
+       "at": 1126163,
+       "prop": ".RNMSpreadedListNetRIXOL",
+       "dari": "sisi",
+       "larik": "RNMSpreadedListNetRIXOL",
+       "syarat": [],
+       "kolom": [
+        "Spreading R/I Net Premium",
+        ""
+       ],
+       "kunci": [
+        "Currency",
+        "Value"
+       ],
+       "lebar": [
+        195,
+        354
+       ],
+       "desimal": [
+        null,
+        2
+       ],
+       "format": [
+        "pxNumber",
+        "pxNumber"
+       ],
+       "syaratSel": [
+        null,
+        null
+       ],
+       "atSel": [
+        1138238,
+        1143195
+       ],
+       "baca": [
+        null,
+        null
+       ],
+       "tombol": [
+        null,
+        null
+       ],
+       "tombolKepala": [
+        null,
+        null
+       ],
+       "pilihan": [
+        null,
+        null
+       ],
+       "aksiUbah": [
+        null,
+        null
+       ],
+       "modeBaris": "row",
+       "templatBaris": "ASM-FW-GISFW-Data-TreatyInTotal!pyGridModalTemplate"
+      }
+     ],
+     "tata": "g3"
     }
    ]
   }
@@ -29513,12 +34140,6 @@ export const DIBUANG: readonly Terbuang[] = [
   "alasan": "penjaga mati: 1=2"
  },
  {
-  "berkas": "DetailEGNPI",
-  "at": 66677,
-  "jenis": "medan",
-  "alasan": "kontrol tanpa properti: '.pyTemplateRichTextEditor'"
- },
- {
   "berkas": "Layers",
   "at": 345431,
   "jenis": "sel",
@@ -29667,12 +34288,6 @@ export const DIBUANG: readonly Terbuang[] = [
   "at": 1813015,
   "jenis": "sel",
   "alasan": "penjaga mati: 1=2"
- },
- {
-  "berkas": "DetailEGNPIOldData",
-  "at": 65431,
-  "jenis": "medan",
-  "alasan": "kontrol tanpa properti: '.pyTemplateRichTextEditor'"
  },
  {
   "berkas": "LayersOldData",

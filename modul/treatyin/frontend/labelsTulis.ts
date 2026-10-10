@@ -6,6 +6,12 @@ export const TOMBOL_TULIS = {
   simpan: 'Save', // `TreatyInActionButtons` @20066
   tutup: 'Close', // @36946
   aksi: 'Actions', // @54595 → local action `TreatyInAction`
+  /**
+   * `Force Edit (dev)` Pega (`TreatyInActionButtons`, DT `TreatyInForceEdit`)
+   * — di Pega dikunci per nama akun developer; di sini khusus divisi IT.
+   */
+  paksaEdit: 'Force Edit',
+  petunjukPaksaEdit: 'IT only — unlock the form for editing',
   menyimpan: 'Menyimpan…',
   /** Modal `TreatyInAction`. */
   judulAksi: 'Action',
@@ -19,7 +25,7 @@ export const TOMBOL_TULIS = {
   tanyaTolak: 'Are you sure you want to DECLINE this offer?', // @14478
   tolak: 'Decline', // @65981 → `TreatyInDeclineConfirmation_postact`
   /** Properti terkirim tanpa kolom di tabel pendaratan — dilaporkan, tidak ditelan. */
-  takTersimpan: 'Belum punya kolom di tabel, jadi TIDAK tersimpan:',
+  takTersimpan: 'No column in the table yet, so NOT saved:',
 } as const
 
 /**

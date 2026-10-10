@@ -18,6 +18,7 @@
 import { useEffect, useState } from 'react'
 
 import { Gagal, Kosong, Memuat, Panel } from '../../../../inti/frontend/components/ui/dasar'
+import { formatDateTime } from '../../../../inti/frontend/lib/format'
 import {
   ambilLampiran,
   ambilRiwayat,
@@ -238,7 +239,11 @@ export function PanelRiwayat({
               )}
               {riwayat.map((b, i) => (
                 <tr key={i}>
-                  <td>{b.tanggal}</td>
+                  {/* ⛔ Stempel Pega (`20261009T050155.604 GMT`) tampil apa
+                      adanya sampai 8 Oktober 2026 — deretan angka mesin yang
+                      harus dipecah sendiri oleh pembacanya. Jam ikut: dua
+                      catatan sehari hanya dibedakan olehnya. */}
+                  <td>{formatDateTime(b.tanggal)}</td>
                   <td>{b.operator}</td>
                   <td>{b.disetujui}</td>
                   <td>{b.catatan}</td>

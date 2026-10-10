@@ -60,8 +60,6 @@ func TestLabelCoverDariPemilikProses(t *testing.T) {
 func TestLabelYangDisimpulkanMengakuiDirinya(t *testing.T) {
 	for _, u := range []struct{ properti, nilai, mau string }{
 		{"LayerType", "sublayer", "sub layer"},
-		{"ReinstatementNote", "asamount", "as amount"},
-		{"ReinstatementNote", "astime", "as time"},
 		{"AccountingModeNonProp", "risk", "Risk Attaching"},
 		{"Bordeaux", "nonreporting", "Non Reporting"},
 	} {
@@ -80,6 +78,13 @@ func TestYangTerbuktiMenangAtasKesimpulan(t *testing.T) {
 		{"Bordeaux", "reporting", "Reporting"},
 		{"AccountingModeNonProp", "loss", "Loss Occuring"},
 		{"OptionLimit", "2", "Of 100% Limit"},
+		// ⛔ `ReinstatementNote.xml` (8 Oktober 2026) — dan kedatangannya
+		// MEMBATALKAN kesimpulan yang sebelumnya ada di sini. Dugaannya
+		// `as amount` / `as time`, dasarnya "kode gandeng dipecah jadi
+		// kata"; yang sebenarnya kalimat penuh yang nol hubungannya dengan
+		// ejaan kodenya.
+		{"ReinstatementNote", "asamount", "Additional Premium as to amount"},
+		{"ReinstatementNote", "astime", "Additional Premium as to time"},
 	} {
 		if got := services.LabelPrompt(u.properti, u.nilai); got != u.mau {
 			t.Errorf("%s.%s = %q, mau %q", u.properti, u.nilai, got, u.mau)
@@ -121,14 +126,20 @@ func TestBerapaLabelMasihDisimpulkan(t *testing.T) {
 	t.Logf("label yang masih DISIMPULKAN (%d):\n  %s",
 		len(kesimpulan), strings.Join(kesimpulan, "\n  "))
 
-	// Terukur 7 Oktober 2026 — LIMA:
-	//   LayerType.sublayer · ReinstatementNote.asamount · .astime
-	//   AccountingModeNonProp.risk · Bordeaux.nonreporting
+	// Terukur 8 Oktober 2026 — TIGA:
+	//   LayerType.sublayer · AccountingModeNonProp.risk ·
+	//   Bordeaux.nonreporting
+	//
+	// ⭐ Turun dari LIMA sejak `ReinstatementNote.xml` tiba, dan cara
+	// turunnya layak dicatat: kedua label itu TIDAK terbukti benar, mereka
+	// terbukti SALAH. Dua dari dua kesimpulan yang akhirnya diadu dengan
+	// ekspornya meleset (`OptionLimit` lebih dahulu), jadi ketiga sisa di
+	// bawah ini lebih baik dianggap salah sampai berkasnya datang.
 	//
 	// ⚠️ `LayerType.layer` dan `CurrencyRelation.*` TIDAK terhitung:
 	// labelnya sama dengan nilainya, jadi nol yang disimpulkan di sana.
-	if len(kesimpulan) != 5 {
-		t.Fatalf("masih disimpulkan = %d, terakhir diukur 5:\n  %s",
+	if len(kesimpulan) != 3 {
+		t.Fatalf("masih disimpulkan = %d, terakhir diukur 3:\n  %s",
 			len(kesimpulan), strings.Join(kesimpulan, "\n  "))
 	}
 }

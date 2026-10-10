@@ -111,7 +111,7 @@ func (g *Gudang) DaftarPenyesuaianWarisan(ctx context.Context) ([]models.BarisPe
 	}
 	q := fmt.Sprintf(`SELECT ID, OLDID, EDMSTATE, EDMMATERIALTYPE, TREATYCONTRACTNAME,
 		PROPORTIONTYPE, LEADINGREINSSOURCE, CEDING, COMMENCEMENT, TERMINATION,
-		POSITIONUSERNAME, STATUSAKSEPTASI
+		POSITIONUSERNAME, STATUSAKSEPTASI, POSITION
 		FROM %s ORDER BY ID DESC`, nama)
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
@@ -124,9 +124,9 @@ func (g *Gudang) DaftarPenyesuaianWarisan(ctx context.Context) ([]models.BarisPe
 
 	out := []models.BarisPenyesuaian{}
 	for rows.Next() {
-		var k [12]sql.NullString
+		var k [13]sql.NullString
 		if err := rows.Scan(&k[0], &k[1], &k[2], &k[3], &k[4], &k[5], &k[6], &k[7],
-			&k[8], &k[9], &k[10], &k[11]); err != nil {
+			&k[8], &k[9], &k[10], &k[11], &k[12]); err != nil {
 			return nil, fmt.Errorf("repository: membaca baris %s: %w", TabelWarisanPenyesuaian, err)
 		}
 		// ⛔ Apa adanya — nol tafsir di repository.
@@ -137,6 +137,7 @@ func (g *Gudang) DaftarPenyesuaianWarisan(ctx context.Context) ([]models.BarisPe
 			AsalBisnis: k[6].String, Cedant: k[7].String,
 			TanggalMulai: k[8].String, TanggalBerakhir: k[9].String,
 			Posisi: k[10].String, StatusAkseptasi: k[11].String,
+			KodePosisi: k[12].String,
 		})
 	}
 	if err := rows.Err(); err != nil {

@@ -106,6 +106,10 @@ func TestSQLKomiteDiDEV(t *testing.T) {
 		"LogLayanan MONITORING_KLAIM_LOG":       sqlLogLayanan(q("MONITORING_KLAIM_LOG")),
 		"RiwayatAkseptasi HISTORYAKSEPTASIPEGA": sqlRiwayatAkseptasi(q("HISTORYAKSEPTASIPEGA")),
 		"SisipDokumenKlaim (tabel warisan)":     sqlSisipDokumenKlaim(q(TabelDokumenKlaim)),
+		// Close Without Payment (10-10-2026): kolom TRANSFER_TYPE / KOMITE_CIRCUM_CAUSE_OF_LOSS = migrasi
+		// komiteclaimfacin 642 / 643 (BELUM sampai -migrate work owner).
+		"TeksTutup (SELECT)":         sqlTeksTutup(q("T_GENERAL_KOMITE")),
+		"KlaimDitolak CLAIMREJECTED": sqlSisipKlaimDitolak(q("CLAIMREJECTED")),
 	}
 	for nama, s := range tulis {
 		if !polaDML.MatchString(s) {

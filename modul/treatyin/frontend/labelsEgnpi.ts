@@ -52,9 +52,9 @@ export const EGNPI = {
   totalProporsi: 'Total Proportion %',
 
   // Teks layar kita sendiri — ditandai supaya tidak tertukar dengan ekspor.
-  barisBaru: '(belum dipilih)',
+  barisBaru: '(not selected)',
   tanpaBaris: 'No items',
-  petunjukKosong: 'Belum ada baris EGNPI.',
+  petunjukKosong: 'No EGNPI rows yet.',
 } as const
 
 /**

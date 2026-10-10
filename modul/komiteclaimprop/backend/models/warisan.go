@@ -1,7 +1,10 @@
 package models
 
 // Untuk apa berkas ini: BARIS TABEL WARISAN yang ditulis Komite - `HISTORYAKSEPTASIPEGA` (KomitePostAdjustment
-// S32-S33), `MONITORING_KLAIM_LOG` (S30-S31), dan bahan nomor akseptasi (S16.5-S16.7).
+// S32-S33), `MONITORING_KLAIM_LOG` (S30-S31), `CLAIMREJECTED` (KomitePost_Close S13), dan bahan nomor akseptasi
+// (S16.5-S16.7).
+
+import "time"
 
 // Nilai tetap `InsertHistoryAkseptasiPega_Sql` (S32).
 const (
@@ -35,6 +38,28 @@ type LogLayanan struct {
 func SusunLogAkseptasi(klaimID, noPolis, stsReject, nomor string) LogLayanan {
 	return LogLayanan{IDPega: KunciInstans(klaimID), Parameter: KunciInstans(klaimID) + " / " + noPolis + " / " + stsReject,
 		JenisService: JenisServiceAkseptasi, NoAkseptasi: nomor}
+}
+
+// Nilai tetap baris CLAIMREJECTED kasus klaim treaty (KomitePost_Close S13.1, `DataIn.CARI4` / `CARI5` / `CARI8` =
+// `TempOpenPage.pyLabel` / `pyStatusWork` / `pxObjClass`): bentuk baris CLMP warisan di DEV (237 baris, 10-10-2026) -
+// LABEL "ClaimTreaty", STATUSWORK klaim saat diputus ("New" untuk jalur close: klaim masih terbuka).
+const (
+	LabelKlaimTreaty   = "ClaimTreaty"
+	StatusKlaimTerbuka = "New"
+)
+
+// KlaimDitolak - satu baris CLAIMREJECTED (`InsertClaimRejected_Sql`, KomitePost_Close S13 bila disetujui).
+type KlaimDitolak struct {
+	// InsKey / ID / InsName / Label / StatusWork / Kelas - CARI1-CARI5, CARI8 kasus klaim induk.
+	InsKey, ID, InsName, Label, StatusWork, Kelas string
+	// PembuatNama / PembuatID - CARI6 / CARI7 (`pxCreateOpName` / `pxCreateOperator` klaim induk).
+	PembuatNama, PembuatID string
+	// Diperbarui - CARI9 `pyWorkPage.pxUpdateDateTime` (kasus komite); PengubahNama / PengubahID - CARI10 / CARI11
+	// (`TempOpenPage.pxUpdateOpName` / `pxUpdateOperator`: kasus klaim baru saja disimpan Komite - penyetuju).
+	Diperbarui               time.Time
+	PengubahNama, PengubahID string
+	// Remark - CARI12 `pyWorkPage.Komite.Remarks` (= Remarks pop-up close, `ClaimData.Remark_Close` klaim induk).
+	Remark string
 }
 
 // BahanNomor - keluaran penghitung bersama (`ParamSeq.HASIL1` MM.YYYY, `ParamSeq.HASIL2` urut) dan jenisnya

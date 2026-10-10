@@ -125,14 +125,28 @@ describe('render — grid kurs panel New di mode Edit', () => {
     opsi,
   })
 
-  it('Currency menjadi `<select>` berisi daftar BrowseCurrency_RD, nilai tersimpan terpilih', () => {
+  // ⛔ DIBALIK 8 Oktober 2026 — dahulu `<select>`. Permintaan pemilik
+  // proses untuk SELURUH dropdown Treaty In dan Adjustment: *"kondisi saat
+  // melakukan pengetikannya seharusnya terlihat layaknya melakukan mencari,
+  // kemudian data yang keluar adalah yang 100% mirip dengan yang diketik"*.
+  //
+  // Kontrolnya kini combobox (`PilihSaring`): satu kotak yang dapat diketik,
+  // daftarnya tersaring saat mengetik, dan ketikan tanpa memilih
+  // dikembalikan ke pilihan terakhir.
+  it('Currency menjadi combobox berisi daftar BrowseCurrency_RD, nilai tersimpan terpilih', () => {
     const html = renderToStaticMarkup(<GridEkspor g={GRID_KURS.baru} k={konteks((sp, kunci) => opsiUntuk(sp, kunci, DATA))} />)
-    expect(html).toMatch(/<select[^>]*aria-label="Currency"/)
-    expect(html).toContain('<option value="10001" selected="">USD</option>')
+    expect(html).toMatch(/role="combobox"[^>]*aria-label="Currency"|aria-label="Currency"[^>]*role="combobox"/)
+    // ⚠️ Teks pilihan terbaca di KOTAKNYA. Daftar `<li>` baru dirender
+    // saat combobox dibuka, jadi render statis tidak memuatnya.
+    expect(html).toContain('value="USD"')
+    expect(html).toContain('aria-expanded="false"')
+    // ⛔ Sel tabel: `<th>` sudah menamainya, jadi NOL label di dalam sel.
+    expect(html).not.toContain('<label class="field__label">Currency</label>')
   })
 
-  it('daftar belum dimuat → kotak teks, bukan dropdown kosong', () => {
+  it('daftar belum dimuat → kotak teks, bukan combobox kosong', () => {
     const html = renderToStaticMarkup(<GridEkspor g={GRID_KURS.baru} k={konteks()} />)
+    expect(html).not.toContain('role="combobox"')
     expect(html).not.toContain('<select')
   })
 })

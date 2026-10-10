@@ -26,13 +26,13 @@
 // di berkas ini, sama seperti tab Limits.
 //
 // ---------------------------------------------------------------------
-// ⭐ BENTUK TAMPILAN meniru tab Limits (permintaan pemilik proses)
+// ⭐ BENTUK TAMPILAN = PEGA (permintaan pemakai 8 Oktober 2026)
 // ---------------------------------------------------------------------
-// Pega memberi tab ini SATU grid yang barisnya dapat dibuka menjadi rincian
-// (`Section/DetailEGNPI.xml`). Itu persis bentuk `KartuLipat` tab Limits:
-// kepala kartu memuat ringkasan yang di Pega menjadi kolom grid, dan isinya
-// medan rincian. Jadi "meniru Limits" dan "sama seperti Pega" di sini satu
-// hal, bukan dua.
+// Pega memberi tab ini SATU grid `masterDetail` — kolom Treaty Group · As
+// Date · Proportion % · Currency · Amount · Amount in IDR, `Add` di kepala
+// kolom tombol, `Delete` per baris — yang barisnya dibuka menjadi rincian
+// (`Section/DetailEGNPI.xml`). Kartu lipat berchip sebelumnya DIGANTI grid
+// itu (`gridPega.tsx`), urutan dan lebar kolom dari ekspor.
 //
 // ⛔ Aturan B pemilik proses tetap berlaku: mengetik TIDAK menyentuh basis
 // data. Suntingan hidup di keadaan layar sampai Save/Submit — dan rute yang
@@ -42,7 +42,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { PemicuUbah } from './pemicuUbah'
 
-import { Field, FieldAngka, Kosong, Panel } from '../../../../inti/frontend/components/ui/dasar'
+import { Area, Field, FieldAngka } from '../../../../inti/frontend/components/ui/dasar'
 import {
   ambilOpsiLimits,
   hitungEgnpi,
@@ -52,12 +52,13 @@ import {
   type OpsiLimits,
   type PilihanWarisan,
 } from '../api'
-import { DESIMAL_EGNPI, EGNPI } from '../labelsEgnpi'
+import { DESIMAL_EGNPI, EGNPI, KOLOM_GRID_EGNPI } from '../labelsEgnpi'
 import { useProperti } from '../halaman'
 import type { ModeForm } from '../mode'
 import TanggalRedup from './TanggalRedup'
 import DropdownWarisan from './DropdownWarisan'
-import { Bagian, Chip, KartuLipat, KepalaBagian, TombolHapus, TombolTambah } from './limitsUI'
+import { BlokPega, GridNilaiPega, GridPega, TeksPega } from './gridPega'
+import { SelKosongPega, TataPegaBlok } from './tataPega'
 import { formatLimit } from './TabLimitsProp'
 
 /** Angka tampil — pemformat modul, bukan pemformat kedua. */
@@ -70,36 +71,6 @@ interface BarisTotal {
   Value: string
 }
 
-/** Grid dua kolom hanya-baca — panel `Total EGNPI Amount`. */
-function GridTotal({ baris }: { baris: readonly BarisTotal[] }) {
-  return (
-    <div className="table-wrap trin__share-total">
-      <table className="trin__tabel">
-        <thead>
-          <tr>
-            <th scope="col">{EGNPI.totalPerMataUang}</th>
-            <th scope="col">{EGNPI.nilai}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {baris.length === 0 && (
-            <tr>
-              <td colSpan={2}>{EGNPI.tanpaBaris}</td>
-            </tr>
-          )}
-          {baris.map((b, i) => (
-            <tr key={String(i)}>
-              <td>{b.Currency}</td>
-              <td>{tampil(b.Value, DESIMAL_EGNPI.nilaiPerMataUang)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-/** Rincian satu baris — `Section/DetailEGNPI.xml`, urut dan hak ubahnya. */
 /**
  * Rincian satu baris — `Section/DetailEGNPI.xml`, urut dan hak ubahnya.
  *
@@ -141,8 +112,12 @@ function RincianBaris({
   onKonversi: (baru?: BarisEgnpi) => void
 }) {
   return (
-    <Bagian judul={EGNPI.panel}>
-      <div className="trin__egnpi-medan">
+    <>
+      {/* `DetailEGNPI.xml` @449 `Stacked with labels left`: Treaty Group ·
+          As At · baris Amount dan Amount in IDR (`Inline grid 30 70`
+          @1324 — satuan | nilai, tetap dua baris pasangan 1fr:2fr) ·
+          Proportion % · Note. */}
+      <TataPegaBlok tata="kiri">
         {/* ⚠️ EKSPOR BERSELISIH DENGAN DIRINYA SENDIRI di medan ini: grid
             membuatnya DAPAT diubah, rinciannya `pyReadOnly=true` — tetapi
             sel yang sama memuat `pyReadOnlyCondition = ViewState = 1`, jadi
@@ -185,40 +160,48 @@ function RincianBaris({
             bukan kesetiaan, melainkan layar yang tersendat. */}
         {/* ⭐ `change` Pega: konversi berjalan hanya bila Amount BERUBAH
             (mata uang memicunya sendiri saat dipilih, `onPilih`). */}
-        <PemicuUbah className="trin__egnpi-pasangan" nilai={b.Amount} aktif={bisaUbah} aksi={onKonversi}>
-          {bisaUbah ? (
-            <DropdownWarisan
-              label={EGNPI.jumlah}
-              ambil={ambilMataUang}
-              nilai={b.Currency}
-              onPilih={(o) => {
-                // Mata uang dipilih → konversi SEGERA (Pega: `change` dropdown),
-                // atas baris yang SUDAH memuat pilihannya.
-                const baru = { ...b, Currency: o.nama, CurrencyID: o.id }
-                onUbah(baru)
-                onKonversi(baru)
+        {/* `Inline grid 30 70` @1324 = baris [30% `Stacked with labels
+            left` @1612 satuan berlabel | 70% nilai] — tangkapan layar 29. */}
+        <PemicuUbah nilai={b.Amount} aktif={bisaUbah} aksi={onKonversi}>
+          <TataPegaBlok tata="t3070">
+            <TataPegaBlok tata="kiri">
+              {bisaUbah ? (
+                <DropdownWarisan
+                  label={EGNPI.jumlah}
+                  ambil={ambilMataUang}
+                  nilai={b.Currency}
+                  onPilih={(o) => {
+                    // Mata uang dipilih → konversi SEGERA (Pega: `change` dropdown),
+                    // atas baris yang SUDAH memuat pilihannya.
+                    const baru = { ...b, Currency: o.nama, CurrencyID: o.id }
+                    onUbah(baru)
+                    onKonversi(baru)
+                  }}
+                />
+              ) : (
+                <Field label={EGNPI.jumlah} value={b.Currency} readOnly onChange={() => undefined} />
+              )}
+            </TataPegaBlok>
+            <FieldAngka
+              label=""
+              value={b.Amount}
+              desimal={DESIMAL_EGNPI.jumlah}
+              readOnly={!bisaUbah}
+              onChange={(v) => {
+                onUbah({ ...b, Amount: v })
               }}
             />
-          ) : (
-            <Field label={EGNPI.jumlah} value={b.Currency} readOnly onChange={() => undefined} />
-          )}
-          <FieldAngka
-            label=""
-            value={b.Amount}
-            desimal={DESIMAL_EGNPI.jumlah}
-            readOnly={!bisaUbah}
-            onChange={(v) => {
-              onUbah({ ...b, Amount: v })
-            }}
-          />
+          </TataPegaBlok>
         </PemicuUbah>
 
         {/* Baris `Amount in IDR` — mata uangnya TETAP `IDR`.
             ⭐ Di ekspor sel kiri `.pyTemplateRichTextEditor`: pemegang tempat
             yang hanya memperlihatkan satuannya. Karena itu ia hanya-baca di
             sini, bukan pilihan. */}
-        <div className="trin__egnpi-pasangan">
-          <Field label={EGNPI.jumlahIDR} value={EGNPI.satuanIDR} readOnly onChange={() => undefined} />
+        <TataPegaBlok tata="t3070">
+          <TataPegaBlok tata="kiri">
+            <Field label={EGNPI.jumlahIDR} value={EGNPI.satuanIDR} readOnly onChange={() => undefined} />
+          </TataPegaBlok>
           {/* ⭐ Nilainya DAPAT diubah di ekspor sekalipun
               `SetAmountConversion` menimpanya — dibiarkan begitu: menguncinya
               menghapus jalan keluar pemakai ketika mata uangnya nol di grid
@@ -232,7 +215,7 @@ function RincianBaris({
               onUbah({ ...b, AmountIDR: v })
             }}
           />
-        </div>
+        </TataPegaBlok>
 
         {/* ⚠️ `Proportion %` dapat diubah di ekspor, tetapi `Update Total`
             MENIMPANYA setiap kali ditekan. Itu bunyi ekspornya. */}
@@ -250,17 +233,22 @@ function RincianBaris({
 
         {/* ⛔ RALAT 7 Oktober 2026 — medan ini sempat dikunci mati atas dasar
             `pyReadOnly` telanjang; `pyReadOnlyCondition = ViewState = 1` yang
-            berlaku, jadi ia aktif di mode Edit. */}
-        <Field
-          label={EGNPI.keterangan}
-          value={b.Note}
-          readOnly={!bisaUbah}
-          onChange={(v) => {
-            onUbah({ ...b, Note: v })
-          }}
-        />
-      </div>
-    </Bagian>
+            berlaku, jadi ia aktif di mode Edit.
+            ⭐ `pxTextArea` di ekspor — kotak teks bertinggi, seperti Pega. */}
+        {bisaUbah ? (
+          <Area
+            label={EGNPI.keterangan}
+            value={b.Note}
+            baris={3}
+            onChange={(v) => {
+              onUbah({ ...b, Note: v })
+            }}
+          />
+        ) : (
+          <Field label={EGNPI.keterangan} value={b.Note} readOnly onChange={() => undefined} />
+        )}
+      </TataPegaBlok>
+    </>
   )
 }
 
@@ -334,135 +322,144 @@ export default function TabEgnpi({
       })
   }
 
+  // Lebar kolom dari ekspor (`pyWidth` sel kepala): 287 · 197 · 142 · 137 ·
+  // 222 · 223, kolom tombol 125.
+  const L = [287, 197, 142, 137, 222, 223] as const
+
+  // ⭐ Urutan = Section `TreatyInTabsNonProportional` tab `EGNPI`:
+  //   blok `Estimate Gross Net Premium Income` (grid + rincian)
+  //   grid `Total EGNPI Amount` | `Value`
+  //   `Total Amount in IDR` `IDR` [nilai] · `Total Proportion %` [nilai]
+  //   tombol `Update Total` · `Update EGNPI Value`
   return (
-    <Panel judul={EGNPI.judul}>
-      <div className="tl-rincian">
-        <KepalaBagian
-          judul={EGNPI.panel}
-          jumlah={rows.length}
-          aksi={
-            bisaUbah && (
-              <TombolTambah
-                label={EGNPI.tambah}
-                onClick={() => {
+    <div className="trin__blok trin__tab">
+      <BlokPega judul={EGNPI.panel}>
+        <GridPega
+          label={EGNPI.panel}
+          kolom={[
+            { judul: KOLOM_GRID_EGNPI[0], lebar: L[0], isi: (b) => (b.TreatyGroup === '' ? EGNPI.barisBaru : b.TreatyGroup) },
+            { judul: KOLOM_GRID_EGNPI[1], lebar: L[1], isi: (b) => b.AsDate },
+            { judul: KOLOM_GRID_EGNPI[2], lebar: L[2], angka: true, isi: (b) => tampil(b.Proportion, DESIMAL_EGNPI.proporsi) },
+            { judul: KOLOM_GRID_EGNPI[3], lebar: L[3], isi: (b) => b.Currency },
+            { judul: KOLOM_GRID_EGNPI[4], lebar: L[4], angka: true, isi: (b) => tampil(b.Amount, DESIMAL_EGNPI.jumlah) },
+            { judul: KOLOM_GRID_EGNPI[5], lebar: L[5], angka: true, isi: (b) => tampil(b.AmountIDR, DESIMAL_EGNPI.jumlahIDR) },
+          ]}
+          baris={rows}
+          tombol={
+            bisaUbah
+              ? {
+                  lebar: 125,
                   // `TreatyInNonAddItem(egnpi)` — mata uangnya mewarisi
                   // `TreatyIn.Retention(1)`; services yang menentukannya.
-                  jalankan('tambah')
-                }}
-              />
-            )
+                  tambah: {
+                    label: EGNPI.tambah,
+                    onKlik: () => {
+                      jalankan('tambah')
+                    },
+                  },
+                  hapus: {
+                    label: EGNPI.hapus,
+                    akses: (_, i) => `${EGNPI.hapus} ${EGNPI.treatyGroup} ${String(i + 1)}`,
+                    onKlik: (i) => {
+                      jalankan('hapus', i)
+                    },
+                  },
+                }
+              : undefined
           }
+          rincian={(b, i) => (
+            <RincianBaris
+              b={b}
+              bisaUbah={bisaUbah}
+              ambilMataUang={ambilMataUang}
+              ambilKelompokTreaty={ambilKelompokTreaty}
+              onUbah={(baru) => {
+                setRows(rows.map((x, j) => (j === i ? baru : x)))
+              }}
+              onKonversi={(baru) => {
+                jalankan('konversi', i, baru === undefined ? rows : rows.map((x, j) => (j === i ? baru : x)))
+              }}
+            />
+          )}
         />
+      </BlokPega>
 
-        {rows.length === 0 ? (
-          <Kosong pesan={EGNPI.petunjukKosong} />
-        ) : (
-          <div className="tl-daftar">
-            {rows.map((b, i) => (
-              <KartuLipat
-                key={i}
-                nomor={i + 1}
-                judul={b.TreatyGroup}
-                judulKosong={EGNPI.barisBaru}
-                bukaAwal={b.TreatyGroup === ''}
-                meta={
-                  <>
-                    <Chip label={EGNPI.asAt} nilai={b.AsDate} />
-                    <Chip label={EGNPI.mataUang} nilai={b.Currency} />
-                    <Chip label={EGNPI.jumlah} nilai={tampil(b.Amount, DESIMAL_EGNPI.jumlah)} />
-                    <Chip label={EGNPI.jumlahIDR} nilai={tampil(b.AmountIDR, DESIMAL_EGNPI.jumlahIDR)} />
-                    <Chip label={EGNPI.proporsi} nilai={tampil(b.Proportion, DESIMAL_EGNPI.proporsi)} />
-                  </>
-                }
-                aksi={
-                  bisaUbah && (
-                    <TombolHapus
-                      label={EGNPI.hapus}
-                      labelAkses={`${EGNPI.hapus} ${EGNPI.treatyGroup} ${i + 1}`}
-                      onClick={() => {
-                        jalankan('hapus', i)
-                      }}
-                    />
-                  )
-                }
+      {pesan.length > 0 && (
+        <ul className="tl-pesan" role="alert">
+          {pesan.map((p, i) => (
+            <li key={i}>{p}</li>
+          ))}
+        </ul>
+      )}
+      {gagal !== '' && (
+        <p className="tl-pesan" role="alert">
+          {gagal}
+        </p>
+      )}
+
+      <GridNilaiPega
+        judul={EGNPI.totalPerMataUang}
+        nilai={EGNPI.nilai}
+        baris={perMataUang}
+        lebar={[194, 349]}
+        tampil={(v) => tampil(v, DESIMAL_EGNPI.nilaiPerMataUang)}
+      />
+
+      {/* Wadah tanpa kepala @24029 — `Inline grid double` @24222:
+          [ `Inline 30 70 table` @24521 total | tombol `1=2` ×3 | `Inline
+          grid double` @28482 tombol ]. Sel tersembunyi TETAP memakan slotnya
+          (tangkapan layar 29): tombol turun ke baris KETIGA, separuh kiri. */}
+      <TataPegaBlok tata="g2">
+        <TataPegaBlok tata="t3070">
+          {/* 30%: `Inline labels left` @24819 · 70%: `Inline 30 70 table` @25509 [IDR | nilai]. */}
+          <TataPegaBlok tata="alir">
+            <TeksPega>{EGNPI.totalIDR}</TeksPega>
+          </TataPegaBlok>
+          <TataPegaBlok tata="t3070">
+            <TeksPega>{EGNPI.satuanIDR}</TeksPega>
+            <Field label="" value={tampil(totalIDR, DESIMAL_EGNPI.totalIDR)} readOnly onChange={() => undefined} />
+          </TataPegaBlok>
+          {/* Dua tombol `1=2` (@26087 · @26294) = satu baris pasangan kosong. */}
+          <SelKosongPega />
+          <SelKosongPega />
+          {/* 30%: `Inline labels left` @26775 · 70%: nilai. */}
+          <TataPegaBlok tata="alir">
+            <TeksPega>{EGNPI.totalProporsi}</TeksPega>
+          </TataPegaBlok>
+          <Field label="" value={tampil(totalProporsi, DESIMAL_EGNPI.totalProporsi)} readOnly onChange={() => undefined} />
+        </TataPegaBlok>
+        {/* Tombol `1=2` @27587 · @27794 · @28001. */}
+        <SelKosongPega />
+        <SelKosongPega />
+        <SelKosongPega />
+
+        {bisaUbah && (
+          <TataPegaBlok tata="g2">
+            <div>
+              <button
+                type="button"
+                className="btn btn--primary btn--sm"
+                onClick={() => {
+                  jalankan('total')
+                }}
               >
-                <RincianBaris
-                  b={b}
-                  bisaUbah={bisaUbah}
-                  ambilMataUang={ambilMataUang}
-                  ambilKelompokTreaty={ambilKelompokTreaty}
-                  onUbah={(baru) => {
-                    setRows(rows.map((x, j) => (j === i ? baru : x)))
-                  }}
-                  onKonversi={(baru) => {
-                    jalankan('konversi', i, baru === undefined ? rows : rows.map((x, j) => (j === i ? baru : x)))
-                  }}
-                />
-              </KartuLipat>
-            ))}
-          </div>
+                {EGNPI.perbaruiTotal}
+              </button>
+            </div>
+            <div>
+              <button
+                type="button"
+                className="btn btn--sm"
+                onClick={() => {
+                  jalankan('nilai')
+                }}
+              >
+                {EGNPI.perbaruiNilai}
+              </button>
+            </div>
+          </TataPegaBlok>
         )}
-
-        {pesan.length > 0 && (
-          <ul className="tl-pesan" role="alert">
-            {pesan.map((p, i) => (
-              <li key={i}>{p}</li>
-            ))}
-          </ul>
-        )}
-        {gagal !== '' && (
-          <p className="tl-pesan" role="alert">
-            {gagal}
-          </p>
-        )}
-
-        <Bagian judul={EGNPI.totalPerMataUang}>
-          <GridTotal baris={perMataUang} />
-        </Bagian>
-
-        <Bagian
-          judul={EGNPI.totalIDR}
-          aksi={
-            bisaUbah && (
-              <div className="trin__aksi">
-                <button
-                  type="button"
-                  className="btn btn--primary btn--sm"
-                  onClick={() => {
-                    jalankan('total')
-                  }}
-                >
-                  {EGNPI.perbaruiTotal}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn--sm"
-                  onClick={() => {
-                    jalankan('nilai')
-                  }}
-                >
-                  {EGNPI.perbaruiNilai}
-                </button>
-              </div>
-            )
-          }
-        >
-          <div className="trin__egnpi-total">
-            <Field
-              label={`${EGNPI.totalIDR} (${EGNPI.satuanIDR})`}
-              value={tampil(totalIDR, DESIMAL_EGNPI.totalIDR)}
-              readOnly
-              onChange={() => undefined}
-            />
-            <Field
-              label={EGNPI.totalProporsi}
-              value={tampil(totalProporsi, DESIMAL_EGNPI.totalProporsi)}
-              readOnly
-              onChange={() => undefined}
-            />
-          </div>
-        </Bagian>
-      </div>
-    </Panel>
+      </TataPegaBlok>
+    </div>
   )
 }

@@ -20,20 +20,27 @@ import (
 // gudangTiruan menjawab dari peta, dan MENCATAT himpunan yang diterimanya -
 // supaya uji dapat membuktikan services tidak meneruskan yang tidak sah.
 type gudangTiruan struct {
+	// divisi - `M_LOGIN_GO.DIVISION_CODE` per akun (Force Edit divisi IT).
+	divisi map[string]string
+	// batasBahaya - medan akar `T_TREATY_HAZARD_LIMIT` (tab Event Limits).
+	batasBahaya map[string]string
 	isi         map[models.Himpunan][]models.Acuan
 	diminta     []models.Himpunan
 	galat       error
 	dibuat      []models.Kontrak
 	versiDibuat []models.VersiKontrak
 	dibaca      []int64
-	kontrak     models.KontrakDenganVersi
-	serupa      []int64
-	warisan     []models.Kontrak
-	diperbarui  []models.Kontrak
-	versiBaru   []models.VersiKontrak
-	cariWarisan []string
-	adaQS       bool
-	dicatat     []string
+	// indukSpreading - argumen tiap panggilan `BacaIndukSpreading`
+	// (grup · desc · mulai · kecuali); dipakai pagar parameter RD susunan.
+	indukSpreading [][4]string
+	kontrak        models.KontrakDenganVersi
+	serupa         []int64
+	warisan        []models.Kontrak
+	diperbarui     []models.Kontrak
+	versiBaru      []models.VersiKontrak
+	cariWarisan    []string
+	adaQS          bool
+	dicatat        []string
 
 	// Tab pendaratan migrasi 430, dan galatnya yang TERPISAH dari `galat`.
 	periodePelaporan []models.BarisPeriodeWarisan
@@ -411,7 +418,8 @@ func (_ *gudangTiruan) BacaSharePendaratan(_ context.Context, _ string) (models.
 	return models.SharePendaratan{}, nil
 }
 
-func (_ *gudangTiruan) BacaIndukSpreading(_ context.Context, _, _, _ string) ([]models.SusunanSpreading, error) {
+func (g *gudangTiruan) BacaIndukSpreading(_ context.Context, grup, desc, mulai, kecuali string) ([]models.SusunanSpreading, error) {
+	g.indukSpreading = append(g.indukSpreading, [4]string{grup, desc, mulai, kecuali})
 	return []models.SusunanSpreading{}, nil
 }
 
@@ -455,6 +463,11 @@ func (g *gudangTiruan) BacaLimitsAkarPendaratan(_ context.Context, _ string) (mo
 	return models.LimitsAkar{}, nil
 }
 
+// BacaBatasBahaya - medan akar `T_TREATY_HAZARD_LIMIT` (tab Event Limits).
+func (g *gudangTiruan) BacaBatasBahaya(_ context.Context, _ string) (map[string]string, error) {
+	return g.batasBahaya, nil
+}
+
 func (g *gudangTiruan) BacaTotalPenampung(_ context.Context, _ string) (map[string][]map[string]any, error) {
 	return map[string][]map[string]any{}, nil
 }
@@ -469,6 +482,14 @@ func (g *gudangTiruan) BacaRevisiPendaratan(_ context.Context, _ string) (reposi
 }
 
 func (g *gudangTiruan) BacaKursTahunan(_ context.Context, _ string) ([]models.BarisKursWarisan, error) {
+	return g.kurs, g.galatTab
+}
+
+func (g *gudangTiruan) DivisiAkun(_ context.Context, akun string) (string, error) {
+	return g.divisi[akun], nil
+}
+
+func (g *gudangTiruan) BacaKursKontrak(_ context.Context, _, _ string) ([]models.BarisKursWarisan, error) {
 	return g.kurs, g.galatTab
 }
 

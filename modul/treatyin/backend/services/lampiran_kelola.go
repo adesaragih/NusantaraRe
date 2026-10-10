@@ -84,9 +84,10 @@ func (l *Layanan) lampiranKontrak(ctx context.Context, idKontrak, idLampiran str
 	return models.BarisLampiranWarisan{}, false, nil
 }
 
-// kepalaKontrakLampiran - kepala `TREATY_IN` kontrak yang lampirannya disentuh.
+// kepalaKontrakLampiran - kepala kontrak (`TREATY_IN`, atau `TREATY_IN_EDM`
+// untuk penyesuaian) yang lampirannya disentuh.
 func (l *Layanan) kepalaKontrakLampiran(ctx context.Context, id string) (map[string]any, error) {
-	kepala, ada, err := l.gudang.BacaKepalaTreatyIn(ctx, id)
+	kepala, ada, err := l.kepalaLampiran(ctx, id)
 	if err != nil {
 		return nil, err
 	}

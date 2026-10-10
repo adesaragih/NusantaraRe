@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
 import { menuTabelDariMigrasi } from '../inti/frontend/uji/menuBersih'
-import { FOLDER_KORPUS } from './katalogKorpus'
+import { FOLDER_KORPUS, FOLDER_TANPA_MENU } from './katalogKorpus'
 import { modulBerkotakMasuk } from './Beranda'
 import { ambilModulAktif } from '../inti/frontend/klien'
 import { daftarPalet, KODE_MENU_KELOLA_USER, KODE_MENU_TEMPLATE_MANAGER, susunMenu } from '../inti/frontend/lib/daftarMenu'
@@ -37,7 +37,7 @@ describe('menu modul nonaktif hilang', () => {
     // Modul yang memang belum dimigrasi tetap berdiri - ia bukan modul nonaktif.
     // Daftarnya pernyataan `Status` di MODUL.md setiap modul, bukan angka di sini.
     const belum = tombol.filter((t) => t.halaman === null)
-    expect(belum.map((t) => t.label).sort()).toEqual(folderKorpusBelumDimigrasi())
+    expect(belum.map((t) => t.label).sort()).toEqual(folderKorpusBelumDimigrasi().filter((f) => !FOLDER_TANPA_MENU.includes(f)))
     expect(s.tanpaRute).toEqual([])
     expect(s.nonaktifBerute).toEqual([])
   })

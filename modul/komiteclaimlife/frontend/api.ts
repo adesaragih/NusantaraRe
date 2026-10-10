@@ -20,13 +20,6 @@ export interface BarisInboxKomite {
   statusBaris: string
 }
 
-export interface HalamanInboxKomite {
-  baris: BarisInboxKomite[]
-  total: number
-  halaman: number
-  ukuran: number
-}
-
 export interface AnggotaKasusKomite {
   urut: number
   jabatan: string
@@ -85,22 +78,6 @@ export interface RiwayatKomite {
 
 export async function ambilRiwayatKomite(kasusID: string): Promise<RiwayatKomite> {
   return minta<RiwayatKomite>(`/api/komite/${encodeURIComponent(kasusID)}/riwayat`)
-}
-
-/** Laporan harian "perlu intervensi" — `GET /api/komite/laporan-harian` (admin). */
-export interface LaporanHarianKomite {
-  tanggal: string
-  kosong: boolean
-  baris: (EfekKomite & { kasusId: string })[]
-}
-
-export async function ambilLaporanHarianKomite(): Promise<LaporanHarianKomite> {
-  return minta<LaporanHarianKomite>('/api/komite/laporan-harian')
-}
-
-/** Inbox Komite milik pelaku — `GET /api/komite`. */
-export async function ambilInboxKomite(halaman = 1): Promise<HalamanInboxKomite> {
-  return minta<HalamanInboxKomite>(`/api/komite?halaman=${String(halaman)}`)
 }
 
 /** Jawaban `POST /api/komite/{id}/keputusan`. */

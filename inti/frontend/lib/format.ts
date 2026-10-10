@@ -28,6 +28,28 @@ export function formatDate(v: string | Date | null | undefined): string {
   return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`;
 }
 
+/**
+ * Stempel waktu Pega → `DD-MM-YYYY HH:MM`.
+ *
+ * ⛔ Panel History menampilkan `20261009T050155.604 GMT` apa adanya sampai
+ * 8 Oktober 2026 — laporan pemilik proses. Bentuk itu stempel MESIN: ia
+ * terbaca sebagai satu deretan angka panjang, dan pembacanya harus memecahnya
+ * sendiri untuk tahu harinya.
+ *
+ * ⭐ Jamnya DIPERTAHANKAN, berbeda dari `formatDate`: di History urutan dua
+ * catatan pada hari yang sama hanya dapat dibedakan oleh jamnya.
+ *
+ * ⚠️ Zona waktunya TIDAK digeser — `GMT` di stempel itu ditampilkan sebagai
+ * jam yang sama. Menggesernya ke waktu setempat akan membuat catatan yang
+ * sama terbaca berbeda di dua mesin, dan nol di antaranya salah.
+ */
+export function formatDateTime(v: string | null | undefined): string {
+  if (!v) return "";
+  const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})/.exec(String(v).trim());
+  if (!m) return formatDate(v) || String(v);
+  return `${m[3]}-${m[2]}-${m[1]} ${m[4]}:${m[5]}`;
+}
+
 function parseDate(s: string): Date | null {
   const m = /^(\d{2})-(\d{2})-(\d{4})$/.exec(s);
   if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));

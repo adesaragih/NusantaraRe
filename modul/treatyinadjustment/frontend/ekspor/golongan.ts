@@ -28,6 +28,12 @@ const PERSEN = [
   // `% Treaty Limit` grid Co-Ins Scale (sel 265, `pySymbol` `%`) — grid itu
   // dipulihkan 7 Oktober 2026 (`pyIsVisibilityOption = ALWAYS`).
   'PctLimit',
+  // ⛔ `Total Share Pct` / `Spreading Total Pct` tampil MENTAH (`25`)
+  // sampai 8 Oktober 2026, sementara layar Treaty In memformatnya
+  // persen (`selAngka(['persen', 2], …)` di Prop, `persen(…)` di XOL).
+  // Laporan pemilik proses: spreading Adjustment *"seharusnya mirip
+  // seperti yang ada di treaty in"*.
+  'SpreadingTotalPct', 'SpreadingTotalPctXOL',
   // Rincian baris Installment — gambar Pega 38: `% Installment` 25,00 dan
   // `% Total` 100,0000 (empat desimal itu TIDAK ada di ekspor; cadangan
   // golongan yang dipakai).
