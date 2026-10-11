@@ -22,6 +22,10 @@ const TabelObjectItemType = "OBJECTITEMTYPE"
 type PembacaCsvObjek interface {
 	// RWKelurahan - RDBList\BrowseRW2_SQL: RW ber-zipcode itu dan NOTE = kelurahan (spasi diabaikan); baris pertama dipakai.
 	RWKelurahan(ctx context.Context, zip, kelurahan string) ([]models.RWCsv, error)
+	// RWKodePos - tiket 73 P6 (K73-58, CSV Aneka tanpa KELURAHAN): RW pertama ber-zipcode itu, urut NOTE / DISTRICTNAME /
+	// CITYNAME `[keputusan agent]` (Pega Obj-Browse Int-RW `.ZipCode = POSTAL_CODE AND .Note = KELURAHAN` dengan Note kosong -
+	// perilakunya `[belum terverifikasi]`); ok = false bila tidak ada.
+	RWKodePos(ctx context.Context, zip string) (models.RWCsv, bool, error)
 	// IDRiskAddress - Obj-Browse Int-RISKADDRESS `.ADDRESS = alamat AND .POSTALCODE = zip` (langkah 5.9) -> ID pertama; "" = tidak ada.
 	IDRiskAddress(ctx context.Context, alamat, zip string) (string, error)
 	// IDAkumulasi - Obj-Browse Int-ACCUMULATION `.NOTE = nama` (langkah 5.10) -> ID pertama; "" = tidak ada.
@@ -52,6 +56,11 @@ func NewCsvObjekOracle(d *db.DB) *CsvObjekOracle { return &CsvObjekOracle{db: d}
 func sqlRWKelurahan(rw string) string {
 	return "SELECT NOTE, DISTRICTNAME, CITYNAME, PROVINCENAME, NATION FROM " + rw +
 		" WHERE ZIPCODE = :1 AND REPLACE(NOTE, ' ', '') = REPLACE(:2, ' ', '')"
+}
+
+func sqlRWKodePos(rw string) string {
+	return "SELECT NOTE, DISTRICTNAME, CITYNAME, PROVINCENAME, NATION FROM " + rw +
+		" WHERE ZIPCODE = :1 ORDER BY NOTE, DISTRICTNAME, CITYNAME FETCH FIRST 1 ROWS ONLY"
 }
 
 func sqlCariIDRiskAddress(ra string) string {
@@ -143,6 +152,24 @@ func (r *CsvObjekOracle) RWKelurahan(ctx context.Context, zip, kelurahan string)
 		return nil, fmt.Errorf("repository: %s: %w", TabelRW, err)
 	}
 	return hasil, nil
+}
+
+// RWKodePos - lihat PembacaCsvObjek.
+func (r *CsvObjekOracle) RWKodePos(ctx context.Context, zip string) (models.RWCsv, bool, error) {
+	q, err := r.db.Qualify(TabelRW)
+	if err != nil {
+		return models.RWCsv{}, false, err
+	}
+	var v [5]sql.NullString
+	err = r.db.QueryRowContext(ctx, sqlRWKodePos(q), zip).Scan(&v[0], &v[1], &v[2], &v[3], &v[4])
+	if errors.Is(err, sql.ErrNoRows) {
+		return models.RWCsv{}, false, nil
+	}
+	if err != nil {
+		return models.RWCsv{}, false, fmt.Errorf("repository: baca %s: %w", TabelRW, err)
+	}
+	return models.RWCsv{Note: v[0].String, District: v[1].String, City: v[2].String, Province: v[3].String, Nation: v[4].String},
+		true, nil
 }
 
 // IDRiskAddress - lihat PembacaCsvObjek.

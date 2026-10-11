@@ -75,7 +75,7 @@ func TestBarisFacInProductionAneka(t *testing.T) {
 		if !reflect.DeepEqual(got, u.mau) {
 			t.Errorf("%s:\n%q", nama, got)
 		}
-		if b[0].IDPega != "ASM-FW-GISFW-WORK UJI-NB-1" || b[0].BusinessCode != "10048" || teksPolis(b[0].TSI) != "10" ||
+		if b[0].IDPega != "UJI-NB-1" || b[0].BusinessCode != "10048" || teksPolis(b[0].TSI) != "10" ||
 			teksPolis(b[0].RIComm) != "0.1" {
 			t.Errorf("%s dasar: %+v", nama, b[0])
 		}

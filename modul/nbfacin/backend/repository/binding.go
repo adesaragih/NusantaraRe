@@ -48,7 +48,7 @@ func sqlFlagBinding(work string) string {
 
 // sqlCariJSONOffer - COUNT prosedur + nomor offer yang sudah ada (GetNoOffer_Sql memungut nomor baris case itu).
 func sqlCariJSONOffer(jo string) string {
-	return "SELECT COUNT(*), MAX(NOOFFER) FROM " + jo + " WHERE IDPEGA = :1"
+	return "SELECT COUNT(*), MAX(NOOFFER) FROM " + jo + " WHERE IDPEGA IN (:1, :2)" // dua bentuk: case lama tidak disisip ganda
 }
 
 func sqlSisipJSONOffer(jo string) string {
@@ -56,10 +56,10 @@ func sqlSisipJSONOffer(jo string) string {
 }
 
 func sqlUbahJSONOffer(jo string) string {
-	return "UPDATE " + jo + " SET JSONDATA = :1 WHERE IDPEGA = :2"
+	return "UPDATE " + jo + " SET JSONDATA = :1 WHERE IDPEGA IN (:2, :3)"
 }
 
-func sqlHapusFacInOffer(fo string) string { return "DELETE FROM " + fo + " WHERE IDPEGA = :1" }
+func sqlHapusFacInOffer(fo string) string { return "DELETE FROM " + fo + " WHERE IDPEGA IN (:1, :2)" }
 
 // kolomFacInOffer - urutan kolom InsertOfferProduction_Sql (50); GROUPNAME / TOP_RISK di akhir seperti sumbernya.
 var kolomFacInOffer = []string{"IDPEGA", "NOOFFER", "BUSINESSCODE", "CEDINGCO", "SOB", "BEGINDATE", "ENDDATE", "PROVINCE",
@@ -75,7 +75,7 @@ var kolomFacInOffer = []string{"IDPEGA", "NOOFFER", "BUSINESSCODE", "CEDINGCO", 
 // JSON_OFFER ber-NOOFFER itu.
 func nilaiKolomFacInOffer(kolom, jo string) string {
 	switch kolom {
-	case "BEGINDATE", "ENDDATE":
+	case "BEGINDATE", "ENDDATE", "SAILDATE":
 		return "TO_DATE(?, 'DD/MM/YYYY HH24:MI:SS')"
 	case "RATE":
 		return "REPLACE(?, '.', ',')"
@@ -83,8 +83,7 @@ func nilaiKolomFacInOffer(kolom, jo string) string {
 		return angkaMasuk("?")
 	case "SPREAD_DATE":
 		return "(SELECT MAX(j.TGL_INPUT) FROM " + jo + " j WHERE j.NOOFFER = ?)"
-	case "TRADING_NAME", "CONVEYANCE_NAME", "LICENSEPLATE", "TYPE_NAME", "MODEL_NAME", "ENGINENO", "IDSHIP",
-		"FROMRUTE", "TORUTE", "SAILDATE":
+	case "LICENSEPLATE", "TYPE_NAME", "MODEL_NAME", "ENGINENO":
 		return "NULL"
 	}
 	return "?"
@@ -120,7 +119,10 @@ func argFacInOffer(b models.BarisFacInOffer, noOffer string) []any {
 		"OCCUPATIONCODE": k(b.OccupationCode), "MARKETINGOFFICERCODE": k(b.MarketingOfficerCode),
 		"INSUREDNAME": k(b.InsuredName), "PERCENT_RI_COMM": ikatDesimal(b.PercentRIComm), "RISLIPCEDING": k(b.RISlipCeding),
 		"GROUP_TYPE": k(b.GroupType), "GROUPNAME": k(b.GroupName), "TOP_RISK": k(b.TopRisk),
-		"NOSERIAL": k(b.NoSerial)} // tiket 73 P4: Aneka cabang 13 `.SerialNo`; "" = NULL (FIRE / Bonding / Golf "NULL")
+		"NOSERIAL": k(b.NoSerial), // tiket 73 P4: Aneka cabang 13 `.SerialNo`; "" = NULL (FIRE / Bonding / Golf "NULL")
+		// tiket 74 P5: cabang Marine Cargo langkah 16; "" = NULL (cabang lain, sama dengan NULL tetap sebelumnya)
+		"TRADING_NAME": k(b.TradingName), "CONVEYANCE_NAME": k(b.ConveyanceName), "IDSHIP": k(b.IDShip),
+		"FROMRUTE": k(b.FromRute), "TORUTE": k(b.ToRute), "SAILDATE": k(b.SailDate)}
 	var arg []any
 	for _, kol := range kolomFacInOffer {
 		if strings.Contains(nilaiKolomFacInOffer(kol, ""), "?") {
@@ -159,7 +161,8 @@ func (r *SubmitOracle) tulisBinding(ctx context.Context, tx *db.Tx, t tabelSubmi
 	}
 	var ada int
 	var noOffer sql.NullString
-	if err := tx.QueryRowContext(ctx, q, idPega).Scan(&ada, &noOffer); err != nil {
+	polos, awalan := DuaBentukIDPega(idPega)
+	if err := tx.QueryRowContext(ctx, q, polos, awalan).Scan(&ada, &noOffer); err != nil {
 		return fmt.Errorf("repository: baca %s: %w", TabelJSONOffer, err)
 	}
 	if ada == 0 {
@@ -175,10 +178,11 @@ func (r *SubmitOracle) tulisBinding(ctx context.Context, tx *db.Tx, t tabelSubmi
 		if _, err := jalankan(ctx, tx, sqlSisipJSONOffer(t.jo), TabelJSONOffer, "1"+urut, idPega, b.JSONData, noOffer.String); err != nil {
 			return err
 		}
-	} else if _, err := jalankan(ctx, tx, sqlUbahJSONOffer(t.jo), TabelJSONOffer, b.JSONData, idPega); err != nil {
+	} else if _, err := jalankan(ctx, tx, sqlUbahJSONOffer(t.jo), TabelJSONOffer, b.JSONData, polos, awalan); err != nil {
 		return err
 	}
-	if _, err := jalankan(ctx, tx, sqlHapusFacInOffer(t.fo), "hapus "+TabelFacInOffer, caseID); err != nil {
+	fp, fa := DuaBentukIDPega(caseID)
+	if _, err := jalankan(ctx, tx, sqlHapusFacInOffer(t.fo), "hapus "+TabelFacInOffer, fp, fa); err != nil {
 		return err
 	}
 	sisip := sqlSisipFacInOffer(t.fo, t.jo)
@@ -263,7 +267,7 @@ func sqlKonfirmasiBinding(general string) string {
 // sqlTglBind - UpdateTgl_BindJsonOffer_SQL (`UPDATE JSON_OFFER a SET a.TGL_BIND = sysdate, jsondata = … WHERE
 // a.JSONDATA.IDNewBisnis = pyLabel`) dikunci IDPEGA seperti tiket 63 (keputusan agent D6); JSONDATA minimal (tiket 63 D1).
 func sqlTglBind(jo string) string {
-	return "UPDATE " + jo + " SET TGL_BIND = SYSDATE, JSONDATA = :1 WHERE IDPEGA = :2"
+	return "UPDATE " + jo + " SET TGL_BIND = SYSDATE, JSONDATA = :1 WHERE IDPEGA IN (:2, :3)"
 }
 
 // TulisTekanBinding - lihat PenyimpanSubmit. FACINPERFORMANCE TIDAK ditulis di sini (keputusan work owner D4: BINDING/ACCEPT
@@ -293,13 +297,14 @@ func (r *SubmitOracle) TulisTekanBinding(ctx context.Context, tx *db.Tx, b model
 	if err := satu(sqlKonfirmasiBinding(t.general), "CONFIRM_BINDING", ErrSudahBinding, b.CaseID); err != nil {
 		return err
 	}
-	if err := satu(sqlTglBind(t.jo), "TGL_BIND "+TabelJSONOffer, ErrPenawaranTidakAda, b.JSONData, b.IDPega); err != nil {
+	if err := satu(sqlTglBind(t.jo), "TGL_BIND "+TabelJSONOffer, ErrPenawaranTidakAda, b.JSONData, b.IDPega,
+		AwalanIDPega+IDPegaProduksi(b.IDPega)); err != nil {
 		return err
 	}
 	k := db.KosongJadiNil
 	p := b.Riwayat
 	_, err = jalankan(ctx, tx, sqlSisipRiwayatProduksi(t.produksi), "riwayat "+TabelRiwayatProduksi, b.IDPega, k(p.TypePolis),
 		k(p.Posisi), k(p.PIC), p.TglInp, k(p.Div), k(p.Type), k(p.Putaran), k(p.Approval), k(p.Keterangan), k(p.AksesLogin),
-		ikatDesimal(p.PercentRNM), b.IDPega)
+		ikatDesimal(p.PercentRNM), b.IDPega, AwalanIDPega+IDPegaProduksi(b.IDPega))
 	return err
 }

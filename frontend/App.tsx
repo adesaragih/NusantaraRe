@@ -175,12 +175,31 @@ export default function App() {
   // berkas modul lain tampil di modal selebar layar di atas halaman yang sedang dibuka - `PropsRute.onLihatBerkas`.
   // Rute modulnya dipasang lagi di dalam modal (salinan kedua, keadaannya sendiri) dan berkasnya dibuka lewat jalur
   // kotak masuk Beranda (`bukaKasus`); tombol Back berkas itu (`onBeranda`) dan tombol X menutup jendelanya.
-  const [jendela, setJendela] = useState<{ modul: string; id: string; halaman: string; ketuk: number } | null>(null)
+  // `id` null = isi MENU modul itu (`PropsRute.onBukaMenu`, 10-10-2026) - tanpa `bukaKasus`, bukan tampilan saja; `baru` =
+  // langsung form tambah modul itu (`PropsRute.mulaiBaru`).
+  const [jendela, setJendela] = useState<{ modul: string; id: string | null; halaman: string; ketuk: number; baru?: boolean } | null>(
+    null,
+  )
   const lihatBerkas = useCallback(
     (modul: string, id: string) => {
       const m = MODUL_FRONTEND.find((x) => x.nama === modul)
       if (m === undefined || !modulDipasang(m.nama, modulBoleh)) return false
       setJendela((lama) => ({ modul: m.nama, id, halaman: m.halamanAwal, ketuk: (lama?.ketuk ?? 0) + 1 }))
+      return true
+    },
+    [modulBoleh],
+  )
+  const bukaMenu = useCallback(
+    (modul: string, opsi?: { baru?: boolean }) => {
+      const m = MODUL_FRONTEND.find((x) => x.nama === modul)
+      if (m === undefined || !modulDipasang(m.nama, modulBoleh)) return false
+      setJendela((lama) => ({
+        modul: m.nama,
+        id: null,
+        halaman: m.halamanAwal,
+        ketuk: (lama?.ketuk ?? 0) + 1,
+        baru: opsi?.baru === true,
+      }))
       return true
     },
     [modulBoleh],
@@ -337,9 +356,26 @@ export default function App() {
             }}
             onLihatBerkas={lihatBerkas}
             onBukaModul={bukaModul}
+            onBukaMenu={bukaMenu}
           />
         ))}
-        {jendela !== null && modulJendela !== undefined && (
+        {/*
+          Form tambah yang sudah berupa jendela sendiri (`MenuModul.formBaruBerjendela`, mis. popup Add account): tanpa
+          bingkai jendela Shell - work owner 10-10-2026 "HANYA MUNCULIN INI SAJA, MENU UTAMA ACCOUNT NYA TIDAK USAH".
+        */}
+        {jendela !== null && modulJendela !== undefined && jendela.baru === true && modulJendela.formBaruBerjendela === true && (
+          <modulJendela.Rute
+            key={jendela.ketuk}
+            halaman={jendela.halaman}
+            masuk={masuk}
+            onPindah={() => undefined}
+            mulaiBaru
+            onBeranda={() => {
+              setJendela(null)
+            }}
+          />
+        )}
+        {jendela !== null && modulJendela !== undefined && !(jendela.baru === true && modulJendela.formBaruBerjendela === true) && (
           <Modal judul={modulJendela.kelompok} onTutup={() => setJendela(null)} labelBatal="Close" penuh>
             <modulJendela.Rute
               key={jendela.ketuk}
@@ -348,7 +384,8 @@ export default function App() {
               onPindah={(h) => {
                 setJendela((j) => (j === null ? j : { ...j, halaman: h }))
               }}
-              bukaKasus={{ id: jendela.id, ketuk: jendela.ketuk, hanyaLihat: true }}
+              bukaKasus={jendela.id === null ? undefined : { id: jendela.id, ketuk: jendela.ketuk, hanyaLihat: true }}
+              mulaiBaru={jendela.baru === true}
               onBeranda={() => {
                 setJendela(null)
               }}

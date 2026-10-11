@@ -67,8 +67,11 @@ type tabelAneka struct {
 	aneka, marine, aviasi, he, memo string
 }
 
-func (r *ObjekOracle) tabelAneka() (tabelAneka, error) {
-	t, err := r.tabel()
+func (r *ObjekOracle) tabelAneka() (tabelAneka, error) { return tabelAnekaDari(r.db.Qualify) }
+
+// tabelAnekaDari - lihat tabelObjekDari.
+func tabelAnekaDari(q func(string) (string, error)) (tabelAneka, error) {
+	t, err := tabelObjekDari(q)
 	if err != nil {
 		return tabelAneka{}, err
 	}
@@ -78,11 +81,11 @@ func (r *ObjekOracle) tabelAneka() (tabelAneka, error) {
 		ke   *string
 	}{{TabelAnekaList, &a.aneka}, {TabelMarineHull, &a.marine}, {TabelAviationHull, &a.aviasi}, {TabelVehicleHE, &a.he},
 		{TabelMemorandumAccept, &a.memo}} {
-		q, err := r.db.Qualify(x.nama)
+		n, err := q(x.nama)
 		if err != nil {
 			return a, err
 		}
-		*x.ke = q
+		*x.ke = n
 	}
 	return a, nil
 }
@@ -554,6 +557,8 @@ type tulisAneka struct {
 	uid   func() (string, error)
 	baru  map[string]string
 	ganti map[string]bool // posisi objek yang coverage-nya dikirim (diganti utuh, P2)
+	// awal - SEQ_NO lokasi terakhir yang sudah ada (tiket 73 P6, unggah CSV berkelompok); 0 = lokasi 1..n (GantiObjekAneka).
+	awal int
 }
 
 type langkahSisip struct {
@@ -573,7 +578,8 @@ func (w *tulisAneka) jalankan(ctx context.Context, l []langkahSisip) error {
 func (w *tulisAneka) sisipLokasi(ctx context.Context, id string, lokasi []models.LokasiAneka) error {
 	t := w.t
 	k := db.KosongJadiNil
-	for i, o := range lokasi {
+	for n, o := range lokasi {
+		i := w.awal + n
 		ids := make([]string, 3)
 		for j, seq := range []string{sequenceLocationList, sequenceProperty, sequenceRiskLocation} {
 			var err error
@@ -678,11 +684,22 @@ func (w *tulisAneka) sisipObjek(ctx context.Context, induk, tabelInduk, jalur, j
 
 // sisipAnekaBerkelompok - pola sisipBerkelompok (tulisberkelompok.go): lintasan hitung, ID berkelompok, lintasan tulis,
 // INSERT array-bind. Jawab posisi -> ID objek baru.
+// tabelPerBarisAneka - bug DEV 10-10-2026 (ORA-01722 T_SPREADINGLIST tetap muncul dengan kolomArrayBertipe, biner DEV dibangun
+// ulang 11:18): coverage / deductible / spreading jalur Aneka disisip PER BARIS dengan bind skalar - bentuk yang terbukti jalan di
+// DEV untuk spreading FIRE (TulisSpreading, SQL sqlSisipSpreading yang sama); tetap SETELAH induknya (urutan kelompok).
+var tabelPerBarisAneka = map[string]bool{TabelSpreadingList: true, TabelCoverageList: true, TabelDeductibleList: true}
+
 func sisipAnekaBerkelompok(ctx context.Context, e eksekutorKelompok, t tabelAneka, id string, lokasi []models.LokasiAneka,
 	uid func() (string, error)) (map[string]string, map[string]bool, error) {
+	return sisipAnekaBerkelompokDari(ctx, e, t, id, lokasi, uid, 0)
+}
+
+// sisipAnekaBerkelompokDari - sisipAnekaBerkelompok dengan SEQ_NO lokasi awal+1.. (tiket 73 P6).
+func sisipAnekaBerkelompokDari(ctx context.Context, e eksekutorKelompok, t tabelAneka, id string, lokasi []models.LokasiAneka,
+	uid func() (string, error), awal int) (map[string]string, map[string]bool, error) {
 	hitung := &penghitungID{n: map[string]int{}}
 	nolUID := func() (string, error) { return "", nil }
-	if err := (&tulisAneka{t: t, p: hitung, uid: nolUID, baru: map[string]string{}, ganti: map[string]bool{}}).sisipLokasi(ctx, id,
+	if err := (&tulisAneka{t: t, p: hitung, uid: nolUID, baru: map[string]string{}, ganti: map[string]bool{}, awal: awal}).sisipLokasi(ctx, id,
 		lokasi); err != nil {
 		return nil, nil, err
 	}
@@ -706,7 +723,7 @@ func sisipAnekaBerkelompok(ctx context.Context, e eksekutorKelompok, t tabelAnek
 		}
 	}
 	kel := &penulisKelompok{id: kumpulan, indeks: map[string]*kelompokSisip{}}
-	w := &tulisAneka{t: t, p: kel, uid: uid, baru: map[string]string{}, ganti: map[string]bool{}}
+	w := &tulisAneka{t: t, p: kel, uid: uid, baru: map[string]string{}, ganti: map[string]bool{}, awal: awal}
 	if err := w.sisipLokasi(ctx, id, lokasi); err != nil {
 		return nil, nil, err
 	}
@@ -716,11 +733,8 @@ func sisipAnekaBerkelompok(ctx context.Context, e eksekutorKelompok, t tabelAnek
 		}
 	}
 	for _, k := range kel.kelompok {
-		for awal := 0; awal < len(k.baris); awal += ukuranKelompok {
-			akhir := min(awal+ukuranKelompok, len(k.baris))
-			if err := e.sisipArray(ctx, k.q, k.tabel, kolomArray(k.baris[awal:akhir]), akhir-awal); err != nil {
-				return nil, nil, err
-			}
+		if err := jalankanKelompok(ctx, e, k, tabelPerBarisAneka[k.tabel]); err != nil {
+			return nil, nil, err
 		}
 	}
 	return w.baru, w.ganti, nil

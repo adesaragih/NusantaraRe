@@ -2,20 +2,28 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
+	"hash/fnv"
 	"reflect"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
 	"nusantarare/modul/nbfacin/backend/models"
 )
 
-// urutTiruan - sequence tiruan: nilai ke-k tiap sequence = "<seq>-k" (urutan per sequence, seperti NEXTVAL).
+// urutTiruan - sequence tiruan: nilai ke-k tiap sequence = dasar(seq) + k, teks digit seperti NEXTVAL (kolom NUMBER(19),
+// periksaBindBaris); dasar dari nama sequence sehingga sama di kedua jalur apa pun urutan pengambilannya.
 type urutTiruan struct{ n map[string]int }
 
 func (u *urutTiruan) berikut(seq string) string {
+	h := fnv.New32a()
+	h.Write([]byte(seq))
 	u.n[seq]++
-	return fmt.Sprintf("%s-%d", seq, u.n[seq])
+	return fmt.Sprint(int64(h.Sum32()%9000+1000)*1000000 + int64(u.n[seq]))
 }
 
 type barisRekam struct {
@@ -49,6 +57,8 @@ type eksekutorTiruan struct {
 	rt      int
 	urutan  []string // teks SQL tiap eksekusi
 	selisih int      // ID dikembalikan per sequence = n + selisih (uji pengaman)
+	seragam bool     // jalur Aneka: setiap kolom array wajib lolos periksaKolomSeragam
+	gagal   string   // tabel yang eksekusinya ditolak (uji pembungkus galat)
 }
 
 func (e *eksekutorTiruan) nomorBerkelompok(_ context.Context, seq []string, n int) ([][]string, error) {
@@ -62,9 +72,17 @@ func (e *eksekutorTiruan) nomorBerkelompok(_ context.Context, seq []string, n in
 	return hasil, nil
 }
 
-func (e *eksekutorTiruan) sisipArray(_ context.Context, q, _ string, kolom []any, n int) error {
+func (e *eksekutorTiruan) sisipArray(_ context.Context, q, tabel string, kolom []any, n int) error {
+	if tabel == e.gagal {
+		return errors.New("ORA-01722: invalid number")
+	}
 	e.rt++
 	e.urutan = append(e.urutan, q)
+	if e.seragam {
+		if err := periksaKolomSeragam(q, kolom); err != nil {
+			return err
+		}
+	}
 	for r := 0; r < n; r++ {
 		arg := make([]any, len(kolom))
 		for c := range kolom {
@@ -75,6 +93,41 @@ func (e *eksekutorTiruan) sisipArray(_ context.Context, q, _ string, kolom []any
 			arg[c] = v[r]
 		}
 		e.baris = append(e.baris, barisRekam{q, arg})
+	}
+	return nil
+}
+
+// bindAngkaMasuk - nomor bind (:n) yang diterima angkaMasuk (TO_NUMBER ber-mask) dalam teks SQL.
+var bindAngkaMasuk = regexp.MustCompile(`TO_NUMBER\(:(\d+), 'FM`)
+
+// periksaKolomSeragam - instrumen bug DEV 10-10-2026 (ORA-01722 T_SPREADINGLIST, lihat kolomArrayBertipe): setiap kolom
+// array-bind SATU tipe Go untuk semua baris dan tanpa nil telanjang; nilai teks di bind angkaMasuk wajib cocok PolaAngkaMasuk.
+func periksaKolomSeragam(q string, kolom []any) error {
+	angka := map[int]bool{}
+	for _, m := range bindAngkaMasuk.FindAllStringSubmatch(q, -1) {
+		n, _ := strconv.Atoi(m[1])
+		angka[n-1] = true
+	}
+	for c, k := range kolom {
+		v := k.([]any)
+		for r, x := range v {
+			if x == nil && len(v) == 1 {
+				continue // n == 1: bind skalar (argEksekusi), NULL sah seperti jalur per baris
+			}
+			if x == nil {
+				return fmt.Errorf("kolom %d baris %d: nil telanjang", c+1, r+1)
+			}
+			if len(v) > 1 && reflect.TypeOf(x) != reflect.TypeOf(v[0]) {
+				return fmt.Errorf("kolom %d: tipe %T baris 1, %T baris %d", c+1, v[0], x, r+1)
+			}
+			s, ok := x.(string)
+			if n, adaN := x.(sql.NullString); adaN {
+				s, ok = n.String, n.Valid
+			}
+			if ok && angka[c] && !PolaAngkaMasuk.MatchString(s) {
+				return fmt.Errorf("kolom %d baris %d: %q di luar mask angkaMasuk", c+1, r+1, s)
+			}
+		}
 	}
 	return nil
 }
@@ -143,16 +196,77 @@ func bandingkanJalur(t *testing.T, objek []models.ObjekFire) (int, int) {
 	if err := (&tulisObjek{t: tbObjekUji, p: lama, uid: uidUrut()}).sisipObjek(ctx, "UJI-NB-1", objek); err != nil {
 		t.Fatal(err)
 	}
-	baru := &eksekutorTiruan{u: &urutTiruan{n: map[string]int{}}}
+	baru := &eksekutorTiruan{u: &urutTiruan{n: map[string]int{}}, seragam: true}
 	if err := sisipBerkelompok(ctx, baru, tbObjekUji, "UJI-NB-1", objek, uidUrut()); err != nil {
 		t.Fatal(err)
 	}
 	ml, ul := perSQL(lama.baris)
-	mb, ub := perSQL(baru.baris)
+	mb, ub := perSQL(nilaiAsli(baru.baris))
 	if !reflect.DeepEqual(ml, mb) || !reflect.DeepEqual(ul, ub) || len(lama.baris) != len(baru.baris) {
 		t.Fatalf("baris berbeda: lama %d baris %d SQL, baru %d baris %d SQL", len(lama.baris), len(ul), len(baru.baris), len(ub))
 	}
 	return lama.rt, baru.rt
+}
+
+// nilaiAsli - baris berkelompok dengan sql.NullString (kolomArrayBertipe) dikembalikan ke nilai jalur lama (Valid -> teks,
+// tidak Valid -> nil): isi data yang disimpan tidak berubah.
+func nilaiAsli(baris []barisRekam) []barisRekam {
+	hasil := make([]barisRekam, len(baris))
+	for i, b := range baris {
+		arg := make([]any, len(b.arg))
+		for c, x := range b.arg {
+			arg[c] = x
+			if n, ok := x.(sql.NullString); ok {
+				arg[c] = nil
+				if n.Valid {
+					arg[c] = n.String
+				}
+			}
+		}
+		hasil[i] = barisRekam{b.q, arg}
+	}
+	return hasil
+}
+
+// TestSisipBerkelompokFireNullTerakhir - bug DEV 10-10-2026 (pencegahan FIRE, work owner 10-10-2026): fixture objekKecilUji
+// memuat kolom T_LOCATIONLIST bercampur NULL; jalur FIRE lolos periksaKolomSeragam, dan kolom yang NULL di baris TERAKHIR
+// setelah baris berisi (bentuk pemicu ORA-01722) memang ada di fixture - instrumen diuji atas bentuk kolomArray lama.
+func TestSisipBerkelompokFireNullTerakhir(t *testing.T) {
+	ctx := context.Background()
+	baru := &eksekutorTiruan{u: &urutTiruan{n: map[string]int{}}, seragam: true}
+	if err := sisipBerkelompok(ctx, baru, tbObjekUji, "UJI-NB-1", objekKecilUji(), uidUrut()); err != nil {
+		t.Fatal(err)
+	}
+	lama := &rekamLangsung{u: &urutTiruan{n: map[string]int{}}}
+	if err := (&tulisObjek{t: tbObjekUji, p: lama, uid: uidUrut()}).sisipObjek(ctx, "UJI-NB-1", objekKecilUji()); err != nil {
+		t.Fatal(err)
+	}
+	ml, ul := perSQL(lama.baris)
+	nullTerakhir := 0
+	for _, q := range ul {
+		baris := ml[q]
+		if len(baris) < 2 {
+			continue
+		}
+		kolom := kolomArray(baris)
+		for _, k := range kolom {
+			v := k.([]any)
+			adaIsi := false
+			for _, x := range v[:len(v)-1] {
+				adaIsi = adaIsi || x != nil
+			}
+			if adaIsi && v[len(v)-1] == nil {
+				nullTerakhir++
+			}
+		}
+		if strings.HasPrefix(q, "INSERT INTO LOC ") && periksaKolomSeragam(q, kolom) == nil {
+			t.Error("instrumen: kolom T_LOCATIONLIST bercampur NULL bentuk lama lolos")
+		}
+	}
+	if nullTerakhir == 0 {
+		t.Error("fixture tanpa kolom NULL di baris terakhir setelah baris berisi")
+	}
+	t.Logf("kolom NULL di baris terakhir setelah baris berisi (jalur lama): %d", nullTerakhir)
 }
 
 // TestSisipBerkelompokSetara - K66-B13: objek kecil (semua jenis anak, dua varian SQL deductible) dan CSV 1128 baris sintetis
@@ -164,7 +278,7 @@ func TestSisipBerkelompokSetara(t *testing.T) {
 		t.Errorf("round-trip: kecil %d -> %d, CSV %d -> %d", kecilLama, kecilBaru, csvLama, csvBaru)
 	}
 	// Urutan eksekusi: tabel induk sebelum anak.
-	baru := &eksekutorTiruan{u: &urutTiruan{n: map[string]int{}}}
+	baru := &eksekutorTiruan{u: &urutTiruan{n: map[string]int{}}, seragam: true}
 	if err := sisipBerkelompok(context.Background(), baru, tbObjekUji, "UJI-NB-1", objekKecilUji(), uidUrut()); err != nil {
 		t.Fatal(err)
 	}
@@ -201,6 +315,44 @@ func TestSisipBerkelompokRoundTrip(t *testing.T) {
 	}
 	if q := sqlNomorBerkelompok([]string{"S.A", "S.B"}); q != "SELECT S.A.NEXTVAL, S.B.NEXTVAL FROM DUAL CONNECT BY LEVEL <= :1" {
 		t.Errorf("%q", q)
+	}
+}
+
+// TestKolomArrayBertipe - bug DEV 10-10-2026: kolom teks yang memuat nil -> sql.NullString di setiap baris (NULL di posisi mana
+// pun, termasuk baris terakhir); kolom tanpa nil apa adanya;
+// kolom bercampur tipe / tipe bukan teks bercampur NULL -> galat. Instrumen periksaKolomSeragam diuji dulu atas jawaban yang
+// diketahui: bentuk kolomArray lama (nil di baris terakhir) DITOLAK, bentuk kolomArrayBertipe diterima.
+func TestKolomArrayBertipe(t *testing.T) {
+	q := "INSERT INTO S.SPR (A, B, C) VALUES (:1, :2, " + angkaMasuk(":3") + ")"
+	baris := [][]any{{"1", 1, "40"}, {"2", 2, nil}} // bentuk DEV: desimal baris terakhir NULL
+	if err := periksaKolomSeragam(q, kolomArray(baris)); err == nil {
+		t.Error("instrumen: nil di baris terakhir lolos")
+	}
+	for _, v := range []any{"0.123456789", sql.NullString{String: "1E+3", Valid: true}} {
+		if err := periksaKolomSeragam(q, []any{[]any{"1"}, []any{1}, []any{v}}); err == nil {
+			t.Errorf("instrumen: %v di angkaMasuk lolos", v)
+		}
+	}
+	if err := periksaKolomSeragam(q, []any{[]any{"1", "2"}, []any{1, "2"}, []any{"1", "2"}}); err == nil {
+		t.Error("instrumen: kolom bercampur tipe lolos")
+	}
+	kolom, err := kolomArrayBertipe(baris)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(kolom, []any{[]any{"1", "2"}, []any{1, 2}, []any{sql.NullString{String: "40", Valid: true}, sql.NullString{}}}) {
+		t.Errorf("kolom: %v", kolom)
+	}
+	if err := periksaKolomSeragam(q, kolom); err != nil {
+		t.Errorf("instrumen menolak bentuk benar: %v", err)
+	}
+	if k, err := kolomArrayBertipe([][]any{{nil}, {nil}}); err != nil || !reflect.DeepEqual(k, []any{[]any{sql.NullString{}, sql.NullString{}}}) {
+		t.Errorf("kolom NULL semua: %v %v", k, err)
+	}
+	for _, salah := range [][][]any{{{1}, {nil}}, {{"a"}, {1}}, {{nil}, {2}}} {
+		if _, err := kolomArrayBertipe(salah); err == nil {
+			t.Errorf("%v: tanpa galat", salah)
+		}
 	}
 }
 

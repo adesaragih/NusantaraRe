@@ -163,6 +163,9 @@ type BarisFacInOffer struct {
 	// NoSerial - NOSERIAL (tiket 73 P4: `.SerialNo` objek Aneka cabang 13); "" = NULL (Pega "NULL", cabang lain).
 	NoSerial                                                    string
 	PercentRNM, PercentShareSpreaded, TSI, Premi, PercentRIComm *apd.Decimal
+	// Tiket 74 P5 (cabang Marine Cargo langkah 16): TRADING_NAME / CONVEYANCE_NAME / IDSHIP / FROMRUTE / TORUTE / SAILDATE
+	// (teks "DD/MM/YYYY HH24:MI:SS"); "" = NULL (cabang lain).
+	TradingName, ConveyanceName, IDShip, FromRute, ToRute, SailDate string
 }
 
 // ValiditasUW - DAYS_VALIDITY / DATE_VALIDITY / WAITING_BIND_DATE / COMMENT_TEXT T_GENERAL_POLIS (tanggal = teks Pega DateTime).

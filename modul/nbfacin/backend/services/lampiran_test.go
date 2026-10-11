@@ -40,7 +40,7 @@ func (l *lampiranTiruan) KategoriLampiran(context.Context) ([]string, error) { r
 func (l *lampiranTiruan) JumlahLampiran(_ context.Context, idPega string) (map[string]int, error) {
 	out := map[string]int{}
 	for _, d := range l.dok {
-		if d.IDPega == idPega {
+		if repository.IDPegaProduksi(d.IDPega) == repository.IDPegaProduksi(idPega) { // dua bentuk (idpegaproduksi.go)
 			out[d.Kategori2]++
 		}
 	}
@@ -56,7 +56,7 @@ func (l *lampiranTiruan) lengkapi(d models.DokumenPolis) models.DokumenPolis {
 func (l *lampiranTiruan) DaftarLampiran(_ context.Context, idPega, kategori, _, _ string) ([]models.DokumenPolis, error) {
 	var out []models.DokumenPolis
 	for _, d := range l.dok {
-		if d.IDPega == idPega && d.Kategori2 == kategori {
+		if repository.IDPegaProduksi(d.IDPega) == repository.IDPegaProduksi(idPega) && d.Kategori2 == kategori {
 			out = append(out, l.lengkapi(d))
 		}
 	}
@@ -65,7 +65,7 @@ func (l *lampiranTiruan) DaftarLampiran(_ context.Context, idPega, kategori, _, 
 }
 func (l *lampiranTiruan) AmbilLampiran(_ context.Context, idPega, id, _, _ string) (models.DokumenPolis, error) {
 	d, ada := l.dok[id]
-	if !ada || d.IDPega != idPega {
+	if !ada || repository.IDPegaProduksi(d.IDPega) != repository.IDPegaProduksi(idPega) {
 		return models.DokumenPolis{}, repository.ErrLampiranTidakAda
 	}
 	return l.lengkapi(d), nil
@@ -295,7 +295,7 @@ func TestUnggahLampiran(t *testing.T) {
 	}
 	d := r.repo.dok[id]
 	imageID := d.TStorageID
-	if d.IDPega != "ASM-FW-GISFW-WORK UJI-NB-1" || d.NamaFile != "Slip Final.PDF" || d.Mime != "pdf" || d.Kategori1 != "Reas" ||
+	if d.IDPega != "UJI-NB-1" || d.NamaFile != "Slip Final.PDF" || d.Mime != "pdf" || d.Kategori1 != "Reas" ||
 		d.Kategori2 != "OFFER" || d.Operator != "UJI-MKT" || len(imageID) != unggah.PanjangImageID {
 		t.Fatalf("dokumen %+v", d)
 	}

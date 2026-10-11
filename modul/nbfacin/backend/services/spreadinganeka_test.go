@@ -616,3 +616,37 @@ func TestSpreadingOtomatisEngineeringBatasDibulatkan(t *testing.T) {
 		t.Errorf("baris: %v", s)
 	}
 }
+
+// TestKapasitasLokasiEngineering - tiket 48 (laporan work owner 11-10-2026), GetKapasitasTreaty cabang IsEngineering yang HIDUP
+// (NB 10.2.1.1.4.20.5 L26916; 10.2.1.1.3 ber-`//` mati; DDL 9.2.1.1.3.19.5): lokasi non top risk TSI RNM > maxtsi 700 -> pesan
+// bernomor lokasi 1-based; tepat 700 tidak; top risk -> pesan lama.
+func TestKapasitasLokasiEngineering(t *testing.T) {
+	ctx := context.Background()
+	src := &spreadingTiruan{kap: &kapasitasUji}
+	lokasi := func(tsi ...string) []models.LokasiAneka {
+		var l []models.LokasiAneka
+		for _, x := range tsi {
+			l = append(l, models.LokasiAneka{Okupasi: []models.OkupasiAneka{{Objek: []models.ObjekAneka{{Currency: "IDR",
+				Coverages: []models.CoverageAneka{{OldID: "1", TSI: d(x), TSILiability: d(x), Premium: d("10")}}}}}}})
+		}
+		return l
+	}
+	k := models.KasusSpreading{PercentShare: d("70"), StartDateTime: "20250101T170000.000 GMT"}
+	for nama, c := range map[string]struct {
+		lokasi []models.LokasiAneka
+		top    bool
+		mau    string
+	}{
+		"tepat 700": {lokasi("1000"), false, ""},
+		"lokasi 2":  {lokasi("1000", "1001"), false, "TSI in Location 2 exceeds treaty capacity"},
+		"lokasi 1":  {lokasi("1001"), false, "TSI in Location 1 exceeds treaty capacity"},
+		"top risk":  {lokasi("1001"), true, pesanKapasitasTop},
+	} {
+		c.lokasi[0].IsTopRisk = c.top
+		hitungNRAneka(c.lokasi, k.PercentShare)
+		pesan, err := spreadingOtomatisEngineering(ctx, src, k, c.lokasi)
+		if err != nil || (c.mau == "" && len(pesan) != 0) || (c.mau != "" && (len(pesan) != 1 || pesan[0] != c.mau)) {
+			t.Errorf("%s: %v %v", nama, pesan, err)
+		}
+	}
+}

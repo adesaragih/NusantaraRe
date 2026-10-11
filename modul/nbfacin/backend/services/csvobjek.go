@@ -37,15 +37,7 @@ import (
 // dengan KOLOM_CSV_OBJEK frontend. Kolom 1-55 = parser Pega; 56-61 ditambah work owner 08-10-2026 (bukan kolom Pega):
 // KODE_POS / KECAMATAN / KABUPATEN_KOTA / PROVINSI membantu mencari RW (cariRWCsv), SUMBER_KODE_POS / TINGKAT_KEYAKINAN hanya
 // ditampilkan (tidak memengaruhi Save Data).
-var KolomCsvObjek = []string{"NO", "NO_OFFER_SLIP", "CLASS_OF_BUSINESS", "BEGIN_DATE", "END_DATE", "INSURED_NAME", "SOB_NAME",
-	"CEDING_CO_NAME", "MARKETING_NAME", "OCCUPATION_CODE", "OCCUPATION_NAME", "CLASS_OF_CONSTRUCTION", "TYPE_ADDRESS", "ADDRESS",
-	"BUILDING_NO", "POSTAL_CODE", "KELURAHAN", "OBJECT_TYPE", "INTEREST", "TOP_RISK", "ITEM_TYPE", "ITEM_TYPE_1", "ITEM_TYPE_2",
-	"ITEM_TYPE_3", "ITEM_TYPE_4", "ITEM_TYPE_5", "ITEM_TYPE_6", "TSI_OBJECT_ITEM", "TSI_OBJECT_ITEM_1", "TSI_OBJECT_ITEM_2",
-	"TSI_OBJECT_ITEM_3", "TSI_OBJECT_ITEM_4", "TSI_OBJECT_ITEM_5", "TSI_OBJECT_ITEM_6", "ACCUMULATION_CODE", "ACCUMULATION_NAME",
-	"ADJUSTABLE_PCT", "CURRENCY", "INDEMNITY_MONTH", "LOL", "RATE_FLEXAS", "NET_RATE_FLEXAS", "DISCOUNT_RATE_FLEXAS", "RATE_RSMDCC",
-	"NET_RATE_RSMDCC", "DISCOUNT_RATE_RSMDCC", "RATE_FWTWD", "NET_RATE_FWTWD", "DISCOUNT_RATE_FWTWD", "RATE_EQ", "NET_RATE_EQ",
-	"DISCOUNT_RATE_EQ", "RATE_OTHERS", "NET_RATE_OTHERS", "DISCOUNT_RATE_OTHERS", "KODE_POS", "KECAMATAN", "KABUPATEN_KOTA",
-	"PROVINSI", "SUMBER_KODE_POS", "TINGKAT_KEYAKINAN"}
+var KolomCsvObjek = models.KolomCsvObjek
 
 const (
 	// BatasBarisCsvObjek - paling banyak 3000 baris per unggahan (RALAT D7 08-10-2026, work owner: "jangan dibatasin 500. 3000
@@ -156,45 +148,8 @@ func uraiCsvObjek(baris []map[string]string) ([]barisCsv, error) {
 	var masalah []string
 	hasil := make([]barisCsv, len(baris))
 	for i, r := range baris {
-		b := barisCsv{n: i + 1, teks: map[string]string{}, angka: map[string]*apd.Decimal{}}
-		for k := range r {
-			if !slices.Contains(KolomCsvObjek, k) {
-				masalah = append(masalah, fmt.Sprintf("baris %d: kolom %s tidak dikenal", b.n, k))
-			}
-		}
-		for _, k := range KolomCsvObjek {
-			v := strings.TrimSpace(r[k])
-			switch k {
-			case "TYPE_ADDRESS", "ADDRESS", "OBJECT_TYPE", "KELURAHAN":
-				v = strings.ToUpper(v)
-			}
-			b.teks[k] = v
-		}
-		b.teks["ACCUMULATION_NAME"] = b.teks["ADDRESS"]
-		for _, k := range append(slices.Clone(kolomAngkaCsv), "ADJUSTABLE_PCT") {
-			v := b.teks[k]
-			if v == "" {
-				continue
-			}
-			if k != "ADJUSTABLE_PCT" {
-				v = normalAngkaCsv(v)
-			}
-			d, err := utils.ParseDecimal(v)
-			if err != nil {
-				masalah = append(masalah, fmt.Sprintf("baris %d kolom %s: angka tidak sah %q", b.n, k, b.teks[k]))
-				continue
-			}
-			b.angka[k] = d
-		}
-		for k, ke := range map[string]*time.Time{"BEGIN_DATE": &b.mulai, "END_DATE": &b.akhir} {
-			if v := b.teks[k]; v != "" {
-				t, ok := tanggalCsv(v)
-				if !ok {
-					masalah = append(masalah, fmt.Sprintf("baris %d kolom %s: tanggal harus dd/MM/yyyy: %q", b.n, k, v))
-				}
-				*ke = t
-			}
-		}
+		b, m := uraiBarisCsv(i+1, r)
+		masalah = append(masalah, m...)
 		hasil[i] = b
 	}
 	if len(masalah) > 0 {
@@ -202,6 +157,52 @@ func uraiCsvObjek(baris []map[string]string) ([]barisCsv, error) {
 		return nil, fmt.Errorf("%w: %s", ErrMasukanObjek, strings.Join(masalah, "; "))
 	}
 	return hasil, nil
+}
+
+// uraiBarisCsv - satu baris CSV nomor n (langkah 5.2): kolom tak dikenal, normalisasi teks / angka, tanggal; galat baris
+// dikembalikan (tidak dihentikan). Dipakai jalur JSON (uraiCsvObjek) dan jalur unggah mengalir (tiket 75) - aturan SATU.
+func uraiBarisCsv(n int, r map[string]string) (barisCsv, []string) {
+	var masalah []string
+	b := barisCsv{n: n, teks: map[string]string{}, angka: map[string]*apd.Decimal{}}
+	for k := range r {
+		if !slices.Contains(KolomCsvObjek, k) {
+			masalah = append(masalah, fmt.Sprintf("baris %d: kolom %s tidak dikenal", b.n, k))
+		}
+	}
+	for _, k := range KolomCsvObjek {
+		v := strings.TrimSpace(r[k])
+		switch k {
+		case "TYPE_ADDRESS", "ADDRESS", "OBJECT_TYPE", "KELURAHAN":
+			v = strings.ToUpper(v)
+		}
+		b.teks[k] = v
+	}
+	b.teks["ACCUMULATION_NAME"] = b.teks["ADDRESS"]
+	for _, k := range append(slices.Clone(kolomAngkaCsv), "ADJUSTABLE_PCT") {
+		v := b.teks[k]
+		if v == "" {
+			continue
+		}
+		if k != "ADJUSTABLE_PCT" {
+			v = normalAngkaCsv(v)
+		}
+		d, err := utils.ParseDecimal(v)
+		if err != nil {
+			masalah = append(masalah, fmt.Sprintf("baris %d kolom %s: angka tidak sah %q", b.n, k, b.teks[k]))
+			continue
+		}
+		b.angka[k] = d
+	}
+	for k, ke := range map[string]*time.Time{"BEGIN_DATE": &b.mulai, "END_DATE": &b.akhir} {
+		if v := b.teks[k]; v != "" {
+			t, ok := tanggalCsv(v)
+			if !ok {
+				masalah = append(masalah, fmt.Sprintf("baris %d kolom %s: tanggal harus dd/MM/yyyy: %q", b.n, k, v))
+			}
+			*ke = t
+		}
+	}
+	return b, masalah
 }
 
 // headerCsv - langkah 5.3 dengan D1 (b): kolom terisi saja, baris terakhir menang (beda nilai -> log).
@@ -248,6 +249,95 @@ type rencanaCsv struct {
 	akumulasiID string // "" = belum ada di master
 }
 
+// rencanakanBarisCsv - satu baris rencanakanCsv: rencana, pesan KodePos (0 / 1), galat isian (mata uang, D6); ID coverage master
+// yang dipakai dicatat ke pakaiCoverage (dicek sekali oleh pemanggil, D8). Galat basis data dikembalikan sebagai error.
+func (s *Service) rencanakanBarisCsv(ctx context.Context, b barisCsv, pakaiCoverage map[string]string) (rencanaCsv, []string, []string, error) {
+	var pesan, masalah []string
+	jenis := jenisObjekBaku(b.t("OBJECT_TYPE"))
+	o := models.ObjekFire{ObjectNo: strconv.Itoa(b.n), RoadType: b.t("TYPE_ADDRESS"), RoadName: b.t("ADDRESS"),
+		BuildingNo: b.t("BUILDING_NO"), RiskLocation: b.t("TYPE_ADDRESS") + " " + b.t("ADDRESS"), ZipCode: b.t("POSTAL_CODE"),
+		IsTopRisk: b.t("TOP_RISK") == "Y", ObjectName: b.t("OBJECT_TYPE"), ObjectType: jenis,
+		LossRecords: []models.CatatanKerugian{{Detail: "-"}}}
+	r := rencanaCsv{}
+	// 5.6-5.8: BrowseRW2_SQL (cariRWCsv); tanpa hasil -> pesan (juga bila kode pos / kelurahan kosong).
+	rw, zip, err := s.cariRWCsv(ctx, b)
+	if err != nil {
+		return rencanaCsv{}, nil, nil, err
+	}
+	if rw != nil {
+		r.rw, o.ZipCode = rw, zip
+		o.City, o.District, o.Territory, o.Province, o.Country = rw.City, rw.District, rw.Note, rw.Province, rw.Nation
+	}
+	if r.rw == nil {
+		pesan = append(pesan, "KodePos "+b.t("POSTAL_CODE")+" and kelurahan "+b.t("KELURAHAN")+" pada lokasi ke - "+strconv.Itoa(b.n)+
+			" tidak ditemukan!")
+	}
+	// 5.9 risk address persis ADDRESS + POSTALCODE (kode pos yang menemukan RW).
+	id, err := s.csv.IDRiskAddress(ctx, b.t("ADDRESS"), o.ZipCode)
+	if err != nil {
+		return rencanaCsv{}, nil, nil, err
+	}
+	r.riskID, o.RiskAddressID = id, id
+	// 5.10 akumulasi persis NOTE = ACCUMULATION_NAME (= ADDRESS); tidak ada -> kode CSV dipakai sampai master dibuat.
+	if r.akumulasiID, err = s.csv.IDAkumulasi(ctx, b.t("ACCUMULATION_NAME")); err != nil {
+		return rencanaCsv{}, nil, nil, err
+	}
+	// 5.11-5.13 okupasi (selalu satu per lokasi); nama kosong -> master OCCUPATION FIRE ber-OLDID kode. Kode kosong tidak
+	// dicari (RD Pega membuang filter kosong dan memungut okupasi pertama - tidak ditiru, keputusan agent).
+	nama := b.t("OCCUPATION_NAME")
+	if nama == "" && b.t("OCCUPATION_CODE") != "" {
+		if nama, err = s.csv.NamaOkupasiFire(ctx, b.t("OCCUPATION_CODE")); err != nil {
+			return rencanaCsv{}, nil, nil, err
+		}
+	}
+	o.Occupations = []models.OkupasiObjek{{OccupationID: b.t("OCCUPATION_CODE"), OccupationName: nama,
+		ConstructionClass: b.t("CLASS_OF_CONSTRUCTION")}}
+	// MappingJsonH2HNusare2_act 5.1-5.7: item per slot terisi; mata uang wajib ada di master (D6).
+	var mu models.MataUangCsv
+	adaItem := false
+	for _, sl := range ItemCsvObjek {
+		adaItem = adaItem || b.t("ITEM_TYPE"+sl) != ""
+	}
+	if adaItem {
+		m, ok, err := s.csv.MataUang(ctx, b.t("CURRENCY"))
+		if err != nil {
+			return rencanaCsv{}, nil, nil, err
+		}
+		if !ok {
+			masalah = append(masalah, fmt.Sprintf("baris %d kolom CURRENCY: mata uang %q tidak ada di master CURRENCY", b.n, b.t("CURRENCY")))
+		}
+		mu = m
+	}
+	adj := b.t("ADJUSTABLE_PCT")
+	for _, sl := range ItemCsvObjek {
+		jenisItem := b.t("ITEM_TYPE" + sl)
+		if jenisItem == "" {
+			continue
+		}
+		idItem, err := s.csv.IDJenisItemFire(ctx, jenisItem)
+		if err != nil {
+			return rencanaCsv{}, nil, nil, err
+		}
+		it := models.ItemObjek{ItemTypeID: idItem, ItemType: jenisItem, TSI: b.angka["TSI_OBJECT_ITEM"+sl], Currency: mu.Currency,
+			Note: b.t("INTEREST"), IsAdjustable: adj != "" && adj != "100", PctAdjustOther: b.angka["ADJUSTABLE_PCT"],
+			Coverages: []models.CoverageObjek{}}
+		for _, p := range perilCsv {
+			rate := b.angka["RATE_"+p.kolom]
+			if rate == nil || rate.Sign() <= 0 {
+				continue
+			}
+			pakaiCoverage[p.coverage] = p.oldID
+			it.Coverages = append(it.Coverages, models.CoverageObjek{OldID: p.oldID, Coverage: p.coverage, CoverageNote: p.catatan,
+				CoverageBasis: "1", Rate: rate, NetRate: b.angka["NET_RATE_"+p.kolom], DiscountPercentage: b.angka["DISCOUNT_RATE_"+p.kolom],
+				IndemnityPercentage: apd.New(100, 0), LimitOfLiability: b.angka["LOL"], AccumulationCode: b.t("ACCUMULATION_CODE"),
+				AccumulationDescription: b.t("ACCUMULATION_NAME")})
+		}
+		o.Items = append(o.Items, it)
+	}
+	r.objek = o
+	return r, pesan, masalah, nil
+}
+
 // rencanakanCsv - langkah 5.4-5.14 + MappingJsonH2HNusare2_act / MappingCoverage tanpa menulis: objek per baris, pesan KodePos,
 // galat mata uang (400, D6) dan ID coverage master (400, D8) dikumpulkan.
 func (s *Service) rencanakanCsv(ctx context.Context, baris []barisCsv) ([]rencanaCsv, []string, error) {
@@ -255,88 +345,11 @@ func (s *Service) rencanakanCsv(ctx context.Context, baris []barisCsv) ([]rencan
 	var rencana []rencanaCsv
 	pakaiCoverage := map[string]string{}
 	for _, b := range baris {
-		jenis := jenisObjekBaku(b.t("OBJECT_TYPE"))
-		o := models.ObjekFire{ObjectNo: strconv.Itoa(b.n), RoadType: b.t("TYPE_ADDRESS"), RoadName: b.t("ADDRESS"),
-			BuildingNo: b.t("BUILDING_NO"), RiskLocation: b.t("TYPE_ADDRESS") + " " + b.t("ADDRESS"), ZipCode: b.t("POSTAL_CODE"),
-			IsTopRisk: b.t("TOP_RISK") == "Y", ObjectName: b.t("OBJECT_TYPE"), ObjectType: jenis,
-			LossRecords: []models.CatatanKerugian{{Detail: "-"}}}
-		r := rencanaCsv{}
-		// 5.6-5.8: BrowseRW2_SQL (cariRWCsv); tanpa hasil -> pesan (juga bila kode pos / kelurahan kosong).
-		rw, zip, err := s.cariRWCsv(ctx, b)
+		r, p, m, err := s.rencanakanBarisCsv(ctx, b, pakaiCoverage)
 		if err != nil {
 			return nil, nil, err
 		}
-		if rw != nil {
-			r.rw, o.ZipCode = rw, zip
-			o.City, o.District, o.Territory, o.Province, o.Country = rw.City, rw.District, rw.Note, rw.Province, rw.Nation
-		}
-		if r.rw == nil {
-			pesan = append(pesan, "KodePos "+b.t("POSTAL_CODE")+" and kelurahan "+b.t("KELURAHAN")+" pada lokasi ke - "+strconv.Itoa(b.n)+
-				" tidak ditemukan!")
-		}
-		// 5.9 risk address persis ADDRESS + POSTALCODE (kode pos yang menemukan RW).
-		id, err := s.csv.IDRiskAddress(ctx, b.t("ADDRESS"), o.ZipCode)
-		if err != nil {
-			return nil, nil, err
-		}
-		r.riskID, o.RiskAddressID = id, id
-		// 5.10 akumulasi persis NOTE = ACCUMULATION_NAME (= ADDRESS); tidak ada -> kode CSV dipakai sampai master dibuat.
-		if r.akumulasiID, err = s.csv.IDAkumulasi(ctx, b.t("ACCUMULATION_NAME")); err != nil {
-			return nil, nil, err
-		}
-		// 5.11-5.13 okupasi (selalu satu per lokasi); nama kosong -> master OCCUPATION FIRE ber-OLDID kode. Kode kosong tidak
-		// dicari (RD Pega membuang filter kosong dan memungut okupasi pertama - tidak ditiru, keputusan agent).
-		nama := b.t("OCCUPATION_NAME")
-		if nama == "" && b.t("OCCUPATION_CODE") != "" {
-			if nama, err = s.csv.NamaOkupasiFire(ctx, b.t("OCCUPATION_CODE")); err != nil {
-				return nil, nil, err
-			}
-		}
-		o.Occupations = []models.OkupasiObjek{{OccupationID: b.t("OCCUPATION_CODE"), OccupationName: nama,
-			ConstructionClass: b.t("CLASS_OF_CONSTRUCTION")}}
-		// MappingJsonH2HNusare2_act 5.1-5.7: item per slot terisi; mata uang wajib ada di master (D6).
-		var mu models.MataUangCsv
-		adaItem := false
-		for _, sl := range ItemCsvObjek {
-			adaItem = adaItem || b.t("ITEM_TYPE"+sl) != ""
-		}
-		if adaItem {
-			m, ok, err := s.csv.MataUang(ctx, b.t("CURRENCY"))
-			if err != nil {
-				return nil, nil, err
-			}
-			if !ok {
-				masalah = append(masalah, fmt.Sprintf("baris %d kolom CURRENCY: mata uang %q tidak ada di master CURRENCY", b.n, b.t("CURRENCY")))
-			}
-			mu = m
-		}
-		adj := b.t("ADJUSTABLE_PCT")
-		for _, sl := range ItemCsvObjek {
-			jenisItem := b.t("ITEM_TYPE" + sl)
-			if jenisItem == "" {
-				continue
-			}
-			idItem, err := s.csv.IDJenisItemFire(ctx, jenisItem)
-			if err != nil {
-				return nil, nil, err
-			}
-			it := models.ItemObjek{ItemTypeID: idItem, ItemType: jenisItem, TSI: b.angka["TSI_OBJECT_ITEM"+sl], Currency: mu.Currency,
-				Note: b.t("INTEREST"), IsAdjustable: adj != "" && adj != "100", PctAdjustOther: b.angka["ADJUSTABLE_PCT"],
-				Coverages: []models.CoverageObjek{}}
-			for _, p := range perilCsv {
-				rate := b.angka["RATE_"+p.kolom]
-				if rate == nil || rate.Sign() <= 0 {
-					continue
-				}
-				pakaiCoverage[p.coverage] = p.oldID
-				it.Coverages = append(it.Coverages, models.CoverageObjek{OldID: p.oldID, Coverage: p.coverage, CoverageNote: p.catatan,
-					CoverageBasis: "1", Rate: rate, NetRate: b.angka["NET_RATE_"+p.kolom], DiscountPercentage: b.angka["DISCOUNT_RATE_"+p.kolom],
-					IndemnityPercentage: apd.New(100, 0), LimitOfLiability: b.angka["LOL"], AccumulationCode: b.t("ACCUMULATION_CODE"),
-					AccumulationDescription: b.t("ACCUMULATION_NAME")})
-			}
-			o.Items = append(o.Items, it)
-		}
-		r.objek = o
+		pesan, masalah = append(pesan, p...), append(masalah, m...)
 		rencana = append(rencana, r)
 	}
 	ids := make([]string, 0, len(pakaiCoverage))
@@ -544,6 +557,9 @@ func (s *Service) simpanCsvObjek(ctx context.Context, pelaku inti.Pelaku, id str
 	if !idKasusSah(id) {
 		return HasilCsvObjek{}, ErrKasusTidakAda
 	}
+	if err := s.cekKunciUnggah(ctx, id); err != nil { // tiket 75 K75-2
+		return HasilCsvObjek{}, err
+	}
 	csv, err := uraiCsvObjek(baris)
 	if err != nil {
 		return HasilCsvObjek{}, err
@@ -556,6 +572,9 @@ func (s *Service) simpanCsvObjek(ctx context.Context, pelaku inti.Pelaku, id str
 		return HasilCsvObjek{}, ErrKasusTidakAda
 	}
 	if err != nil {
+		return HasilCsvObjek{}, err
+	}
+	if err := s.wajibCsvFire(ctx, id); err != nil {
 		return HasilCsvObjek{}, err
 	}
 	g, err := s.generalCsv(kasus, headerDariCsv(id, csv))
@@ -659,6 +678,26 @@ func (c *cacheCsv) RWKelurahan(ctx context.Context, zip, kel string) ([]models.R
 		c.rw[k] = v
 	}
 	return v, err
+}
+
+// RWKodePos - tiket 73 P6; ber-cache per kode pos (tidak ada juga di-cache).
+func (c *cacheCsv) RWKodePos(ctx context.Context, zip string) (models.RWCsv, bool, error) {
+	k := "kodepos|" + zip
+	if v, ok := c.rw[k]; ok {
+		if len(v) == 0 {
+			return models.RWCsv{}, false, nil
+		}
+		return v[0], true, nil
+	}
+	v, ada, err := c.PembacaCsvObjek.RWKodePos(ctx, zip)
+	if err != nil {
+		return models.RWCsv{}, false, err
+	}
+	c.rw[k] = nil
+	if ada {
+		c.rw[k] = []models.RWCsv{v}
+	}
+	return v, ada, nil
 }
 
 func (c *cacheCsv) satu(kunci string, ambil func() (string, error)) (string, error) {

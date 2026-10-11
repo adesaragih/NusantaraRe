@@ -53,6 +53,7 @@ import {
 } from '../api'
 import { SPREADING as S, TEKS_OBJEK, TEKS_SPREADING as T } from '../labels'
 import CopySpreadingLokasi from './CopySpreadingLokasi'
+import PagerLokasi, { potongHalaman } from './PagerLokasi'
 
 const JEDA_MS = 500
 
@@ -236,6 +237,7 @@ export default function TabSpreading({ caseId, tahapUw = false }: { caseId: stri
   const [menyimpan, setMenyimpan] = useState(false)
   const [tersimpan, setTersimpan] = useState(false)
   const [terbuka, setTerbuka] = useState<string[]>([])
+  const [halLokasi, setHalLokasi] = useState(1)
   const nomor = useRef(0)
   // Pesan proteksi template Copy Spreading dari server (QS / Type Treaty kembar).
   const [pesanTemplate, setPesanTemplate] = useState<string[]>([])
@@ -463,7 +465,8 @@ export default function TabSpreading({ caseId, tahapUw = false }: { caseId: stri
         )}
       </section>
 
-      {/* Lokasi -> item -> coverage -> spreading */}
+      {/* Lokasi -> item -> coverage -> spreading; 10 lokasi per halaman (work owner 11-10-2026) */}
+      <PagerLokasi total={v.lokasi.length} halaman={halLokasi} onPindah={setHalLokasi} />
       <div className="nbf-cov-wrap">
         <table className="nbf-tabel">
           <thead>
@@ -484,7 +487,7 @@ export default function TabSpreading({ caseId, tahapUw = false }: { caseId: stri
                 </td>
               </tr>
             )}
-            {v.lokasi.map((l, o) => [
+            {potongHalaman(v.lokasi, halLokasi).map(([l, o]) => [
               <tr key={`o${o}`} className={terbuka.includes(`o${o}`) ? 'nbf-baris--terbuka' : undefined}>
                 <td>
                   <Buka buka={terbuka.includes(`o${o}`)} onKlik={() => balik(`o${o}`)} />

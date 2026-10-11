@@ -23,7 +23,7 @@ import { useEffect, useState } from 'react'
 import { Gagal, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { desimalSah, jumlahDesimal, pangkasNolEkor } from '../../../../inti/frontend/lib/desimal'
 import { angka4 } from '../angka4'
-import { ambilCedant, ambilSpreading, ambilSpreadingAneka, simpanCedant, type BarisCedant, type DasarCedant, type TampilanCedant, type TampilanSpreading } from '../api'
+import { ambilCedant, ambilSpreading, ambilSpreadingAneka, ambilSpreadingCargo, simpanCedant, type BarisCedant, type DasarCedant, type TampilanCedant, type TampilanSpreading } from '../api'
 import { CEDANT as C, OPSI_SHARE_CEDANT_TYPE, TEKS_CEDANT as T } from '../labels'
 import IsianAngka4 from './IsianAngka4'
 import { lebihDari100, RingkasanSpreading } from './TabSpreading'
@@ -107,8 +107,11 @@ export function galatCedant(baris: BarisCedant[]): string[] {
   return pesan
 }
 
-/** `aneka` (tiket 73 P3): ringkasan dari `…/spreading-aneka` dan grid per mata uang versi `!IsFire` (tanpa Top Risk). */
-export default function TabCedant({ caseId, aneka = false }: { caseId: string; aneka?: boolean }) {
+/**
+ * `aneka` (tiket 73 P3): ringkasan dari `…/spreading-aneka` dan grid per mata uang versi `!IsFire` (tanpa Top Risk). `cargo` (tiket
+ * 74 P4, aditif): sama, dari `…/spreading-cargo` (Inw Fac Cedant Panels tanpa cabang Marine - tata letak `!IsFire` L70737).
+ */
+export default function TabCedant({ caseId, aneka = false, cargo = false }: { caseId: string; aneka?: boolean; cargo?: boolean }) {
   const [v, setV] = useState<TampilanCedant | null>(null)
   const [sp, setSp] = useState<Pick<TampilanSpreading, 'ringkasanTreaty' | 'ringkasanMataUang'> | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
@@ -130,7 +133,7 @@ export default function TabCedant({ caseId, aneka = false }: { caseId: string; a
       },
     )
     // Total per mata uang (Dtl layout S62 `IsFire`: grid `TotalSpreadAll.pxResults`) = ringkasan tab Spreading.
-    ;(aneka ? ambilSpreadingAneka : ambilSpreading)(caseId).then(
+    ;(cargo ? ambilSpreadingCargo : aneka ? ambilSpreadingAneka : ambilSpreading)(caseId).then(
       (h) => {
         if (!batal) setSp(h)
       },
@@ -364,7 +367,7 @@ export default function TabCedant({ caseId, aneka = false }: { caseId: string; a
           ))}
       </section>
 
-      {sp !== null && <RingkasanSpreading v={sp} hanyaMataUang tanpaTopRisk={aneka} />}
+      {sp !== null && <RingkasanSpreading v={sp} hanyaMataUang tanpaTopRisk={aneka || cargo} />}
 
       <div className="nbf-objek__kaki">
         <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" onClick={() => void simpan()} disabled={menyimpan}>

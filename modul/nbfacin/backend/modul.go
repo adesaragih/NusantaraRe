@@ -11,7 +11,6 @@ import (
 	"time"
 
 	inti "nusantarare/inti/backend"
-	"nusantarare/inti/backend/config"
 	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/nbfacin/backend/handlers"
 	"nusantarare/modul/nbfacin/backend/repository"
@@ -60,14 +59,19 @@ func Pendaftaran() inti.Pendaftaran {
 			svc.DenganGrup(services.KonfigGrup{Login: cfg.GrupNBFacIn.Login, MarketingCode: cfg.GrupNBFacIn.MarketingCode,
 				BondingMarketingName: cfg.GrupNBFacIn.BondingMarketingName}, cfg.IsPegaProd)
 			p.Catat("nbfacin: group " + cfg.GrupNBFacIn.String())
-			// Tiket 67: lampiran DOCUMENT_POLIS / T_STORAGE_IMAGE; pelaksana penyimpanan menurut PELAKSANA_STORAGE (bawaan stub,
-			// config inti yang sudah ada); ⛔ garam STORAGE_TOKEN_SALT tidak pernah dicetak.
-			svc.DenganLampiran(p.Dasar(), cfg.PelaksanaStorage == config.PelaksanaStorageNyata, cfg.StorageTokenSalt)
-			return Modul{svc: svc, stubPelaku: cfg.AuthStub, pelaksana: cfg.PelaksanaStorage,
+			// Tiket 67: lampiran DOCUMENT_POLIS / T_STORAGE_IMAGE; ⛔ garam STORAGE_TOKEN_SALT tidak pernah dicetak.
+			// Merge GitHub 10-10-2026 (keputusan work owner "Ikut GitHub, sesuaikan nbfacin"): PELAKSANA_STORAGE dibuang dari config
+			// inti - penyimpanan SELALU nyata (M_LINK_SERVICE + STORAGE_TOKEN_SALT), sama dengan `inti/backend/penyimpanan`; stub
+			// lokal hanya untuk uji (DenganLampiranUji).
+			svc.DenganLampiran(p.Dasar(), true, cfg.StorageTokenSalt)
+			return Modul{svc: svc, stubPelaku: cfg.AuthStub, pelaksana: pelaksanaNyata,
 				interval: services.IntervalPekerjaLampiran, catat: p.Catat}, nil
 		},
 	}
 }
+
+// pelaksanaNyata - teks log pelaksana penyimpanan lampiran (dulu nilai PELAKSANA_STORAGE).
+const pelaksanaNyata = "nyata"
 
 // Modul memenuhi inti.Modul.
 type Modul struct {

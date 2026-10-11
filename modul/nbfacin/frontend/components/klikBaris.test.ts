@@ -50,7 +50,7 @@ describe('klikBaris', () => {
   it('dipasang sekali di rute modul (semua tabel NB FacIn); baris berkursor tangan', () => {
     const RUTE = readFileSync(join(__dirname, '..', 'rute.tsx'), 'utf8')
     expect(RUTE).toContain('useEffect(() => pasangKlikBaris(), [])')
-    const CSS = readFileSync(join(__dirname, '..', 'nbfacin.css'), 'utf8')
+    const CSS = readFileSync(join(__dirname, '..', 'nbfacin.css'), 'utf8').replace(/\r\n/g, '\n')
     expect(CSS).toContain('.nbfacin tr:has(> td > .nbf-buka) {\n  cursor: pointer;')
   })
 })

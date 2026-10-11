@@ -340,10 +340,14 @@ func (r *SpreadingOracle) TulisSpreading(ctx context.Context, tx *db.Tx, id stri
 					if err != nil {
 						return err
 					}
-					if _, err := jalankan(ctx, tx, sqlSisipSpreading(t.spread), "menyisip "+TabelSpreadingList, idBaris, c.ID, indukSpreading,
-						jalurSpreading, n+1, uid, db.KosongJadiNil(s.TreatyType), db.KosongJadiNil(s.TreatyName), ikatDesimal(s.SharePercentage),
-						ikatDesimal(s.TSISpreaded), ikatDesimal(s.TSIGrossSpreaded), ikatDesimal(s.PremiumSpreaded),
-						ikatDesimal(s.ClaimEstimation), mataUang); err != nil {
+					arg := []any{idBaris, c.ID, indukSpreading, jalurSpreading, n + 1, uid, db.KosongJadiNil(s.TreatyType),
+						db.KosongJadiNil(s.TreatyName), ikatDesimal(s.SharePercentage), ikatDesimal(s.TSISpreaded),
+						ikatDesimal(s.TSIGrossSpreaded), ikatDesimal(s.PremiumSpreaded), ikatDesimal(s.ClaimEstimation), mataUang}
+					// bug DEV 10-10-2026 ORA-01722: bentuk bind diperiksa sebelum Oracle (periksabind.go).
+					if err := periksaBindBaris(sqlSisipSpreading(t.spread), TabelSpreadingList, [][]any{arg}, n); err != nil {
+						return err
+					}
+					if _, err := jalankan(ctx, tx, sqlSisipSpreading(t.spread), "menyisip "+TabelSpreadingList, arg...); err != nil {
 						return err
 					}
 				}

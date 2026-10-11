@@ -150,12 +150,23 @@ func (s *Service) tulisanBinding(ctx context.Context, id string, k models.Kontek
 	if s.grup.pembuatGroup(k) {
 		groupType = "1"
 	}
-	// Tiket 73 P4: cabang 13 / 14 / 15 (Aneka / Bonding / Golf) bila case keluarga Aneka; selain itu cabang FIRE (tiket 63).
-	offer, aneka, err := s.barisFacInOfferKasusAneka(ctx, id, dasarFacInOffer(id, k, kasus.General, kode, groupType), objek)
+	// Tiket 73 P4: cabang 13 / 14 / 15 (Aneka / Bonding / Golf) bila case keluarga Aneka; tiket 74 P5: cabang 16 Marine Cargo;
+	// selain itu cabang FIRE (tiket 63).
+	dasar := dasarFacInOffer(id, k, kasus.General, kode, groupType)
+	offer, aneka, err := s.barisFacInOfferKasusAneka(ctx, id, dasar, objek)
 	if err != nil {
 		return nil, err
 	}
-	if !aneka {
+	cargo, adaCargo, err := s.cargoProduksi(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	switch {
+	case adaCargo:
+		if offer, err = barisFacInOfferCargo(dasar, cargo); err != nil {
+			return nil, err
+		}
+	case !aneka:
 		sp, err := s.bacaSpreading(ctx, nil, id)
 		if err != nil {
 			return nil, err

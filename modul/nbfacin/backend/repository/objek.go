@@ -60,7 +60,10 @@ type tabelObjek struct {
 	work, general, loc, prop, risk, bang, sekitar, item, okupasi, tol, fea, rugi, koas, cov, ded, spread string
 }
 
-func (r *ObjekOracle) tabel() (tabelObjek, error) {
+func (r *ObjekOracle) tabel() (tabelObjek, error) { return tabelObjekDari(r.db.Qualify) }
+
+// tabelObjekDari - nama tabel objek lewat q (Qualify skema; simulasi: nama apa adanya).
+func tabelObjekDari(q func(string) (string, error)) (tabelObjek, error) {
 	var t tabelObjek
 	for _, x := range []struct {
 		nama string
@@ -70,11 +73,11 @@ func (r *ObjekOracle) tabel() (tabelObjek, error) {
 		{TabelPropertyItemList, &t.item}, {TabelOccupationList, &t.okupasi}, {TabelTableOfLimit, &t.tol},
 		{TabelFEAList, &t.fea}, {TabelListCauseOfLoss, &t.rugi}, {TabelCoinsData, &t.koas}, {TabelCoverageList, &t.cov}, {TabelDeductibleList, &t.ded},
 		{TabelSpreadingList, &t.spread}} {
-		q, err := r.db.Qualify(x.nama)
+		n, err := q(x.nama)
 		if err != nil {
 			return t, err
 		}
-		*x.ke = q
+		*x.ke = n
 	}
 	return t, nil
 }
@@ -210,9 +213,20 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 	if n == 0 {
 		return nil, ErrKasusTidakAda
 	}
-	baris, err := r.db.QueryContext(ctx, sqlBacaObjek(t), id)
+	hasil, _, err := r.bacaPohon(ctx, t, lingkupBaca{id: id})
+	return hasil, err
+}
+
+// bacaPohon - pohon objek FIRE lingkup `b` (urut SEQ_NO) beserta T_LOCATIONLIST.ID tiap lokasi (sejajar). Case tidak diperiksa.
+func (r *ObjekOracle) bacaPohon(ctx context.Context, t tabelObjek, b lingkupBaca) ([]models.ObjekFire, []string, error) {
+	id := b.id
+	q, arg, err := b.kueri(sqlBacaObjek(t))
 	if err != nil {
-		return nil, fmt.Errorf("repository: baca objek: %w", err)
+		return nil, nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, q, arg...)
+	if err != nil {
+		return nil, nil, fmt.Errorf("repository: baca objek: %w", err)
 	}
 	defer baris.Close()
 	hasil := []models.ObjekFire{}
@@ -225,7 +239,7 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 			tujuan[i] = teks[k]
 		}
 		if err := baris.Scan(tujuan...); err != nil {
-			return nil, fmt.Errorf("repository: objek: %w", err)
+			return nil, nil, fmt.Errorf("repository: objek: %w", err)
 		}
 		v := func(k string) string { return teks[k].String }
 		hasil = append(hasil, models.ObjekFire{ObjectNo: v("p.OBJECT_NO"), ObjectType: v("p.OBJECT_TYPE"),
@@ -260,30 +274,30 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 			kolomDesimal{"l.LOSS_RATIO1_YEAR_PERCENT", "LOSS_RATIO1_YEAR_PERCENT", &lr.OneYearPercent},
 			kolomDesimal{angkaKeluar("l.LOSS_RATIO35_YEAR_AMOUNT"), "LOSS_RATIO35_YEAR_AMOUNT", &lr.ThreeFiveYearAmount},
 			kolomDesimal{"l.LOSS_RATIO35_YEAR_PERCENT", "LOSS_RATIO35_YEAR_PERCENT", &lr.ThreeFiveYearPercent}); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		idProperty = append(idProperty, v("TO_CHAR(p.ID)"))
 		idLokasi = append(idLokasi, v("TO_CHAR(l.ID)"))
 	}
 	if err := baris.Err(); err != nil {
-		return nil, fmt.Errorf("repository: objek: %w", err)
+		return nil, nil, fmt.Errorf("repository: objek: %w", err)
 	}
 	baris.Close()
-	item, err := r.bacaItem(ctx, t, id)
+	item, err := r.bacaItem(ctx, t, b)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	okupasi, err := r.bacaOkupasi(ctx, t, id)
+	okupasi, err := r.bacaOkupasi(ctx, t, b)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	fea, err := r.bacaFEA(ctx, t, id)
+	fea, err := r.bacaFEA(ctx, t, b)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	rugi, err := r.bacaKerugian(ctx, t, id)
+	rugi, err := r.bacaKerugian(ctx, t, b)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	for i, l := range idLokasi {
 		if d, ada := fea[l]; ada {
@@ -304,7 +318,7 @@ func (r *ObjekOracle) BacaObjek(ctx context.Context, id string) ([]models.ObjekF
 			hasil[i].LossRecords = d
 		}
 	}
-	return hasil, nil
+	return hasil, idLokasi, nil
 }
 
 // GantiObjek - lihat PenyimpanObjek. Urutan: sentuh case (kunci + 404), pastikan General,
@@ -358,7 +372,7 @@ func (w *tulisObjek) sisipObjek(ctx context.Context, id string, baris []models.O
 			q, tabel string
 			arg      []any
 		}{
-			{sqlSisipLokasi(t.loc), TabelLocationList, []any{ids[0], id, i + 1, uid, ikatDesimal(o.LossRatio.OneYearAmount),
+			{sqlSisipLokasi(t.loc), TabelLocationList, []any{ids[0], id, w.seqNo(i), uid, ikatDesimal(o.LossRatio.OneYearAmount),
 				ikatDesimal(o.LossRatio.OneYearPercent), ikatDesimal(o.LossRatio.ThreeFiveYearAmount),
 				ikatDesimal(o.LossRatio.ThreeFiveYearPercent)}},
 			{sqlSisipProperty(t.prop), TabelProperty, []any{ids[1], ids[0], k(o.ObjectNo), k(o.ObjectType), k(o.ObjectName),

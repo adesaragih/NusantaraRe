@@ -104,8 +104,12 @@ func argCoverage(c models.CoverageObjek, mataUang string) []any {
 }
 
 // bacaCoverage - coverage case `id` per T_PROPERTYITEMLIST.ID (teks), deductible terpasang (tiket 45).
-func (r *ObjekOracle) bacaCoverage(ctx context.Context, t tabelObjek, id string) (map[string][]models.CoverageObjek, error) {
-	baris, err := r.db.QueryContext(ctx, sqlBacaCoverage(t), id)
+func (r *ObjekOracle) bacaCoverage(ctx context.Context, t tabelObjek, b lingkupBaca) (map[string][]models.CoverageObjek, error) {
+	q, arg, err := b.kueri(sqlBacaCoverage(t))
+	if err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca coverage: %w", err)
 	}
@@ -137,7 +141,7 @@ func (r *ObjekOracle) bacaCoverage(ctx context.Context, t tabelObjek, id string)
 		return nil, fmt.Errorf("repository: coverage: %w", err)
 	}
 	baris.Close()
-	ded, err := r.bacaDeductible(ctx, t, id)
+	ded, err := r.bacaDeductible(ctx, t, b)
 	if err != nil {
 		return nil, err
 	}

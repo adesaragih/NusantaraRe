@@ -157,7 +157,8 @@ func (s *Service) isFlagUWAneka(ctx context.Context, id string) (bool, bool, err
 	if !ada {
 		return false, false, nil
 	}
-	if l := liniSpreadingDari(id, kb); !l.aneka && !l.golf {
+	// Tiket 74 P5: MARINE CARGO polis individual ikut CekLimitSpreading_Act langkah 5 (IsFlagUW = 1 bila bukan Declaration).
+	if l := liniSpreadingDari(id, kb); !l.aneka && !l.golf && !salahSatu(id, kb, "IsMarineCargo") {
 		return false, false, nil
 	}
 	kasus, err := s.kasus.BacaKasus(ctx, id)

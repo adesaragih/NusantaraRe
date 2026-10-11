@@ -160,3 +160,87 @@ mati.** gofmt / vet bersih; `go test ./modul/nbfacin/... ./inti/backend/config/ 
     "Resolved-Decline", "Resolved-Rejected"}; "Resolved-Reject" (bukan status Pega) TIDAK dikunci. Sistem baru belum menulis
     status reject apa pun (yang ditulis: "Resolved-Completed", "Resolved-Decline").
   - Uji: `services/lampiran_test.go` `TestUnggahLampiranK676`, `handlers/lampiran_test.go` `TestLampiranHandler`.
+- **K67-7** (work owner 10-10-2026, lewat 9d; sesudah merge GitHub `7d627608` yang menghapus `PELAKSANA_STORAGE` /
+  `bacaPelaksanaStorage` dari config inti):
+  1. **Selalu nyata (Google Storage).** `modul.go` memasang `svc.DenganLampiran(p.Dasar(), true, cfg.StorageTokenSalt)`;
+     alamat dari M_LINK_SERVICE, token dari STORAGE_TOKEN_SALT, sama dengan `inti/backend/penyimpanan`. Stub lokal hanya untuk
+     uji (`DenganLampiranUji`). Konsekuensi: di DEV tanpa M_LINK_SERVICE "Google" / STORAGE_TOKEN_SALT, baris DOCUMENT_POLIS
+     tercatat tetapi efek outbox gagal (status "gagal") dan dapat diulang (Ulangi).
+  2. **Pilihan (A)**: nbfacin tetap memakai port tiket 67 sendiri (outbox asinkron, `services/lampiranpengirim.go`, aturan
+     K67-6). Adaptor di atas `inti/backend/penyimpanan` (B) dan pindah ke `inti/backend/dokumenpolis` + `PanelLampiranReas` (C)
+     TIDAK dikerjakan.
+  - Teks persetujuan penjaga `inti/backend/penjaga/lintasaplikasi_test.go` L208 diperbarui sesi 9d / 0f.
+- **K67-8** (work owner 10-10-2026, lewat 9d — cara 1): bug DEV 11:18 `nbfacin lampiran: … memungut efek keluar: ORA-02014:
+  cannot select FOR UPDATE from view with DISTINCT, GROUP BY, etc.`, muncul sejak K67-7 menghidupkan pekerja.
+  - Sebab: pungutan memakai `ORDER BY … FETCH FIRST 1 ROWS ONLY FOR UPDATE SKIP LOCKED`. Oracle melarang row_limiting_clause
+    bersama `FOR UPDATE` (ORA-02014), walau T_LOG_SERVICE_RNM tabel biasa (migrasi claimlife 015 L25 `CREATE TABLE`).
+    `[terverifikasi di kode]` batasan yang sama sudah tercatat di `modul/masterproductnamelife/backend/repository/
+    mpnl_lampiran.go` L114; `[dugaan]` sumber dokumentasi Oracle tidak dibaca di sesi ini.
+  - Perbaikan: kandidat dipilih lewat subkueri ROWNUM berurut JADWAL_BERIKUT, lalu `SELECT … FROM T WHERE ID = (…) FOR UPDATE
+    SKIP LOCKED` atas tabel dasar. Diterapkan di dua tempat:
+    - `inti/backend/outbox/penyimpan.go` `sqlPungutEfek` (inti lintas modul; saringan `AND MODUL = :3` tetap);
+    - `repository/lampiran.go` `sqlPungutEfekRujukan` (pungutan per rujukan nbfacin, bentuk yang sama + `AND RUJUKAN = :4`).
+    Penandaan `UPDATE … AND STATUS = :4` tetap pengaman pemungutan ganda. Harga: bila kandidat sedang dikunci worker lain,
+    putaran itu kosong dan dicoba lagi putaran berikutnya.
+  - Uji: `TestPungutEfekTanpaRowLimitingDenganForUpdate` (teks SQL utuh, bind :1-:3 berurutan sekali, kunci di tabel dasar);
+    `TestSQLLampiran` (bentuk baru + penjaga: kueri FOR UPDATE tanpa FETCH FIRST). Tanpa query / tulisan ke DEV.
+
+## Bug DEV 11-10-2026 — semua unggah lampiran 'gagal-permanen' "STORAGE_TOKEN_SALT kosong" (sesi c3, lewat sesi 9d)
+
+**Gejala `[terverifikasi]`** (query work owner): T_LOG_SERVICE_RNM MODUL 'NBFACIN' JENIS_EFEK 'storage-unggah' ID 14 / 15 / 16 / 18
+ber-GALAT_TERAKHIR "token penyimpanan gagal diambil: STORAGE_TOKEN_SALT kosong". `APP_RNM\.env` tidak memuat kunci
+STORAGE_TOKEN_SALT (dicek ada / tidaknya kunci saja). Product Name Life di backend yang sama bisa unggah / view.
+
+**Sebab `[terverifikasi]`:**
+
+- `services/lampiranstorage.go` `sumberTokenStorage.TokenBaru` menolak garam kosong SEBELUM membaca token GCP_IMAGE.
+- `masterproductnamelife/backend/services/mpnl_storage.go` `tokenStorage` (urutan procedure GET_TOKEN_STORAGE) memakai ulang token
+  berlaku TANPA garam. Garam hanya dituntut saat merakit token baru.
+
+**Perbaikan** (keputusan work owner "tiru menu Product Name Life"):
+
+- APPNAME diperiksa lebih dulu.
+- Token bersisa > margin 15 detik dipakai (seperti sebelumnya).
+- Bila tidak ada token bersisa > margin dan garam kosong: token berlaku APA PUN (`INPUTDATE > saat`, sisa > 0) dipakai seperti
+  MPNL. Baru bila itu pun tidak ada → `ErrGaramTokenKosong`.
+- Dengan garam terisi, perilaku lama (margin, rakit baru) TIDAK berubah.
+- Baris efek lama yang sudah gagal-permanen tidak disentuh; work owner klik Ulangi sesudah backend direstart.
+
+**Uji** (`services/lampiranpengirim_test.go`):
+
+- `TestTokenStorageTanpaGaram` (a): garam kosong + token sisa 10 detik → dipakai tanpa galat / simpan.
+- (b): garam kosong + tanpa token → `ErrGaramTokenKosong`.
+- (c): garam terisi + token sisa 10 detik → dirakit baru.
+- Sisa > margin → dipakai dengan / tanpa garam.
+- `TestSumberTokenStorage`: APPNAME kosong ditolak sebelum garam.
+- Tiga mutasi semuanya tertangkap.
+
+**Catatan:** tanpa garam, unggah tetap bergantung pada token GCP_IMAGE yang ditulis pihak lain (MPNL / Pega) dan masih berlaku.
+Bila tidak ada, unggah gagal dengan galat yang sama. Pengisian STORAGE_TOKEN_SALT di `.env` tetap jalan yang lengkap.
+
+## View / View Office Online di popup View File (permintaan work owner 11-10-2026, lewat sesi 9d; sesi c3)
+
+- **View pdf / gambar:** frontend memakai `GET …/lampiran/berkas/{id}/isi` yang sudah ada. Tanpa perubahan backend.
+- **`GET /api/nbfacin/kasus/{caseId}/lampiran/berkas/{id}/office` → 200 `{"url": "<https bertanda tangan>"}`**
+  (`services/lampiranoffice.go` `TautanOfficeLampiran`, pola `inti/backend/dokumenpolis` TautanOffice):
+  - otorisasi / tahap sama dengan `/isi` (tahapLampiran, dokumen milik case);
+  - ekstensi hanya xls / xlsx / doc / docx / ppt / pptx (`ReasViewAttachment` b2951; `DOCUMENT_POLIS.MIME` huruf kecil); selain
+    itu 400;
+  - belum tersimpan (tanpa catatan T_STORAGE_IMAGE: menunggu / gagal) → 409 `ErrLampiranBelumTersimpan`;
+  - stub lokal (klien penyimpanan tanpa tautan, atau URLPUBLIC kosong) → 409 `ErrLampiranOfficeTanpaStorage` "View Office Online
+    butuh penyimpanan nyata (Google Storage) …";
+  - objek hilang di penyimpanan → 409 `ErrLampiranTanpaBerkas`;
+  - URL = GetUrlGoogleStorage_Act seperti `Buka`: URL tersimpan dipakai selama berlaku (sisa ≥ 1 menit), selain itu geturl
+    (Durasi 1800) + Update_T_Storage_SQL; hanya https. `Buka` sendiri tidak diubah (`storageJarakJauh.Tautan` baru);
+  - ⛔ URL tidak ditulis ke log / pesan galat; jawaban `Cache-Control: no-store`.
+- **Uji:**
+  - `services/lampiranoffice_test.go`: layanan (pdf 400, stub 409, case lain 404, nyata tanpa URLPUBLIC 409, nyata → URL, objek
+    hilang 409, belum tersimpan 409) dan klien nyata (tersimpan tanpa geturl, geturl, http ditolak tanpa URL di pesan, tanpa
+    EXPDATE);
+  - `handlers/lampiranoffice_test.go`: 200 + no-store, 400 / 409 / 409 / 404 / 401.
+  - Mutasi 5/5 tertangkap.
+
+## Catatan silang — IDPEGA = case id polos (11-10-2026)
+
+Tulisan IDPEGA tiket ini kini memakai case id polos; pembaca menerima dua bentuk (polos / berawalan). Rincian: `docs/issues/69-jalur-policy.md`
+bagian "IDPEGA = case id polos".

@@ -26,6 +26,7 @@ import {
   ambilDeduction,
   ambilSpreading,
   ambilSpreadingAneka,
+  ambilSpreadingCargo,
   hitungDeduction,
   simpanDeduction,
   type AksiDeduction,
@@ -34,11 +35,14 @@ import {
   type TampilanDeduction,
   type TampilanSpreading,
   type TampilanSpreadingAneka,
+  type TampilanSpreadingCargo,
+  type CargoSpreading,
   type LokasiSpreadingAneka,
   type ObjekSpreadingAneka,
 } from '../api'
-import { DEDUCTION as D, DEDUCTION_ANEKA as DA, TEKS_ANEKA, TEKS_DEDUCTION as T } from '../labels'
+import { DEDUCTION as D, DEDUCTION_ANEKA as DA, DEDUCTION_CARGO as DC, TEKS_ANEKA, TEKS_DEDUCTION as T } from '../labels'
 import IsianAngka4 from './IsianAngka4'
+import PagerLokasi, { potongHalaman } from './PagerLokasi'
 import { RingkasanSpreading } from './TabSpreading'
 
 const angka = (v: string | undefined) => angka4(v ?? '')
@@ -79,159 +83,164 @@ function Buka({ buka, onKlik }: { buka: boolean; onKlik: () => void }) {
 /** Daftar komisi (`CoverageCommisionList` FIRE) - lokasi -> item -> coverage -> detail, baca-saja. */
 function DaftarKomisi({ lokasi }: { lokasi: LokasiSpreading[] }) {
   const [terbuka, setTerbuka] = useState<string[]>([])
+  const [hal, setHal] = useState(1)
   const ganti = (k: string) => setTerbuka((t) => (t.includes(k) ? t.filter((x) => x !== k) : [...t, k]))
   return (
-    <div className="nbf-cov-wrap">
-      <table className="nbf-tabel">
-        <thead>
-          <tr>
-            <th scope="col" />
-            {D.kolomLokasi.map((k) => (
-              <th key={k} scope="col">
-                {k}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {lokasi.length === 0 && (
+    <>
+      {/* 10 baris per halaman (work owner 11-10-2026) */}
+      <PagerLokasi total={lokasi.length} halaman={hal} onPindah={setHal} />
+      <div className="nbf-cov-wrap">
+        <table className="nbf-tabel">
+          <thead>
             <tr>
-              <td colSpan={4}>{T.kosong}</td>
+              <th scope="col" />
+              {D.kolomLokasi.map((k) => (
+                <th key={k} scope="col">
+                  {k}
+                </th>
+              ))}
             </tr>
-          )}
-          {lokasi.map((l, a) => [
-            <tr key={`l${a}`} className={terbuka.includes(`l${a}`) ? 'nbf-baris--terbuka' : undefined}>
-              <td>
-                <Buka buka={terbuka.includes(`l${a}`)} onKlik={() => ganti(`l${a}`)} />
-              </td>
-              <td>{l.objectNo}</td>
-              <td>{l.objectName}</td>
-              <td>{l.location}</td>
-            </tr>,
-            terbuka.includes(`l${a}`) && (
-              <tr key={`ld${a}`} className="nbf-objek__detail">
-                <td colSpan={4}>
-                  <div className="nbf-cov-wrap">
-                    <table className="nbf-tabel">
-                      <thead>
-                        <tr>
-                          <th scope="col" />
-                          {D.kolomItem.map((k) => (
-                            <th key={k} scope="col">
-                              {k}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {l.items.map((it, b) => [
-                          <tr key={`i${a}-${b}`}>
-                            <td>
-                              <Buka buka={terbuka.includes(`i${a}-${b}`)} onKlik={() => ganti(`i${a}-${b}`)} />
-                            </td>
-                            <td>{it.itemType}</td>
-                            <td>{it.currency}</td>
-                            <td className="nbf-angka">{angka(it.tsi)}</td>
-                            <td className="nbf-angka">{angka(it.totalGrossPremi)}</td>
-                            <td className="nbf-angka">{angka(it.totalPremiumRnm)}</td>
-                          </tr>,
-                          terbuka.includes(`i${a}-${b}`) && (
-                            <tr key={`id${a}-${b}`} className="nbf-objek__detail">
-                              <td colSpan={6}>
-                                <div className="nbf-cov-wrap">
-                                  <table className="nbf-tabel">
-                                    <thead>
-                                      <tr>
-                                        <th scope="col" />
-                                        {D.kolomCoverage.map((k) => (
-                                          <th key={k} scope="col">
-                                            {k}
-                                          </th>
-                                        ))}
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {it.coverages.map((c, k) => [
-                                        <tr key={`c${a}-${b}-${k}`}>
-                                          <td>
-                                            <Buka buka={terbuka.includes(`c${a}-${b}-${k}`)} onKlik={() => ganti(`c${a}-${b}-${k}`)} />
-                                          </td>
-                                          <td>{c.oldId}</td>
-                                          <td className="nbf-angka">{angka(c.rate)}</td>
-                                          <td className="nbf-angka">{angka(c.premium)}</td>
-                                          <td className="nbf-angka">{angka(c.premiNusantaraRe)}</td>
-                                        </tr>,
-                                        terbuka.includes(`c${a}-${b}-${k}`) && (
-                                          <tr key={`cd${a}-${b}-${k}`} className="nbf-objek__detail">
-                                            <td colSpan={5}>
-                                              <dl className="nbf-deduct__rinci">
-                                                <div>
-                                                  <dt>{D.detailCoverage.tsiLiability}</dt>
-                                                  <dd>{angka(c.tsiLiability)}</dd>
-                                                </div>
-                                                <div>
-                                                  <dt>{D.detailCoverage.premium}</dt>
-                                                  <dd>{angka(c.premium)}</dd>
-                                                </div>
-                                                <div>
-                                                  <dt>{D.detailCoverage.tsiNusantaraRe}</dt>
-                                                  <dd>{angka(c.tsiNusantaraRe)}</dd>
-                                                </div>
-                                                <div>
-                                                  <dt>{D.detailCoverage.premiNusantaraRe}</dt>
-                                                  <dd>{angka(c.premiNusantaraRe)}</dd>
-                                                </div>
-                                              </dl>
-                                              <div className="nbf-cov-wrap">
-                                                <table className="nbf-tabel">
-                                                  <thead>
-                                                    <tr>
-                                                      {D.kolomSpreading.map((h) => (
-                                                        <th key={h} scope="col">
-                                                          {h}
-                                                        </th>
-                                                      ))}
-                                                    </tr>
-                                                  </thead>
-                                                  <tbody>
-                                                    {c.spreading.length === 0 && (
-                                                      <tr>
-                                                        <td colSpan={5}>{T.kosong}</td>
-                                                      </tr>
-                                                    )}
-                                                    {c.spreading.map((s, m) => (
-                                                      <tr key={`${s.treatyType}-${m}`}>
-                                                        <td>{s.treatyName}</td>
-                                                        <td className="nbf-angka">{angka(s.sharePercentage)}</td>
-                                                        <td className="nbf-angka">{angka(s.tsiSpreaded)}</td>
-                                                        <td className="nbf-angka">{angka(s.claimEstimation)}</td>
-                                                        <td className="nbf-angka">{angka(s.premiumSpreaded)}</td>
-                                                      </tr>
-                                                    ))}
-                                                  </tbody>
-                                                </table>
-                                              </div>
-                                            </td>
-                                          </tr>
-                                        ),
-                                      ])}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </td>
-                            </tr>
-                          ),
-                        ])}
-                      </tbody>
-                    </table>
-                  </div>
-                </td>
+          </thead>
+          <tbody>
+            {lokasi.length === 0 && (
+              <tr>
+                <td colSpan={4}>{T.kosong}</td>
               </tr>
-            ),
-          ])}
-        </tbody>
-      </table>
-    </div>
+            )}
+            {potongHalaman(lokasi, hal).map(([l, a]) => [
+              <tr key={`l${a}`} className={terbuka.includes(`l${a}`) ? 'nbf-baris--terbuka' : undefined}>
+                <td>
+                  <Buka buka={terbuka.includes(`l${a}`)} onKlik={() => ganti(`l${a}`)} />
+                </td>
+                <td>{l.objectNo}</td>
+                <td>{l.objectName}</td>
+                <td>{l.location}</td>
+              </tr>,
+              terbuka.includes(`l${a}`) && (
+                <tr key={`ld${a}`} className="nbf-objek__detail">
+                  <td colSpan={4}>
+                    <div className="nbf-cov-wrap">
+                      <table className="nbf-tabel">
+                        <thead>
+                          <tr>
+                            <th scope="col" />
+                            {D.kolomItem.map((k) => (
+                              <th key={k} scope="col">
+                                {k}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {l.items.map((it, b) => [
+                            <tr key={`i${a}-${b}`}>
+                              <td>
+                                <Buka buka={terbuka.includes(`i${a}-${b}`)} onKlik={() => ganti(`i${a}-${b}`)} />
+                              </td>
+                              <td>{it.itemType}</td>
+                              <td>{it.currency}</td>
+                              <td className="nbf-angka">{angka(it.tsi)}</td>
+                              <td className="nbf-angka">{angka(it.totalGrossPremi)}</td>
+                              <td className="nbf-angka">{angka(it.totalPremiumRnm)}</td>
+                            </tr>,
+                            terbuka.includes(`i${a}-${b}`) && (
+                              <tr key={`id${a}-${b}`} className="nbf-objek__detail">
+                                <td colSpan={6}>
+                                  <div className="nbf-cov-wrap">
+                                    <table className="nbf-tabel">
+                                      <thead>
+                                        <tr>
+                                          <th scope="col" />
+                                          {D.kolomCoverage.map((k) => (
+                                            <th key={k} scope="col">
+                                              {k}
+                                            </th>
+                                          ))}
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {it.coverages.map((c, k) => [
+                                          <tr key={`c${a}-${b}-${k}`}>
+                                            <td>
+                                              <Buka buka={terbuka.includes(`c${a}-${b}-${k}`)} onKlik={() => ganti(`c${a}-${b}-${k}`)} />
+                                            </td>
+                                            <td>{c.oldId}</td>
+                                            <td className="nbf-angka">{angka(c.rate)}</td>
+                                            <td className="nbf-angka">{angka(c.premium)}</td>
+                                            <td className="nbf-angka">{angka(c.premiNusantaraRe)}</td>
+                                          </tr>,
+                                          terbuka.includes(`c${a}-${b}-${k}`) && (
+                                            <tr key={`cd${a}-${b}-${k}`} className="nbf-objek__detail">
+                                              <td colSpan={5}>
+                                                <dl className="nbf-deduct__rinci">
+                                                  <div>
+                                                    <dt>{D.detailCoverage.tsiLiability}</dt>
+                                                    <dd>{angka(c.tsiLiability)}</dd>
+                                                  </div>
+                                                  <div>
+                                                    <dt>{D.detailCoverage.premium}</dt>
+                                                    <dd>{angka(c.premium)}</dd>
+                                                  </div>
+                                                  <div>
+                                                    <dt>{D.detailCoverage.tsiNusantaraRe}</dt>
+                                                    <dd>{angka(c.tsiNusantaraRe)}</dd>
+                                                  </div>
+                                                  <div>
+                                                    <dt>{D.detailCoverage.premiNusantaraRe}</dt>
+                                                    <dd>{angka(c.premiNusantaraRe)}</dd>
+                                                  </div>
+                                                </dl>
+                                                <div className="nbf-cov-wrap">
+                                                  <table className="nbf-tabel">
+                                                    <thead>
+                                                      <tr>
+                                                        {D.kolomSpreading.map((h) => (
+                                                          <th key={h} scope="col">
+                                                            {h}
+                                                          </th>
+                                                        ))}
+                                                      </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                      {c.spreading.length === 0 && (
+                                                        <tr>
+                                                          <td colSpan={5}>{T.kosong}</td>
+                                                        </tr>
+                                                      )}
+                                                      {c.spreading.map((s, m) => (
+                                                        <tr key={`${s.treatyType}-${m}`}>
+                                                          <td>{s.treatyName}</td>
+                                                          <td className="nbf-angka">{angka(s.sharePercentage)}</td>
+                                                          <td className="nbf-angka">{angka(s.tsiSpreaded)}</td>
+                                                          <td className="nbf-angka">{angka(s.claimEstimation)}</td>
+                                                          <td className="nbf-angka">{angka(s.premiumSpreaded)}</td>
+                                                        </tr>
+                                                      ))}
+                                                    </tbody>
+                                                  </table>
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          ),
+                                        ])}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </td>
+                              </tr>
+                            ),
+                          ])}
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+              ),
+            ])}
+          </tbody>
+        </table>
+      </div>
+    </>
   )
 }
 
@@ -243,6 +252,7 @@ function DaftarKomisi({ lokasi }: { lokasi: LokasiSpreading[] }) {
  */
 export function DaftarKomisiAneka({ lokasi }: { lokasi: LokasiSpreadingAneka[] }) {
   const [terbuka, setTerbuka] = useState<string[]>([])
+  const [hal, setHal] = useState(1)
   const ganti = (k: string) => setTerbuka((t) => (t.includes(k) ? t.filter((x) => x !== k) : [...t, k]))
   const kepala = (kolom: readonly string[]) => (
     <thead>
@@ -373,70 +383,216 @@ export function DaftarKomisiAneka({ lokasi }: { lokasi: LokasiSpreadingAneka[] }
     )
   }
   return (
-    <div className="nbf-cov-wrap">
-      <table className="nbf-tabel nbf-aneka-grid nbf-aneka-grid--lokasi">
-        {kepala(DA.kolomLokasi)}
-        <tbody>
-          {lokasi.length === 0 && (
-            <tr>
-              <td colSpan={3}>{T.kosong}</td>
-            </tr>
-          )}
-          {lokasi.map((l, a) => {
-            const kl = `l${a}`
-            return [
-              <tr key={kl}>
-                <td>
-                  <Buka buka={terbuka.includes(kl)} onKlik={() => ganti(kl)} />
-                </td>
-                <td>{l.objectNo}</td>
-                <td>{l.location}</td>
-              </tr>,
-              terbuka.includes(kl) && (
-                <tr key={`${kl}-d`} className="nbf-objek__detail">
-                  <td colSpan={3}>
-                    <div className="nbf-lapis nbf-lapis--objek">
-                      {l.okupasi.length > 0 && (
-                        <div className="nbf-cov-wrap">
-                          <table className="nbf-tabel nbf-aneka-grid">
-                            {kepala(DA.kolomOkupasi)}
-                            <tbody>
-                              {l.okupasi.map((k, b) => {
-                                const kk = `k${a}-${b}`
-                                return [
-                                  <tr key={kk}>
-                                    <td>
-                                      <Buka buka={terbuka.includes(kk)} onKlik={() => ganti(kk)} />
-                                    </td>
-                                    <td>{k.occupationName}</td>
-                                  </tr>,
-                                  terbuka.includes(kk) && (
-                                    <tr key={`${kk}-d`} className="nbf-objek__detail">
-                                      <td colSpan={2}>{objek(k.objek, `o${a}-${b}`, false)}</td>
-                                    </tr>
-                                  ),
-                                ]
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                      {l.objekGolf.length > 0 && objek(l.objekGolf, `o${a}-g`, true)}
-                    </div>
+    <>
+      {/* 10 baris per halaman (work owner 11-10-2026) */}
+      <PagerLokasi total={lokasi.length} halaman={hal} onPindah={setHal} />
+      <div className="nbf-cov-wrap">
+        <table className="nbf-tabel nbf-aneka-grid nbf-aneka-grid--lokasi">
+          {kepala(DA.kolomLokasi)}
+          <tbody>
+            {lokasi.length === 0 && (
+              <tr>
+                <td colSpan={3}>{T.kosong}</td>
+              </tr>
+            )}
+            {potongHalaman(lokasi, hal).map(([l, a]) => {
+              const kl = `l${a}`
+              return [
+                <tr key={kl}>
+                  <td>
+                    <Buka buka={terbuka.includes(kl)} onKlik={() => ganti(kl)} />
                   </td>
-                </tr>
-              ),
-            ]
-          })}
-        </tbody>
-      </table>
-    </div>
+                  <td>{l.objectNo}</td>
+                  <td>{l.location}</td>
+                </tr>,
+                terbuka.includes(kl) && (
+                  <tr key={`${kl}-d`} className="nbf-objek__detail">
+                    <td colSpan={3}>
+                      <div className="nbf-lapis nbf-lapis--objek">
+                        {l.okupasi.length > 0 && (
+                          <div className="nbf-cov-wrap">
+                            <table className="nbf-tabel nbf-aneka-grid">
+                              {kepala(DA.kolomOkupasi)}
+                              <tbody>
+                                {l.okupasi.map((k, b) => {
+                                  const kk = `k${a}-${b}`
+                                  return [
+                                    <tr key={kk}>
+                                      <td>
+                                        <Buka buka={terbuka.includes(kk)} onKlik={() => ganti(kk)} />
+                                      </td>
+                                      <td>{k.occupationName}</td>
+                                    </tr>,
+                                    terbuka.includes(kk) && (
+                                      <tr key={`${kk}-d`} className="nbf-objek__detail">
+                                        <td colSpan={2}>{objek(k.objek, `o${a}-${b}`, false)}</td>
+                                      </tr>
+                                    ),
+                                  ]
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                        {l.objekGolf.length > 0 && objek(l.objekGolf, `o${a}-g`, true)}
+                      </div>
+                    </td>
+                  </tr>
+                ),
+              ]
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   )
 }
 
-export default function TabDeduction({ caseId, aneka = false }: { caseId: string; aneka?: boolean }) {
+/**
+ * Daftar komisi Marine Cargo (tiket 74 P4) - baca-saja, dari jawaban `…/spreading-cargo`: `CoverageCommisionList.xml` cabang
+ * Marine (cargo: No. / Trading / Goods / Packing / Conveyance) → `InputCommissionMC_FacIn` (Coverage / TSI / Gross Premium) →
+ * `CommisionItemAneka` (detail = `DEDUCTION_ANEKA.detailCoverage`; label "TSI Liability" terikat `.TSI`, verbatim) + baris spreading
+ * `InputDtlSpreadingCommisionCoverage_FacIn`.
+ */
+export function DaftarKomisiCargo({ cargo }: { cargo: CargoSpreading[] }) {
+  const [terbuka, setTerbuka] = useState<string[]>([])
+  const [hal, setHal] = useState(1)
+  const ganti = (k: string) => setTerbuka((t) => (t.includes(k) ? t.filter((x) => x !== k) : [...t, k]))
+  const kepala = (kolom: readonly string[]) => (
+    <thead>
+      <tr>
+        <th scope="col" />
+        {kolom.map((k) => (
+          <th key={k} scope="col">
+            {k}
+          </th>
+        ))}
+      </tr>
+    </thead>
+  )
+  return (
+    <>
+      {/* 10 baris per halaman (work owner 11-10-2026) */}
+      <PagerLokasi total={cargo.length} halaman={hal} onPindah={setHal} />
+      <div className="nbf-cov-wrap">
+        <table className="nbf-tabel nbf-aneka-grid">
+          {kepala(DC.kolomCargo)}
+          <tbody>
+            {cargo.length === 0 && (
+              <tr>
+                <td colSpan={DC.kolomCargo.length + 1}>{T.kosong}</td>
+              </tr>
+            )}
+            {potongHalaman(cargo, hal).map(([x, i]) => {
+              const kg = `g${i}`
+              return [
+                <tr key={kg}>
+                  <td>
+                    <Buka buka={terbuka.includes(kg)} onKlik={() => ganti(kg)} />
+                  </td>
+                  <td>{x.no}</td>
+                  <td>{x.tradingNote}</td>
+                  <td>{x.goodNote}</td>
+                  <td>{x.packingNote}</td>
+                  <td>{x.conveyanceNote}</td>
+                </tr>,
+                terbuka.includes(kg) && (
+                  <tr key={`${kg}-d`} className="nbf-objek__detail">
+                    <td colSpan={DC.kolomCargo.length + 1}>
+                      <div className="nbf-cov-wrap">
+                        <table className="nbf-tabel nbf-aneka-grid">
+                          {kepala(DC.kolomCoverage)}
+                          <tbody>
+                            {x.coverages.length === 0 && (
+                              <tr>
+                                <td colSpan={DC.kolomCoverage.length + 1}>{T.kosong}</td>
+                              </tr>
+                            )}
+                            {x.coverages.map((c, n) => {
+                              const kc = `${kg}-c${n}`
+                              return [
+                                <tr key={kc}>
+                                  <td>
+                                    <Buka buka={terbuka.includes(kc)} onKlik={() => ganti(kc)} />
+                                  </td>
+                                  <td>{c.coverageNote}</td>
+                                  <td className="nbf-angka">{angka(c.tsi)}</td>
+                                  <td className="nbf-angka">{angka(c.premium)}</td>
+                                </tr>,
+                                terbuka.includes(kc) && (
+                                  <tr key={`${kc}-d`} className="nbf-objek__detail">
+                                    <td colSpan={DC.kolomCoverage.length + 1}>
+                                      <dl className="nbf-deduct__rinci nbf-aneka-angka">
+                                        <div>
+                                          <dt>{DA.detailCoverage.tsi}</dt>
+                                          <dd>{angka(c.tsi)}</dd>
+                                        </div>
+                                        <div>
+                                          <dt>{DA.detailCoverage.tsiNusantaraRe}</dt>
+                                          <dd>{angka(c.tsiNusantaraRe)}</dd>
+                                        </div>
+                                        <div>
+                                          <dt>{DA.detailCoverage.premium}</dt>
+                                          <dd>{angka(c.premium)}</dd>
+                                        </div>
+                                        <div>
+                                          <dt>{DA.detailCoverage.premiNusantaraRe}</dt>
+                                          <dd>{angka(c.premiNusantaraRe)}</dd>
+                                        </div>
+                                      </dl>
+                                      <div className="nbf-cov-wrap">
+                                        <table className="nbf-tabel">
+                                          <thead>
+                                            <tr>
+                                              {D.kolomSpreading.map((h) => (
+                                                <th key={h} scope="col">
+                                                  {h}
+                                                </th>
+                                              ))}
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {c.spreading.length === 0 && (
+                                              <tr>
+                                                <td colSpan={5}>{T.kosong}</td>
+                                              </tr>
+                                            )}
+                                            {c.spreading.map((s, m) => (
+                                              <tr key={`${s.treatyType}-${m}`}>
+                                                <td>{s.treatyName}</td>
+                                                <td className="nbf-angka">{angka(s.sharePercentage)}</td>
+                                                <td className="nbf-angka">{angka(s.tsiSpreaded)}</td>
+                                                <td className="nbf-angka">{angka(s.claimEstimation)}</td>
+                                                <td className="nbf-angka">{angka(s.premiumSpreaded)}</td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ),
+                              ]
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                ),
+              ]
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )
+}
+
+/** `cargo` (tiket 74 P4, aditif): ringkasan + daftar komisi dari `…/spreading-cargo`. */
+export default function TabDeduction({ caseId, aneka = false, cargo = false }: { caseId: string; aneka?: boolean; cargo?: boolean }) {
   const [v, setV] = useState<TampilanDeduction | null>(null)
-  const [sp, setSp] = useState<TampilanSpreading | TampilanSpreadingAneka | null>(null)
+  const [sp, setSp] = useState<TampilanSpreading | TampilanSpreadingAneka | TampilanSpreadingCargo | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [menghitung, setMenghitung] = useState(false)
   const [menyimpan, setMenyimpan] = useState(false)
@@ -452,7 +608,7 @@ export default function TabDeduction({ caseId, aneka = false }: { caseId: string
         if (!batal) setGalat(err)
       },
     )
-    ;(aneka ? ambilSpreadingAneka : ambilSpreading)(caseId).then(
+    ;(cargo ? ambilSpreadingCargo : aneka ? ambilSpreadingAneka : ambilSpreading)(caseId).then(
       (h) => {
         if (!batal) setSp(h)
       },
@@ -542,7 +698,11 @@ export default function TabDeduction({ caseId, aneka = false }: { caseId: string
       </section>
 
       <section className="nbf-lapis">
-        {sp === null ? <Memuat /> : aneka ? <DaftarKomisiAneka lokasi={(sp as TampilanSpreadingAneka).lokasi} /> : <DaftarKomisi lokasi={(sp as TampilanSpreading).lokasi} />}
+        {sp === null ? (
+          <Memuat />
+        ) : cargo ? (
+          <DaftarKomisiCargo cargo={(sp as TampilanSpreadingCargo).cargo} />
+        ) : aneka ? <DaftarKomisiAneka lokasi={(sp as TampilanSpreadingAneka).lokasi} /> : <DaftarKomisi lokasi={(sp as TampilanSpreading).lokasi} />}
       </section>
 
       {sp !== null && <RingkasanSpreading v={sp} />}

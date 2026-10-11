@@ -108,11 +108,11 @@ func TestBacaKasus(t *testing.T) {
 		return k
 	}
 	all, _ := json.Marshal(j)
-	if n := len(kunci(all)); n != 19 || len(kunci(j["opportunity"])) != 14 || len(kunci(j["general"])) != 15 {
+	if n := len(kunci(all)); n != 21 || len(kunci(j["opportunity"])) != 14 || len(kunci(j["general"])) != 15 {
 		t.Errorf("kunci %v / opportunity %v / general %v", kunci(all), kunci(j["opportunity"]), kunci(j["general"]))
 	}
 	for _, harus := range []string{`"caseId":"UJI-NB-1"`, `"position":"Offer"`, `"statusWork":"Pending-Policy"`,
-		`"insuredName":"UJI TERTANGGUNG"`, `"riskScoring":{"finalScore":"","noteFinalScore":""}`, `"aksesLossRecord":false`, `"aksesKorespondensi":false`, `"bolehUbah":true,"alasanBacaSaja":"","bolehUbahSpreading":true,"ubahBarisSpreading":true,"ubahAkumulasi":false`, `"offeringDate":"01-10-2026"`, `"businessProspectName":"UJI Prospek"`, `"beginDate":""`,
+		`"insuredName":"UJI TERTANGGUNG"`, `"riskScoring":{"finalScore":"","noteFinalScore":""}`, `"aksesLossRecord":false`, `"aksesKorespondensi":false`, `"bolehUbah":true,"alasanBacaSaja":"","bolehUbahSpreading":true,"ubahBarisSpreading":true,"ubahAkumulasi":false`, `"offeringDate":"01-10-2026"`, `"businessProspectName":"UJI Prospek"`, `"beginDate":""`, `"jenisCsv":""`,
 		// tiket 73 P1: tanpa pembaca BUSINESS -> kontainer larik kosong (bukan null), semua sakelar false.
 		`"tampilanAneka":{"kontainer":[],"kolomTahunJumlah":false,"he":false,"golf":false,"tanamanHasil":false,"engineering":false,"bonding":false,"briguna":false,"topRisk":false,"sectionLol":false,"jumlahSatuan":false,"currencyCoverage":false,"mbd":false}`} {
 		if !strings.Contains(isi, harus) {

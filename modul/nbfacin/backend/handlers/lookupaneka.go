@@ -20,6 +20,15 @@ type kapalKabel struct {
 	DWT         string `json:"dwt"`
 	Klasifikasi string `json:"klasifikasi"`
 	Konstruksi  string `json:"konstruksi"`
+	// Tiket 74 P1 - aditif (popup Select Ship Marine Cargo); medan lama tidak berubah (Marine Hull Aneka).
+	ShipTypeID     string `json:"shipTypeId"`
+	ShipTypeName   string `json:"shipTypeName"`
+	Register       string `json:"register"`
+	Imo            string `json:"imo"`
+	YMake2         string `json:"yMake2"`
+	Remark         string `json:"remark"`
+	FormerShipName string `json:"formerShipName"`
+	Rebuilt        string `json:"rebuilt"`
 }
 
 type tipeKendaraanKabel struct {

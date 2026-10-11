@@ -14,11 +14,11 @@ import (
 )
 
 // sqlKasusGanda - :1 InsuredName tanpa "." / spasi, :2 SobName, :3 BusinessCode, :4 NoOfferSlip, :5 / :6 Begin / End
-// dd/MM/yyyy, :7 IDPEGA case sendiri. Urutan baris tidak ditentukan (Pega memakai pxResults(1) tanpa ORDER BY).
+// dd/MM/yyyy, :7 / :8 IDPEGA case sendiri dua bentuk (polos / berawalan, idpegaproduksi.go). Urutan baris tidak ditentukan (Pega memakai pxResults(1) tanpa ORDER BY).
 func sqlKasusGanda(prod string) string {
 	return "select distinct IDPEGA,NOPOLIS from " + prod + " where NOENDORS is null AND replace(replace(INSUREDNAME,'.',''),' ','') = :1" +
 		" AND SOB = :2 AND BUSINESSCODE = :3 AND RISLIPCEDING = :4 AND to_char(BEGINDATE,'dd/MM/yyyy') = :5" +
-		" AND to_char(ENDDATE,'dd/MM/yyyy') = :6 AND (IDPEGA IS NULL OR IDPEGA <> :7)"
+		" AND to_char(ENDDATE,'dd/MM/yyyy') = :6 AND (IDPEGA IS NULL OR IDPEGA NOT IN (:7, :8))"
 }
 
 // KasusGanda - lihat PenyimpanSubmit.
@@ -27,8 +27,9 @@ func (r *SubmitOracle) KasusGanda(ctx context.Context, c models.CariKasusGanda) 
 	if err != nil {
 		return nil, err
 	}
+	polos, awalan := DuaBentukIDPega(c.IDPegaSendiri)
 	baris, err := r.db.QueryContext(ctx, sqlKasusGanda(prod), c.InsuredName, c.SobName, c.BusinessCode, c.NoOfferSlip, c.Mulai,
-		c.Akhir, c.IDPegaSendiri)
+		c.Akhir, polos, awalan)
 	if err != nil {
 		return nil, fmt.Errorf("repository: GetDataDoubleCase: %w", err)
 	}

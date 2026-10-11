@@ -859,3 +859,383 @@ migrasi.
 **Uji:** `services/selesaipolicyaneka_test.go`, `services/salinlokasi_test.go`, `handlers/salinlokasi_test.go`; uji P3
 `TestKasusSpreadingAneka` / `TestBacaSpreadingRingkas` disesuaikan (gerbang lini). Mutasi P5: 19 mutasi + 1 sesudah uji Golf
 MBD ditambah, semua mati.
+
+### Berkas work owner 10-10-2026 (`D:\migrasi\RNM\DDL\`)
+
+- **FlagSpreading.xml** (`ASM-FW-GISFW-DATA-SPREADINGRISK!FLAGSPREADING`): nilai lokal "SF-MR 2023" dan "Open Fac Market" (L186-192;
+  sensus dua cara grep 2 / urai XML 2). Validasi salin-lokasi kini membatasi flagSpreading terisi ke dua nilai itu (peka huruf;
+  400 di luar daftar). Wajib bila treatyType "10015" (K73-51) tetap.
+- **M_LIMIT_NONPROPANDENGG.xls / M_LIMIT_ENGINEERINGG.xls / M_LIMIT_FINANCIALINS.xls** (butir DBA P4). Dibaca lewat Excel COM
+  read-only. Hanya JABATAN / TEAM_GROUP / LIMIT_BOTTOM* / WORKBASKET / JABATAN_ATASAN yang diambil (NAMA / LOGIN tidak disalin).
+  Isi tetap dibaca dari DB, tidak di-hardcode.
+  - Kolom kedua tabel bentuk A sama dengan DDL (14 kolom; 37 baris masing-masing). FINANCIALINS 7 kolom, 4 baris.
+  - Ejaan JABATAN NONPROPANDENGG / ENGINEERINGG = ejaan `jabatanPengguna` / `jabatanPosisiUW` Go (JUW_B, UNDERWRITER, SENIORUW,
+    DEPHEADUNDERWRITER, KADIVFACULTATIVE, KADIVTEKNIK, MANAGERTEKNIK, DIREKTURMARKETING, DIREKTURTEKNIK) + LEADER (JUW_UW langkah 7):
+    tanpa selisih ejaan.
+  - TIDAK ADA baris JUW_A dan KADIVFINANCIAL di kedua tabel. UNDERWRITER tidak ada untuk team 3 (sama dengan PROPERTYY DDL).
+    DEPHEADUNDERWRITER hanya team 3. Akibatnya Accept JUW A / Kadiv Financial / UNDERWRITER team 3 = subquery tanpa baris ->
+    LetterNo "" -> Else (perilaku Pega yang sama, bukan selisih).
+  - SENIORUW team 1 dua baris (limit identik, LOGIN berbeda -> Pega tidak ORA-01427). `acceptance.Next` menerima limit identik.
+  - FINANCIALINS JABATAN berspasi: "SENIOR UNDERWRITER", "KADIV KEUANGAN", "DIREKTUR MARKETING", "DIREKTUR TEKNIK". Ini cocok
+    dengan gerbang `acceptance.NextFinancial` langkah 22 ("KADIV KEUANGAN", "DIREKTUR MARKETING", "DIREKTUR TEKNIK").
+
+## Bug DEV 10-10-2026 — Save Spreading Aneka 500 `ORA-01722` di `T_SPREADINGLIST` (sesi c3)
+
+- `[terverifikasi: go-ora v2.8.19, module cache]` INSERT array-bind (`command.go` `Stmt._exec` cabang `bulkExec`) menyandi
+  tiap elemen kolom dengan SATU `ParameterInfo` yang dipakai ulang: `encodeValue` → `par.init()` (`parameter_encode.go` L516,
+  CharsetID / CharsetForm / ContFlag = 0) → `setDataType` menurut tipe Go elemen (nil → NCHAR tanpa charset L16-18; string →
+  NCHAR + charset server L98-102). DataType kolom = elemen non-kosong terakhir, tetapi CharsetID / CharsetForm di kepala bind
+  (`parameter.go` `write` L373-374) = milik elemen TERAKHIR. Kolom teks / desimal (angkaMasuk) yang baris terakhirnya NULL
+  dan baris sebelumnya berisi terkirim NCHAR ber-charset 0. `[dugaan]` dampaknya di server = ORA-01722 di `TO_NUMBER` (tidak
+  dapat dibuktikan dari kode klien; tanpa percobaan ke DEV). Baris spreading Aneka lazim begitu (mis. baris OR berisi, baris
+  terakhir tanpa TreatyName / ClaimEstimation). Penyebab format nilai (>8 desimal) disingkirkan: spreading lewat
+  `bulatkanSimpanAneka` (`simpan8`).
+- Perbaikan (opsi b): `repository.kolomArrayBertipe` — kolom teks yang memuat NULL diikat `sql.NullString` di SETIAP baris
+  (satu tipe Go per kolom; cabang `tyNullString` = cabang string); kolom bercampur tipe / tipe bukan teks bercampur NULL =
+  galat. Dipakai `sisipAnekaBerkelompok` (seluruh tabel jalur Aneka: lokasi, okupasi, objek, coverage, deductible, spreading).
+  `[keputusan work owner 10-10-2026, lewat sesi 9d]` FIRE ikut: `sisipBerkelompok` (Save tab Object FIRE) memakai
+  `kolomArrayBertipe` sebagai pencegahan — pengecualian sadar dari "jangan ubah yang sudah berhasil"; isi data yang disimpan
+  tidak berubah (`bandingkanJalur` membandingkan dengan jalur lama per baris setelah `sql.NullString` dikembalikan ke nilai
+  asal). `[terverifikasi]` fixture `objekKecilUji` (jalur lama) memuat 5 kolom NULL di baris terakhir setelah baris berisi,
+  termasuk T_LOCATIONLIST kolom 5 (log `TestSisipBerkelompokFireNullTerakhir`).
+- Uji: `TestKolomArrayBertipe` (instrumen `periksaKolomSeragam` diuji dulu atas jawaban yang diketahui), tiga uji
+  `sisipAnekaBerkelompok` memakai `eksekutorTiruan{seragam: true}` (satu tipe per kolom, tanpa nil telanjang, teks bind
+  angkaMasuk cocok `PolaAngkaMasuk`); mutasi `kolomArray` lama di jalur Aneka → ketiganya gagal.
+- Uji FIRE: `TestSisipBerkelompokFireNullTerakhir` (bentuk lama T_LOCATIONLIST ditolak instrumen; jalur FIRE lolos
+  `periksaKolomSeragam`), `bandingkanJalur` / urutan eksekusi memakai `seragam: true`; mutasi `kolomArray` lama di
+  `sisipBerkelompok` → `TestSisipBerkelompokFireNullTerakhir`, `TestSisipBerkelompokSetara`, `TestSisipBerkelompokRoundTrip`
+  gagal ("nil telanjang").
+- **Lanjutan 10-10-2026 (biner DEV dibangun ulang 11:18, ORA-01722 tetap):** `kolomArrayBertipe` bukan (satu-satunya)
+  penyebab. Perubahan:
+  - Coverage / deductible / spreading jalur Aneka kini disisip PER BARIS dengan bind skalar, bentuk yang jalan di DEV untuk
+    spreading FIRE (`tabelPerBarisAneka`, `jalankanKelompok`), tetap setelah induknya.
+  - Setiap INSERT objek (Aneka, FIRE berkelompok, spreading FIRE per baris) diperiksa sebelum Oracle oleh `periksaBindBaris`
+    (`repository/periksabind.go`):
+    - bind angkaMasuk wajib cocok `PolaAngkaMasuk`;
+    - ID / PARENT_ID / SEQ_NO wajib bilangan bulat (kecuali T_LOCATIONLIST.PARENT_ID VARCHAR2 ID case);
+    - jumlah nilai = jumlah bind.
+    Galat `ErrBindTidakSah` menyebut tabel, kolom, baris, dan BENTUK nilai (tanpa nilai mentah).
+  - Galat Oracle dibungkus tabel + rentang baris + jumlah bind + cara (array-bind / per baris).
+- Uji jalur PUT utuh (`TestSimpanSpreadingAnekaBindCaseDEV`, service → `repository.SimulasiTulisAneka`) atas rekonstruksi case
+  work owner: 2 lokasi, PUBLIC LIABILITY, % Share 25, Copy To All "2024 QS 155M FAC" 100 %, TSI 500.000.000.000.000.
+  `[terverifikasi di uji]` semua bind T_SPREADINGLIST lolos mask; total = ringkasan layar (TSI 137.500.000.000.000, premi
+  1.375.000.000.000). Jadi isi bind bukan penyebab untuk bentuk ini `[dugaan]`.
+- **Akar masalah (DEV 11:31, ditangkap periksaBindBaris: `T_SPREADINGLIST kolom CLAIM_ESTIMATION baris 1: panjang bulat 1,
+  desimal 20`; ditelusur sesi 0f, diperbaiki sesi c3):**
+  - Urutan di cabang uw `SimpanSpreadingAneka`: `hitungSaveSpreadingAneka` membulatkan 8 desimal, lalu `totalAneka` dipanggil
+    untuk `periksaJenisTreaty`.
+  - `totalLokasiAneka` di dalamnya menimpa `ClaimEstimation` baris dengan nilai skala 20 yang belum dibulatkan (LoL kosong →
+    0E-20), dan pohon itulah yang ditulis.
+  - Perbaikan: pemeriksaan memakai `salinDalamAneka(d.lokasi)`. Hasil hitung tidak berubah: pohon yang ditulis tetap hasil
+    `hitungSaveSpreadingAneka`, dan total pemeriksaan dihitung dari LoL, bukan dari baris.
+  - Uji `TestSimpanSpreadingAnekaBindCaseDEVTahapUW` (posisi ReasFacInJuniorUnderwritingB, LoL kosong, treaty 10015) MERAH
+    sebelum perbaikan dengan pesan yang sama persis dengan log DEV, HIJAU sesudahnya.
+  - Padanan FIRE `[terverifikasi]` aman: `hitungSaveSpreading` memanggil `totalLokasi` SEBELUM `bulatkanSimpan`, dan cabang uw
+    memeriksa lewat `totalMataUang(k, adaTop)` tanpa memanggil ulang `totalLokasi`. `pertahankanSpreading` juga membulatkan
+    sesudah `totalLokasi`; `lossrecord.go` / `scoring.go` hanya membaca. Di Aneka, `GantiObjekAneka` (aneka.go L419-423)
+    membulatkan sesudah `totalLokasiAneka`; L688 (`tampilanSpreadingAneka`) bekerja atas salinan dan tidak ditulis.
+
+## Catatan silang — prakondisi `.pxListSubscript>1` (11-10-2026, tiket 74 P5)
+
+`[terverifikasi]` Langkah INSERT `SaveOfferProduction_Act` / `SaveTreatyProduction_Act` (FACINOFFER / FACINPRODUCTION) di cabang ini berprakondisi `.pxListSubscript>1` (T=2 lanjut / F=3 lewati), sama dengan
+setiap cabang lain (FIRE / Aneka / Marine). Port sistem baru menulis SEMUA baris spreading. **Keputusan work owner 11-10-2026
+(K74-23, `docs/issues/74-marine-cargo.md`):** tetap begitu — kode tiket ini tidak diubah.
+
+## P6 — Upload CSV keluarga Aneka, mulai Marine Hull: riset (sesi c3, 11-10-2026)
+
+**Pemicu:** work owner 11-10-2026 meminta tombol CSV case MARINE HULL diperbaiki ("PERBAIKI, SUDAH DI TAMBAH DI FOLDER"). Template
+Pega: `D:\migrasi\RNM\DDL\templatecsvmarinehull.csv`, 31 judul. Nilai contohnya TIDAK disalin.
+
+**Status:** riset selesai. `jenisCsv` di GET kasus sudah dipasang. Port importer menunggu K73-52..K73-62 (penampung butuh
+keputusan migrasi).
+
+### Korpus `[terverifikasi]` (`D:\migrasi\RNM\NB FacIn\`, varian NB)
+
+- **Pemilihan:** `Activity\ChooseActivityMappingCSV_Act.xml` langkah 5 `IsAneka` → `InsertUploadAneka_act` (langkah 1 / 2 ber-label
+  `//`). Pemicunya tombol "Save Data" `Section\Periode.xml` L28596 / L28873 (refresh, lalu `InputInwardFacultativeDtl`). Tidak ada
+  hitung premi sesudahnya.
+- **Template:** `Activity\SetDownloadMasterCSV.xml` langkah 2–6, Property-Set `InputData.CARI44` berurutan, sehingga yang terakhir
+  benar menang:
+  - IsAneka → TemplateCSVAneka;
+  - IsMarineHull → TemplateCSVMarineHull;
+  - IsContractorsPlantMachinery → **TemplateCSVAneka_CPM** (template ketiga, tidak disebut di permintaan);
+  - IsFire → TemplateCSVFire;
+  - IsMarineCargo → TemplateCSVMarineCargo.
+  `When\IsAneka.xml` memuat IsMarineHull (B), IsContractorsPlantMachinery (W), IsBondingAndCustomBonds (AA), dan lainnya, tetapi
+  TIDAK memuat isGolfInsurance. Akibatnya Golf tanpa template dan tanpa importer.
+- **Tidak bercabang per lini.** `InsertUploadAneka_act` mengisi SEMUA medan untuk setiap lini Aneka: medan Marine Hull, VehicleHE,
+  SerialNo, Year, Flag, dan BuiltIn. Kolom yang tidak ada di berkas tetap kosong.
+- **Kolom yang dibaca** (per NAMA judul): 35. Sensus dua cara cocok: (1) urai langkah hidup / mati, (2) regex mentah atas kedua berkas;
+  selisih ∅ dua arah. Uji instrumen: `RISKADDRESS_ID` tergolong mati (Insert 4.8 + Protect 4 ber-`//`), `KELURAHAN` hidup (4.6).
+  - Template Marine Hull (31) ⊂ dibaca. Template \ dibaca = ∅.
+  - Dibaca \ template = SERIALNO, CHASSISNUMBER, ENGINENUMBER, KELURAHAN (untuk template Aneka umum / CPM yang belum ada).
+- **Insert, per baris `TempWorkPage.ListB2BHostUpload`:**
+  - 1 Property-Remove LocationList + CurrencyList (MENGGANTI).
+  - 4.1 `.NO == ""` → lompat (baris dilewati). `Local.IdxLocation = .NO`: LocationList DIINDEKS NILAI NO. Perbandingan
+    "baris sebelumnya" memakai `ListB2BHostUpload(CountLocation)`, dan CountLocation hanya naik untuk baris ber-NO, sehingga bergeser
+    bila ada baris NO kosong di tengah.
+  - 4.2 `ProtectUploadAneka_Act`. TRANS `ERRMSG == ""` F=6: galat PERTAMA menghentikan impor dan `Work-.Save` tidak tercapai.
+  - Lokasi baru (4.7) bila NO ≠ baris sebelumnya:
+    - ObjectNo = NO;
+    - RoadType / RoadName / BuildingNo / Country, ASMAddress = TYPE_ADDRESS + " " + ADDRESS, ZipCode = POSTAL_CODE;
+    - kota / provinsi / district / RW = baris PERTAMA Obj-Browse `Int-RW` (ZipCode = POSTAL_CODE, Note = KELURAHAN).
+    - Catatan: 4.7 memakai `(<LAST>)` untuk semua medan kecuali ObjectNo.
+  - Okupasi (4.9): HANYA `OccupationList(1)`, ditimpa bila NO atau OCCUPATION_NAME berubah. ID / Name = baris pertama
+    `BrowseOccupationANEKA_RD`: TYPE "ANEKA", BusinessName case, Name **Contains** tak peka huruf, urut ID DESC; sama dengan lookup
+    tiket 73 P1.
+  - Mata uang (4.10–4.11): `GetCurrencyIDByName` per baris → CurrencyMaster (CURR, OLDID).
+  - Objek baru (4.12) bila NO / OBJECT_DESCRIPTION / SECTION berubah:
+    - ObjectName = OBJECT_DESCRIPTION, Currency (Name / ID / OldID);
+    - Section = SECTION I → 1, SECTION II → 2, WARRANTY → 3, selain itu 4;
+    - TSI;
+    - SerialNo, VehicleHE.ChassisNumber / EngineNumber;
+    - Year, MarineHull.NRTRT / GRTRT / DWTRT / Construction / TypeOfVessel (= OBJECT_TYPE) / Classification;
+    - Flag = FLAGNAME, BuiltIn = PLACE_OF_MANUFACTURE.
+    - Medan objek diambil dari baris PERTAMA objek.
+  - Coverage baru (4.13) bila objek atau COVERAGE_NAME berubah:
+    - Coverage / CoverageNote = baris pertama `BrowseCoverageFacIn_RD`: Type "ANEKA", BizCode case, NamaCoverage **Contains**;
+      sama dengan lookup tiket 73 P2;
+    - CalculateMethod_FacIn = PRO RATA → 1, SHORT PERIOD → 2, selain itu 3;
+    - Day: kosong → "365";
+    - Loading = PCT_LOADING, LostLimit = PCT_SCALE, Rate = PCT_RATE, Premium = PREMIUM, DiscountPercentage / Discount,
+      PctLoL / LimitofLiability, TSI = TSI baris;
+    - Currency = mata uang objek.
+    - Baris berurutan dengan coverage yang sama diabaikan.
+  - Angka: TSI / PREMIUM / DISCOUNT / LOL buang "." lalu "," → "."; PCT_* hanya "," → ".".
+  - 6 Java: buang duplikat CurrencyMaster dengan kunci `.Currency`, padahal halaman itu hanya ber-medan CURR / OLDID. `[dugaan]`
+    Kuncinya selalu kosong, sehingga hanya SATU entri yang tersisa.
+  - 7: CurrencyList (Premium / TSI per mata uang dari coverage) bila StatusBusiness ≠ "3".
+  - 8 `Work-.Save`.
+- **Protect** (`Activity\ProtectUploadAneka_Act.xml`), pesan verbatim:
+  - "Occupation Cannot NULL" / "Coverage Cannot NULL". Keduanya Property-Set yang MENIMPA, jadi bila keduanya kosong yang tersisa
+    pesan Coverage.
+  - `\n * Occupation <NAMA> Not Available in Master` / `\n * Coverage <NAMA> Not Available in Master`.
+  - Pencarian hanya bila nama berubah dari baris sebelumnya.
+  - TRANS langkah 5.4 / 6.4 menguji `TradingTemp.pxResults`, halaman salinan dari cargo. `[dugaan]` Halaman itu tidak ada di alur
+    Aneka, sehingga Protect keluar sesudah galat okupasi dan coverage tidak diperiksa. Hasilnya sama: impor berhenti di baris itu.
+  - Langkah 4 (RiskAddress) ber-`//`.
+- **Master:** POOLDATA.OCCUPATION (`DDL\OCCUPATION.txt`), COVERAGE (butir 96), RW, CURRENCY. Semuanya sudah dibaca sistem baru;
+  tidak butuh DDL baru.
+- **Tujuan:** semua medan sudah ada di `models.LokasiAneka` / `ObjekAneka` / `CoverageAneka` / `MarineHull` / `VehicleHE` (tiket 73
+  P1/P2). Tabel objek TIDAK butuh migrasi.
+
+### Penampung unggah — kebutuhan (rentang 255–259 HABIS; nomor TIDAK diambil)
+
+Kolom fisik `T_NB_CSV_BARIS` = 77. Dua cara cocok: kolom `C_` di DDL 257 + 258 = daftar Go `KolomCsvObjek` ∪ `KolomCsvCargo`, selisih
+∅. Dari 35 kolom Aneka, **12 sudah ada** (NO, TYPE_ADDRESS, ADDRESS, BUILDING_NO, POSTAL_CODE, KELURAHAN, OCCUPATION_NAME,
+CURRENCY, TSI, OBJECT_TYPE, COVERAGE_NAME, LOL) dan **23 perlu kolom baru**:
+
+> COUNTRY, OBJECT_DESCRIPTION, SECTION, YEAR, PLACE_OF_MANUFACTURE, NRT, GRT, DWT, FLAGNAME, CONSTRUCTION, CLASSIFICATION,
+> CALCULATE_METHOD, DAY, PCT_LOADING, PCT_SCALE, PCT_RATE, PREMIUM, PCT_DISCOUNT, DISCOUNT, PCT_LOL, SERIALNO, CHASSISNUMBER,
+> ENGINENUMBER
+
+`T_NB_CSV_UNGGAH.JENIS` VARCHAR2(10) sudah cukup untuk "aneka". Tidak ada CHECK, sehingga jenis baru tanpa migrasi.
+
+### Keputusan yang diminta (korpus tidak menjawab / Pega cacat) — JANGAN ditebak
+
+- **K73-52 Penampung.**
+  - (a) **Rekomendasi:** satu migrasi baru, `ALTER TABLE T_NB_CSV_BARIS ADD` 23 kolom `C_<judul>` VARCHAR2(4000), pola 258. Butuh
+    rentang nomor baru.
+  - (b) Tanpa migrasi: peta slot per jenis ke 65 kolom FIRE / cargo yang tidak dipakai Aneka (mis. `C_ITEM_TYPE_1` menampung
+    OBJECT_DESCRIPTION). Bisa dikerjakan, tetapi nama kolom di DB menyesatkan saat DBA / IT memeriksa data unggah.
+- **K73-53 NO.**
+  - Pega mengindeks LocationList dengan NILAI NO dan memakai `<LAST>`. Akibatnya NO yang muncul lagi tidak berurutan (1, 2, 1)
+    menimpa alamat lokasi 2, dan NO bukan angka 1..n tidak terdefinisi `[belum terverifikasi]`.
+  - Usul: lokasi baru setiap NO berbeda dari baris sebelumnya, ObjectNo = NO apa adanya. NO yang muncul lagi tidak berurutan →
+    galat jelas (bukan menimpa).
+- **K73-54 Baris NO kosong.** Pega melewatinya diam-diam, tetapi perbandingan "baris sebelumnya" ikut bergeser. Usul: lewati baris
+  itu dan bandingkan dengan baris terproses sebelumnya.
+- **K73-55 Mata uang tak ada di master.** Pega diam (Currency.ID kosong). Usul: galat, seperti K74-21 / K66 D6.
+- **K73-56 CurrencyList.** Pega membangun ulang lewat langkah 7, tetapi duplikatnya dibuang Java dengan kunci yang salah. Usul:
+  CurrencyList + cicilan dihapus tanpa dibangun ulang, seperti K66 D5 / K74-21.
+- **K73-57 Premi.**
+  - (a) Ikut Pega: PREMIUM CSV disimpan apa adanya, tanpa hitung.
+  - (b) Seperti FIRE K66 D5: dihitung mesin `hitung-coverage-aneka` dari Rate / TSI / Day / Loading / Discount.
+- **K73-58 RW.**
+  - Pega: Obj-Browse ZipCode + Note = KELURAHAN. Template Marine Hull TIDAK punya KELURAHAN, dan Obj-Browse dengan nilai kosong
+    `[belum terverifikasi]`.
+  - Usul: pakai `cariRWCsv` / `pilihRWCsv` CSV FIRE (K66-B8 / B9): kode pos dulu; kelurahan bila ada.
+- **K73-59 Okupasi / coverage "Contains" + baris pertama.** "ICC" bisa terpilih ke coverage lain yang memuat teks itu.
+  - (a) Ikut Pega.
+  - (b) Cocok persis, tak peka huruf. Tidak ada yang persis → galat "Not Available in Master".
+- **K73-60 Template Aneka umum / CPM belum ada.**
+  - Usul: unggah `marinehull` dengan judul wajib = 31 judul template, kolom lain diabaikan (pola K74-18).
+  - `aneka` / `cpm` tetap 409 sampai template dikirim. Saat itu judul wajibnya = judul template.
+- **K73-61 Bonding / CustomBonds** termasuk IsAneka. Pega mengimpornya ke AnekaList generik, tanpa MemorandumAccept. Ikut Pega, atau
+  tolak CSV untuk Bonding?
+- **K73-62 Galat pertama menghentikan impor** (Pega 4.2 F=6), sama dengan cargo P6. Konfirmasi saja. Alternatifnya: kumpulkan
+  semua galat seperti CSV FIRE D6 / D7.
+
+### Jawaban work owner (11-10-2026)
+
+- **K73-52 → (a)** migrasi. Rentang ketiga nbfacin = **250-254**, diambil dari rnwfacin (yang belum memakai satu nomor pun);
+  rnwfacin menjadi 220-249. Polanya sama dengan 255-259. `MODUL.md` kedua modul diperbarui.
+  - **Ralat bentuk (work owner 11-10-2026):** ALTER `T_NB_CSV_BARIS` bernomor 250 akan jalan sebelum 257 yang membuat tabelnya
+    (`inti/backend/migrasi/migrasi.go` mengurutkan menurut nama berkas), sehingga gagal di DB baru. Bentuknya diganti:
+    250 = `CREATE TABLE T_NB_CSV_BARIS_ANEKA` (UNGGAH_ID, NO_BARIS, PK keduanya, kolom `C_<judul>` VARCHAR2(4000)), tanpa FK,
+    pembersihan lewat kode.
+- **K73-57 → (a)** ikut Pega: PREMIUM / DISCOUNT dari CSV disimpan apa adanya, tanpa hitung ulang.
+- **K73-59 → (a)** ikut Pega: Contains + baris pertama.
+- **K73-53 / 54 / 55 / 56 / 58 / 60 / 61 / 62 →** usulan disetujui: NO berulang tidak berurutan = galat; baris NO kosong
+  dilewati; mata uang tak ada = galat; CurrencyList dihapus tanpa dibangun ulang; RW lewat `cariRWCsv` / `pilihRWCsv`; judul wajib
+  marinehull = 31, aneka / cpm 409 sampai template dikirim; Bonding / CustomBonds diimpor seperti Pega; galat pertama menghentikan
+  impor.
+
+- **K73-63 (work owner 11-10-2026, sesudah bug DEV premi > TSI):** impor CSV Aneka menolak baris dengan PREMIUM > TSI pada
+  baris yang sama. Ini pengaman tambahan sistem baru, penyimpangan sadar: Pega `InsertUploadAneka_act` L4363 menyimpan PREMIUM apa
+  adanya, dan tidak ada proteksi premi > TSI di korpus. Baris contoh `templatecsvmarinehull.csv` sendiri ber-PREMIUM jauh di
+  atas TSI. K73-57 tidak berubah.
+
+**Frontend P6 (11-10-2026, selesai):** `components/csvMarineHull.ts` (31 judul VERBATIM `templatecsvmarinehull.csv`, semua wajib,
+urutan bebas; template unduhan = baris judul saja); `BilahCsvObjek` jenis `'marinehull'` lewat tabel `CSV_PER_JENIS`;
+`InwardFacultative` memasang bilah bila `jenisCsv` server = `'marinehull'` (FIRE / cargo tetap dari penanda lama). Aneka umum / CPM
+tetap pesan "belum tersedia". Sampai importer c3 terpasang, unggah Marine Hull dijawab 409 oleh server.
+
+Mengikuti preseden tanpa pertanyaan:
+
+- spreading Aneka case terbuang karena objek diganti (K66 D5);
+- unggah tanpa batas lewat infrastruktur tiket 75 (K74-17);
+- kelompok ≥ 1000 baris tidak membelah lokasi;
+- kunci K75-2 berlaku untuk PUT `…/objek-aneka` dan Save spreading Aneka.
+
+### Dibangun sekarang (aditif)
+
+- **GET kasus `jenisCsv`** (`services/lini.go` `templateCsvKasus`, `handlers/kasus.go`, `api.ts` `KasusNB.jenisCsv?`):
+  - nilai 'fire' | 'cargo' | 'aneka' | 'marinehull' | 'cpm' | '', menurut SetDownloadMasterCSV langkah 2–6 berurutan;
+  - 'cpm' DITAMBAHKAN dari korpus (TemplateCSVAneka_CPM).
+  - Importer ketiga jenis Aneka sama.
+  - ~~Selama port belum ada, unggah untuk case Aneka tetap 409 (`ErrCsvBukanFire`).~~ Importer terpasang (lihat bagian berikut);
+    Aneka umum / CPM → 409 `ErrCsvTemplateAnekaBelumAda`.
+- **Uji:**
+  - `TestJenisCsvKasus`: Marine Hull 05 / 55, CPM 12, Liability, HE, Golf "", FIRE, cargo, tanpa pembaca;
+  - `TestBacaKasus` 21 kunci;
+  - `TestKunciKasusSamaDenganApiTs` 21 kunci, `jenisCsv` terakhir.
+
+### Backend P6 Aneka — importer dibangun (sesi c3, 11-10-2026)
+
+**Status:** dibangun, uji hijau (`go vet`, `go test -short ./...`). Migrasi **250** DITULIS, belum dijalankan. Belum dicoba di
+DEV.
+
+**Migrasi 250 — WAJIB sebelum biner bila unggah CSV case Aneka dipakai:**
+
+- `CREATE TABLE T_NB_CSV_BARIS_ANEKA` (UNGGAH_ID, NO_BARIS, 35 kolom `C_<judul>`), tanpa FK (K73-52 opsi 1).
+- Tanpa 250, hanya unggah CSV case Aneka yang gagal (ORA-00942). FIRE / cargo tidak menyentuh tabel ini.
+- Tidak bergantung urutan dengan 257 / 258.
+- Penyimpangan BENTUK dari teks awal K73-52 ("ALTER `T_NB_CSV_BARIS`, pola 258") sudah diputuskan work owner (lihat ralat di atas).
+- `repository/csvunggah.go` memilih penampung per jenis (`tabelUnggah.penampung`).
+- Tidak ada kode yang menghapus baris penampung, untuk jenis mana pun — pembersihan baris FIRE / cargo juga belum ada.
+
+**Pemilihan importer** (`services/csvfire.go` `jenisCsvKasus`):
+
+- IsFire → fire;
+- IsMarineCargo → cargo;
+- IsAneka dengan `jenisCsv` = marinehull → **aneka**;
+- IsAneka lainnya → 409 `ErrCsvTemplateAnekaBelumAda` (K73-60);
+- selain itu → `ErrCsvBukanFire`.
+- Save Data JSON lama tetap FIRE saja.
+
+**Port** (`services/csvaneka.go`, bukti per langkah di kepala berkas):
+
+- Judul per nama: 31 judul template wajib, 4 opsional.
+- Angka: ribuan / persen seperti Pega. TSI "1.5" → 15 (titik = ribuan) ditiru apa adanya. Angka wajib terurai (preseden K66 D7).
+- Protect berurutan:
+  - kosong menimpa;
+  - okupasi tidak ada → keluar;
+  - Contains + baris pertama (K73-59);
+  - BusinessName = Class of Business case;
+  - BizCode = BUSINESS.ID;
+  - mata uang tidak ada / kosong = galat (K73-55).
+- Validasi berhenti di baris PERTAMA bermasalah (K73-62). NO berulang tidak berurutan = galat (K73-53). Baris NO kosong dilewati,
+  isinya tidak diperiksa (K73-54).
+- Susun pohon (Insert 4.7 / 4.9 / 4.12 / 4.13):
+  - lokasi per NO;
+  - okupasi tunggal yang DITIMPA;
+  - objek per (deskripsi, section) dengan medan dari baris pertama;
+  - coverage per nama; baris coverage sama yang berurutan diabaikan;
+  - Premium / Discount apa adanya; medan server RNM tidak dihitung (K73-57).
+- RW (K73-58):
+  - KELURAHAN terisi → `RWKelurahan`;
+  - kosong → `RWKodePos` baru: baris pertama urut NOTE / DISTRICTNAME / CITYNAME `[keputusan agent]`;
+  - kode pos tidak ada → kota / provinsi kosong.
+- Simpan berkelompok:
+  - ≥ 1000 baris dan berakhir di batas lokasi;
+  - kelompok pertama mengganti seluruh objek case (coverage Aneka lama + anak + okupasi + lokasi) dan menghapus CurrencyList +
+    cicilan (K73-56);
+  - SEQ_NO lokasi menyambung lokasi terbesar (`repository/anekacsv.go`, `sisipAnekaBerkelompokDari`; `GantiObjekAneka` tetap awal 0).
+- **Kunci K75-2:** PUT `…/objek-aneka` dan Save spreading Aneka 409 selama unggah berjalan (gerbang baru, hanya menambah).
+
+**Uji** (`services/csvaneka_test.go`, `repository/anekacsv_test.go`, `repository/csvunggah_test.go`):
+
+- peta judul, urai angka / pemetaan, Protect (8 kasus pesan), susun pohon;
+- alur 2500 baris;
+- kelompok tidak memotong lokasi tiga-baris;
+- baris NO kosong berisi rusak dilewati;
+- berhenti di galat pertama;
+- NO berulang;
+- kunci K75-2;
+- offset SEQ_NO;
+- kolom DDL 250 = kode, dua arah.
+
+**Mutasi:** 18 diuji, semuanya tertangkap (satu lewat timeout `go test`: `akhir` tidak maju untuk baris NO kosong terakhir →
+simpan berputar). Tiga awalnya lolos dan menghasilkan uji tambahan: batas kelompok, baris NO kosong, offset SEQ_NO.
+
+**Nama berkas template unduhan:** frontend memakai `templatecsvmarinehull.csv` verbatim (judul saja). Backend tidak menyajikan
+template.
+
+### Bug DEV 11-10-2026 — unggah CSV 3 case NB-151034 gagal simpan ORA-12899 `T_COVERAGELIST.COVERAGE_NOTE` (sesi c3)
+
+- **Sebab `[terverifikasi]`:**
+  - `services/csvaneka.go` mengisi CoverageNote = COVERAGE.NAME, yang di DDL berlebar VARCHAR2(4000 BYTE) (`DDL\COVERAGE.txt` L4).
+  - Kolom tujuannya VARCHAR2(500), lebar RANCANGAN (193).
+- **Perbaikan — migrasi 251** `ALTER TABLE T_COVERAGELIST MODIFY (COVERAGE_NOTE VARCHAR2(4000))`, satu pernyataan per blok;
+  `_down` kembali ke 500 dan gagal ORA-01441 bila sudah ada isi > 500.
+  - `services/loader/amandemen.go` mencatat `amandemenLebar` (berkas bangkitan `skema_gen.go` tidak disentuh).
+  - Validasi coverageNote FIRE / Aneka / cargo dinaikkan ke 4000.
+  - STRUKTUR diperbarui.
+  - Penjaga migrasi-sebagian membaca 251.
+- **T_ADDITIONALCOVERAGE.COVERAGE_NOTE (Warranty Extension cargo) TIDAK ikut.** Tabelnya lahir di 256; pelari migrasi mengurutkan
+  menurut nama berkas, sehingga ALTER di 251 gagal ORA-00942 di basis data baru. Nomor nbfacin > 256 sudah habis.
+  - Kolom ini tetap 500 dan divalidasi 400 di PUT objek-cargo, jadi tidak ada crash ORA.
+  - Lebar sumbernya (CONDITION.CONDITIONNAME, view JSON) tidak tertulis di DDL.
+- **Ulangi:** pekerjaan gagal di fase simpan melanjutkan simpan dari BARIS_TERSIMPAN. Kemajuan ikut rollback bersama kelompok yang
+  gagal, jadi kegagalan di kelompok 1 berarti ganti lagi dari baris 1.
+  - Uji: `TestUlangiSimpanAnekaSesudahGagal`, gagal di kelompok 1 dan 2, tanpa lokasi ganda.
+  - Sesudah 251 dijalankan DBA: klik Ulangi.
+
+### Audit lebar sesudah ORA-12899 — keputusan work owner 11-10-2026 (lewat sesi 9d; sesi c3)
+
+- **(a) RW, tanpa migrasi.** CSV Aneka menolak dengan galat jelas per baris bila RW.NOTE / DISTRICTNAME / CITYNAME / PROVINCENAME
+  (master VARCHAR2(4000), `DDL\RW.txt`) melebihi kolom tujuan ASMRW / ASM_DISTRICT / ASM_CITY / PROVINCE VARCHAR2(100) (192).
+  - Lebar diukur dalam BYTE (len UTF-8), bukan jumlah rune. Teks pesan buatan sistem baru, contoh: `baris 3: master RW kode pos
+    "99999" - CITYNAME 102 byte melebihi kolom T_RISKLOCATION.ASM_CITY (paling banyak 100 byte)`.
+  - Diperiksa saat validasi untuk setiap lokasi baru. RW kini dicari juga di fase validasi, sehingga galat pertama menghentikan
+    impor (K73-62).
+  - Diperiksa ulang saat simpan: RW yang memanjang sesudah validasi → pekerjaan gagal "data master berubah sejak validasi", objek
+    tidak ditulis.
+  - `services/csvaneka.go` `periksaRWAnekaCsv`; uji `TestLebarRWAnekaCsv` (tepat 100 byte sah; empat medan; validasi; simpan).
+- **(c) COVERAGE.ID / OLDID:** dibiarkan, tanpa bukti data.
+- **Mutasi:** batas `>=`, ukur rune, tanpa cek di validasi, tanpa cek di simpan — semuanya tertangkap.
+
+### K73-63 — PREMIUM > TSI ditolak di CSV Aneka (keputusan work owner 11-10-2026, lewat sesi 9d; sesi c3)
+
+- **Pemicu:** case Marine Hull di DEV ber-Total Premium Spreaded 496,8 M dengan TSI 1,6 M. InsertUploadAneka_act L4363 mengisi
+  Premium = PREMIUM CSV apa adanya (K73-57), dan baris contoh `templatecsvmarinehull.csv` memang ber-PREMIUM jauh di atas TSI.
+  Pega TIDAK memproteksi premi > TSI.
+- **Keputusan: pengaman sistem baru, PENYIMPANGAN SADAR dari Pega.**
+  - Baris dengan PREMIUM (sesudah urai) > TSI pada baris yang sama → galat `baris N: PREMIUM <nilai> melebihi TSI <nilai>`
+    (nilai bentuk desimal titik).
+  - Premi = TSI sah. Premi yang lolos tetap dari CSV (K73-57 tidak berubah).
+  - Galat pertama menghentikan impor (K73-62).
+  - Tidak menyentuh FIRE / cargo / Save layar.
+- **Port:** `services/csvaneka.go` `uraiBarisAnekaCsv`, dipakai validasi DAN simpan. Di simpan, baris penampung tidak berubah
+  sejak validasi, jadi cek ulang itu praktis tidak pernah memicu.
+  - `[keputusan agent]` dicek hanya bila PREMIUM dan TSI keduanya terisi.
+- **Uji:** `TestPremiMelebihiTSIAneka`: sama sah; lebih 0,01 galat; "43.200.000.002,00" vs "100.000.001,00" galat; kurang sah;
+  salah satu kosong tanpa cek; validasi berhenti di baris 3.
+  - Fixtur `TestSusunAnekaCsv` baris "UJI MESIN" diberi PREMIUM 5 (≤ TSI 7).
+  - Mutasi (batas `>=`, tanpa cek) tertangkap.
+
+## Catatan silang — IDPEGA = case id polos (11-10-2026)
+
+Tulisan IDPEGA tiket ini kini memakai case id polos; pembaca menerima dua bentuk (polos / berawalan). Rincian: `docs/issues/69-jalur-policy.md`
+bagian "IDPEGA = case id polos".

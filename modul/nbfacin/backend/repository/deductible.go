@@ -100,8 +100,12 @@ func mataUangBaca(s string) string {
 }
 
 // bacaDeductible - deductible case `id` per T_COVERAGELIST.ID (teks).
-func (r *ObjekOracle) bacaDeductible(ctx context.Context, t tabelObjek, id string) (map[string][]models.Deductible, error) {
-	baris, err := r.db.QueryContext(ctx, sqlBacaDeductible(t), id)
+func (r *ObjekOracle) bacaDeductible(ctx context.Context, t tabelObjek, b lingkupBaca) (map[string][]models.Deductible, error) {
+	q, arg, err := b.kueri(sqlBacaDeductible(t))
+	if err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca deductible: %w", err)
 	}

@@ -152,6 +152,9 @@ func (m MemorandumAccept) Kosong() bool { return m == MemorandumAccept{} }
 // Construction.
 type BarisKapal struct {
 	ID, Nama, Flag, Tahun, NRT, GRT, DWT, Klasifikasi, Konstruksi string
+	// Tiket 74 P1 (aditif, popup Select Ship Marine Cargo - SelectShip_act L470-873 / SelectShip.xml L6384-6469): SHIPTYPEID,
+	// SHIPNAME (dipetakan ke Param.ShipTypeName, SelectShip.xml L6439), REGISTER, IMO, YEARMAKE2, REMARK, FORMERSHIPNAME, REBUILT.
+	ShipTypeID, ShipTypeName, Register, Imo, YMake2, Remark, FormerShipName, Rebuilt string
 }
 
 // BarisTipeKendaraan - satu pilihan Type HE (lookup `BrowseType_RD`, view POOLDATA.BRANDDETAIL): ID -> VehicleHE.Type,

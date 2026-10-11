@@ -17,7 +17,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | GROUPMENU | `FACULTATIVE` |
 | Pemilik | `@PEMILIK-RNWFACIN` |
 | Status | belum dimigrasi |
-| Rentang migrasi | `220-254` |
+| Rentang migrasi | `220-249` |
 | Slot menu | `964-965` |
 | Prefix rute API | — (ditetapkan spec modul ini) |
 | Kontrak disediakan | — |
@@ -25,6 +25,9 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 
 > 09-10-2026 (keputusan work owner, lewat sesi nbfacin): nomor `255-259` dilepas ke nbfacin sebagai rentang kedua -
 > rnwfacin belum memakai satu nomor pun (0 berkas migrasi saat itu). Rentang rnwfacin kini `220-254`.
+>
+> 11-10-2026 (keputusan work owner, lewat sesi nbfacin): nomor `250-254` dilepas ke nbfacin sebagai rentang KETIGA (tiket 73 P6
+> unggah CSV Aneka) - rnwfacin masih belum memakai satu nomor pun. Rentang rnwfacin kini `220-249`.
 
 `Pemilik` adalah penanda pemegang modul. Wilayah berkas yang boleh disentuh cabang
 `module/<nama>` dijaga `.github/workflows/penjaga-wilayah-cabang.yml` - CODEOWNERS

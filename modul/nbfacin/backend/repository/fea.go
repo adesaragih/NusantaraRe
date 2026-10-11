@@ -41,8 +41,12 @@ func argFEA(f models.BarisFEA) []any {
 }
 
 // bacaFEA - FEA case `id` per T_LOCATIONLIST.ID (teks).
-func (r *ObjekOracle) bacaFEA(ctx context.Context, t tabelObjek, id string) (map[string][]models.BarisFEA, error) {
-	baris, err := r.db.QueryContext(ctx, sqlBacaFEA(t), id)
+func (r *ObjekOracle) bacaFEA(ctx context.Context, t tabelObjek, b lingkupBaca) (map[string][]models.BarisFEA, error) {
+	q, arg, err := b.kueri(sqlBacaFEA(t))
+	if err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca FEA objek: %w", err)
 	}

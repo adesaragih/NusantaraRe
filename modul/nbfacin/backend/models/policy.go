@@ -59,6 +59,8 @@ type BarisFacInProduction struct {
 	// Tiket 73 P5 (cabang Aneka / Golf SaveTreatyProduction_Act 19 / 21): NoSerial = `.SerialNo` objek ("" = teks "NULL" seperti
 	// FIRE); MOIDKasus = QuotationData.MOID yang DIDAHULUKAN atas GetMOID (S11 L2492, K73-46; "" = GetMOID seperti FIRE).
 	NoSerial, MOIDKasus string
+	// Tiket 74 P5 (cabang Marine Cargo langkah 22): seperti BarisFacInOffer; "" = NULL (cabang lain).
+	TradingName, ConveyanceName, IDShip, FromRute, ToRute, SailDate string
 }
 
 // HariClosingBawaan - SaveJsonPolicy langkah 4 `@if(Local.TglProd=="",25,Local.TglProd)`.

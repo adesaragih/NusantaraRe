@@ -247,7 +247,11 @@ export function useSubmitMarketing(caseId: string, saatBerhasil: (h: HasilSubmit
     try {
       const h = await tekanBinding(caseId)
       setV(h)
-      setIsi((x) => ({ ...x, receivedRiSlip: h.receivedRiSlip }))
+      const baru: IsianSubmit = { ...isi, receivedRiSlip: h.receivedRiSlip }
+      setIsi(baru)
+      // Proteksi diperiksa ulang: pesan "Tekan tombol Binding terlebih dahulu sebelum Accept." dari pemeriksaan sebelum Binding
+      // tidak boleh tertinggal dan menahan Submit (bug DEV 10-10-2026: "setelah klik binding, tombol submitnya gabisa").
+      await periksa(baru)
     } catch (err) {
       setGalat(err)
     } finally {

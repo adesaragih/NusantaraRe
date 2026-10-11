@@ -62,11 +62,11 @@ func TestSQLSubmit(t *testing.T) {
 	}{
 		"konteks":      {sqlKonteksSubmit(tbSubmit), 2},
 		"akun":         {sqlAkunSubmit("L"), 1},
-		"riwayat":      {sqlRiwayatAkseptasi("P"), 1},
-		"banding":      {sqlOpsiBanding("LIM", "HP"), 3},
+		"riwayat":      {sqlRiwayatAkseptasi("P"), 2},
+		"banding":      {sqlOpsiBanding("LIM", "HP"), 4},
 		"rw":           {sqlCekRW("RW"), 4},
 		"okupasi":      {sqlKategoriOkupasi("OC", 3), 3},
-		"produksi":     {sqlSisipRiwayatProduksi("P"), 13},
+		"produksi":     {sqlSisipRiwayatProduksi("P"), 14},
 		"pega":         {sqlSisipRiwayatPega("HP"), 4},
 		"performance":  {sqlSisipPerformance("F"), 9},
 		"posisi":       {sqlPosisiSubmit("W"), 5},
@@ -83,8 +83,8 @@ func TestSQLSubmit(t *testing.T) {
 			t.Errorf("%s: %d bind, mau %d", nama, n, c.mau)
 		}
 	}
-	for _, harus := range []string{"SELECT JABATAN FROM LIM WHERE WORKBASKET IN (SELECT WORKBASKET FROM (",
-		"SELECT WORKBASKET FROM HP WHERE ID_PEGA = :1 AND WORKBASKET != :2 ORDER BY TGL_TRANSFER DESC", ") WHERE ROWNUM = 1) AND TEAM_GROUP = :3"} {
+	for _, harus := range []string{"SELECT JABATAN, JABATAN_ATASAN FROM LIM WHERE WORKBASKET IN (SELECT WORKBASKET FROM (",
+		"SELECT WORKBASKET FROM HP WHERE ID_PEGA IN (:1, :2) AND WORKBASKET != :3 ORDER BY TGL_TRANSFER DESC", ") WHERE ROWNUM = 1) AND TEAM_GROUP = :4"} {
 		if !strings.Contains(sqlOpsiBanding("LIM", "HP"), harus) {
 			t.Errorf("GetAksepBanding_SQL tanpa %q", harus)
 		}
@@ -131,5 +131,15 @@ func TestMigrasiPosisiJUWB(t *testing.T) {
 func TestSQLValiditasUW(t *testing.T) {
 	if q := sqlValiditasUW("UJI.G"); q != "UPDATE UJI.G SET DAYS_VALIDITY = :1, DATE_VALIDITY = :2, WAITING_BIND_DATE = :3, COMMENT_TEXT = :4 WHERE ID = :5" {
 		t.Errorf("%q", q)
+	}
+}
+
+// TestSQLCatatanPegaNonMarketing - tiket 57 "IS ada Ask ?": catatan terbaru (TGL_TRANSFER) di luar workbasket marketing, pola
+// GetAksepBanding_SQL; dua bind.
+func TestSQLCatatanPegaNonMarketing(t *testing.T) {
+	q := sqlCatatanPegaNonMarketing("S.P")
+	if bindTerbesar(t, q) != 3 || !strings.Contains(q, "WHERE ID_PEGA IN (:1, :2) AND WORKBASKET != :3 ORDER BY TGL_TRANSFER DESC) WHERE ROWNUM = 1") ||
+		!strings.HasPrefix(q, "SELECT STATUS, WORKBASKET FROM (SELECT STATUS, WORKBASKET FROM S.P") {
+		t.Error(q)
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -230,12 +231,21 @@ func TestStorageJarakJauhHapusAda(t *testing.T) {
 type penyimpanTokenTiruan struct {
 	app, lama string
 	simpan    []string
+	// sisa - umur token lama (0 = 40 detik); token hanya dikembalikan bila sisanya > sisaMinimum (saringan SQL
+	// `INPUTDATE > saat + sisaMinimum`). minta - sisaMinimum tiap panggilan.
+	sisa  time.Duration
+	minta []time.Duration
 }
 
 func (p *penyimpanTokenTiruan) AppStorage(context.Context) (string, error) { return p.app, nil }
-func (p *penyimpanTokenTiruan) TokenStorageBerlaku(context.Context, *db.Tx, string, time.Time, time.Duration) (string, time.Duration, error) {
-	if p.lama != "" {
-		return p.lama, 40 * time.Second, nil
+func (p *penyimpanTokenTiruan) TokenStorageBerlaku(_ context.Context, _ *db.Tx, _ string, _ time.Time, minimum time.Duration) (string, time.Duration, error) {
+	p.minta = append(p.minta, minimum)
+	sisa := p.sisa
+	if sisa == 0 {
+		sisa = 40 * time.Second
+	}
+	if p.lama != "" && sisa > minimum {
+		return p.lama, sisa, nil
 	}
 	return "", 0, nil
 }
@@ -262,10 +272,47 @@ func TestSumberTokenStorage(t *testing.T) {
 		t.Errorf("baru: %v %q %v %q", err, tok, exp, p.simpan)
 	}
 	if _, _, err := (sumberTokenStorage{transaksi: tanpaTx, penyimp: p}).TokenBaru(ctx); !errors.Is(err, layanan.ErrGaramTokenKosong) {
-		t.Errorf("garam kosong: %v", err)
+		t.Errorf("garam kosong tanpa token: %v", err)
 	}
 	p.app = " "
 	if _, _, err := s.TokenBaru(ctx); !errors.Is(err, layanan.ErrAppNameKosong) {
 		t.Errorf("APPNAME kosong: %v", err)
+	}
+	if _, _, err := (sumberTokenStorage{transaksi: tanpaTx, penyimp: p}).TokenBaru(ctx); !errors.Is(err, layanan.ErrAppNameKosong) {
+		t.Errorf("APPNAME diperiksa sebelum garam: %v", err)
+	}
+}
+
+// TestTokenStorageTanpaGaram - bug DEV 11-10-2026 (STORAGE_TOKEN_SALT kosong, "tiru menu Product Name Life"): garam hanya dituntut
+// saat merakit. (a) garam kosong + token berlaku (sisa 10 detik, <= margin) -> dipakai tanpa galat dan tanpa simpan; (b) garam
+// kosong + tanpa token -> ErrGaramTokenKosong; (c) garam terisi + token sisa 10 detik -> perilaku lama: dirakit baru (margin 15
+// detik); token bersisa > margin dipakai dengan atau tanpa garam.
+func TestTokenStorageTanpaGaram(t *testing.T) {
+	ctx := context.Background()
+	kini := time.Date(2026, 10, 11, 6, 0, 0, 0, time.UTC)
+	jam := func() time.Time { return kini }
+	p := &penyimpanTokenTiruan{app: "UJIAPP", lama: "LAMA", sisa: 10 * time.Second}
+	tanpa := sumberTokenStorage{transaksi: tanpaTx, penyimp: p, jam: jam}
+	tok, exp, err := tanpa.TokenBaru(ctx)
+	if err != nil || tok != "LAMA" || !exp.Equal(kini.Add(10*time.Second)) || len(p.simpan) != 0 ||
+		!slices.Equal(p.minta, []time.Duration{MarginTokenStorage, 0}) {
+		t.Errorf("(a): %v %q %v simpan %v minta %v", err, tok, exp, p.simpan, p.minta)
+	}
+	p.lama = ""
+	if _, _, err := tanpa.TokenBaru(ctx); !errors.Is(err, layanan.ErrGaramTokenKosong) || len(p.simpan) != 0 {
+		t.Errorf("(b): %v %v", err, p.simpan)
+	}
+	p.lama, p.minta = "LAMA", nil
+	dengan := sumberTokenStorage{transaksi: tanpaTx, penyimp: p, garam: "GARAM-UJI", jam: jam}
+	baru, _ := layanan.RakitToken("GARAM-UJI", kini)
+	if tok, _, err := dengan.TokenBaru(ctx); err != nil || tok != baru || len(p.simpan) != 1 ||
+		!slices.Equal(p.minta, []time.Duration{MarginTokenStorage}) {
+		t.Errorf("(c): %v %q %v %v", err, tok, p.simpan, p.minta)
+	}
+	p.sisa = time.Minute
+	for nama, s := range map[string]sumberTokenStorage{"tanpa garam": tanpa, "dengan garam": dengan} {
+		if tok, exp, err := s.TokenBaru(ctx); err != nil || tok != "LAMA" || !exp.Equal(kini.Add(time.Minute)) {
+			t.Errorf("sisa > margin %s: %v %q %v", nama, err, tok, exp)
+		}
 	}
 }

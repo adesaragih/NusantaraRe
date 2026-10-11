@@ -62,7 +62,8 @@ func sqlCariKapal(tabel string, denganKata bool) string {
 	if denganKata {
 		syarat, batas = ` AND UPPER(NAME) LIKE :2 ESCAPE '\'`, ":3"
 	}
-	return "SELECT ID, NAME, FLAGNAME, YEARMAKE1, NRT, GRT, DWT, CLASSIFICATION, CONSTRUCTION FROM " + tabel +
+	return "SELECT ID, NAME, FLAGNAME, YEARMAKE1, NRT, GRT, DWT, CLASSIFICATION, CONSTRUCTION, SHIPTYPEID, SHIPNAME, REGISTER, IMO," +
+		" YEARMAKE2, REMARK, FORMERSHIPNAME, REBUILT FROM " + tabel +
 		" WHERE (REMARK != :1 OR REMARK IS NULL)" + syarat + " ORDER BY ID DESC FETCH FIRST " + batas + " ROWS ONLY"
 }
 
@@ -88,12 +89,18 @@ func (r *LookupAnekaOracle) CariKapal(ctx context.Context, kata string) ([]model
 	defer baris.Close()
 	hasil := []models.BarisKapal{}
 	for baris.Next() {
-		var v [9]sql.NullString
-		if err := baris.Scan(&v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6], &v[7], &v[8]); err != nil {
+		var v [17]sql.NullString
+		tuju := make([]any, len(v))
+		for i := range v {
+			tuju[i] = &v[i]
+		}
+		if err := baris.Scan(tuju...); err != nil {
 			return nil, fmt.Errorf("repository: %s: %w", TabelShip, err)
 		}
 		hasil = append(hasil, models.BarisKapal{ID: v[0].String, Nama: v[1].String, Flag: v[2].String, Tahun: v[3].String,
-			NRT: v[4].String, GRT: v[5].String, DWT: v[6].String, Klasifikasi: v[7].String, Konstruksi: v[8].String})
+			NRT: v[4].String, GRT: v[5].String, DWT: v[6].String, Klasifikasi: v[7].String, Konstruksi: v[8].String,
+			ShipTypeID: v[9].String, ShipTypeName: v[10].String, Register: v[11].String, Imo: v[12].String, YMake2: v[13].String,
+			Remark: v[14].String, FormerShipName: v[15].String, Rebuilt: v[16].String})
 	}
 	if err := baris.Err(); err != nil {
 		return nil, fmt.Errorf("repository: %s: %w", TabelShip, err)

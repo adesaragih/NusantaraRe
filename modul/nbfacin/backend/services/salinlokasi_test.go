@@ -94,4 +94,8 @@ func TestSalinLokasiTahap(t *testing.T) {
 			t.Errorf("%s: %v", id, err)
 		}
 		if _, err := Baru(nil).DenganTahap(tahapUji).SalinSpreadingAnekaLokasi(context.Background(), inti.Pelaku{AkunID: "UJI",
-			Peran
+			Peran: []string{"ReasFacInMarketing", "ReasFacInTeamLeader"}}, id, d("50"), 1, templatLokasiUji); !errors.Is(err, ErrSpreadingHanyaUW) {
+			t.Errorf("Aneka %s: %v", id, err)
+		}
+	}
+}

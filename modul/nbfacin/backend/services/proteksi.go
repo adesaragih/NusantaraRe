@@ -219,6 +219,11 @@ func (s *Service) proteksiBerflag(ctx context.Context, id string, tl *isianDeduc
 	if err != nil {
 		return nil, err
 	}
+	// Tiket 74 P5: case MARINE CARGO - langkah IsFire tidak berjalan; langkah 24 cabang MARINE, langkah 27 MARINE CARGO.
+	cargo, adaCargo, err := s.dataProteksiCargo(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 	// Langkah 9-12 (PositionNote ReasFacInTeamLeader): IsBedaCurr && IsDeductibleAcceptance "false" -> "Deductible Acceptance
 	// cannot be empty"; IsDeductibleAcceptance "true" && CommentDeductible kosong -> "Comment Deductible cannot be empty".
 	// Centang tidak dicentang = "false" `[dugaan]` (checkbox Pega mengirim "false").
@@ -226,6 +231,9 @@ func (s *Service) proteksiBerflag(ctx context.Context, id string, tl *isianDeduc
 		beda := deductibleBedaMataUang(objek)
 		if aneka != nil {
 			beda = deductibleBedaMataUangAneka(aneka.lokasi) // K73-30 `[dugaan]`
+		}
+		if adaCargo {
+			beda = false // addDeductibleCargo_ACT L248 IsBedaCurr = 0
 		}
 		if beda && !tl.terima {
 			p.tambahFlag("Deductible Acceptance cannot be empty", flagDeductible1)
@@ -238,11 +246,11 @@ func (s *Service) proteksiBerflag(ctx context.Context, id string, tl *isianDeduc
 	if strings.TrimSpace(kasus.General.MarketingID) == "" {
 		p.tambahFlag(pesanMOIDKosong, flagMarketing1) // langkah 16
 	}
-	if aneka == nil && kasus.RiskScoring.FinalScore == nil {
+	if aneka == nil && !adaCargo && kasus.RiskScoring.FinalScore == nil {
 		p.tambah(pesanScoringKosong)
 	}
 	// Langkah 21 ProtectCurrencyTSI_Act (IsFire).
-	if aneka == nil {
+	if aneka == nil && !adaCargo {
 		if err := s.proteksiMataUang(ctx, objek, p); err != nil {
 			return nil, err
 		}
@@ -254,12 +262,23 @@ func (s *Service) proteksiBerflag(ctx context.Context, id string, tl *isianDeduc
 		return nil, err
 	}
 	// Langkah 24 ProtectCoverage_Act -> cabang ANEKA / GOLF (tiket 73 P4) atau ProtectFIREMBUPA_Act (IsFire).
-	if aneka != nil {
+	switch {
+	case aneka != nil:
 		if err := s.proteksiCoverageAneka(ctx, aneka.lokasi, aneka.isi, p); err != nil {
 			return nil, err
 		}
-	} else if err := s.proteksiLokasi(ctx, kasus.CaseID, objek, p, deductibleBinding); err != nil {
-		return nil, err
+	case adaCargo:
+		if err := s.proteksiCoverageCargo(ctx, cargo, p); err != nil {
+			return nil, err
+		}
+	default:
+		if err := s.proteksiLokasi(ctx, kasus.CaseID, objek, p, deductibleBinding); err != nil {
+			return nil, err
+		}
+	}
+	// Langkah 27 MARINE CARGO (tiket 74 P5): ProtectShipData_Act + "Multi Location Must Have Toprisk".
+	if adaCargo {
+		proteksiKapalCargo(cargo, p)
 	}
 	// Langkah 28 ProtectShareCedant_Act (keluar bila bukan Group), 29 ProtectRenewal_Act (bukan renewal), 30
 	// ProtectCedingCo (IsB2B ASM), 31-34 Survey report / Ceding Co (FlagOnGoingPolicy 2 / Group / data survey) - lihat

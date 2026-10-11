@@ -18,7 +18,7 @@
 
 import { useState } from 'react'
 
-import { Field, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
+import { Area, Field, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
 import { angka4 } from '../angka4'
 import type { Deductible } from '../api'
 import {
@@ -55,7 +55,7 @@ export function adaGalatDeductible(d: Deductible[] | undefined): boolean {
   return (d ?? []).some((x) => MEDAN_ANGKA.some((k) => !angkaSah(x[k])))
 }
 
-function FormDeductible({ d, ubah, mataUang }: { d: Deductible; ubah: (d: Deductible) => void; mataUang: string[] }) {
+function FormDeductible({ d, ubah, mataUang, deskripsi }: { d: Deductible; ubah: (d: Deductible) => void; mataUang: string[]; deskripsi?: string }) {
   const set = (k: keyof Deductible) => (v: string) => ubah({ ...d, [k]: v })
   const err = (k: (typeof MEDAN_ANGKA)[number]) => (angkaSah(d[k]) ? undefined : TEKS_COVERAGE.angka)
   const opsiUang: Opsi[] = mataUang.map((m) => ({ value: m, label: m }))
@@ -103,6 +103,13 @@ function FormDeductible({ d, ubah, mataUang }: { d: Deductible; ubah: (d: Deduct
           </div>
         )}
       </div>
+      {deskripsi !== undefined && (
+        <div className="nbf-dedgrid__baris">
+          <div className="nbf-dedgrid__lebar">
+            <Area label={deskripsi} value={d.descriptions ?? ''} onChange={set('descriptions')} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -115,12 +122,18 @@ export default function GridDeductible({
   currency,
   mataUang,
   ubah,
+  deskripsi,
 }: {
   daftar: Deductible[]
   /** Mata uang item (nilai awal deductible baru). */
   currency: string
   mataUang: string[]
   ubah: (d: Deductible[]) => void
+  /**
+   * Opsional, aditif (tiket 74 P2): label isian `.Descriptions` per baris deductible - hanya Marine Cargo
+   * (`InputCoverageCargo_FacIn.xml` grid `.DeductibleList` kedua L16997 / L17652). Tanpa prop ini (FIRE / Aneka) tidak tampil.
+   */
+  deskripsi?: string
 }) {
   const [terbuka, setTerbuka] = useState<number[]>([])
   return (
@@ -219,7 +232,7 @@ export default function GridDeductible({
               terbuka.includes(n) && (
                 <tr key={`d-${n}`} className="nbf-objek__detail">
                   <td colSpan={11}>
-                    <FormDeductible d={d} ubah={(baru) => ubah(daftar.map((x, k) => (k === n ? baru : x)))} mataUang={mataUang} />
+                    <FormDeductible d={d} ubah={(baru) => ubah(daftar.map((x, k) => (k === n ? baru : x)))} mataUang={mataUang} deskripsi={deskripsi} />
                   </td>
                 </tr>
               ),

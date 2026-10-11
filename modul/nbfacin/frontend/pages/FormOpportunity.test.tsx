@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest'
 import {
   FORM_OPPORTUNITY as F,
   KEPALA_PORTAL,
+  MENU_TOMBOL_OPPORTUNITY,
   NILAI_AWAL_OPPORTUNITY as AWAL,
   OPSI_OPPORTUNITY_SOURCE,
   POPUP_CHOOSE_ACCOUNT as POPUP,
@@ -140,17 +141,44 @@ describe('FormOpportunity = gambar Pega (keadaan awal)', () => {
     expect(buat).toContain('classOfBusiness: cob,')
   })
 
-  it('tiga tombol Group Business berurutan; Search Group Business hidup, dua lainnya nonaktif (C-2, C-8)', () => {
-    const grupHTML = HTML.slice(HTML.indexOf('class="nbf-opp__tombol"'))
-    const tombol = [...grupHTML.matchAll(/<button([^>]*)>([^<]*)<\/button>/g)]
-      .slice(0, 3)
-      .map((m) => ({ teks: m[2], nonaktif: (m[1] ?? '').includes('disabled') }))
-    expect(tombol).toEqual([
+  it('tiga tombol Group Business berurutan; New Company Detail / New Group Business hidup bila Shell memberi onBukaMenu', () => {
+    const tombolDari = (html: string) =>
+      [...html.slice(html.indexOf('class="nbf-opp__tombol"')).matchAll(/<button([^>]*)>([^<]*)<\/button>/g)]
+        .slice(0, 3)
+        .map((m) => ({ teks: m[2], nonaktif: (m[1] ?? '').includes('disabled') }))
+    // Tanpa penyedia (mis. dirender di luar Shell): dua tombol menu nonaktif.
+    expect(tombolDari(HTML)).toEqual([
       { teks: TOMBOL.cariGrup, nonaktif: false },
       { teks: TOMBOL.perusahaanBaru, nonaktif: true },
       { teks: TOMBOL.grupBaru, nonaktif: true },
     ])
+    const hidup = renderToStaticMarkup(<FormOpportunity pemilik={PEMILIK} onBukaMenu={() => true} />)
+    expect(tombolDari(hidup).every((t) => !t.nonaktif)).toBe(true)
     expect(SUMBER).toContain('onClick={() => setCariGrup(true)}')
+  })
+
+  it('New Company Detail = isi menu Company Detail, New Group Business = isi menu Accounts (work owner 10-10-2026)', () => {
+    expect(MENU_TOMBOL_OPPORTUNITY).toEqual({
+      perusahaanBaru: { modul: 'companydetail', menu: 'Company Detail' },
+      grupBaru: { modul: 'accounts', menu: 'Accounts' },
+    })
+    expect(SUMBER).toContain("onClick={() => bukaMenu('perusahaanBaru')}")
+    expect(SUMBER).toContain("onClick={() => bukaMenu('grupBaru')}")
+    // Menu tidak dipegang akun (onBukaMenu -> false): pesan, bukan diam.
+    // Langsung form Create / Add (work owner 10-10-2026: "LANGSUNG MENU CREATE NYA").
+    expect(SUMBER).toContain('if (onBukaMenu?.(modul, { baru: true }) === false) setPesanMenu(TEKS_MENU_OPPORTUNITY.tidakAda(menu))')
+    const CD = readFileSync(join(__dirname, '..', '..', '..', 'companydetail', 'frontend', 'pages', 'CompanyDetail.tsx'), 'utf8')
+    expect(CD).toContain("useState<Tampilan>(mulaiBaru && bolehUbah ? { jenis: 'form', id: null } : { jenis: 'daftar' })")
+    const ACC = readFileSync(join(__dirname, '..', '..', '..', 'accounts', 'frontend', 'pages', 'Accounts.tsx'), 'utf8')
+    expect(ACC).toContain('useState(mulaiBaru && bolehUbah)')
+    // Accounts: popup Add saja, tanpa menu utama (work owner 10-10-2026 "HANYA MUNCULIN INI SAJA").
+    expect(ACC).toContain('<FormAccount groupBusiness={groupBusiness} onTutup={onSelesaiBaru} onTersimpan={onSelesaiBaru} />')
+    // Popup tetap di bawah akar tema (bug DEV 10-10-2026: popup transparan tanpa token --acc-*).
+    expect(ACC).toContain('<section className="accounts__akar accounts__akar--popup">')
+    const MENU_ACC = readFileSync(join(__dirname, '..', '..', '..', 'accounts', 'frontend', 'menu.ts'), 'utf8')
+    expect(MENU_ACC).toContain('formBaruBerjendela: true,')
+    const RUTE = readFileSync(join(__dirname, '..', 'rute.tsx'), 'utf8')
+    expect(RUTE).toContain('onBukaMenu={onBukaMenu}')
   })
 
   it('tombol Create opportunity di kanan atas, sebaris dengan judul (permintaan work owner 03-10-2026); popup tertutup', () => {

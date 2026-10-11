@@ -1913,3 +1913,11 @@ foreach($id in @('Decision27','Utility5','Assignment1','Assignment6')){
     $mo=$r.SelectSingleNode('pyMOName')
     if($mo -and $mo.InnerText){ "$id : $($mo.InnerText) | $($r.SelectSingleNode('pyShapeType').InnerText) | $($r.SelectSingleNode('pyImplementation').InnerText)" } } }
 ```
+
+> **Status 11-10-2026 (sesi c3, salinan repo; korpus `D:\migrasi\RNM\OUTPUT` READ-ONLY tidak diubah):** kedua pesan
+> pelanggaran total di atas SUDAH diport di cabang yang hidup:
+> - IsFire: `services/spreading.go` L330-332;
+> - IsEngineering: `services/spreadinganeka.go` L359-361.
+> Blok IsEngineering 10.2.1.1.3 ber-`//` (mati). Uji batas ditambah: `TestKapasitasLokasiBatas` / `TestKapasitasLokasiEngineering`.
+> Prakondisi `CekLimit.CARI1==1` milik langkah .20.4 (baris SPL), bukan langkah pesan. Rincian: `docs/issues/48-spreading-fire.md`
+> bagian "Laporan work owner 11-10-2026". K3 (TREATYBUSINESS / SumTreatyCapacity_Act) tetap sisa.

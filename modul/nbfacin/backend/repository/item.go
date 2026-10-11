@@ -71,8 +71,12 @@ func argItem(it models.ItemObjek) []any {
 }
 
 // bacaItem - item case `id` per T_PROPERTY.ID (teks).
-func (r *ObjekOracle) bacaItem(ctx context.Context, t tabelObjek, id string) (map[string][]models.ItemObjek, error) {
-	baris, err := r.db.QueryContext(ctx, sqlBacaItem(t), id)
+func (r *ObjekOracle) bacaItem(ctx context.Context, t tabelObjek, b lingkupBaca) (map[string][]models.ItemObjek, error) {
+	q, arg, err := b.kueri(sqlBacaItem(t))
+	if err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca item objek: %w", err)
 	}
@@ -117,7 +121,7 @@ func (r *ObjekOracle) bacaItem(ctx context.Context, t tabelObjek, id string) (ma
 		return nil, fmt.Errorf("repository: item objek: %w", err)
 	}
 	baris.Close()
-	cov, err := r.bacaCoverage(ctx, t, id)
+	cov, err := r.bacaCoverage(ctx, t, b)
 	if err != nil {
 		return nil, err
 	}

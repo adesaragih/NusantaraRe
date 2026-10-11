@@ -27,6 +27,7 @@ import {
 import { LAMPIRAN as L, TEKS_LAMPIRAN as T } from '../labels'
 import { tanggalRiwayat } from './BlokEmailType'
 import HalamanPopup from './HalamanPopup'
+import PenampilLampiran, { jenisPenampil } from './PenampilLampiran'
 
 /** Kategori per halaman (work owner 08-10-2026: "buatin page, 5 per page dan rapikan biar user friendly"). */
 export const UKURAN_KATEGORI_LAMPIRAN = 5
@@ -56,6 +57,9 @@ export default function BlokLampiran({ caseId, awal }: { caseId: string; awal?: 
   const [lihat, setLihat] = useState<string | null>(null)
   const [berkasKategori, setBerkasKategori] = useState<BarisLampiran[] | null>(null)
   const [hapus, setHapus] = useState<BarisLampiran | null>(null)
+  // Penampil View / View Office Online (work owner 11-10-2026) dan galatnya - tampil di popup View File.
+  const [penampil, setPenampil] = useState<BarisLampiran | null>(null)
+  const [galatLihat, setGalatLihat] = useState<unknown>(null)
   const [hal, setHal] = useState(1)
   const pilihBerkas = useRef<HTMLInputElement>(null)
   const kategoriUnggah = useRef('')
@@ -214,8 +218,31 @@ export default function BlokLampiran({ caseId, awal }: { caseId: string; awal?: 
         </table>
       </div>
 
-      {lihat !== null && (
-        <Modal judul={`${L.lihat} - ${lihat}`} onTutup={() => setLihat(null)} labelBatal={T.tutup} lebar>
+      {/* Popup penampil MENGGANTI popup View File selama terbuka (key berbeda - pola PanelLampiranReas, bug Bordereaux 08-10-2026). */}
+      {lihat !== null && penampil !== null && (
+        <PenampilLampiran
+          key="penampil"
+          caseId={caseId}
+          berkas={penampil}
+          onTutup={(err) => {
+            setPenampil(null)
+            if (err !== undefined) setGalatLihat(err)
+          }}
+        />
+      )}
+
+      {lihat !== null && penampil === null && (
+        <Modal
+          key="daftar"
+          judul={`${L.lihat} - ${lihat}`}
+          onTutup={() => {
+            setLihat(null)
+            setGalatLihat(null)
+          }}
+          labelBatal={T.tutup}
+          lebar
+        >
+          <Gagal galat={galatLihat} />
           {berkasKategori === null ? (
             <p className="muted">{T.memuat}</p>
           ) : (
@@ -226,13 +253,14 @@ export default function BlokLampiran({ caseId, awal }: { caseId: string; awal?: 
                     <th scope="col">{L.berkas}</th>
                     <th scope="col">{L.catatan}</th>
                     <th scope="col">{L.tanggal}</th>
+                    <th scope="col" aria-label={L.view} />
                     {v.bolehHapus && <th scope="col" />}
                   </tr>
                 </thead>
                 <tbody>
                   {berkasKategori.length === 0 && (
                     <tr>
-                      <td colSpan={v.bolehHapus ? 4 : 3}>{T.kosong}</td>
+                      <td colSpan={v.bolehHapus ? 5 : 4}>{T.kosong}</td>
                     </tr>
                   )}
                   {berkasKategori.map((b) => (
@@ -260,6 +288,21 @@ export default function BlokLampiran({ caseId, awal }: { caseId: string; awal?: 
                         )}
                       </td>
                       <td>{tanggalRiwayat(b.tanggal)}</td>
+                      <td>
+                        {/* Hanya berkas yang sudah tersimpan di penyimpanan; jenis lain tetap lewat unduh (klik nama). */}
+                        {b.status === '' && jenisPenampil(b.namaFile) !== null && (
+                          <button
+                            type="button"
+                            className="btn nbf-tema__tombol btn--ghost btn--sm"
+                            onClick={() => {
+                              setGalatLihat(null)
+                              setPenampil(b)
+                            }}
+                          >
+                            {jenisPenampil(b.namaFile) === 'office' ? L.viewOffice : L.view}
+                          </button>
+                        )}
+                      </td>
                       {v.bolehHapus && (
                         <td className="table__actions">
                           <button type="button" className="btn nbf-tema__tombol btn--sm" onClick={() => setHapus(b)}>

@@ -202,7 +202,7 @@ function Centang({ label, checked, onChange }: { label: string; checked: boolean
 }
 
 /** Sub-tab Object Address (`ObjectDetails`). */
-function ObjectAddress({ o, ubah, galatType }: { o: ObjekFire; ubah: (o: ObjekFire) => void; galatType: boolean }) {
+export function ObjectAddress({ o, ubah, galatType }: { o: ObjekFire; ubah: (o: ObjekFire) => void; galatType: boolean }) {
   const set = (k: keyof ObjekFire) => (v: string) => ubah({ ...o, [k]: v })
   const [pilihRisk, setPilihRisk] = useState(false)
   return (

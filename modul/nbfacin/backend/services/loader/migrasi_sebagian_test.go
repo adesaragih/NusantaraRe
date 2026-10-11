@@ -35,7 +35,7 @@ func tipeAkhirMigrasi(t *testing.T) map[string]map[string]string {
 		"193_t_coveragelist.sql", "194_t_deductiblelist.sql", "195_t_coveragelist_unit_akumulasi.sql",
 		"198_spreading.sql", "199_cedant.sql", "200_premium_deduction.sql", "201_payment.sql", "202_ppn_check_teks.sql",
 		"203_coverage_zona.sql", "204_coverage_zona_4000.sql", "205_scoring_risk.sql", "208_nb_status.sql", "210_submit_team_leader.sql", "212_submit_uw.sql",
-		"213_form_binding.sql", "214_objek_aneka.sql", "255_pro_rate_percent.sql"} {
+		"213_form_binding.sql", "214_objek_aneka.sql", "251_lebar_coverage_note.sql", "255_pro_rate_percent.sql"} {
 		b, err := os.ReadFile("../../migrations/" + berkas)
 		if err != nil {
 			t.Fatal(err)

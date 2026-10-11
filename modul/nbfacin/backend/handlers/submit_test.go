@@ -33,6 +33,9 @@ func (s *submitTiruanH) RiwayatAkseptasi(context.Context, string) ([]models.Riwa
 func (s *submitTiruanH) OpsiBanding(context.Context, string, string) ([]string, error) {
 	return []string{"JUW_B"}, nil
 }
+func (s *submitTiruanH) CatatanPegaNonMarketing(context.Context, string) (string, string, bool, error) {
+	return "", "", false, nil
+}
 func (s *submitTiruanH) SebabDecline(context.Context) ([]models.BarisCauseOfDecline, error) {
 	return []models.BarisCauseOfDecline{{ID: "1", TermCondition: "Rate"}, {ID: "6", TermCondition: "Period Of Insurance (POI)"},
 		{ID: "15", TermCondition: "Backdated", Description: "Period Of Insurance (POI)"},

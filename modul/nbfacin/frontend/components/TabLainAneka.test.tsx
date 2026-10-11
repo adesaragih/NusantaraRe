@@ -33,8 +33,8 @@ describe('tab lain untuk Aneka (tiket 73 P3)', () => {
   })
 
   it('Cedant / Deduction mengambil ringkasan dari spreading-aneka bila aneka; FIRE tetap ambilSpreading', () => {
-    expect(CEDANT).toContain(';(aneka ? ambilSpreadingAneka : ambilSpreading)(caseId).then(')
-    expect(DEDUCT).toContain(';(aneka ? ambilSpreadingAneka : ambilSpreading)(caseId).then(')
+    expect(CEDANT).toContain(';(cargo ? ambilSpreadingCargo : aneka ? ambilSpreadingAneka : ambilSpreading)(caseId).then(')
+    expect(DEDUCT).toContain(';(cargo ? ambilSpreadingCargo : aneka ? ambilSpreadingAneka : ambilSpreading)(caseId).then(')
     expect(DEDUCT).toContain('aneka ? <DaftarKomisiAneka')
   })
 

@@ -436,3 +436,10 @@ describe('tahap Binding (tiket 64)', () => {
     expect(render(vBinding(false), '9')).not.toContain(EB.tombolBinding + '</button>')
   })
 })
+
+describe('BlokEmailType - Binding lalu Accept (bug DEV 10-10-2026)', () => {
+  it('sesudah tombol Binding sukses, proteksi diperiksa ulang supaya pesan "Tekan tombol Binding…" tidak menahan Submit', () => {
+    const s = readFileSync(join(__dirname, 'BlokEmailType.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    expect(s).toMatch(/const h = await tekanBinding\(caseId\)\s*setV\(h\)\s*const baru: IsianSubmit = \{ \.\.\.isi, receivedRiSlip: h\.receivedRiSlip \}\s*setIsi\(baru\)[\s\S]*?await periksa\(baru\)/)
+  })
+})

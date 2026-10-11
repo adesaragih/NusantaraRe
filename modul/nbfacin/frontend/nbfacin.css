@@ -3049,3 +3049,77 @@
 .nbfacin tr:has(> td > .nbf-buka):hover > td {
   background: var(--alt-row);
 }
+
+/* Tab Object Marine Cargo (tiket 74 P1): grid Additional Ship - isian autocomplete di sel tanpa label tampak (judul kolom
+   sudah menamainya; label tetap terbaca pembaca layar), isian selebar sel. */
+.nbfacin .nbf-cargo-kapal .nbf-saran > label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.nbfacin .nbf-cargo-kapal input {
+  width: 100%;
+  box-sizing: border-box;
+}
+/* Kolom pertama grid Additional Ship berisi isian (bukan tombol buka): lepas lebar 44px aturan grid Aneka. */
+.nbfacin .nbf-aneka-grid.nbf-cargo-kapal > thead > tr > th:first-child,
+.nbfacin .nbf-aneka-grid.nbf-cargo-kapal > tbody > tr:not(.nbf-objek__detail) > td:first-child {
+  width: 34%;
+}
+/* Perapian work owner 11-10-2026 ("INI PERBAIKI DONG, MASA GINI"): Ship Name lebih lebar dari Voyage No; daftar saran kapal tidak
+   lagi sesempit kotak Register ID - ID dan nama kapal terbaca utuh, satu baris per kapal. */
+.nbfacin .nbf-aneka-grid.nbf-cargo-kapal > thead > tr > th:nth-child(2) {
+  width: 38%;
+}
+.nbfacin .nbf-cargo-kapal .nbf-saran__daftar {
+  right: auto;
+  min-width: min(480px, 90vw);
+}
+.nbfacin .nbf-cargo-kapal .nbf-saran__daftar button {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* Tab Object per halaman (tiket 75 F3): lokasi yang ditandai hapus (belum disimpan) tampil redup bercoret; tombol Batal hapus tetap jelas. */
+.nbfacin .nbf-objek__dihapus > td:not(:last-child) {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+/* Form coverage Marine Cargo (work owner 11-10-2026, tangkapan layar Pega): Coverage Note dan Coverage Initial selebar penuh, lalu
+   dua kolom - kiri Currency / Rate / Limit of Liability / Discount (%), kanan TSI / Premium / Min Premium / Discount. */
+.nbfacin .nbf-cargo-cov {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 32px;
+  align-items: start;
+}
+.nbfacin .nbf-cargo-cov__kolom {
+  display: grid;
+  gap: 8px;
+}
+.nbfacin .nbf-cargo-cov__kolom > div {
+  margin-bottom: 0;
+}
+.nbfacin .nbf-cargo-cov__kolom input,
+.nbfacin .nbf-cargo-cov__kolom select {
+  width: 100%;
+  box-sizing: border-box;
+}
+@media (max-width: 700px) {
+  .nbfacin .nbf-cargo-cov {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Grid coverage per cargo (tab Coverage Marine Cargo; perapian work owner 11-10-2026 "INI JUGA RAPIIN DONG"): kolom pertama berisi
+   Coverage Note, bukan tombol buka - lepas lebar 44px aturan grid Aneka; Coverage Note lebar, Coverage Initial sisanya. */
+.nbfacin .nbf-aneka-grid.nbf-cargo-covgrid > thead > tr > th:first-child,
+.nbfacin .nbf-aneka-grid.nbf-cargo-covgrid > tbody > tr:not(.nbf-objek__detail) > td:first-child {
+  width: 60%;
+}

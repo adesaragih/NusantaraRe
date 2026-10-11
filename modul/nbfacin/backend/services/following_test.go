@@ -9,7 +9,6 @@ import (
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
 	"nusantarare/modul/nbfacin/backend/models"
-	"nusantarare/modul/nbfacin/backend/repository"
 )
 
 // Tiket 70 - Following Policy Number.
@@ -46,7 +45,7 @@ func itoa(n int) string { return string(rune('0'+n/10)) + string(rune('0'+n%10))
 // TestJenisCariFollowing - GetListViewFollowing_act 4.1-4.9 BERURUTAN (langkah sesudahnya menimpa); opsi 3 / lain 400; filter kosong
 // tanpa kueri.
 func TestJenisCariFollowing(t *testing.T) {
-	a := repository.AwalanIDPega
+	a := "" // IDPEGA polos dari services; dua bentuk dicocokkan repository (bindFollowing)
 	for nama, c := range map[string]struct{ opsi, filter, jenis, nilai string }{
 		"nopolis":              {"2", "RNM-F1.10.2026.00001", "nopolis", "RNM-F1.10.2026.00001"},
 		"id NB":                {"1", "NB-12", "idpega", a + "NB-12"},

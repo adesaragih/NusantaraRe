@@ -90,7 +90,7 @@ func TestIsFlagUW(t *testing.T) {
 		if err != nil || got != c.mau {
 			t.Errorf("%s: %v %v", nama, got, err)
 		}
-		if nama == "akumulasi" && !reflect.DeepEqual(st.argAkumulasi, []string{"UJI-AKU", "02/01/2025", "ASM-FW-GISFW-WORK UJI-NB-1", "UJI-NB-1"}) {
+		if nama == "akumulasi" && !reflect.DeepEqual(st.argAkumulasi, []string{"UJI-AKU", "02/01/2025", "UJI-NB-1", "UJI-NB-1"}) {
 			t.Errorf("argumen GetCountAccumulation %q", st.argAkumulasi)
 		}
 	}

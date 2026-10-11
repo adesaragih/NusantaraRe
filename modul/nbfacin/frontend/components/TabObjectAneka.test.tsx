@@ -49,7 +49,7 @@ describe('TabObjectAneka', () => {
     expect(HALAMAN).toContain(
       'const kasusAneka = !kasusFire && lini !== undefined && tampilanAneka !== undefined && (lini.anekaNotBonding || lini.golf || lini.bonding)',
     )
-    expect(HALAMAN).toMatch(/\{tab === 'Object' && kasusFire \? \(\s*<TabObject caseId=\{kasus\.caseId\} insuredName=\{insured\} \/>/)
+    expect(HALAMAN).toMatch(/\{tab === 'Object' && kasusFire \? \([\s\S]{0,400}?<TabObject caseId=\{kasus\.caseId\} insuredName=\{insured\} \/>/)
     expect(HALAMAN).toContain("tab === 'Object' && kasusAneka && tampilanAneka !== undefined ? (")
     expect(HALAMAN).toContain('<TabObjectAneka caseId={kasus.caseId} tampilan={tampilanAneka} aneka={lini?.aneka === true} />')
   })

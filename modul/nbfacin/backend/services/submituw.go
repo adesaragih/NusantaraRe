@@ -350,6 +350,14 @@ type dasarJenjang struct {
 	// 61 / 62 tidak berubah selain K73-33).
 	barisB []models.BarisLimitB
 	aneka  *jenjangAneka
+	// cargo - tiket 74 P5: case MARINE CARGO (nil = bukan); kb untuk When COB, pohon cargo untuk TSI / FacRetro.
+	cargo *jenjangCargo
+}
+
+// jenjangCargo - case MARINE CARGO: BUSINESS case dan pohon cargo.
+type jenjangCargo struct {
+	kb    kasusBisnis
+	cargo []models.ObjekCargo
 }
 
 // jenjangAneka - case keluarga Aneka: BUSINESS case (kasusTangga), lini, dan pohon objek Aneka (TSI / FacRetro).
@@ -376,7 +384,9 @@ type barisTSIJenjang struct {
 // (barisTSIAneka). Pesan = kurs tidak ada (ditahan, teks agent).
 func (s *Service) totalTSIUW(ctx context.Context, d *dasarJenjang) error {
 	var baris []barisTSIJenjang
-	if d.aneka != nil {
+	if d.cargo != nil {
+		baris = barisTSICargo(d.cargo)
+	} else if d.aneka != nil {
 		baris = barisTSIAneka(d.aneka)
 	} else {
 		for _, l := range d.sp.Lokasi {
@@ -447,6 +457,23 @@ func barisTSIAneka(a *jenjangAneka) []barisTSIJenjang {
 	return baris
 }
 
+// barisTSICargo - CountTotalTSIPremiNusaRe_Act langkah 10 Marine Cargo (IsMarineCargo L7388; L6369-7294): per cargo × coverage
+// CARI22 = .TSI dengan kurs mata uang coverage (IDR = 1, L7055); cargo IsTopRisk -> CARID1 = .TSILiability, IsAdaTopRisk "true"
+// (L7197-7244) - K74-8. FlagDelete "1" dilewati (pola langkah RNM cargo).
+func barisTSICargo(c *jenjangCargo) []barisTSIJenjang {
+	var baris []barisTSIJenjang
+	for _, x := range c.cargo {
+		if strings.TrimSpace(x.FlagDelete) == "1" {
+			continue
+		}
+		for _, v := range x.Coverages {
+			mu := strings.TrimSpace(v.Currency)
+			baris = append(baris, barisTSIJenjang{mataUang: mu, idr: mu == namaIDR, tsi: v.TSI, top: v.TSILiability, lokasiTop: x.IsTopRisk})
+		}
+	}
+	return baris
+}
+
 // carid2 - DataSearch.CARID2: @Math.divide(TotalTSITopRisk bila ada top risk, selain itu TotalTSINusaRe, 1, 0).
 func (d dasarJenjang) carid2() *apd.Decimal {
 	if d.adaTop {
@@ -472,6 +499,18 @@ func (s *Service) carid2UW(ctx context.Context, id string) (*apd.Decimal, string
 // spreading ber-TreatyType "10015" (FACOUT, langkah 2.3.4 / 2.3.5); langkah 6 mengosongkan IsInputFacRetro (0) - input
 // FacRetro belum ada di sistem baru, jadi Decision22 selalu ke jalur FacRetro.
 func (d dasarJenjang) adaFacRetro() bool {
+	if d.cargo != nil { // tiket 74 P5: baris spreading FACOUT di pohon cargo `[keputusan agent]` (pola FIRE / Aneka)
+		for _, x := range d.cargo.cargo {
+			for _, v := range x.Coverages {
+				for _, b := range v.Spreading {
+					if strings.TrimSpace(b.TreatyType) == treatyFACOUT {
+						return true
+					}
+				}
+			}
+		}
+		return false
+	}
 	if d.aneka != nil { // SetDataFacOutAnekaGolf_Act (L1032 / L1909); K73-36: Golf SEMUA lokasi (Pega: lokasi terakhir, L1655)
 		ada := false
 		setiapCoverageAneka(d.aneka.lokasi, d.aneka.lini.aneka, d.aneka.lini.golf, func(_ int, _ *models.ObjekAneka, _ int, c *models.CoverageAneka) {
@@ -507,11 +546,18 @@ func (k kasusTangga) Nilai(jalur string) (string, bool) {
 
 func (d dasarJenjang) kasusTangga(k models.KonteksSubmit) kasusTangga {
 	t := d.kasusTanggaFire(k)
-	if d.aneka != nil { // tiket 73 P4: BusinessType / BusinessCode / BusinessName case (kasusBisnis) untuk When COB
+	var kb *kasusBisnis
+	switch {
+	case d.aneka != nil:
+		kb = &d.aneka.kb
+	case d.cargo != nil: // tiket 74 P5: When IsMarineCargo / IsNonPropertyandNonEngineering -> M_LIMIT_NONPROPANDENGG (K74-8)
+		kb = &d.cargo.kb
+	}
+	if kb != nil { // tiket 73 P4: BusinessType / BusinessCode / BusinessName case (kasusBisnis) untuk When COB
 		for _, jalur := range []string{"pyWorkPage.Quotation.BusinessType", "pyWorkPage.OfferFacIn.QuotationData.BusinessType",
 			"pyWorkPage.Quotation.BusinessCode", "pyWorkPage.OfferFacIn.QuotationData.BusinessCode", "pyWorkPage.Quotation.BusinessName",
 			"pyWorkPage.OfferFacIn.QuotationData.BusinessName"} {
-			t[jalur], _ = d.aneka.kb.Nilai(jalur)
+			t[jalur], _ = kb.Nilai(jalur)
 		}
 	}
 	return t
@@ -588,6 +634,9 @@ func (s *Service) bacaDasarJenjang(ctx context.Context, id string) (dasarJenjang
 	if d.aneka, err = s.bacaJenjangAneka(ctx, id); err != nil {
 		return d, err
 	}
+	if d.cargo, err = s.bacaJenjangCargo(ctx, id); err != nil {
+		return d, err
+	}
 	if err := s.totalTSIUW(ctx, &d); err != nil {
 		return d, err
 	}
@@ -624,6 +673,22 @@ func (s *Service) bacaJenjangAneka(ctx context.Context, id string) (*jenjangAnek
 		return nil, galatKasus(err)
 	}
 	return &jenjangAneka{kb: kb, lini: l, lokasi: lokasi}, nil
+}
+
+// bacaJenjangCargo - nil bila case bukan MARINE CARGO (atau penyimpan cargo tidak terpasang).
+func (s *Service) bacaJenjangCargo(ctx context.Context, id string) (*jenjangCargo, error) {
+	if s.objekCargo == nil {
+		return nil, nil
+	}
+	kb, ada := s.kasusBisnisDari(ctx, id)
+	if !ada || !salahSatu(id, kb, "IsMarineCargo") {
+		return nil, nil
+	}
+	cargo, err := s.objekCargo.BacaObjekCargo(ctx, id)
+	if err != nil {
+		return nil, galatKasus(err)
+	}
+	return &jenjangCargo{kb: kb, cargo: cargo}, nil
 }
 
 // tujuanPosisi - posisi tujuan + NB status (statusInboxPosisi).
@@ -668,6 +733,9 @@ func (s *Service) letterJUWUW(k models.KonteksSubmit, pelaku inti.Pelaku, d dasa
 		return "", "IsGroup (GetLimitAkseptasi_JUW_UW langkah 8)"
 	}
 	tabel := tabelPreferred[d.preferred]
+	if d.cargo != nil { // tiket 74 P5 (K74-8): IsNonPropertyandNonEngineering -> M_LIMIT_NONPROPANDENGG
+		tabel = string(acceptance.TabelNonPropEng)
+	}
 	if d.aneka != nil { // tiket 73 P4: langkah 14 IsEngineering (L2652) / 15 IsNonPropertyandNonEngineering (L2836), tanpa IsPreferredRisk
 		tabel = string(acceptance.TabelNonPropEng)
 		if d.aneka.lini.engineering {
@@ -764,11 +832,28 @@ func (s *Service) proteksiSpreadingUW(ctx context.Context, id string) ([]string,
 			}
 		}
 	}
+	// Tiket 74 P5 (K74-13): CheckSpreadingProtectMCargoMBU_ACT + M4 / M5 dari ringkasan spreading cargo - case MARINE CARGO saja.
+	var cargo *dataSpreadingCargo
+	if s.objekCargo != nil && s.adalahMarineCargo(ctx, id) {
+		d, err := s.bacaDataSpreadingCargo(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		pesan = append(pesan, pesanSpreadingCargo(d.cargo)...)
+		cargo = &d
+	}
 	t, err := s.tampilan(ctx, id, sp, nil, true)
 	if err != nil {
 		return nil, err
 	}
 	ringkas := t.Pesan
+	if cargo != nil {
+		tc, err := s.tampilanSpreadingCargo(ctx, id, *cargo, nil, true)
+		if err != nil {
+			return nil, err
+		}
+		ringkas = append(append([]string{}, ringkas...), tc.Pesan...)
+	}
 	if aneka != nil {
 		ta, err := s.tampilanSpreadingAneka(ctx, id, *aneka, nil, true)
 		if err != nil {

@@ -52,8 +52,12 @@ func argKerugian(c models.CatatanKerugian) []any {
 }
 
 // bacaKerugian - catatan kerugian case `id` per T_PROPERTY.ID (teks).
-func (r *ObjekOracle) bacaKerugian(ctx context.Context, t tabelObjek, id string) (map[string][]models.CatatanKerugian, error) {
-	baris, err := r.db.QueryContext(ctx, sqlBacaKerugian(t), id)
+func (r *ObjekOracle) bacaKerugian(ctx context.Context, t tabelObjek, b lingkupBaca) (map[string][]models.CatatanKerugian, error) {
+	q, arg, err := b.kueri(sqlBacaKerugian(t))
+	if err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca catatan kerugian: %w", err)
 	}

@@ -158,11 +158,27 @@ export const FORM_OPPORTUNITY = {
   statusBisnis: 'Business Status',
 } as const
 
-/** Tiga tombol Group Business di gambar - aksinya tidak diketahui (keputusan agent C-2: nonaktif). */
+/**
+ * Tiga tombol Group Business di gambar. Dulu dua tombol terakhir nonaktif karena aksinya tidak diketahui (keputusan agent
+ * C-2). Sejak 10-10-2026 work owner memutuskan "BUTTON NEW COMPANY DETAIL = ISI MENU COMPANY DETAIL, BUTTON NEW GROUP
+ * BUSINESS = ISI MENU ACCOUNT", lihat `MENU_TOMBOL_OPPORTUNITY`.
+ */
 export const TOMBOL_FORM_OPPORTUNITY = {
   cariGrup: 'Search Group Business',
   perusahaanBaru: 'New Company Detail',
   grupBaru: 'New Group Business',
+} as const
+
+/** Modul yang menunya dibuka tombol New Company Detail / New Group Business (jendela `PropsRute.onBukaMenu`). */
+export const MENU_TOMBOL_OPPORTUNITY = {
+  perusahaanBaru: { modul: 'companydetail', menu: 'Company Detail' },
+  grupBaru: { modul: 'accounts', menu: 'Accounts' },
+} as const
+
+/** Teks sistem baru - BUKAN dari Pega. */
+export const TEKS_MENU_OPPORTUNITY = {
+  /** Akun tidak memegang menu modul itu (atau modulnya tidak aktif). */
+  tidakAda: (menu: string) => `Menu ${menu} tidak tersedia untuk akun Anda.`,
 } as const
 
 /**
@@ -304,6 +320,19 @@ export const TEKS_CSV_OBJEK = {
   ya: 'Ya',
   batal: 'Batal',
   tutup: 'Tutup',
+  // Tiket 75 (unggah tanpa batas, proses latar) - teks sistem baru.
+  mengunggah: (nama: string, mb: string) => `Mengunggah ${nama} (${mb} MB)… jangan tutup halaman sampai unggahan selesai.`,
+  memvalidasi: (n: number) => `Memeriksa isi CSV di server… ${n.toLocaleString('id-ID')} baris diperiksa.`,
+  valid: (n: number) => `${n.toLocaleString('id-ID')} baris CSV valid - periksa lewat View Upload, lalu tekan Save Data untuk menyimpan.`,
+  gagalValidasi: (n: number) => `${n.toLocaleString('id-ID')} baris CSV tidak valid - perbaiki berkas lalu unggah ulang:`,
+  menyimpanKemajuan: (a: number, b: number) =>
+    `Menyimpan objek di server… ${a.toLocaleString('id-ID')} / ${b.toLocaleString('id-ID')} baris (${b > 0 ? Math.floor((a / b) * 100) : 0}%). Halaman boleh ditinggal; kemajuan tetap berjalan.`,
+  gagal: (a: number, b: number) =>
+    `Penyimpanan berhenti sesudah ${a.toLocaleString('id-ID')} / ${b.toLocaleString('id-ID')} baris. Tekan Ulangi untuk melanjutkan dari bagian yang gagal.`,
+  ulangi: 'Ulangi',
+  galatLain: (n: number) => `… dan ${n.toLocaleString('id-ID')} galat lain.`,
+  /** Bug DEV 11-10-2026: template CSV FIRE hanya untuk case FIRE (Pega ChooseActivityMappingCSV_Act L439/L499). */
+  belumUntukCob: (cob: string) => `Upload CSV untuk Class of Business ${cob} belum tersedia di sistem baru (template CSV FIRE hanya untuk Class of Business FIRE).`,
 } as const
 
 export const PILIHAN_PERIODE = {
@@ -2007,6 +2036,9 @@ export const LAMPIRAN = {
   catatan: 'Note',
   tanggal: 'Upload Date',
   hapus: 'Delete',
+  /** Work owner 11-10-2026: penampil tanpa unduh, label panel lampiran bersama (`ReasViewAttachment` b2670 / Product Name Life). */
+  view: 'View',
+  viewOffice: 'View Office Online',
 } as const
 
 /** Teks sistem baru (bukan Pega) blok Attachment File. Konfirmasi hapus = keputusan agent (Pega tanpa konfirmasi). */
@@ -2465,3 +2497,149 @@ export const SPREADING_LOKASI = {
 
 /** Opsi `.FlagSpreading` - `DDL\FlagSpreading.xml` (ASM-FW-GISFW-DATA-SPREADINGRISK!FLAGSPREADING). */
 export const OPSI_FLAG_SPREADING = ['SF-MR 2023', 'Open Fac Market'] as const
+
+// Tiket 74 Marine Cargo - label VERBATIM korpus (`pyLabelFieldValue` / `pyLabelPreview`; `pyLabelFor` hanya sasaran label).
+
+/** Kolom grid CargoList tab Object - `NB FacIn\Section\InputDtlObject_FacIn.xml` L3014-3693 (non-UW). */
+export const GRID_CARGO = ['No.', 'Top Risk', 'SailDate', 'Goods', 'Ship Name', 'Conveyance'] as const
+
+/** Kolom grid CargoList tahap UW - `InputDtlObject_FacIn_IsUW.xml` L2989-3605. */
+export const GRID_CARGO_UW = ['No.', 'Top Risk', 'Trading', 'Goods', 'Packing', 'Conveyance'] as const
+
+/** Form cargo - `InputDtlCargo_FacIn.xml` (kepala) + `MarineCargoDtl.xml` (blok). */
+export const FORM_CARGO = {
+  topRisk: 'Top Risk',
+  trading: 'Trading',
+  goods: 'Goods',
+  conveyance: 'Conveyance',
+  packing: 'Packing',
+  /** Teks tanpa pilihan dropdown (`pyNoSelectionText` L1692). */
+  pilih: 'Choose',
+  grupAgent: 'Survey Agent',
+  selectAgent: 'Select Agent',
+  fullName: 'Full Name',
+  address: 'Address',
+  city: 'City/Town',
+  country: 'Country Code',
+  grupLc: 'LC',
+  lcStatus: 'LC Status',
+  lcBank: 'LC Bank',
+  lcNumber: 'LC Number',
+  lcCondition: 'LC Condition',
+  lcRemark: 'LC Remark',
+  lcEndDate: 'LC Expired Date',
+  grupKapal: 'Ship Data',
+  selectShip: 'Select Ship',
+  shipName: 'Ship Name',
+  shipType: 'Ship Type',
+  grt: 'GRT',
+  nrt: 'NRT',
+  dwt: 'DWT',
+  age: 'Age',
+  flagName: 'Flag Name',
+  construction: 'Construction',
+  yMake1: 'Year Make 1',
+  remark: 'Remark',
+  sailDate: 'Sail Date',
+  fromRute: 'From Rute',
+  toRute: 'To Rute',
+  blNumber: 'No BL',
+  invoiceNumber: 'Invoice Number',
+  invoiceDate: 'Invoice Date',
+  maxAge: 'Max Age ID',
+  maxAgeDetail: 'Max Age Detail',
+  grupKapalTambahan: 'Additional Ship',
+  kolomKapalTambahan: ['Register ID', 'Ship Name', 'Voyage No'],
+  tambah: 'Add',
+  hapus: 'Delete',
+} as const
+
+/** Popup Select Ship - `Section\SelectShip.xml` (kolom grid `BrowseShip_RD`, tombol Select). */
+export const POPUP_KAPAL_CARGO = {
+  judul: 'Select Ship',
+  kolom: ['Register', 'Imo', 'ID', 'Ship Name', 'Former Ship Name', 'Ship Type', 'Flag Name', 'Construction', 'Classification',
+    'GRT', 'NRT', 'DWT', 'Year Make 1', 'Year Make 2', 'Rebuilt', 'Remark'],
+  pilih: 'Select',
+} as const
+
+/** Popup Select Agent - `Section\SelectAgent.xml` (`BrowseLLOYDAGENT_RD`). */
+export const POPUP_AGENT_CARGO = {
+  judul: 'Select Agent',
+  kolom: ['ID', 'Name', 'Address', 'City', 'Country'],
+  pilih: 'Select',
+} as const
+
+/** Teks sistem baru - BUKAN dari Pega. */
+export const TEKS_CARGO = {
+  kosong: 'Belum ada objek cargo.',
+  /** Pega memakai filter kolom grid; sistem baru satu kotak cari. */
+  cari: 'Cari nama…',
+  kosongCari: 'Tidak ada data.',
+} as const
+
+// Tiket 74 P2 - tab Coverage Marine Cargo. Label = `pyLabelPreview` (bila ada) / `pyLabelFieldValue`, sama dengan form Aneka;
+// `pyLabelFor` ("Keterangan Jaminan", "Premi", "Diskon (%)") hanya sasaran label (diurai per sel `InputCoverageCargo_FacIn.xml`).
+
+/** Grid cargo tab Coverage - `WORK!INPUTDTLCOVERAGE_FACIN` S131 L970-1718. */
+export const GRID_CARGO_COVERAGE = ['No.', 'Trading', 'Goods', 'Packing', 'Conveyance'] as const
+
+/** Grid coverage per cargo + grid total - `DATA-CARGO!INPUTDTLCOVERAGE_FACIN` L1378 / L1519, L3674-4110. */
+export const GRID_COVERAGE_CARGO = {
+  kolom: ['Coverage Note', 'Coverage Initial'],
+  total: ['Currency', 'Grand Total Gross TSI', 'Grand Total Gross Premium', 'Grand Total Gross Rate'],
+} as const
+
+/** Form `InputCoverageCargo_FacIn.xml`. */
+export const FORM_COVERAGE_CARGO = {
+  coverageNote: 'Coverage Note',
+  coverageInitial: 'Coverage Initial',
+  selectCoverage: 'Select Coverage',
+  currency: 'Currency',
+  rate: 'Rate (%)',
+  limitOfLiability: 'Limit of Liability',
+  discountPercentage: 'Discount (%)',
+  tsi: 'TSI',
+  premium: 'Premium',
+  minPremium: 'Min Premium',
+  discount: 'Discount',
+  grupWarranty: 'Warranty Extension',
+  kolomWarranty: ['Coverage', 'Deductible'],
+  tambah: 'Add',
+  hapus: 'Delete',
+  /** `.Descriptions` deductible - label "Deskripsi" `Section\InputDeductible_FacIn.xml` kontainer S3 (sel grid cargo berlabel generik "Text Area"). */
+  deskripsi: 'Deskripsi',
+} as const
+
+/** Popup Select Coverage - `Section\SelectCoverage.xml` S1 (Coverage ID / Coverage Note, tombol Select). */
+export const POPUP_COVERAGE_CARGO = {
+  judul: 'Select Coverage',
+  kolom: ['Coverage ID', 'Coverage Note'],
+  pilih: 'Select',
+} as const
+
+/** Tab Spreading Marine Cargo (tiket 74 P3) - grid cargo `CoverageSpreadingList.xml` L15422-16018, grid coverage
+ *  `InputCoverageSpreadingMarineCargo.xml` (pyValue kepala kolom; tanpa "Old" - K73-39 TSI / Premium Old hanya EDM). Detail
+ *  coverage + baris spreading = `SPREADING` FIRE (`SpreadingItem` / `InputDtlSpreadingCoverage_FacIn` sama persis). */
+export const SPREADING_CARGO = {
+  kolomCargo: ['No.', 'Trading', 'Goods', 'Packing', 'Conveyance'],
+  kolomCoverage: ['Coverage', 'Standard Rate (%)', 'Gross Premium', 'Premium Nusantara Re'],
+} as const
+
+/** Premium Deduction Marine Cargo (tiket 74 P4) - `CoverageCommisionList.xml` cabang Marine (cargo) → `InputCommissionMC_FacIn.xml`
+ *  (Coverage / TSI / Gross Premium; TSI Old / Gross Premium Old hanya EDM - K73-39) → `CommisionItemAneka` (= `DEDUCTION_ANEKA.detailCoverage`). */
+export const DEDUCTION_CARGO = {
+  kolomCargo: ['No.', 'Trading', 'Goods', 'Packing', 'Conveyance'],
+  kolomCoverage: ['Coverage', 'TSI', 'Gross Premium'],
+} as const
+
+/** Tab Object per halaman untuk case besar (tiket 75 F3, K75-3) - teks sistem baru, bukan Pega. */
+export const TEKS_OBJEK_HALAMAN = {
+  cari: 'Cari Object No / Object Name / alamat risiko / kode pos…',
+  jumlah: (n: number) => `${n.toLocaleString('id-ID')} lokasi - ditampilkan per halaman dari server.`,
+  belumDisimpan: (n: number) => `${n.toLocaleString('id-ID')} perubahan belum disimpan.`,
+  baru: 'Lokasi baru (belum disimpan)',
+  dihapus: 'akan dihapus',
+  batalHapus: 'Batal hapus',
+  terlaluBanyak: 'Paling banyak 500 lokasi diubah / dihapus dan 500 lokasi ditambah per Save - simpan dulu, lalu lanjutkan.',
+  tersimpan: (n: number) => `Tersimpan. Case kini berisi ${n.toLocaleString('id-ID')} lokasi.`,
+} as const

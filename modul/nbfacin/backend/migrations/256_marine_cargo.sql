@@ -1,0 +1,188 @@
+-- 256 - tab Object + Coverage MARINE CARGO (tiket 74 P1 + P2, keputusan work owner 10-10-2026 K74-1). Rentang KEDUA nbfacin
+-- 255-259. Ditulis, TIDAK dijalankan agent; work owner / DBA yang menjalankan. Nol COMMIT (ADR-U-0029).
+--
+-- Bukti `[terverifikasi]` (`NB\` = `D:\migrasi\RNM\NB FacIn\`): form `NB\Section\InputDtlCargo_FacIn.xml` + `MarineCargoDtl.xml`
+-- (Survey Agent L1456-3845, LC L5077-6572, Ship L8508-11371, SailDate / Rute / BL / Invoice / MaxAge L13053-15110, Additional Ship
+-- L15889-17374), `NB\Activity\SelectShip_act.xml` L470-873 (17 medan kapal), `NB\Section\InputCoverageCargo_FacIn.xml`
+-- (CoverageInitial L1070, AdditionalCoverage L7548-8880, DeductibleList `.Descriptions` L17652). Jalur rancangan
+-- `loader/skema_gen.go`: CargoList (induk T_GENERAL_POLIS), CargoList/Ship (T_SHIP), CargoList/LC (T_LC), CargoList/CoverageList
+-- (T_COVERAGELIST ber-PARENT_TABLE 'T_CARGOLIST'; tanpa perubahan struktur induk - PARENT_ID TANPA FK, pola 193).
+--
+-- T_CARGOLIST = rancangan 22 kolom (PARENT_ID VARCHAR2(32) = T_GENERAL_POLIS.ID, pola T_LOCATIONLIST 186) + kolom form yang tidak
+-- ada di rancangan (sampel tidak memuatnya, S7): INVOICE_DATE VARCHAR2(30) (pola START_DATE), MAX_AGE VARCHAR2(50) (= .ID
+-- BrowseMaxAge_RD), MAX_AGE_DETAIL VARCHAR2(4000) (pxTextArea, isi `.Warranty`), FLAG_DELETE VARCHAR2(10) (`.FlagDelete`, pola 214).
+-- BL_NUMBER rancangan VARCHAR2(50) -> VARCHAR2(4000): kontrolnya pxTextArea "No BL" (MarineCargoDtl L14244) `[keputusan agent]`.
+--
+-- Anak satu halaman per cargo (UNIQUE PARENT_ID, FK ke T_CARGOLIST - pola T_MARINEHULL 214):
+--   - T_SHIP rancangan 19 kolom + FORMER_SHIP_NAME / CLASSIFICATION / REBUILT (SelectShip_act L580 / L601 / L872). Lebar mengikuti
+--     sumber POOLDATA.SHIP (`D:\migrasi\RNM\DDL\SHIP.txt`: ID VARCHAR2(100), kolom lain VARCHAR2(1000); pola butir 80) - rancangan
+--     VARCHAR2(50) / (500) diperlebar. SHIP_REF_ID = `.Ship.ID` (kolom ID dipakai PK). GRT / NRT / DWT tetap TEKS seperti
+--     T_MARINEHULL (214): SelectShip_act `@toDecimal(@replaceAll(Param.GRT,',','.'))` - perilaku @toDecimal atas teks tak terurai
+--     `belum terverifikasi`, jadi aplikasi menyimpan hasil replaceAll apa adanya `[keputusan agent]`. AGE VARCHAR2(50) (hitung
+--     CountAgeShip).
+--   - T_LC rancangan (LC = cekbox "LC Status", teks "true"/"false") + LCBANK (ejaan properti `.LCBANK`), LC_NUMBER, LC_CONDITION,
+--     LC_REMARK VARCHAR2(500) (pxTextInput, pola 214), LC_END_DATE VARCHAR2(30) (pola START_DATE).
+--   - T_SURVEYAGENT BARU (halaman `.PolicyData.SurveyAgent` per cargo, K74-6): ASM_AGENT_ID VARCHAR2(100), FULL_NAME VARCHAR2(4000)
+--     (pxTextArea `.pyFullName`), ADDRESS / CITY / COUNTRY VARCHAR2(500) (pxTextInput) `[keputusan agent]`.
+-- Anak berulang:
+--   - T_ADDITIONALSHIP BARU (grid `.PolicyData.Ship.AdditionalShip`, induk T_SHIP): SHIP_REF_ID (`.ID` autocomplete Register ID),
+--     NM_SHIP, VOYAGE_NO + medan yang di-SET autocomplete BrowseShip_RD (MarineCargoDtl L16928-17001: REGISTER, SHIPTYPE_ID,
+--     FLAG_NAME, NRT, DWT, GRT, Y_MAKE1, CONST) - lebar = POOLDATA.SHIP; VOYAGE_NO VARCHAR2(500) (pxTextInput).
+--   - T_ADDITIONALCOVERAGE (rancangan, jalur VehicleList/CoverageList/AdditionalCoverage; di sini grid Warranty Extension
+--     `.AdditionalCoverage` coverage cargo, induk T_COVERAGELIST): hanya kolom yang dipakai form cargo - COVERAGE VARCHAR2(50),
+--     COVERAGE_NOTE VARCHAR2(500) (lebar rancangan). Kolom rancangan lain ditambah migrasi lain bila jalur Vehicle diport.
+-- Kolom tambahan:
+--   - T_COVERAGELIST.COVERAGE_INITIAL VARCHAR2(500) (`.CoverageInitial`, pxTextInput L1070) `[keputusan agent]`;
+--   - T_DEDUCTIBLELIST.DESCRIPTIONS VARCHAR2(4000) (`.Descriptions` per baris deductible, pxTextArea L17652) `[keputusan agent]`.
+-- ID / PARENT_ID NUMBER(19) (A92).
+CREATE TABLE {skema}.T_CARGOLIST (
+  ID              NUMBER(19) NOT NULL,
+  IDPEGA          VARCHAR2(50),
+  COB_GROUP       VARCHAR2(20),
+  PARENT_ID       VARCHAR2(32) NOT NULL,
+  SEQ_NO          NUMBER(5) NOT NULL,
+  ROW_UID         VARCHAR2(36) NOT NULL,
+  BL_NUMBER       VARCHAR2(4000),
+  CONVEYANCE_ID   VARCHAR2(50),
+  CONVEYANCE_NAME VARCHAR2(500),
+  CONVEYANCE_NOTE VARCHAR2(500),
+  FLAG_OLD_DATA   VARCHAR2(10),
+  FROM_RUTE       VARCHAR2(50),
+  GOOD_ID         VARCHAR2(50),
+  GOOD_NOTE       VARCHAR2(500),
+  INVOICE_NUMBER  VARCHAR2(50),
+  IS_TOP_RISK     VARCHAR2(10),
+  PACKING_ID      VARCHAR2(50),
+  PACKING_NOTE    VARCHAR2(500),
+  SAIL_DATE       VARCHAR2(30),
+  TO_RUTE         VARCHAR2(50),
+  TRADING_ID      VARCHAR2(50),
+  TRADING_NOTE    VARCHAR2(500),
+  INVOICE_DATE    VARCHAR2(30),
+  MAX_AGE         VARCHAR2(50),
+  MAX_AGE_DETAIL  VARCHAR2(4000),
+  FLAG_DELETE     VARCHAR2(10),
+  CONSTRAINT PK_T_CARGOLIST PRIMARY KEY (ID),
+  CONSTRAINT FK_CARGOLIST_GENERAL FOREIGN KEY (PARENT_ID) REFERENCES {skema}.T_GENERAL_POLIS (ID)
+)
+/
+CREATE INDEX {skema}.IX_T_CARGOLIST_PARENT ON {skema}.T_CARGOLIST (PARENT_ID, SEQ_NO)
+/
+CREATE SEQUENCE {skema}.SEQ_T_CARGOLIST START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+/
+CREATE TABLE {skema}.T_SHIP (
+  ID               NUMBER(19) NOT NULL,
+  IDPEGA           VARCHAR2(50),
+  COB_GROUP        VARCHAR2(20),
+  PARENT_ID        NUMBER(19) NOT NULL,
+  AGE              VARCHAR2(50),
+  CONST            VARCHAR2(1000),
+  DWT              VARCHAR2(1000),
+  FLAG_NAME        VARCHAR2(1000),
+  GRT              VARCHAR2(1000),
+  IMO              VARCHAR2(1000),
+  NM_SHIP          VARCHAR2(1000),
+  NRT              VARCHAR2(1000),
+  REGISTER         VARCHAR2(1000),
+  REMARK           VARCHAR2(1000),
+  SHIPTYPE_ID      VARCHAR2(1000),
+  SHIPTYPE_NAME    VARCHAR2(1000),
+  SHIP_REF_ID      VARCHAR2(100),
+  Y_MAKE1          VARCHAR2(1000),
+  Y_MAKE2          VARCHAR2(1000),
+  FORMER_SHIP_NAME VARCHAR2(1000),
+  CLASSIFICATION   VARCHAR2(1000),
+  REBUILT          VARCHAR2(1000),
+  CONSTRAINT PK_T_SHIP PRIMARY KEY (ID),
+  CONSTRAINT UQ_T_SHIP_PARENT UNIQUE (PARENT_ID),
+  CONSTRAINT FK_SHIP_CARGOLIST FOREIGN KEY (PARENT_ID) REFERENCES {skema}.T_CARGOLIST (ID)
+)
+/
+CREATE SEQUENCE {skema}.SEQ_T_SHIP START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+/
+CREATE TABLE {skema}.T_LC (
+  ID           NUMBER(19) NOT NULL,
+  IDPEGA       VARCHAR2(50),
+  COB_GROUP    VARCHAR2(20),
+  PARENT_ID    NUMBER(19) NOT NULL,
+  LC           VARCHAR2(50),
+  LCBANK       VARCHAR2(500),
+  LC_NUMBER    VARCHAR2(500),
+  LC_CONDITION VARCHAR2(500),
+  LC_REMARK    VARCHAR2(500),
+  LC_END_DATE  VARCHAR2(30),
+  CONSTRAINT PK_T_LC PRIMARY KEY (ID),
+  CONSTRAINT UQ_T_LC_PARENT UNIQUE (PARENT_ID),
+  CONSTRAINT FK_LC_CARGOLIST FOREIGN KEY (PARENT_ID) REFERENCES {skema}.T_CARGOLIST (ID)
+)
+/
+CREATE SEQUENCE {skema}.SEQ_T_LC START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+/
+CREATE TABLE {skema}.T_SURVEYAGENT (
+  ID           NUMBER(19) NOT NULL,
+  IDPEGA       VARCHAR2(50),
+  COB_GROUP    VARCHAR2(20),
+  PARENT_ID    NUMBER(19) NOT NULL,
+  ASM_AGENT_ID VARCHAR2(100),
+  FULL_NAME    VARCHAR2(4000),
+  ADDRESS      VARCHAR2(500),
+  CITY         VARCHAR2(500),
+  COUNTRY      VARCHAR2(500),
+  CONSTRAINT PK_T_SURVEYAGENT PRIMARY KEY (ID),
+  CONSTRAINT UQ_T_SURVEYAGENT_PARENT UNIQUE (PARENT_ID),
+  CONSTRAINT FK_SURVEYAGENT_CARGOLIST FOREIGN KEY (PARENT_ID) REFERENCES {skema}.T_CARGOLIST (ID)
+)
+/
+CREATE SEQUENCE {skema}.SEQ_T_SURVEYAGENT START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+/
+CREATE TABLE {skema}.T_ADDITIONALSHIP (
+  ID          NUMBER(19) NOT NULL,
+  IDPEGA      VARCHAR2(50),
+  COB_GROUP   VARCHAR2(20),
+  PARENT_ID   NUMBER(19) NOT NULL,
+  SEQ_NO      NUMBER(5) NOT NULL,
+  ROW_UID     VARCHAR2(36) NOT NULL,
+  SHIP_REF_ID VARCHAR2(100),
+  REGISTER    VARCHAR2(1000),
+  NM_SHIP     VARCHAR2(1000),
+  VOYAGE_NO   VARCHAR2(500),
+  SHIPTYPE_ID VARCHAR2(1000),
+  FLAG_NAME   VARCHAR2(1000),
+  NRT         VARCHAR2(1000),
+  DWT         VARCHAR2(1000),
+  GRT         VARCHAR2(1000),
+  Y_MAKE1     VARCHAR2(1000),
+  CONST       VARCHAR2(1000),
+  CONSTRAINT PK_T_ADDITIONALSHIP PRIMARY KEY (ID),
+  CONSTRAINT FK_ADDITIONALSHIP_SHIP FOREIGN KEY (PARENT_ID) REFERENCES {skema}.T_SHIP (ID)
+)
+/
+CREATE INDEX {skema}.IX_T_ADDITIONALSHIP_PARENT ON {skema}.T_ADDITIONALSHIP (PARENT_ID, SEQ_NO)
+/
+CREATE SEQUENCE {skema}.SEQ_T_ADDITIONALSHIP START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+/
+CREATE TABLE {skema}.T_ADDITIONALCOVERAGE (
+  ID            NUMBER(19) NOT NULL,
+  IDPEGA        VARCHAR2(50),
+  COB_GROUP     VARCHAR2(20),
+  PARENT_ID     NUMBER(19) NOT NULL,
+  SEQ_NO        NUMBER(5) NOT NULL,
+  ROW_UID       VARCHAR2(36) NOT NULL,
+  COVERAGE      VARCHAR2(50),
+  COVERAGE_NOTE VARCHAR2(500),
+  CONSTRAINT PK_T_ADDITIONALCOVERAGE PRIMARY KEY (ID),
+  CONSTRAINT FK_ADDITIONALCOVERAGE_COVERAGE FOREIGN KEY (PARENT_ID) REFERENCES {skema}.T_COVERAGELIST (ID)
+)
+/
+CREATE INDEX {skema}.IX_T_ADDITIONALCOVERAGE_PARENT ON {skema}.T_ADDITIONALCOVERAGE (PARENT_ID, SEQ_NO)
+/
+CREATE SEQUENCE {skema}.SEQ_T_ADDITIONALCOVERAGE START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+/
+ALTER TABLE {skema}.T_COVERAGELIST ADD (
+  COVERAGE_INITIAL VARCHAR2(500)
+)
+/
+ALTER TABLE {skema}.T_DEDUCTIBLELIST ADD (
+  DESCRIPTIONS VARCHAR2(4000)
+)
+/

@@ -145,7 +145,7 @@ func dasarBarisProduksi(d dasarProduksi) models.BarisFacInProduction {
 		ids = append(ids, c.ID)
 	}
 	ri := nolBila(d.k.RICommision)
-	return models.BarisFacInProduction{IDPega: idPega(d.id), BusinessCode: d.kodeBisnis, CedingCo: g.CedingCoName,
+	return models.BarisFacInProduction{IDPega: repository.IDPegaProduksi(d.id), BusinessCode: d.kodeBisnis, CedingCo: g.CedingCoName,
 		SOB: d.k.SobName, BeginDate: tanggalFacInOffer(g.StartDateTime), EndDate: tanggalFacInOffer(g.EndDateTime),
 		PercentRNM: simpan8(d.k.PercentShare), MarketingCode: d.k.MarketingCode, InsuredName: d.k.InsuredName,
 		PercentRIComm: simpan8(ri), PctRICommSelisih: simpan8(ri), RISlipCeding: g.ReffNumber, GroupType: d.groupType,
@@ -263,12 +263,20 @@ func (s *Service) tulisanPolicy(ctx context.Context, id string, k models.Konteks
 	if err != nil {
 		return nil, err
 	}
+	cargo, adaCargo, err := s.cargoProduksi(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 	var prod []models.BarisFacInProduction
 	risiko := profilRisikoLoss(sp, k.ClassOfBusiness)
-	if aneka {
+	switch {
+	case adaCargo: // tiket 74 P5: langkah 22 Marine Cargo; M_RISK_LOSS_PROFILE = Aneka (K74-11 = K73-48)
+		prod, err = barisFacInProductionCargo(dp, cargo)
+		risiko = profilRisikoLossAneka(k.ClassOfBusiness)
+	case aneka:
 		prod, err = barisFacInProductionAneka(dp, objek, lokasi, lini)
 		risiko = profilRisikoLossAneka(k.ClassOfBusiness)
-	} else {
+	default:
 		prod, err = barisFacInProduction(dp, objek, sp)
 	}
 	if err != nil {

@@ -1,6 +1,7 @@
 // API modul NB FacIn - tiket 20/21.
 
-import { minta, mintaFormulir } from '../../../inti/frontend/klien'
+import { BATAS_WAKTU_MS, kegagalanDari, minta, mintaFormulir, rakitURL } from '../../../inti/frontend/klien'
+import { headerIdentitas } from '../../../inti/frontend/store/sesi'
 
 /** Isian layar coverage kargo yang menjadi masukan rumus (butir 61). */
 export interface IsianPremiCargo {
@@ -219,9 +220,26 @@ export interface KasusNB {
    * `anekaNotBonding`, `liability` = IsLiability, `bonding` = IsBondingAndCustomBonds, `golf` = isGolfInsurance (Golf punya
    * gerbang sendiri - aneka false).
    */
-  lini: { fire: boolean; aneka: boolean; anekaNotBonding: boolean; liability: boolean; bonding: boolean; golf: boolean }
+  lini: {
+    fire: boolean
+    aneka: boolean
+    anekaNotBonding: boolean
+    liability: boolean
+    bonding: boolean
+    golf: boolean
+    /** Tiket 74 P0 - When `IsMarineCargo` (`When\IsMarineCargo.xml` L44, BusinessType "MarineCargo" = GroupPanel 004). Opsional: biner lama tanpa kunci ini. */
+    marineCargo?: boolean
+  }
   /** Tab Object keluarga Aneka (tiket 73 P1) - dihitung backend lewat When korpus; di luar Aneka: kontainer [] dan semua false. */
   tampilanAneka: TampilanAneka
+  /** Tiket 75 F3 - jumlah lokasi objek FIRE; tab Object per halaman bila > ambang (usulan 500). null bila tak terbaca. Opsional: biner lama tanpa kunci ini. */
+  jumlahLokasi?: number | null
+  /**
+   * Tiket 73 P6 - template CSV objek menurut Class of Business (Pega SetDownloadMasterCSV): 'fire' | 'cargo' | 'aneka' |
+   * 'marinehull' | 'cpm' | '' (tanpa template). Importer 'aneka' / 'marinehull' / 'cpm' sama (InsertUploadAneka_act). Opsional: biner
+   * lama tanpa kunci ini.
+   */
+  jenisCsv?: '' | 'fire' | 'cargo' | 'aneka' | 'marinehull' | 'cpm'
 }
 
 /**
@@ -672,6 +690,11 @@ export interface Deductible {
   inputCondition: string
   /** `.TimeExcess` hari. */
   timeExcess: string
+  /**
+   * Tiket 74 P2 Marine Cargo saja: `.Descriptions` per baris deductible (`Section\InputCoverageCargo_FacIn.xml` grid
+   * `.DeductibleList` kedua L16997 / L17652; `T_DEDUCTIBLELIST.DESCRIPTIONS` migrasi 256). FIRE / Aneka tidak mengirimnya.
+   */
+  descriptions?: string
 }
 
 /** Mode hitung `CountPremi_ACT`: dari rate ("percent") atau dari premi ("amount", rate dihitung balik). */
@@ -754,6 +777,30 @@ export function jalurIsiLampiran(caseId: string, id: string): string {
   return `${jalurLampiran(caseId)}/berkas/${encodeURIComponent(id)}/isi`
 }
 
+/** Isi satu berkas sebagai Blob - `View` pdf / gambar di popup penampil (work owner 11-10-2026, pola panel lampiran bersama). */
+export async function ambilIsiLampiran(caseId: string, id: string): Promise<Blob> {
+  const kendali = new AbortController()
+  const jam = setTimeout(() => {
+    kendali.abort()
+  }, BATAS_WAKTU_MS)
+  try {
+    const jawab = await fetch(rakitURL(jalurIsiLampiran(caseId, id)), {
+      method: 'GET',
+      headers: { ...headerIdentitas() },
+      signal: kendali.signal,
+    })
+    if (!jawab.ok) throw kegagalanDari(jawab.status, await jawab.text())
+    return await jawab.blob()
+  } finally {
+    clearTimeout(jam)
+  }
+}
+
+/** `GET …/lampiran/berkas/{id}/office` - URL bertanda tangan untuk View Office Online (`DownloadDocumentPolis` ViewOffice). */
+export function tautanOfficeLampiran(caseId: string, id: string): Promise<{ url: string }> {
+  return minta<{ url: string }>(`${jalurLampiran(caseId)}/berkas/${encodeURIComponent(id)}/office`)
+}
+
 /** `POST …/lampiran/berkas/{id}/ulangi` - unggah ulang berkas yang menunggu / gagal (pola Treaty Contract Out). */
 export function ulangiLampiran(caseId: string, id: string): Promise<void> {
   return minta<void>(`${jalurLampiran(caseId)}/berkas/${encodeURIComponent(id)}/ulangi`, { metode: 'POST' })
@@ -782,6 +829,77 @@ export interface HasilCsvObjekServer {
  * `POST /api/nbfacin/kasus/{caseId}/objek/csv` - Save Data bilah CSV (tiket 66, `InsertUploadFire_act`): baris CSV template FIRE
  * (nama kolom -> teks apa adanya) MENGGANTI semua objek case.
  */
+// Tiket 75 - unggah CSV objek TANPA BATAS baris (K75-1..3): berkas di-stream ke server (multipart medan `berkas`), validasi +
+// simpan di LATAR per kelompok; layar membaca status berkala. Kabel sesi c3.
+
+export type StatusTugasCsv = 'memvalidasi' | 'valid' | 'gagal_validasi' | 'menyimpan' | 'selesai' | 'gagal'
+
+/** Status satu pekerjaan unggah CSV objek. */
+export interface TugasCsvObjek {
+  idUnggah: string
+  status: StatusTugasCsv
+  totalBaris: number
+  barisDiproses: number
+  barisTersimpan: number
+  /** Paling banyak 100 pesan galat pertama (berawalan nomor baris). */
+  galat: string[]
+  jumlahGalat: number
+  /** Ringkasan hasil (seperti `HasilCsvObjekServer.pesan`). */
+  pesan: string[]
+  namaBerkas: string
+  dibuat: string
+  /** Case sudah punya objek - konfirmasi "ganti semua" sebelum Simpan. */
+  adaObjek: boolean
+  /** Tambahan c3: fase terakhir ('validasi' / 'simpan'), jumlah seluruh pesan, dan sebab kegagalan proses (bukan galat baris). */
+  fase?: string
+  jumlahPesan?: number
+  galatProses?: string
+  /** Tiket 74 P6: importer yang dipilih server menurut COB case ('fire' / 'cargo'). */
+  jenis?: string
+}
+
+const jalurCsv = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/objek/csv`
+
+/** Batas waktu unggah berkas besar (1 juta baris ± ratusan MB). */
+export const BATAS_WAKTU_UNGGAH_CSV_MS = 30 * 60 * 1000
+
+/** `POST …/objek/csv/berkas` (multipart `berkas`) - 202 begitu berkas diterima utuh; validasi berjalan di latar. */
+export function unggahCsvObjek(caseId: string, berkas: File): Promise<TugasCsvObjek> {
+  const isi = new FormData()
+  isi.append('berkas', berkas, berkas.name)
+  return mintaFormulir<TugasCsvObjek>(`${jalurCsv(caseId)}/berkas`, isi, BATAS_WAKTU_UNGGAH_CSV_MS)
+}
+
+/** `GET …/objek/csv/{idUnggah}` - status + kemajuan. */
+export function ambilTugasCsvObjek(caseId: string, idUnggah: string): Promise<TugasCsvObjek> {
+  return minta<TugasCsvObjek>(`${jalurCsv(caseId)}/${encodeURIComponent(idUnggah)}`)
+}
+
+/** `GET …/objek/csv/aktif` - pekerjaan terakhir case (null bila belum pernah) - memulihkan kemajuan sesudah muat ulang. */
+export function ambilTugasCsvAktif(caseId: string): Promise<TugasCsvObjek | null> {
+  return minta<TugasCsvObjek | null>(`${jalurCsv(caseId)}/aktif`)
+}
+
+/** `GET …/objek/csv/{idUnggah}/baris` - View Upload per halaman dari server. */
+export function ambilBarisCsvObjek(
+  caseId: string,
+  idUnggah: string,
+  halaman: number,
+  ukuran: number,
+): Promise<{ total: number; baris: Record<string, string>[]; /** Tiket 74 P6: urutan judul berkas (per jenis); opsional. */ kolom?: string[] }> {
+  return minta(`${jalurCsv(caseId)}/${encodeURIComponent(idUnggah)}/baris`, { kueri: { halaman: String(halaman), ukuran: String(ukuran) } })
+}
+
+/** `POST …/objek/csv/{idUnggah}/simpan` - Save Data di latar (MENGGANTI semua objek case, per kelompok). */
+export function simpanTugasCsvObjek(caseId: string, idUnggah: string): Promise<TugasCsvObjek> {
+  return minta<TugasCsvObjek>(`${jalurCsv(caseId)}/${encodeURIComponent(idUnggah)}/simpan`, { metode: 'POST' })
+}
+
+/** `POST …/objek/csv/{idUnggah}/ulangi` - lanjut dari kelompok yang gagal (K75-2). */
+export function ulangiTugasCsvObjek(caseId: string, idUnggah: string): Promise<TugasCsvObjek> {
+  return minta<TugasCsvObjek>(`${jalurCsv(caseId)}/${encodeURIComponent(idUnggah)}/ulangi`, { metode: 'POST' })
+}
+
 export function simpanCsvObjek(caseId: string, baris: Record<string, string>[]): Promise<HasilCsvObjekServer> {
   return minta<HasilCsvObjekServer>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/objek/csv`, {
     metode: 'POST',
@@ -807,6 +925,33 @@ export function simpanAkumulasi(caseId: string, baris: ObjekFire[]): Promise<Daf
 
 export function simpanObjek(caseId: string, baris: ObjekFire[]): Promise<DaftarObjek> {
   return minta<DaftarObjek>(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/objek`, { metode: 'PUT', badan: { baris } })
+}
+
+// Tiket 75 F3 (K75-3): tab Object PER HALAMAN dari server untuk case besar (jumlahLokasi > AMBANG_HALAMAN_OBJEK); case kecil tetap
+// `GET`/`PUT …/objek` utuh. Kabel sesi c3 (`handlers/objekhalaman.go`).
+
+/** Ambang mode per halaman - sama dengan `services.AmbangHalamanObjek` backend. */
+export const AMBANG_HALAMAN_OBJEK = 500
+
+/** Satu lokasi halaman: objek FIRE + `id` = T_LOCATIONLIST.ID. */
+export type ObjekBerId = ObjekFire & { id: string }
+
+/** `GET …/objek/halaman?halaman=&ukuran=&cari=` - ukuran 1..500; urut Object No (SEQ_NO); cari memuat, tanpa beda huruf. */
+export function ambilObjekHalaman(
+  caseId: string,
+  halaman: number,
+  ukuran: number,
+  cari: string,
+): Promise<{ total: number; halaman: number; ukuran: number; lokasi: ObjekBerId[] }> {
+  return minta(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/objek/halaman`, { kueri: { halaman, ukuran, cari } })
+}
+
+/**
+ * `PATCH …/objek` - hanya yang berubah: ubah (ber-id) / tambah / hapus (id). 409 bila lokasi berubah sejak dimuat, lokasi yang diubah
+ * sudah ber-spreading (K75-4), atau unggahan CSV sedang diproses.
+ */
+export function perbaruiObjek(caseId: string, isi: { ubah: ObjekBerId[]; tambah: ObjekFire[]; hapus: string[] }): Promise<{ jumlahLokasi: number }> {
+  return minta(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/objek`, { metode: 'PATCH', badan: isi })
 }
 
 /** Saringan popup Choose Risk Address - nama medan = properti Pega yang diikat sel 78-84. */
@@ -2296,11 +2441,206 @@ export interface BarisKapal {
   dwt: string
   klasifikasi: string
   konstruksi: string
+  // Aditif tiket 74 (popup Select Ship Marine Cargo, `SelectShip_act` L470-873) - opsional: biner lama tanpa medan ini.
+  shipTypeId?: string
+  shipTypeName?: string
+  register?: string
+  imo?: string
+  yMake2?: string
+  remark?: string
+  formerShipName?: string
+  rebuilt?: string
 }
 
 /** `GET /api/nbfacin/kapal?cari=` - Contains tak peka huruf atas NAME; kosong = tanpa saringan; maks. 500. */
 export function cariKapal(cari: string): Promise<{ baris: BarisKapal[] }> {
   return minta<{ baris: BarisKapal[] }>('/api/nbfacin/kapal', { kueri: { cari } })
+}
+
+// Tiket 74 Marine Cargo (sesi 0f, kontrak ke c3 10-10-2026). Hierarki Cargo → Coverage → Spreading, tanpa lokasi
+// (`docs/issues/74-marine-cargo.md` S1-S3). Semua medan teks; angka / uang = teks desimal bertitik (ADR-0003); tanggal kabel DD-MM-YYYY.
+// Medan bertanda "server" diisi backend saat PUT (`ProtectObjectMarine`, `CountAgeShip`, master Max Age), diabaikan klien.
+
+/** `.PolicyData.Ship` - diisi popup Select Ship (`Activity\SelectShip_act.xml` L470-873); semua tampil read-only. */
+export interface KapalCargo {
+  id: string
+  nmShip: string
+  shipTypeId: string
+  shipTypeName: string
+  grt: string
+  nrt: string
+  dwt: string
+  /** server - `CountAgeShip`: tahun Sail Date − Year Make 1. */
+  age: string
+  flagName: string
+  construction: string
+  yMake1: string
+  yMake2: string
+  remark: string
+  register: string
+  imo: string
+  formerShipName: string
+  classification: string
+  rebuilt: string
+}
+
+/** Satu baris `.PolicyData.Ship.AdditionalShip` (grid Additional Ship `MarineCargoDtl.xml` L15875). */
+export interface KapalTambahan {
+  id: string
+  register: string
+  nmShip: string
+  voyageNo: string
+  shipTypeId: string
+  flagName: string
+  nrt: string
+  dwt: string
+  grt: string
+  yMake1: string
+  construction: string
+}
+
+/** Satu coverage cargo (P2) - form `Section\InputCoverageCargo_FacIn.xml`; satu coverage per cargo. */
+export interface CoverageCargo {
+  coverage: string
+  coverageNote: string
+  coverageInitial: string
+  /** Nama mata uang (`.Currency.Name`). */
+  currency: string
+  /** server */
+  currencyId?: string
+  /** server */
+  currencyOldId?: string
+  rate: string
+  limitOfLiability: string
+  discountPercentage: string
+  tsi: string
+  premium: string
+  minPremium: string
+  /** server */
+  discount?: string
+  /** server */
+  tsiLiability?: string
+  /** server */
+  tsiNusantaraRe?: string
+  /** server */
+  premiNusantaraRe?: string
+  /** server - `AppendCoverageMarineCargo_ACT`. */
+  proRatePercent?: string
+  /** `.AdditionalCoverage` - grid Warranty Extension. */
+  warrantyExtension: { coverage: string; coverageNote: string }[]
+  deductibles: Deductible[]
+}
+
+/** Satu baris `.OfferFacIn.CargoList` (`ASM-FW-GISFW-Data-Cargo`). */
+export interface ObjekCargo {
+  /** Pengenal baris (kosong = baru) - backend mempertahankan anak (coverage) lewat id ini. */
+  id: string
+  isTopRisk: boolean
+  tradingId: string
+  /** server */
+  tradingNote: string
+  goodId: string
+  /** server */
+  goodNote: string
+  conveyanceId: string
+  /** server */
+  conveyanceName: string
+  /** server */
+  conveyanceNote: string
+  packingId: string
+  /** server */
+  packingNote: string
+  fromRute: string
+  toRute: string
+  sailDate: string
+  blNumber: string
+  invoiceNumber: string
+  invoiceDate: string
+  maxAge: string
+  /** server - `.Warranty` master Max Age. */
+  maxAgeDetail: string
+  /** Per cargo (K74-6). */
+  surveyAgent: { agentId: string; fullName: string; address: string; city: string; country: string }
+  lc: { lc: boolean; bank: string; number: string; condition: string; remark: string; endDate: string }
+  ship: KapalCargo
+  additionalShip: KapalTambahan[]
+  /** Baca saja - hapus lunak EDM (`SetFlagDeleteEDM_Act`) bukan jalur NB. */
+  flagDelete?: string
+  /** P2 - GET membawa; PUT objek membawa balik apa adanya (absen / null = coverage lama dipertahankan server). */
+  coverages?: CoverageCargo[]
+  /**
+   * server - grid `TotalTSIPremiGrossList` per mata uang (`SumTotalTSIPremiGross_Act` langkah 4: Rate = Premium / TSI × 100);
+   * coverage tanpa mata uang = satu baris currency "".
+   */
+  totalGross?: { currency: string; tsi: string; premium: string; rate: string }[]
+}
+
+export interface DaftarCargo {
+  cargo: ObjekCargo[]
+}
+
+const jalurCargo = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/objek-cargo`
+
+/** `GET …/objek-cargo` - grid CargoList tab Object Marine Cargo. */
+export function ambilObjekCargo(caseId: string): Promise<DaftarCargo> {
+  return minta<DaftarCargo>(jalurCargo(caseId))
+}
+
+/** `PUT …/objek-cargo` - Save tab Object / Coverage Marine Cargo; daftar diganti utuh. */
+export function simpanObjekCargo(caseId: string, cargo: ObjekCargo[]): Promise<DaftarCargo> {
+  return minta<DaftarCargo>(jalurCargo(caseId), { metode: 'PUT', badan: { cargo } })
+}
+
+/** Rantai on-change form coverage cargo (`InputCoverageCargo_FacIn.xml`): Currency / Rate / TSI / Discount (%) → `CountCoverageMarine`, Premium → `CountTSIandRateMarineCargo_Act`. */
+export type PemicuCargo = 'currency' | 'rate' | 'tsi' | 'diskonPersen' | 'premium'
+
+/** `POST …/hitung-coverage-cargo` - hitung tanpa menyimpan; jawaban membawa medan server (Discount, TSI Liability, RNM, mata uang). */
+export function hitungCoverageCargo(caseId: string, baris: { coverage: CoverageCargo; pemicu: PemicuCargo }[]): Promise<{ baris: CoverageCargo[] }> {
+  return minta(`/api/nbfacin/kasus/${encodeURIComponent(caseId)}/hitung-coverage-cargo`, { metode: 'POST', badan: { baris } })
+}
+
+/** Satu kondisi marine - `BrowseMarineCondition_RD` (Type "MARINE"): popup Select Coverage dan Warranty Extension. */
+export interface BarisKondisiMarine {
+  id: string
+  conditionName: string
+}
+
+/** `GET /api/nbfacin/marine/coverage?q=`. */
+export function cariKondisiMarine(q: string): Promise<{ baris: BarisKondisiMarine[] }> {
+  return minta<{ baris: BarisKondisiMarine[] }>('/api/nbfacin/marine/coverage', { kueri: { q } })
+}
+
+/** Satu opsi master Marine Cargo: nilai `.ID`, tampil `.Description` (BrowseTrading_RD / BrowseGoodsType / BrowseConveyance_RD / BrowsePacking_RD). */
+export interface BarisMasterCargo {
+  id: string
+  description: string
+}
+
+export type JenisMasterCargo = 'trading' | 'goods' | 'conveyance' | 'packing'
+
+/** `GET /api/nbfacin/marine/{jenis}` - dropdown Trading / Goods / Conveyance / Packing form cargo. */
+export function daftarMasterCargo(jenis: JenisMasterCargo): Promise<{ baris: BarisMasterCargo[] }> {
+  return minta<{ baris: BarisMasterCargo[] }>(`/api/nbfacin/marine/${jenis}`)
+}
+
+/** `GET /api/nbfacin/marine/max-age?q=` - autocomplete Max Age ID (`BrowseMaxAge_RD`); pilih mengisi Max Age Detail dari `warranty`. */
+export function cariMaxAge(q: string): Promise<{ baris: { id: string; warranty: string }[] }> {
+  return minta<{ baris: { id: string; warranty: string }[] }>('/api/nbfacin/marine/max-age', { kueri: { q } })
+}
+
+/** Satu agen survei - `BrowseLLOYDAGENT_RD` (popup Select Agent: ID, Name, Address, City, Country). */
+export interface BarisAgentSurvei {
+  id: string
+  name: string
+  address: string
+  city: string
+  country: string
+  contact: string
+}
+
+/** `GET /api/nbfacin/marine/agent?q=` - `.Name Contains q`. */
+export function cariAgentSurvei(q: string): Promise<{ baris: BarisAgentSurvei[] }> {
+  return minta<{ baris: BarisAgentSurvei[] }>('/api/nbfacin/marine/agent', { kueri: { q } })
 }
 
 /** Satu tipe kendaraan HE - `BrowseType_RD` atas view BRANDDETAIL `TYPE = 'ANEKA'`. */
@@ -2410,6 +2750,84 @@ export function simpanSpreadingAneka(caseId: string, isi: TampilanSpreadingAneka
   return minta<TampilanSpreadingAneka>(jalurSpreadingAneka(caseId), {
     metode: 'PUT',
     badan: { percentShare: isi.percentShare, template: isi.template, lokasi: isi.lokasi },
+  })
+}
+
+// Tiket 74 P3 - tab Spreading MARINE CARGO: Cargo → Coverage → SpreadingList (tanpa lokasi); daun = FIRE (`SpreadingItem`).
+
+/** Satu coverage cargo di tab Spreading - grid `InputCoverageSpreadingMarineCargo` + detail `SpreadingItem`. */
+export interface CoverageSpreadingCargo {
+  /** Kode coverage - WAJIB dibawa balik di PUT / hitung-baris (pemeriksa bentuk server, 409 bila posisi tidak cocok). */
+  coverage: string
+  currency: string
+  coverageNote: string
+  rate: string
+  premium: string
+  discount: string
+  tsi: string
+  tsiLiability: string
+  limitOfLiability: string
+  tsiNusantaraRe: string
+  premiNusantaraRe: string
+  spreading: BarisSpreading[]
+}
+
+/** Satu cargo - grid `CoverageSpreadingList` cabang `IsMarineCargo` (No. / Trading / Goods / Packing / Conveyance). */
+export interface CargoSpreading {
+  no: string
+  tradingNote: string
+  goodNote: string
+  packingNote: string
+  conveyanceNote: string
+  coverages: CoverageSpreadingCargo[]
+}
+
+/** `GET /api/nbfacin/kasus/{caseId}/spreading-cargo`. */
+export interface TampilanSpreadingCargo {
+  percentShare: string
+  treaty: TreatySpreading[]
+  template: TemplateSpreading[]
+  cargo: CargoSpreading[]
+  ringkasanTreaty: TotalSpreading[]
+  ringkasanMataUang: RingkasanMataUangSpreading[]
+  pesan: string[]
+  /**
+   * `ProtectSpreading.CARI15` "Total Limit of Liability(…%)" (`SumTSIPremiSpreadedRNM_MARINECARGO_Act` L4318). TIDAK ditampilkan:
+   * tidak ada section / harness korpus yang merujuk `ProtectSpreading.CARI15` (grep 0, sesi 0f 10-10-2026) - tempat tampilnya
+   * tidak diketahui, jadi tidak dikarang.
+   */
+  labelLimitOfLiability?: string
+}
+
+const jalurSpreadingCargo = (caseId: string) => `/api/nbfacin/kasus/${encodeURIComponent(caseId)}/spreading-cargo`
+
+export function ambilSpreadingCargo(caseId: string): Promise<TampilanSpreadingCargo> {
+  return minta<TampilanSpreadingCargo>(jalurSpreadingCargo(caseId))
+}
+
+/** % Share RNM diubah: NR semua coverage cargo + baris spreading (tanpa spreading otomatis - Marine tidak punya cabang GetKapasitasTreaty); tidak menyimpan. */
+export function hitungShareSpreadingCargo(caseId: string, percentShare: string): Promise<TampilanSpreadingCargo> {
+  return minta<TampilanSpreadingCargo>(`${jalurSpreadingCargo(caseId)}/hitung-share`, { metode: 'POST', badan: { percentShare } })
+}
+
+/** Copy To All Spreading cargo (`CopyToAllSpreadingCargoMBU_ACT` langkah 2); tidak menyimpan. */
+export function salinSpreadingCargo(caseId: string, percentShare: string, template: TemplateSpreading[]): Promise<TampilanSpreadingCargo> {
+  return minta<TampilanSpreadingCargo>(`${jalurSpreadingCargo(caseId)}/salin`, { metode: 'POST', badan: { percentShare, template } })
+}
+
+/** Baris spreading diubah di tahap UW: hitung ulang; tidak menyimpan. */
+export function hitungBarisSpreadingCargo(caseId: string, isi: TampilanSpreadingCargo): Promise<TampilanSpreadingCargo> {
+  return minta<TampilanSpreadingCargo>(`${jalurSpreadingCargo(caseId)}/hitung-baris`, {
+    metode: 'POST',
+    badan: { percentShare: isi.percentShare, cargo: isi.cargo },
+  })
+}
+
+/** Save tab Spreading cargo (`IsThereAnyObjectLocation_Act`): hitung ulang lalu simpan. */
+export function simpanSpreadingCargo(caseId: string, isi: TampilanSpreadingCargo): Promise<TampilanSpreadingCargo> {
+  return minta<TampilanSpreadingCargo>(jalurSpreadingCargo(caseId), {
+    metode: 'PUT',
+    badan: { percentShare: isi.percentShare, template: isi.template, cargo: isi.cargo },
   })
 }
 

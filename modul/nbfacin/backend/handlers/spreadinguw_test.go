@@ -87,12 +87,12 @@ func TestSpreadingTahapUWHandler(t *testing.T) {
 	}
 }
 
-// TestKunciKasusSamaDenganApiTs - dua arah + urutan: kasusKabel = api.ts KasusNB (19 kunci; tiket 59 bolehUbahSpreading /
+// TestKunciKasusSamaDenganApiTs - dua arah + urutan: kasusKabel = api.ts KasusNB (21 kunci; tiket 59 bolehUbahSpreading /
 // ubahBarisSpreading, tiket 60 ubahAkumulasi, tiket 64d kunciPeriode, tiket 70 bolehFollowing, tiket 73 businessType / lini /
-// tampilanAneka). Instrumen diuji atas jawaban yang sudah diketahui.
+// tampilanAneka, tiket 75 F3 jumlahLokasi, tiket 73 P6 jenisCsv). Instrumen diuji atas jawaban yang sudah diketahui.
 func TestKunciKasusSamaDenganApiTs(t *testing.T) {
 	ts, gob := kunciInterfaceTS(t, "KasusNB"), kunciTagJSON(kasusKabel{})
-	if len(gob) != 19 || gob[18] != "tampilanAneka" || len(ts) < 18 || ts[0] != "caseId" {
+	if len(gob) != 21 || gob[20] != "jenisCsv" || len(ts) < 18 || ts[0] != "caseId" {
 		t.Fatalf("instrumen: ts %v, go %v", ts, gob)
 	}
 	if !reflect.DeepEqual(ts, gob) {

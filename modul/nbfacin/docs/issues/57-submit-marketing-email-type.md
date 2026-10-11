@@ -375,3 +375,89 @@ kini TIDAK menahan Banding Binding (Accept tetap 422). `handlers.TestSubmitHandl
 kasus). **Mutasi 45 / 46 mati**; 1 setara: net rate ProtectNeRate.CARI1 → ProtectMarine.CARI2 (keduanya penahan marketing dan
 bukan penahan Binding - tak terbedakan oleh perilaku). Mutan uji tiket 57 lama 8 / 8 tetap mati.
 
+
+- **K57-22 Ralat K57-12 — opsi Banding = jabatan + atasannya** (bug DEV 10-10-2026, work owner: "ini banding kenapa cuma ke
+  kadiv teknik? harusnya kan ke kadiv teknik dan atasannya"; telusur sesi 0f, perbaikan sesi c3; berlaku semua COB, FIRE ikut).
+  - `[terverifikasi]` `NB FacIn\RDBList\GetAksepBanding_SQL.xml` L85: `select JABATAN AS CARI1,JABATAN_ATASAN AS CARI2 …`.
+  - `[terverifikasi]` `NB FacIn\Activity\GetAksepBanding.xml`:
+    - langkah 5 (prakondisi `@LengthOfPageList(AksepBanding.pxResults)>0`) meng-APPEND `AksepBanding.pxResults(1).CARI1`
+      (L828-829) lalu `.pxResults(1).CARI2` (L897-898). Jadi opsi = [JABATAN, JABATAN_ATASAN] BARIS PERTAMA saja.
+    - Langkah 3 tanpa metode, prakondisi `.EmailType==4||.EmailTypeBinding==4 || .EmailTypeUWPolicy ==4`; arti kode aksi
+      WhenFalse "6" `belum terverifikasi`. Port memuat opsi di tampilan, dan Submit memvalidasinya hanya untuk Email Type 4
+      (tidak berubah).
+    - Langkah 6 tanpa metode dan tanpa prakondisi bermakna.
+  - Port lama mengambil JABATAN saja dari SEMUA baris: atasan hilang, baris ke-2 ikut.
+  - Perbaikan:
+    - `repository.sqlOpsiBanding` mengambil `JABATAN, JABATAN_ATASAN`.
+    - `opsiBandingBarisPertama` membaca baris pertama → [JABATAN, JABATAN_ATASAN] (NULL → ""; nol baris → kosong).
+    - `bandingAktif` tetap: unik + punya tujuan SetBanding_ACT, sehingga "" / MANAGERTEKNIK tersaring.
+    - Validasi `rapikanIsiSubmit` memakai daftar baru. Kabel tidak berubah (`[]string`).
+  - Sensus `DDL\M_LIMIT_PROPERTYY.csv` (salinan work owner, bukan isi DEV), dua cara (csv per nama kolom; awk per posisi
+    kolom), sepakat: 37 baris. Setiap JABATAN_ATASAN berisi dikenal `tujuanBanding`; satu-satunya yang kosong adalah LEADER
+    (WORKBASKET kosong, tak pernah cocok). Contoh: KADIVTEKNIK → DIREKTURMARKETING, KADIVFACULTATIVE → KADIVTEKNIK,
+    MANAGERTEKNIK → DIREKTURMARKETING / KADIVTEKNIK. Kelompok (WORKBASKET, TEAM_GROUP): 36, satu ganda
+    (ReasFacInSeniorUnderwriting / 1) dengan pasangan identik, jadi "baris pertama" tidak ambigu di salinan ini.
+  - Uji: `TestOpsiBandingBarisPertama` (dua baris → baris 1; atasan NULL; nol baris), `TestBandingJabatanDanAtasan`
+    (atasan tampil; kosong / MANAGERTEKNIK / kembar tersaring; Submit menerima atasan, menolak bukan pilihan), teks SQL
+    `TestSQLSubmit`.
+
+## "IS ada Ask ?" — Accept marketing kembali ke penanya terakhir (keputusan work owner 11-10-2026, lewat sesi 9d; sesi c3)
+
+- **Sumber:** tangkapan layar flow Pega LIVE milik work owner. `InputInwardFacultativeOffer` punya bentuk keputusan "IS ada Ask ?"
+  SESUDAH Utility "SAVE JSON_OFFER", dengan cabang Else ke jalur lama.
+  - `[terverifikasi]` Bentuk ini TIDAK ADA di korpus: flow korpus 01-01-94 / 20260512, dan grep "ada Ask" di D:\migrasi\RNM
+    nihil. Ini data work owner, BUKAN korpus.
+  - Kalimat work owner: "kalo ada ask, saat marketing submit, harusnya balik ke siapa yg ask terakhir".
+- ~~**Isi syarat rule belum terverifikasi → tafsiran `[keputusan agent]`:**~~ **DIRALAT 11-10-2026** — syarat kini terverifikasi
+  dari rule DDL kiriman work owner; lihat "Koreksi" di bawah. Tafsiran lama:
+  - Catatan HISTORYAKSEPTASIPEGA TERBARU case (TGL_TRANSFER) dengan WORKBASKET != ReasFacInMarketing, pola GetAksepBanding_SQL.
+  - Bila STATUS = "ASK" (labelApproval Ask, ditulis Submit UW / TL; WORKBASKET = posisi penanya), Accept marketing kembali ke
+    WORKBASKET itu.
+  - NB status `NB IS IN <JABATAN>'S INBOX`, tanpa nama orang: TL / JUW_B memakai teks jalur yang ada, posisi uw lain memakai
+    statusInboxPosisi.
+  - Selain itu jalur lama ke Team Leader, TIDAK berubah.
+  - Ask menang atas IsSpecialCase / IsGroup / IsPKSASM / IsTBonding / Declaration Policy.
+- **Tetap seperti Accept biasa:** proteksi Accept, riwayat produksi / Pega (WORKBASKET ReasFacInMarketing, STATUS ACCEPT), dan
+  penjaga posisi. Hanya tujuan dan NB status yang berbeda.
+- **ADR-0032:** workbasket lama `ReasFacInJuniorUnderwriting` dipetakan ke `ReasFacInJuniorUnderwritingB`.
+- **`[keputusan agent]` workbasket yang tidak dikenal sistem baru** → jalur lama ke TL + log. Case tidak dijatuhkan ke antrean
+  tanpa pemilik.
+- **Kode:**
+  - `services/submitask.go` (`tujuanAskMarketing`), kait di `AjukanSubmit` hanya untuk Accept tahap marketing;
+  - `repository/submit.go` `CatatanPegaNonMarketing` / `sqlCatatanPegaNonMarketing`.
+- **Uji:**
+  - `TestAcceptMarketingKembaliKePenanya`: Ask JUW_B → JUW_B; Ask TL → TL; Ask Senior UW → Senior UW; nama lama tanpa B → B;
+    Reject UW → TL; tanpa riwayat → TL; workbasket asing → TL; riwayat sama dengan Accept biasa; Reject marketing tidak
+    terpengaruh.
+  - `TestSQLCatatanPegaNonMarketing`.
+  - Mutasi 5/5 tertangkap.
+
+### Koreksi 11-10-2026 — syarat dari rule Pega LIVE (`D:\migrasi\RNM\DDL\`, kiriman work owner; BUKAN korpus)
+
+- **`[terverifikasi]` `DDL\InputInwardFacultativeOffer.xml` Decision43 "IS ada Ask ?"** (sesudah Utility9 SAVE JSON_OFFER):
+  - When IsFlagAsk → Utility3 SetBanding_ACT (Transition173);
+  - Else → Decision35 (jalur lama).
+  - When IsFlagAsk (tangkapan layar, RS 01-01-95): `pyWorkPage.OfferFacIn.IsFlagAsk = "true"`.
+- **`[terverifikasi]` `DDL\Protection_Act.xml` (01-01-96):**
+  - L1651 IsFlagAsk = "".
+  - Langkah 21 "Set FlagASk JIka aksep terakhir ask" IsFlagAsk = "true" berprakondisi `ViewSuggest(<LAST>).Approval==3`
+    (T=2 / F=3).
+- **Syarat (port):** entri TERAKHIR riwayat akseptasi, SIAPA PUN pembuatnya, ber-Approval Ask.
+  - Sistem baru membaca baris HISTORYAKSEPTASIPRODUCTION terbaru (`RiwayatAkseptasi`, SaveViewSuggest yang sama; APPROVAL "Ask" =
+    EmailType 3).
+  - Saringan WORKBASKET != marketing TIDAK dipakai untuk syarat: Ask lalu Reject marketing berarti entri terakhir Reject, sehingga
+    flag mati → jalur lama ke TL.
+- **Tujuan `[keputusan agent]`** (Pega SetBanding_ACT memakai LetterNo, yang tidak diisi saat Ask): posisi penanya.
+  - Diambil dari WORKBASKET catatan HISTORYAKSEPTASIPEGA terbaru non-marketing, yang wajib berSTATUS ASK; bila tidak → jalur lama
+    + log.
+  - NB status = label tujuanBanding / SetBanding_ACT bila posisinya ada di peta itu (mis. SENIORUW → "NB IS IN SENIORUW'S
+    INBOX", JUW_B → "JUNIOR UNDERWRITER (B)").
+  - Team Leader = teks Accept marketing; posisi uw lain di luar peta = statusInboxPosisi (mis. Manager Teknik).
+- **Uji `TestAcceptMarketingKembaliKePenanya`** (10 kasus): ditambah "Ask JUW_B lalu Reject marketing lalu Accept → TL" dan
+  "Ask, catatan Pega bukan ASK → TL"; label Senior UW kini SENIORUW.
+  - Mutasi 5/5 tertangkap (entri pertama vs terakhir, cek ASK catatan Pega, label tujuanBanding, peta JUW lama, kait).
+
+## Catatan silang — IDPEGA = case id polos (11-10-2026)
+
+Tulisan IDPEGA tiket ini kini memakai case id polos; pembaca menerima dua bentuk (polos / berawalan). Rincian: `docs/issues/69-jalur-policy.md`
+bagian "IDPEGA = case id polos".

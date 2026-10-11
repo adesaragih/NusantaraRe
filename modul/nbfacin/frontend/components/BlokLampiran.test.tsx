@@ -58,3 +58,26 @@ describe('BlokLampiran', () => {
     expect(HALAMAN).toMatch(/\{bolehSubmit && <BlokEmailType s=\{sub\} hanyaRiwayat=\{hanyaLihat\} \/>\}[\s\S]{0,400}<BlokLampiran caseId=\{kasus\.caseId\} \/>/)
   })
 })
+
+describe('View / View Office Online tanpa unduh (work owner 11-10-2026, pola panel lampiran bersama)', () => {
+  it('jenis penampil dari ekstensi: office xls..pptx, pdf, gambar raster; lainnya tidak ditawarkan', async () => {
+    const { jenisPenampil, ekstensiBerkas } = await import('./PenampilLampiran')
+    expect(['a.xlsx', 'b.XLS', 'c.docx', 'd.pptx'].map(jenisPenampil)).toEqual(['office', 'office', 'office', 'office'])
+    expect(jenisPenampil('e.pdf')).toBe('pdf')
+    expect(jenisPenampil('f.png')).toBe('gambar')
+    expect(['g.csv', 'h.svg', 'i.html', 'tanpa-titik'].map(jenisPenampil)).toEqual([null, null, null, null])
+    expect(ekstensiBerkas('a.b.c.pdf')).toBe('pdf')
+  })
+
+  it('tombol hanya untuk berkas tersimpan; penampil mengganti popup View File; office lewat form GET, bukan window.open', () => {
+    expect(SUMBER).toContain("{b.status === '' && jenisPenampil(b.namaFile) !== null && (")
+    expect(SUMBER).toContain("{jenisPenampil(b.namaFile) === 'office' ? L.viewOffice : L.view}")
+    expect(SUMBER).toContain('{lihat !== null && penampil === null && (')
+    const P = baca('PenampilLampiran.tsx')
+    expect(P).toContain('<form ref={formOffice} method="get" action={PENAMPIL_OFFICE} target={BINGKAI_PENAMPIL} hidden>')
+    expect(P).not.toMatch(/window\.open|location\.href|https?:\/\//)
+    expect(API).toContain('`${jalurLampiran(caseId)}/berkas/${encodeURIComponent(id)}/office`')
+    expect(API).toContain('const jawab = await fetch(rakitURL(jalurIsiLampiran(caseId, id)), {')
+    expect([L.view, L.viewOffice]).toEqual(['View', 'View Office Online'])
+  })
+})

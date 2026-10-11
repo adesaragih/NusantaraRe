@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import { klienMaster, type KlienMaster, type MetaMaster } from './api'
-import { jumlahHalaman, nomorHalaman } from './DaftarMaster'
+import { jumlahHalaman, nomorHalaman, susunKolom } from './DaftarMaster'
 import FormMaster, { badan, KUNCI_NEGARA, medanForm, panjangByte, periksa } from './FormMaster'
 import { LABEL_KOLOM_MASTER, TEKS_MASTER as T } from './labels'
 import { opsiRujukan } from './PilihRujukan'
@@ -116,5 +116,23 @@ describe('kamus label = kolom definisi master backend (dua arah)', () => {
   })
   it('setiap label (selain negara) dipakai kolom backend', () => {
     expect(Object.keys(LABEL_KOLOM_MASTER).filter((k) => k !== KUNCI_NEGARA && !kunci.has(k))).toEqual([])
+  })
+})
+
+describe('DaftarMaster - susunan kolom template Kelola User (work owner 10-10-2026)', () => {
+  it('Old ID di bawah ID; empat kolom jejak menjadi Dibuat / Diubah; kolom data lain urutan meta', () => {
+    const s = susunKolom(['id', 'oldId', 'note', 'nationInitial', 'createOp', 'tglCreate', 'updateOp', 'tglUpdate'])
+    expect(s).toEqual({ data: ['id', 'note', 'nationInitial'], oldDiBawahId: true, dibuat: true, diubah: true })
+    // Tanpa ID, Old ID tetap kolom sendiri; tanpa jejak, kolom Dibuat / Diubah tidak dibuat.
+    expect(susunKolom(['oldId', 'note'])).toEqual({ data: ['oldId', 'note'], oldDiBawahId: false, dibuat: false, diubah: false })
+  })
+
+  it('tema Kelola User: akar .kelola-user, tabel kelola-user__tabel, badge status, aksi berderet', () => {
+    const halaman = readFileSync(join(__dirname, 'HalamanMaster.tsx'), 'utf8')
+    const daftar = readFileSync(join(__dirname, 'DaftarMaster.tsx'), 'utf8')
+    expect(halaman).toContain('<section className="inbox kelola-user">')
+    for (const k of ['kelola-user__cari', 'kelola-user__tabel', 'kelola-user__badge--aktif', 'kelola-user__aksi', 'master-data__saring']) {
+      expect(daftar).toContain(k)
+    }
   })
 })

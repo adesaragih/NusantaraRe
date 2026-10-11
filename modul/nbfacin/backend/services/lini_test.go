@@ -53,7 +53,7 @@ func satuBisnis(gp, old string, id ...string) []models.BarisBisnisLini {
 
 // tanpaTampilan - LiniKasus tanpa TampilanAneka (diuji terpisah di TestTampilanAneka).
 func tanpaTampilan(l LiniKasus) LiniKasus {
-	l.TampilanAneka = TampilanAneka{}
+	l.TampilanAneka, l.JenisCsv = TampilanAneka{}, "" // JenisCsv diuji TestJenisCsvKasus
 	return l
 }
 
@@ -70,6 +70,7 @@ func TestLiniKasus(t *testing.T) {
 		"bonding":        {satuBisnis("003", "36"), LiniKasus{BusinessType: "Bonding", Aneka: true, Bonding: true}},
 		"golf":           {satuBisnis("003", "27"), LiniKasus{BusinessType: "GolfInsurance", Golf: true}},
 		"fire":           {satuBisnis("006", "99"), LiniKasus{BusinessType: "Fire", Fire: true}},
+		"marine cargo":   {satuBisnis("004", "24"), LiniKasus{BusinessType: "MarineCargo", MarineCargo: true}}, // tiket 74 P0
 		"fire style 1":   {satuBisnis("006", "22"), LiniKasus{BusinessType: "FireStyle1", Fire: true}},
 		"BUSINESS ganda": {ganda, LiniKasus{BusinessType: "UNKNOWN"}},
 		// Keputusan work owner 09-10-2026 (saringan `GROUPPANEL IS NOT NULL` Pega GetOldIDBusiness_SQL): baris ber-GROUPPANEL
@@ -144,5 +145,23 @@ func TestTampilanAneka(t *testing.T) {
 		if got := !samaDuaPuluh(kode); got != mau {
 			t.Errorf("jumlahSatuan %q: %v", kode, got)
 		}
+	}
+}
+
+// TestJenisCsvKasus - tiket 73 P6: template CSV objek = SetDownloadMasterCSV langkah 2-6 berurutan (yang terakhir benar menang):
+// Marine Hull dan CPM (keduanya IsAneka) menimpa "aneka"; Golf bukan IsAneka -> ""; tanpa BUSINESS -> "".
+func TestJenisCsvKasus(t *testing.T) {
+	ctx := context.Background()
+	for nama, c := range map[string]struct{ gp, old, mau string }{
+		"marine hull": {"003", "05", "marinehull"}, "marine hull 55": {"003", "55", "marinehull"}, "cpm": {"003", "12", "cpm"},
+		"liability": {"003", "15", "aneka"}, "HE": {"003", "20", "aneka"}, "golf": {"003", "27", ""}, "fire": {"006", "24", "fire"},
+		"cargo": {"004", "", "cargo"},
+	} {
+		if got := layananLini(satuBisnis(c.gp, c.old), "UJI KELAS").LiniKasus(ctx, "K").JenisCsv; got != c.mau {
+			t.Errorf("%s: %q mau %q", nama, got, c.mau)
+		}
+	}
+	if got := Baru(nil).LiniKasus(ctx, "K").JenisCsv; got != "" {
+		t.Errorf("tanpa pembaca: %q", got)
 	}
 }

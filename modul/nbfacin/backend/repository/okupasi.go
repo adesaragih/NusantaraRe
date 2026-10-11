@@ -50,8 +50,12 @@ func sqlSisipTableOfLimit(tol string) string {
 }
 
 // bacaOkupasi - okupasi case `id` per T_PROPERTY.ID (teks).
-func (r *ObjekOracle) bacaOkupasi(ctx context.Context, t tabelObjek, id string) (map[string][]models.OkupasiObjek, error) {
-	baris, err := r.db.QueryContext(ctx, sqlBacaOkupasi(t), id)
+func (r *ObjekOracle) bacaOkupasi(ctx context.Context, t tabelObjek, b lingkupBaca) (map[string][]models.OkupasiObjek, error) {
+	q, arg, err := b.kueri(sqlBacaOkupasi(t))
+	if err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca okupasi objek: %w", err)
 	}

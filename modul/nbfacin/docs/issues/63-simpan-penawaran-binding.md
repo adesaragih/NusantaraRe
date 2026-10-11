@@ -108,3 +108,14 @@ UPDATE JSON_OFFER) juga hanya teruji teks SQL-nya; uji basis data belum ada.
 - `[pertanyaan terbuka — IAM]` padanan JABATAN UW Financial (tiket 62); kini Accept UW Financial → Decision23 Else → Binding.
 - ⚠️ **Temuan keamanan untuk pemilik Pega:** `NB FacIn\Activity\SetNBStatus_Act.xml` langkah 9 (nonaktif) memuat host SMTP dan
   kredensial dalam teks biasa. Nilainya tidak disalin ke artefak mana pun.
+
+## Catatan silang — prakondisi `.pxListSubscript>1` (11-10-2026, tiket 74 P5)
+
+`[terverifikasi]` Langkah INSERT `SaveOfferProduction_Act` (FACINOFFER) di cabang ini berprakondisi `.pxListSubscript>1` (T=2 lanjut / F=3 lewati), sama dengan
+setiap cabang lain (FIRE / Aneka / Marine). Port sistem baru menulis SEMUA baris spreading. **Keputusan work owner 11-10-2026
+(K74-23, `docs/issues/74-marine-cargo.md`):** tetap begitu — kode tiket ini tidak diubah.
+
+## Catatan silang — IDPEGA = case id polos (11-10-2026)
+
+Tulisan IDPEGA tiket ini kini memakai case id polos; pembaca menerima dua bentuk (polos / berawalan). Rincian: `docs/issues/69-jalur-policy.md`
+bagian "IDPEGA = case id polos".

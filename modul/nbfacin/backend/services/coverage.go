@@ -386,7 +386,7 @@ var lebarCoverage = []struct {
 }{
 	{"coverage", func(c models.CoverageObjek) string { return c.Coverage }, 50},
 	{"oldId", func(c models.CoverageObjek) string { return c.OldID }, 50},
-	{"coverageNote", func(c models.CoverageObjek) string { return c.CoverageNote }, 500},
+	{"coverageNote", func(c models.CoverageObjek) string { return c.CoverageNote }, 4000}, // migrasi 251
 	{"coverageBasis", func(c models.CoverageObjek) string { return c.CoverageBasis }, 50},
 	{"day", func(c models.CoverageObjek) string { return c.Day }, 50},
 	{"indemnity", func(c models.CoverageObjek) string { return c.Indemnity }, 50},

@@ -206,3 +206,18 @@ PUT …/objek); (b) proses latar + status; (c) batas lebih rendah.
 - WriteTimeout server / proxy TIDAK diubah: permintaan CSV besar bisa ± 1 menit (frontend sudah memasang batas waktu 10 menit
   untuk simpanCsvObjek).
 
+
+## Bug DEV 10-10-2026 — berkas CSV 1 juta baris tampil "Berkas CSV kosong." (sesi 0f)
+
+- **Laporan work owner:** "INI KENAPA KOSONG? PADAHAL CSV NYA ADA 1JT BARIS".
+- **Sebab:** `BilahCsvObjek` membaca berkas utuh lewat `File.text()`. Untuk berkas ratusan MB, peramban gagal membuat teks sebesar
+  itu (teks kosong), sehingga pesan yang tampil "kosong". Pesan yang benar adalah batas 3000 baris (RALAT D7, keputusan work owner
+  08-10-2026).
+- **Perbaikan:**
+  - `csvObjek.ts` `hitungBarisBerisi` menghitung baris berisi secara mengalir per potongan byte (`Blob.stream()`) dan berhenti
+    begitu melewati batas. Baris kosong atau yang hanya berisi pemisah tidak dihitung, sama dengan pembaca CSV.
+  - `BilahCsvObjek` memeriksanya SEBELUM `File.text()`, dengan pesan "Berkas CSV berisi lebih dari 3000 baris; paling banyak 3000
+    baris per unggahan.".
+  - Berkas berukuran > 0 yang teksnya kosong mendapat pesan sendiri ("tidak dapat dibaca").
+- **Batas 3000 tidak diubah.** Unggahan berukuran jutaan baris butuh rancangan lain (unggah berkas ke server + proses latar);
+  itu keputusan work owner.

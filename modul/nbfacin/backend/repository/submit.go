@@ -44,9 +44,14 @@ type PenyimpanSubmit interface {
 	AkunSubmit(ctx context.Context, akunID string) (models.AkunSubmit, error)
 	// RiwayatAkseptasi - baris HISTORYAKSEPTASIPRODUCTION ber-IDPEGA itu, terbaru dulu.
 	RiwayatAkseptasi(ctx context.Context, idPega string) ([]models.RiwayatAkseptasi, error)
-	// OpsiBanding - GetAksepBanding_SQL: JABATAN M_LIMIT_PROPERTYY untuk workbasket non-marketing TERAKHIR kasus dan
-	// TEAM_GROUP-nya, urut hasil kueri.
+	// OpsiBanding - GetAksepBanding (bug DEV 10-10-2026 "Banding to hanya KADIVTEKNIK"): GetAksepBanding_SQL (JABATAN,
+	// JABATAN_ATASAN M_LIMIT_PROPERTYY untuk workbasket non-marketing TERAKHIR kasus dan TEAM_GROUP-nya), lalu langkah 5 hanya
+	// BARIS PERTAMA hasil kueri: [JABATAN, JABATAN_ATASAN] (NULL -> ""); nol baris -> kosong (prakondisi
+	// `@LengthOfPageList(AksepBanding.pxResults)>0`).
 	OpsiBanding(ctx context.Context, idPega, teamGroup string) ([]string, error)
+	// CatatanPegaNonMarketing - tiket 57 "IS ada Ask ?": STATUS / WORKBASKET catatan HISTORYAKSEPTASIPEGA TERBARU case dengan
+	// WORKBASKET != ReasFacInMarketing (TGL_TRANSFER, pola GetAksepBanding_SQL); ada = false bila tidak ada.
+	CatatanPegaNonMarketing(ctx context.Context, idPega string) (status, workbasket string, ada bool, err error)
 	// SebabDecline - seluruh baris CAUSEOFDECLINE; saringan GetCauseOfDecline / GetCauseOfDecline2 / opsi per T/C diterapkan
 	// layanan atas baris yang sama.
 	SebabDecline(ctx context.Context) ([]models.BarisCauseOfDecline, error)
@@ -130,14 +135,21 @@ func sqlAkunSubmit(login string) string {
 // sqlRiwayatAkseptasi - grid ViewSuggest; TGL_INP ditulis sebagai jam dinding WIB (To_date teks Asia/Jakarta).
 func sqlRiwayatAkseptasi(produksi string) string {
 	return "SELECT TO_CHAR(TGL_INP, 'DD-MM-YYYY HH24:MI'), PIC, APPROVAL, POSISI, KETERANGAN FROM " + produksi +
-		" WHERE IDPEGA = :1 ORDER BY TGL_INP DESC, NOURUT DESC"
+		" WHERE IDPEGA IN (:1, :2) ORDER BY TGL_INP DESC, NOURUT DESC" // IDPEGA dua bentuk (idpegaproduksi.go)
 }
 
-// sqlOpsiBanding - GetAksepBanding_SQL verbatim (bind menggantikan {pyWorkPage.pzInsKey} / {...TeamGroup}).
+// sqlOpsiBanding - GetAksepBanding_SQL verbatim (`select JABATAN AS CARI1,JABATAN_ATASAN AS CARI2 ...`; bind menggantikan
+// {pyWorkPage.pzInsKey} / {...TeamGroup}); urutan hasil kueri apa adanya (tanpa ORDER BY luar, seperti Pega).
 func sqlOpsiBanding(limit, pega string) string {
-	return `SELECT JABATAN FROM ` + limit + ` WHERE WORKBASKET IN (SELECT WORKBASKET FROM (
-  SELECT WORKBASKET FROM ` + pega + ` WHERE ID_PEGA = :1 AND WORKBASKET != :2 ORDER BY TGL_TRANSFER DESC
-) WHERE ROWNUM = 1) AND TEAM_GROUP = :3`
+	return `SELECT JABATAN, JABATAN_ATASAN FROM ` + limit + ` WHERE WORKBASKET IN (SELECT WORKBASKET FROM (
+  SELECT WORKBASKET FROM ` + pega + ` WHERE ID_PEGA IN (:1, :2) AND WORKBASKET != :3 ORDER BY TGL_TRANSFER DESC
+) WHERE ROWNUM = 1) AND TEAM_GROUP = :4`
+}
+
+// sqlCatatanPegaNonMarketing - catatan HISTORYAKSEPTASIPEGA terbaru di luar workbasket :2 (pola sqlOpsiBanding).
+func sqlCatatanPegaNonMarketing(pega string) string {
+	return "SELECT STATUS, WORKBASKET FROM (SELECT STATUS, WORKBASKET FROM " + pega +
+		" WHERE ID_PEGA IN (:1, :2) AND WORKBASKET != :3 ORDER BY TGL_TRANSFER DESC) WHERE ROWNUM = 1"
 }
 
 // sqlSebabDecline - seluruh baris; GetCauseOfDecline (`DESCRIPTION IS NULL`) dan GetCauseOfDecline2 (`TERMCONDITION2 IS NOT
@@ -172,7 +184,7 @@ func sqlSisipRiwayatProduksi(produksi string) string {
  AKSES_LOGIN, B2B, BUSINESS_CODE, PERCENT_RNM)
 SELECT :1, :2, NVL(MAX(NOURUT), 0) + 1, :3, :4, TO_DATE(:5, 'DD/MM/YYYY HH24:MI:SS'), :6, :7, :8, :9, SUBSTR(:10, 1, 3990),
  :11, NULL, NULL, ` + angkaMasuk(":12") + `
-FROM ` + produksi + ` WHERE IDPEGA = :13`
+FROM ` + produksi + ` WHERE IDPEGA IN (:13, :14)` // NOURUT berlanjut atas baris lama berawalan
 }
 
 // sqlSisipRiwayatPega - InsertHistoryAkseptasiPega_Sql (ID_KOMITE tidak diisi jalur ini: InsertHistory.CARI6 tidak pernah
@@ -310,7 +322,8 @@ func (r *SubmitOracle) RiwayatAkseptasi(ctx context.Context, idPega string) ([]m
 	if err != nil {
 		return nil, err
 	}
-	baris, err := r.db.QueryContext(ctx, sqlRiwayatAkseptasi(produksi), idPega)
+	polos, awalan := DuaBentukIDPega(idPega)
+	baris, err := r.db.QueryContext(ctx, sqlRiwayatAkseptasi(produksi), polos, awalan)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca %s: %w", TabelRiwayatProduksi, err)
 	}
@@ -336,7 +349,56 @@ func (r *SubmitOracle) OpsiBanding(ctx context.Context, idPega, teamGroup string
 	if err != nil {
 		return nil, err
 	}
-	return r.teksKolom(ctx, TabelLimitProperty, sqlOpsiBanding(t.limit, t.pega), idPega, WorkbasketMarketing, teamGroup)
+	polos, awalan := DuaBentukIDPega(idPega)
+	baris, err := r.db.QueryContext(ctx, sqlOpsiBanding(t.limit, t.pega), polos, awalan, WorkbasketMarketing, teamGroup)
+	if err != nil {
+		return nil, fmt.Errorf("repository: baca %s: %w", TabelLimitProperty, err)
+	}
+	defer baris.Close()
+	return opsiBandingBarisPertama(baris)
+}
+
+// CatatanPegaNonMarketing - lihat PenyimpanSubmit.
+func (r *SubmitOracle) CatatanPegaNonMarketing(ctx context.Context, idPega string) (string, string, bool, error) {
+	t, err := r.tabel()
+	if err != nil {
+		return "", "", false, err
+	}
+	var status, wb sql.NullString
+	polos, awalan := DuaBentukIDPega(idPega)
+	err = r.db.QueryRowContext(ctx, sqlCatatanPegaNonMarketing(t.pega), polos, awalan, WorkbasketMarketing).Scan(&status, &wb)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", "", false, nil
+	}
+	if err != nil {
+		return "", "", false, fmt.Errorf("repository: baca %s: %w", TabelRiwayatPega, err)
+	}
+	return status.String, wb.String, true, nil
+}
+
+// opsiBandingBarisPertama - GetAksepBanding langkah 5 `[terverifikasi]` (`NB FacIn\Activity\GetAksepBanding.xml` L828-829 /
+// L897-898): `ListBanding.pxResults(<APPEND>).CARI1 = AksepBanding.pxResults(1).CARI1` lalu `= AksepBanding.pxResults(1).CARI2`
+// - dua opsi dari BARIS PERTAMA saja; baris berikutnya diabaikan.
+func opsiBandingBarisPertama(baris barisKueri) ([]string, error) {
+	hasil := []string{}
+	if baris.Next() {
+		var jabatan, atasan sql.NullString
+		if err := baris.Scan(&jabatan, &atasan); err != nil {
+			return nil, fmt.Errorf("repository: %s: %w", TabelLimitProperty, err)
+		}
+		hasil = append(hasil, jabatan.String, atasan.String)
+	}
+	if err := baris.Err(); err != nil {
+		return nil, fmt.Errorf("repository: %s: %w", TabelLimitProperty, err)
+	}
+	return hasil, nil
+}
+
+// barisKueri - bagian *sql.Rows yang dibaca opsiBandingBarisPertama (diuji tanpa basis data).
+type barisKueri interface {
+	Next() bool
+	Scan(dest ...any) error
+	Err() error
 }
 
 // SebabDecline - lihat PenyimpanSubmit.
@@ -457,7 +519,7 @@ func (r *SubmitOracle) TulisSubmit(ctx context.Context, tx *db.Tx, w models.Tuli
 	p := w.Riwayat
 	if _, err := jalankan(ctx, tx, sqlSisipRiwayatProduksi(t.produksi), "riwayat "+TabelRiwayatProduksi, w.IDPega, k(p.TypePolis),
 		k(p.Posisi), k(p.PIC), p.TglInp, k(p.Div), k(p.Type), k(p.Putaran), k(p.Approval), k(p.Keterangan), k(p.AksesLogin),
-		ikatDesimal(p.PercentRNM), w.IDPega); err != nil {
+		ikatDesimal(p.PercentRNM), w.IDPega, AwalanIDPega+IDPegaProduksi(w.IDPega)); err != nil {
 		return err
 	}
 	if _, err := jalankan(ctx, tx, sqlSisipRiwayatPega(t.pega), "riwayat "+TabelRiwayatPega, w.IDPega, k(w.Pega.Status),
@@ -500,7 +562,7 @@ func (r *SubmitOracle) TulisSubmit(ctx context.Context, tx *db.Tx, w models.Tuli
 		}
 	}
 	if p := w.Policy; p != nil {
-		if err := r.tulisPolicy(ctx, tx, w.IDPega, p); err != nil {
+		if err := r.tulisPolicy(ctx, tx, w.CaseID, p); err != nil { // IDPEGA produksi = case id polos
 			return err
 		}
 	}

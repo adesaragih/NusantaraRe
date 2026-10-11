@@ -97,7 +97,31 @@ func businessTypeDari(groupPanel, oldID string) string {
 type LiniKasus struct {
 	BusinessType                                           string
 	Fire, Aneka, AnekaNotBonding, Liability, Bonding, Golf bool
-	TampilanAneka                                          TampilanAneka
+	// MarineCargo - tiket 74 P0: When IsMarineCargo (`NB FacIn\When\IsMarineCargo.xml` L44 `G OR H`, BusinessType "MarineCargo"
+	// = GroupPanel 004).
+	MarineCargo   bool
+	TampilanAneka TampilanAneka
+	// JenisCsv - tiket 73 P6: template CSV objek case (models.JenisCsvFire / JenisCsvCargo / TemplateCsv*; "" = tanpa template),
+	// lihat templateCsvKasus.
+	JenisCsv string
+}
+
+// templateCsvBerurutan - SetDownloadMasterCSV langkah 2-6 (urutan dipertahankan: yang terakhir benar menang).
+var templateCsvBerurutan = []struct{ predikat, jenis string }{
+	{"IsAneka", models.TemplateCsvAneka}, {"IsMarineHull", models.TemplateCsvMarineHull},
+	{"IsContractorsPlantMachinery", models.TemplateCsvAnekaCPM}, {"IsFire", models.JenisCsvFire},
+	{"IsMarineCargo", models.JenisCsvCargo},
+}
+
+// templateCsvKasus - lihat LiniKasus.JenisCsv.
+func templateCsvKasus(id string, kb kasusBisnis) string {
+	jenis := ""
+	for _, p := range templateCsvBerurutan {
+		if salahSatu(id, kb, p.predikat) {
+			jenis = p.jenis
+		}
+	}
+	return jenis
 }
 
 // TampilanAneka - sakelar form objek Aneka (tiket 73 P1, S1) - semua dari rules.Eval:
@@ -161,6 +185,7 @@ var predikatLini = []struct {
 	{"IsLiability", func(l *LiniKasus) *bool { return &l.Liability }},
 	{"IsBondingAndCustomBonds", func(l *LiniKasus) *bool { return &l.Bonding }},
 	{"isGolfInsurance", func(l *LiniKasus) *bool { return &l.Golf }},
+	{"IsMarineCargo", func(l *LiniKasus) *bool { return &l.MarineCargo }},
 }
 
 // kasusBisnis - rules.Kasus jalur Quotation yang dibaca predikat lini (dicacah sesi c3 dari registry_gen.go, rekursif):
@@ -171,7 +196,8 @@ type kasusBisnis struct{ businessType, businessCode, businessName string }
 func (k kasusBisnis) Nilai(jalur string) (string, bool) {
 	switch jalur {
 	case "pyWorkPage.Quotation.BusinessType", "pyWorkPage.OfferFacIn.QuotationData.BusinessType",
-		"pyWorkPage.Policy.Quotation.BusinessType", ".Quotation.BusinessType":
+		"pyWorkPage.Policy.Quotation.BusinessType", ".Quotation.BusinessType",
+		".OfferFacIn.QuotationData.BusinessType": // IsMarineCargo G - When kelas WORK, jalur relatif = pyWorkPage
 		return k.businessType, true
 	case "pyWorkPage.Quotation.BusinessCode", "pyWorkPage.OfferFacIn.QuotationData.BusinessCode":
 		return k.businessCode, true
@@ -200,6 +226,7 @@ func (s *Service) LiniKasus(ctx context.Context, id string) LiniKasus {
 		*p.ke(&l) = v
 	}
 	l.TampilanAneka = tampilanAneka(id, kb)
+	l.JenisCsv = templateCsvKasus(id, kb)
 	return l
 }
 

@@ -17,10 +17,10 @@ const TabelFacInProduction = "FACINPRODUCTION"
 func sqlHitungAkumulasi(prod, offer string) string {
 	return "select SUM(CARID1)AS CARID1 FROM (\n" +
 		"select count(*) AS CARID1 from " + prod + " where ACCUMULATIONCODE = :1 AND TO_DATE (ENDDATE, 'dd/mm/rrrr') >= " +
-		"TO_DATE (:2, 'dd/mm/rrrr') and IDPEGA != :3\n" +
+		"TO_DATE (:2, 'dd/mm/rrrr') and IDPEGA NOT IN (:3, :4)\n" + // FACINPRODUCTION case sendiri dua bentuk (idpegaproduksi.go)
 		"UNION ALL\n" +
-		"select count(*) AS CARID1 from " + offer + " where ACCUMULATIONCODE = :4 AND TO_DATE (ENDDATE, 'dd/mm/rrrr') >= " +
-		"TO_DATE (:5, 'dd/mm/rrrr')and IDPEGA != :6)"
+		"select count(*) AS CARID1 from " + offer + " where ACCUMULATIONCODE = :5 AND TO_DATE (ENDDATE, 'dd/mm/rrrr') >= " +
+		"TO_DATE (:6, 'dd/mm/rrrr')and IDPEGA != :7)"
 }
 
 // HitungAkumulasiBerjalan - lihat PenyimpanSubmit.
@@ -34,7 +34,8 @@ func (r *SubmitOracle) HitungAkumulasiBerjalan(ctx context.Context, kode, tangga
 		return 0, err
 	}
 	var n sql.NullInt64
-	if err := r.db.QueryRowContext(ctx, sqlHitungAkumulasi(prod, offer), kode, tanggal, pzInsKey, kode, tanggal, pyID).Scan(&n); err != nil {
+	polos, awalan := DuaBentukIDPega(pzInsKey)
+	if err := r.db.QueryRowContext(ctx, sqlHitungAkumulasi(prod, offer), kode, tanggal, polos, awalan, kode, tanggal, pyID).Scan(&n); err != nil {
 		return 0, fmt.Errorf("repository: GetCountAccumulation %s: %w", kode, err)
 	}
 	return int(n.Int64), nil

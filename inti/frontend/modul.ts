@@ -103,6 +103,13 @@ export interface MenuModul<H extends string = HalamanTerdaftar> {
    * salah satu `halaman` modul. Pengecualian sadar atas "satu modul satu menu" (30-09-2026).
    */
   menuAtas?: readonly { label: string; halaman: H }[]
+  /**
+   * Opsional dan aditif (10-10-2026): form tambah modul ini SUDAH berupa jendela sendiri (mis. popup Add account). Rute
+   * yang dibuka `PropsRute.onBukaMenu(modul, { baru: true })` lalu dipasang TANPA bingkai jendela Shell, dan rutenya
+   * hanya merender form itu; menutup / menyimpannya memanggil `onBeranda` (menutup permintaan). Work owner 10-10-2026:
+   * "HANYA MUNCULIN INI SAJA, MENU UTAMA ACCOUNT NYA TIDAK USAH".
+   */
+  formBaruBerjendela?: boolean
 }
 
 /** Bentuk ekspor `RUTE_MODUL` di `modul/<nama>/frontend/rute.tsx`. */
@@ -154,6 +161,22 @@ export interface PropsRute<H extends string> {
    * pop up, langsung buka komitenya"). `false` = modul itu tidak dipasang bagi akun ini.
    */
   onBukaModul?: (modul: string, id: string) => boolean
+  /**
+   * Opsional dan aditif (10-10-2026): buka MENU modul lain (halaman awalnya, bukan satu berkas) di jendela di atas layar
+   * ini - layar pemanggil dan isiannya tetap. Tombol New Company Detail / New Group Business form Opportunity NB FacIn
+   * (perintah work owner "BUTTON NEW COMPANY DETAIL = ISI MENU COMPANY DETAIL, BUTTON NEW GROUP BUSINESS = ISI MENU
+   * ACCOUNT"). Berbeda dengan `onLihatBerkas`: isi menu BUKAN tampilan saja - hak menu akun (`KonteksHakMenu`) tetap
+   * berlaku. `false` = modul itu tidak dipasang bagi akun ini (menunya tidak dipegang). `opsi.baru` = langsung form tambah
+   * modul itu (`mulaiBaru`), bukan daftarnya (work owner 10-10-2026: "New Company Detail LANGSUNG MENU CREATE NYA, NEW
+   * GROUP BUSINESS JUGA LANGSUNG TAMPILAN SAAT ADD").
+   */
+  onBukaMenu?: (modul: string, opsi?: { baru?: boolean }) => boolean
+  /**
+   * Opsional dan aditif (10-10-2026): rute dipasang di jendela `onBukaMenu(modul, { baru: true })` - halaman awal modul
+   * langsung membuka form tambahnya (Create / Add) bila akun boleh mengubah (`useBolehUbah`). Rute yang tidak membacanya
+   * tetap menampilkan halaman awalnya seperti biasa.
+   */
+  mulaiBaru?: boolean
 }
 
 /** Satu modul frontend terdaftar. */
@@ -172,6 +195,8 @@ export interface ModulFrontend<H extends string> {
   daftarBeranda?: (workbasket: string | null) => Promise<DaftarBeranda>
   /** Tombol sidebar di bawah Beranda (lihat `MenuModul.menuAtas`). */
   menuAtas?: readonly { label: string; halaman: H }[]
+  /** Form tambah berupa jendela sendiri (lihat `MenuModul.formBaruBerjendela`). */
+  formBaruBerjendela?: boolean
   /**
    * Komponen rute. ⛔ Ia TETAP terpasang selama modulnya aktif, supaya
    * keadaannya (kasus yang sedang dibuka) bertahan saat pemakai pindah

@@ -501,7 +501,7 @@ Save (W-4 / `SetLossRatio_Act`), tidak dari layar.
 | `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
 | `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
 | `PARENT_ID` | teks | VARCHAR2(32) NOT NULL | = `T_GENERAL_POLIS.ID` (butir 76.1; FK) |
-| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan baris grid, mulai 1 |
+| `SEQ_NO` | angka bulat | NUMBER(10) NOT NULL | urutan objek 1..n — NUMBER(5) di 186, diperlebar migrasi 257 (tiket 75: 1 juta lokasi) |
 | `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID (aplikasi v4, A106) |
 | `LOSS_RATIO1_YEAR_AMOUNT` | angka desimal | NUMBER(38,8) | LR 1 Year = ΣClaim/ΣAmount (≤ 365 hari), 8 desimal (A148) — **uang** |
 | `LOSS_RATIO1_YEAR_PERCENT` | teks | VARCHAR2(50) | %LR 1 Years = ΣClaim·100/ΣAmount (8 desimal, A148), teks desimal |
@@ -665,7 +665,7 @@ medan kontrak ADA di rancangan — tanpa kolom baru. Medan uang / rate / persen 
 | `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
 | `COVERAGE` | teks | VARCHAR2(50) | `.Coverage` — ID coverage (`COVERAGE.ID`) |
 | `OLDID` | teks | VARCHAR2(50) | `.OLDID` — kode tampil |
-| `COVERAGE_NOTE` | teks | VARCHAR2(500) | `.CoverageNote` — nama coverage |
+| `COVERAGE_NOTE` | teks | VARCHAR2(4000) | `.CoverageNote` — nama coverage (= COVERAGE.NAME 4000; 500 rancangan, dilebarkan migrasi 251) |
 | `COVERAGE_BASIS` | teks | VARCHAR2(50) | `.CoverageBasis` — 1..4 (5 Layering ditolak 400, tahap C2–C4) |
 | `DAY` | teks | VARCHAR2(50) | `.Day` |
 | `TSI` | angka desimal | NUMBER(38,8) | **uang** — server: = `TSI_OBJECT_ITEM` item |
@@ -704,6 +704,7 @@ medan kontrak ADA di rancangan — tanpa kolom baru. Medan uang / rate / persen 
 | `MIN_PREMIUM` | angka desimal | NUMBER(38,8) | tiket 73 P2 (214) — **uang**, `.MinPremium` |
 | `TYPE_OF_DISCOUNT` | teks | VARCHAR2(10) | tiket 73 P2 (214) — `.TypeOfDiscount` teks apa adanya (sampel "true" 95/95; kolomTeksMenyimpang butir 68.1) |
 | `IS_OLD_DATA` | teks | VARCHAR2(10) | tiket 73 P2 (214) — `.IsOldData` |
+| `COVERAGE_INITIAL` | teks | VARCHAR2(500) | tiket 74 P2 (256 `ALTER ADD`) — `.CoverageInitial` coverage cargo |
 
 ## T_ANEKALIST
 
@@ -970,7 +971,7 @@ Tiket 42 — migrasi 191, **utuh** (rancangan `.../ListCauseOfLoss/CoinsData`, s
 
 Tiket 45 — migrasi 194, **sebagian** (pola A109): rancangan jalur `.../CoverageList/DeductibleList` (lima jalur, semuanya
 berinduk `T_COVERAGELIST`) → `PARENT_ID` ber-FK ke `T_COVERAGELIST.ID`, indeks `IX_T_DEDUCTIBLELIST_PARENT`. Banyak baris
-per coverage, urut `SEQ_NO`. Tanpa kolom yang belum dipakai layar (`FLAG_CURRENCY` R-3, `DESCRIPTIONS`, `BASIS_TYPE`,
+per coverage, urut `SEQ_NO`. Tanpa kolom yang belum dipakai layar (`FLAG_CURRENCY` R-3, `DESCRIPTIONS` - ditambah 256 tiket 74, `BASIS_TYPE`,
 `CLAIM_CATEGORY`, `DEDUCTIBLE_TYPE`, `TYPE`, `VALUE`, `COVERAGE`, kolom turunan `*_ID`).
 
 | Kolom | Tipe | Tipe DDL (migrasi 194) | Isi |
@@ -993,6 +994,312 @@ per coverage, urut `SEQ_NO`. Tanpa kolom yang belum dipakai layar (`FLAG_CURRENC
 | `TIME_EXCESS` | teks | VARCHAR2(30) | Time Excess (hari) — teks desimal (A171) |
 | `TYPE_DEDUCTIBLE` | angka bulat | NUMBER(5) | kode pyStandardValue 0–7 (`DDL\TypeDeductible.xml`, A170) |
 | `TYPE_DEDUCTIBLE2` | angka bulat | NUMBER(5) | kode (`DDL\TypeDeductible2.xml`, bila MinMax 3) |
+| `DESCRIPTIONS` | teks | VARCHAR2(4000) | tiket 74 P2 (256 `ALTER ADD`) — `.Descriptions` deskripsi deductible coverage cargo (pxTextArea) |
+
+## T_CARGOLIST
+
+Tiket 74 P1 — migrasi 256: grid `.OfferFacIn.CargoList` MARINE CARGO (rancangan 22 kolom + 4 baru). Satu baris per cargo, urut `SEQ_NO`.
+
+| Kolom | Tipe | Tipe DDL (migrasi 256) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_CARGOLIST` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | teks | VARCHAR2(32) NOT NULL | = `T_GENERAL_POLIS.ID` (FK) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan baris 1..n |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
+| `BL_NUMBER` | teks | VARCHAR2(4000) | `.PolicyData.BLNumber` "No BL" (pxTextArea; rancangan VARCHAR2(50)) |
+| `CONVEYANCE_ID` | teks | VARCHAR2(50) | `.ConveyanceID` (BrowseConveyance_RD .ID) |
+| `CONVEYANCE_NAME` | teks | VARCHAR2(500) | server — `.ConveyanceName` = Description master (ProtectObjectMarine) |
+| `CONVEYANCE_NOTE` | teks | VARCHAR2(500) | server — `.ConveyanceNote` = Description master |
+| `FLAG_OLD_DATA` | teks | VARCHAR2(10) | `.FlagOldData` rancangan |
+| `FROM_RUTE` | teks | VARCHAR2(50) | `.FromRute` |
+| `GOOD_ID` | teks | VARCHAR2(50) | `.GoodID` (BrowseGoodsType .ID) |
+| `GOOD_NOTE` | teks | VARCHAR2(500) | server — `.GoodNote` = Description master |
+| `INVOICE_NUMBER` | teks | VARCHAR2(50) | `.PolicyData.InvoiceNumber` |
+| `IS_TOP_RISK` | teks | VARCHAR2(10) | `.IsTopRisk` teks "true" / "false" |
+| `PACKING_ID` | teks | VARCHAR2(50) | `.PackingID` (BrowsePacking_RD .ID) |
+| `PACKING_NOTE` | teks | VARCHAR2(500) | server — `.PackingNote` = Description master |
+| `SAIL_DATE` | teks | VARCHAR2(30) | `.PolicyData.SailDate` teks tanggal Pega (pola START_DATE) |
+| `TO_RUTE` | teks | VARCHAR2(50) | `.ToRute` |
+| `TRADING_ID` | teks | VARCHAR2(50) | `.TradingID` (BrowseTrading_RD .ID) |
+| `TRADING_NOTE` | teks | VARCHAR2(500) | server — `.TradingNote` = Description master |
+| `INVOICE_DATE` | teks | VARCHAR2(30) | **baru** — `.PolicyData.InvoiceDate` (pola START_DATE) |
+| `MAX_AGE` | teks | VARCHAR2(50) | **baru** — `.PolicyData.MaxAge` (BrowseMaxAge_RD .ID) |
+| `MAX_AGE_DETAIL` | teks | VARCHAR2(4000) | **baru** — server, `.PolicyData.MaxAgeDetail` = `.Warranty` master |
+| `FLAG_DELETE` | teks | VARCHAR2(10) | **baru** — `.FlagDelete` (hapus lunak EDM; NB tidak menulis) |
+
+## T_SHIP
+
+Tiket 74 P1 — migrasi 256: `.PolicyData.Ship` satu halaman per cargo (`UQ_T_SHIP_PARENT`), diisi popup Select Ship (`SelectShip_act` L470-873). Lebar = POOLDATA.SHIP.
+
+| Kolom | Tipe | Tipe DDL (migrasi 256) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_SHIP` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_CARGOLIST.ID` (UNIQUE, FK) |
+| `AGE` | teks | VARCHAR2(50) | server — CountAgeShip: tahun SailDate − `.Y_MAKE1` |
+| `CONST` | teks | VARCHAR2(1000) | `.CONST` (SelectShip Construction) |
+| `DWT` | teks | VARCHAR2(1000) | `.DWT` teks, koma → titik (SelectShip) |
+| `FLAG_NAME` | teks | VARCHAR2(1000) | `.FLAG_NAME` |
+| `GRT` | teks | VARCHAR2(1000) | `.GRT` teks, koma → titik |
+| `IMO` | teks | VARCHAR2(1000) | `.Imo` |
+| `NM_SHIP` | teks | VARCHAR2(1000) | `.NM_SHIP` (SelectShip Name) |
+| `NRT` | teks | VARCHAR2(1000) | `.NRT` teks, koma → titik |
+| `REGISTER` | teks | VARCHAR2(1000) | `.REGISTER` |
+| `REMARK` | teks | VARCHAR2(1000) | `.REMARK` |
+| `SHIPTYPE_ID` | teks | VARCHAR2(1000) | `.SHIPTYPE_ID` |
+| `SHIPTYPE_NAME` | teks | VARCHAR2(1000) | `.SHIPTYPE_NAME` (= SHIP.SHIPNAME, SelectShip.xml L6439) |
+| `SHIP_REF_ID` | teks | VARCHAR2(100) | `.Ship.ID` (= SHIP.ID) |
+| `Y_MAKE1` | teks | VARCHAR2(1000) | `.Y_MAKE1` |
+| `Y_MAKE2` | teks | VARCHAR2(1000) | `.Y_MAKE2` |
+| `FORMER_SHIP_NAME` | teks | VARCHAR2(1000) | **baru** — `.FormerShipName` |
+| `CLASSIFICATION` | teks | VARCHAR2(1000) | **baru** — `.Classification` |
+| `REBUILT` | teks | VARCHAR2(1000) | **baru** — `.Rebuilt` |
+
+## T_LC
+
+Tiket 74 P1 — migrasi 256: `.PolicyData.LC` satu halaman per cargo (`UQ_T_LC_PARENT`).
+
+| Kolom | Tipe | Tipe DDL (migrasi 256) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_LC` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_CARGOLIST.ID` (UNIQUE, FK) |
+| `LC` | teks | VARCHAR2(50) | `.LC` cekbox "LC Status" teks "true" / "false" |
+| `LCBANK` | teks | VARCHAR2(500) | **baru** — `.LCBANK` |
+| `LC_NUMBER` | teks | VARCHAR2(500) | **baru** — `.LCNumber` |
+| `LC_CONDITION` | teks | VARCHAR2(500) | **baru** — `.LCCondition` |
+| `LC_REMARK` | teks | VARCHAR2(500) | **baru** — `.LCRemark` |
+| `LC_END_DATE` | teks | VARCHAR2(30) | **baru** — `.LCEndDate` "LC Expired Date" (pola START_DATE) |
+
+## T_SURVEYAGENT
+
+Tiket 74 P1 — migrasi 256 (**baru**, K74-6 per cargo): `.PolicyData.SurveyAgent` satu halaman per cargo (`UQ_T_SURVEYAGENT_PARENT`).
+
+| Kolom | Tipe | Tipe DDL (migrasi 256) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_SURVEYAGENT` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_CARGOLIST.ID` (UNIQUE, FK) |
+| `ASM_AGENT_ID` | teks | VARCHAR2(100) | `.ASMAgentID` (BrowseLLOYDAGENT_RD .ID) |
+| `FULL_NAME` | teks | VARCHAR2(4000) | `.pyFullName` (pxTextArea) |
+| `ADDRESS` | teks | VARCHAR2(500) | `.pyAddress` |
+| `CITY` | teks | VARCHAR2(500) | `.pyCity` |
+| `COUNTRY` | teks | VARCHAR2(500) | `.pyCountry` |
+
+## T_ADDITIONALSHIP
+
+Tiket 74 P1 — migrasi 256 (**baru**): grid `.PolicyData.Ship.AdditionalShip`, banyak baris per kapal, urut `SEQ_NO`.
+
+| Kolom | Tipe | Tipe DDL (migrasi 256) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_ADDITIONALSHIP` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_SHIP.ID` (FK) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan baris 1..n |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
+| `SHIP_REF_ID` | teks | VARCHAR2(100) | `.ID` (autocomplete Register ID) |
+| `REGISTER` | teks | VARCHAR2(1000) | `.REGISTER` |
+| `NM_SHIP` | teks | VARCHAR2(1000) | `.NM_SHIP` |
+| `VOYAGE_NO` | teks | VARCHAR2(500) | `.VOYAGE_NO` |
+| `SHIPTYPE_ID` | teks | VARCHAR2(1000) | `.SHIPTYPE_ID` |
+| `FLAG_NAME` | teks | VARCHAR2(1000) | `.FLAG_NAME` |
+| `NRT` | teks | VARCHAR2(1000) | `.NRT` |
+| `DWT` | teks | VARCHAR2(1000) | `.DWT` |
+| `GRT` | teks | VARCHAR2(1000) | `.GRT` |
+| `Y_MAKE1` | teks | VARCHAR2(1000) | `.Y_MAKE1` |
+| `CONST` | teks | VARCHAR2(1000) | `.CONST` |
+
+## T_ADDITIONALCOVERAGE
+
+Tiket 74 P2 — migrasi 256: grid Warranty Extension `.AdditionalCoverage` coverage cargo (sebagian rancangan), banyak baris per coverage.
+
+| Kolom | Tipe | Tipe DDL (migrasi 256) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_ADDITIONALCOVERAGE` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_COVERAGELIST.ID` (FK) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan baris 1..n |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
+| `COVERAGE` | teks | VARCHAR2(50) | `.Coverage` (BrowseMarineCondition_RD .ID) |
+| `COVERAGE_NOTE` | teks | VARCHAR2(500) | `.CoverageNote` (= ConditionName) |
+
+## T_NB_CSV_UNGGAH
+
+Tiket 75 — migrasi 257: satu pekerjaan unggah CSV objek tanpa batas (status, kemajuan, header, galat proses).
+
+| Kolom | Tipe | Tipe DDL (migrasi 257) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_NB_CSV_UNGGAH` |
+| `CASE_ID` | teks | VARCHAR2(32) NOT NULL | ID case (T_GENERAL_POLIS.ID / T_WORK_POLIS.ID), tanpa FK |
+| `STATUS` | teks | VARCHAR2(20) NOT NULL | memvalidasi / valid / gagal_validasi / menyimpan / selesai / gagal |
+| `FASE` | teks | VARCHAR2(20) NOT NULL | validasi / simpan (Ulangi melanjutkan fase ini) |
+| `NAMA_BERKAS` | teks | VARCHAR2(500) | nama berkas bagian multipart |
+| `UKURAN` | angka bulat | NUMBER(19) | byte diterima |
+| `JUMLAH_BARIS` | angka bulat | NUMBER(10) DEFAULT 0 NOT NULL | baris data berkas |
+| `BARIS_DIPROSES` | angka bulat | NUMBER(10) DEFAULT 0 NOT NULL | baris tervalidasi |
+| `BARIS_TERSIMPAN` | angka bulat | NUMBER(10) DEFAULT 0 NOT NULL | baris tersimpan (lokasi) |
+| `KELOMPOK_TERAKHIR` | angka bulat | NUMBER(10) DEFAULT 0 NOT NULL | kelompok simpan terakhir yang COMMIT (1000 baris) |
+| `JUMLAH_GALAT` | angka bulat | NUMBER(10) DEFAULT 0 NOT NULL | jumlah galat baris |
+| `JUMLAH_PESAN` | angka bulat | NUMBER(10) DEFAULT 0 NOT NULL | jumlah pesan (KodePos …) |
+| `NO_OFFER_SLIP` | teks | VARCHAR2(4000) | header langkah 5.3 (teks CSV, D1 (b)) |
+| `BEGIN_DATE` | teks | VARCHAR2(4000) | header langkah 5.3 (teks CSV dd/MM/yyyy) |
+| `END_DATE` | teks | VARCHAR2(4000) | header langkah 5.3 (teks CSV dd/MM/yyyy) |
+| `GALAT_PROSES` | teks | VARCHAR2(4000) | sebab status gagal ("gagal di baris N: …") |
+| `GALAT_DI_BARIS` | angka bulat | NUMBER(10) | baris awal kelompok yang gagal |
+| `DIBUAT_OLEH` | teks | VARCHAR2(100) | akun pengunggah |
+| `DIBUAT` | timestamp | TIMESTAMP NOT NULL | SYSTIMESTAMP saat dibuat |
+| `DIUBAH` | timestamp | TIMESTAMP NOT NULL | detak (SYSTIMESTAMP tiap langkah; basi > 15 menit = terputus) |
+| `JENIS` | teks | VARCHAR2(10) DEFAULT 'fire' NOT NULL | importer: fire / cargo (migrasi 258, tiket 74 P6; pekerjaan lama = fire) / aneka (tiket 73 P6, tanpa migrasi kolom ini) |
+| `KOLOM` | teks | VARCHAR2(4000) | judul dikenali urut berkas, dipisah ";" (migrasi 258; NULL = urutan template FIRE) |
+
+## T_NB_CSV_BARIS
+
+Tiket 75 — migrasi 257: penampung baris CSV apa adanya; satu kolom `C_<kolom>` VARCHAR2(4000) per kolom template (61, urut KolomCsvObjek); kunci (UNGGAH_ID, NO_BARIS).
+
+| Kolom | Tipe | Tipe DDL (migrasi 257) | Isi |
+| --- | --- | --- | --- |
+| `UNGGAH_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_NB_CSV_UNGGAH.ID` (FK) |
+| `NO_BARIS` | angka bulat | NUMBER(10) NOT NULL | nomor baris data 1..n |
+| `C_NO` | teks | VARCHAR2(4000) | kolom CSV `NO` apa adanya |
+| `C_NO_OFFER_SLIP` | teks | VARCHAR2(4000) | kolom CSV `NO_OFFER_SLIP` apa adanya |
+| `C_CLASS_OF_BUSINESS` | teks | VARCHAR2(4000) | kolom CSV `CLASS_OF_BUSINESS` apa adanya |
+| `C_BEGIN_DATE` | teks | VARCHAR2(4000) | kolom CSV `BEGIN_DATE` apa adanya |
+| `C_END_DATE` | teks | VARCHAR2(4000) | kolom CSV `END_DATE` apa adanya |
+| `C_INSURED_NAME` | teks | VARCHAR2(4000) | kolom CSV `INSURED_NAME` apa adanya |
+| `C_SOB_NAME` | teks | VARCHAR2(4000) | kolom CSV `SOB_NAME` apa adanya |
+| `C_CEDING_CO_NAME` | teks | VARCHAR2(4000) | kolom CSV `CEDING_CO_NAME` apa adanya |
+| `C_MARKETING_NAME` | teks | VARCHAR2(4000) | kolom CSV `MARKETING_NAME` apa adanya |
+| `C_OCCUPATION_CODE` | teks | VARCHAR2(4000) | kolom CSV `OCCUPATION_CODE` apa adanya |
+| `C_OCCUPATION_NAME` | teks | VARCHAR2(4000) | kolom CSV `OCCUPATION_NAME` apa adanya |
+| `C_CLASS_OF_CONSTRUCTION` | teks | VARCHAR2(4000) | kolom CSV `CLASS_OF_CONSTRUCTION` apa adanya |
+| `C_TYPE_ADDRESS` | teks | VARCHAR2(4000) | kolom CSV `TYPE_ADDRESS` apa adanya |
+| `C_ADDRESS` | teks | VARCHAR2(4000) | kolom CSV `ADDRESS` apa adanya |
+| `C_BUILDING_NO` | teks | VARCHAR2(4000) | kolom CSV `BUILDING_NO` apa adanya |
+| `C_POSTAL_CODE` | teks | VARCHAR2(4000) | kolom CSV `POSTAL_CODE` apa adanya |
+| `C_KELURAHAN` | teks | VARCHAR2(4000) | kolom CSV `KELURAHAN` apa adanya |
+| `C_OBJECT_TYPE` | teks | VARCHAR2(4000) | kolom CSV `OBJECT_TYPE` apa adanya |
+| `C_INTEREST` | teks | VARCHAR2(4000) | kolom CSV `INTEREST` apa adanya |
+| `C_TOP_RISK` | teks | VARCHAR2(4000) | kolom CSV `TOP_RISK` apa adanya |
+| `C_ITEM_TYPE` | teks | VARCHAR2(4000) | kolom CSV `ITEM_TYPE` apa adanya |
+| `C_ITEM_TYPE_1` | teks | VARCHAR2(4000) | kolom CSV `ITEM_TYPE_1` apa adanya |
+| `C_ITEM_TYPE_2` | teks | VARCHAR2(4000) | kolom CSV `ITEM_TYPE_2` apa adanya |
+| `C_ITEM_TYPE_3` | teks | VARCHAR2(4000) | kolom CSV `ITEM_TYPE_3` apa adanya |
+| `C_ITEM_TYPE_4` | teks | VARCHAR2(4000) | kolom CSV `ITEM_TYPE_4` apa adanya |
+| `C_ITEM_TYPE_5` | teks | VARCHAR2(4000) | kolom CSV `ITEM_TYPE_5` apa adanya |
+| `C_ITEM_TYPE_6` | teks | VARCHAR2(4000) | kolom CSV `ITEM_TYPE_6` apa adanya |
+| `C_TSI_OBJECT_ITEM` | teks | VARCHAR2(4000) | kolom CSV `TSI_OBJECT_ITEM` apa adanya |
+| `C_TSI_OBJECT_ITEM_1` | teks | VARCHAR2(4000) | kolom CSV `TSI_OBJECT_ITEM_1` apa adanya |
+| `C_TSI_OBJECT_ITEM_2` | teks | VARCHAR2(4000) | kolom CSV `TSI_OBJECT_ITEM_2` apa adanya |
+| `C_TSI_OBJECT_ITEM_3` | teks | VARCHAR2(4000) | kolom CSV `TSI_OBJECT_ITEM_3` apa adanya |
+| `C_TSI_OBJECT_ITEM_4` | teks | VARCHAR2(4000) | kolom CSV `TSI_OBJECT_ITEM_4` apa adanya |
+| `C_TSI_OBJECT_ITEM_5` | teks | VARCHAR2(4000) | kolom CSV `TSI_OBJECT_ITEM_5` apa adanya |
+| `C_TSI_OBJECT_ITEM_6` | teks | VARCHAR2(4000) | kolom CSV `TSI_OBJECT_ITEM_6` apa adanya |
+| `C_ACCUMULATION_CODE` | teks | VARCHAR2(4000) | kolom CSV `ACCUMULATION_CODE` apa adanya |
+| `C_ACCUMULATION_NAME` | teks | VARCHAR2(4000) | kolom CSV `ACCUMULATION_NAME` apa adanya |
+| `C_ADJUSTABLE_PCT` | teks | VARCHAR2(4000) | kolom CSV `ADJUSTABLE_PCT` apa adanya |
+| `C_CURRENCY` | teks | VARCHAR2(4000) | kolom CSV `CURRENCY` apa adanya |
+| `C_INDEMNITY_MONTH` | teks | VARCHAR2(4000) | kolom CSV `INDEMNITY_MONTH` apa adanya |
+| `C_LOL` | teks | VARCHAR2(4000) | kolom CSV `LOL` apa adanya |
+| `C_RATE_FLEXAS` | teks | VARCHAR2(4000) | kolom CSV `RATE_FLEXAS` apa adanya |
+| `C_NET_RATE_FLEXAS` | teks | VARCHAR2(4000) | kolom CSV `NET_RATE_FLEXAS` apa adanya |
+| `C_DISCOUNT_RATE_FLEXAS` | teks | VARCHAR2(4000) | kolom CSV `DISCOUNT_RATE_FLEXAS` apa adanya |
+| `C_RATE_RSMDCC` | teks | VARCHAR2(4000) | kolom CSV `RATE_RSMDCC` apa adanya |
+| `C_NET_RATE_RSMDCC` | teks | VARCHAR2(4000) | kolom CSV `NET_RATE_RSMDCC` apa adanya |
+| `C_DISCOUNT_RATE_RSMDCC` | teks | VARCHAR2(4000) | kolom CSV `DISCOUNT_RATE_RSMDCC` apa adanya |
+| `C_RATE_FWTWD` | teks | VARCHAR2(4000) | kolom CSV `RATE_FWTWD` apa adanya |
+| `C_NET_RATE_FWTWD` | teks | VARCHAR2(4000) | kolom CSV `NET_RATE_FWTWD` apa adanya |
+| `C_DISCOUNT_RATE_FWTWD` | teks | VARCHAR2(4000) | kolom CSV `DISCOUNT_RATE_FWTWD` apa adanya |
+| `C_RATE_EQ` | teks | VARCHAR2(4000) | kolom CSV `RATE_EQ` apa adanya |
+| `C_NET_RATE_EQ` | teks | VARCHAR2(4000) | kolom CSV `NET_RATE_EQ` apa adanya |
+| `C_DISCOUNT_RATE_EQ` | teks | VARCHAR2(4000) | kolom CSV `DISCOUNT_RATE_EQ` apa adanya |
+| `C_RATE_OTHERS` | teks | VARCHAR2(4000) | kolom CSV `RATE_OTHERS` apa adanya |
+| `C_NET_RATE_OTHERS` | teks | VARCHAR2(4000) | kolom CSV `NET_RATE_OTHERS` apa adanya |
+| `C_DISCOUNT_RATE_OTHERS` | teks | VARCHAR2(4000) | kolom CSV `DISCOUNT_RATE_OTHERS` apa adanya |
+| `C_KODE_POS` | teks | VARCHAR2(4000) | kolom CSV `KODE_POS` apa adanya |
+| `C_KECAMATAN` | teks | VARCHAR2(4000) | kolom CSV `KECAMATAN` apa adanya |
+| `C_KABUPATEN_KOTA` | teks | VARCHAR2(4000) | kolom CSV `KABUPATEN_KOTA` apa adanya |
+| `C_PROVINSI` | teks | VARCHAR2(4000) | kolom CSV `PROVINSI` apa adanya |
+| `C_SUMBER_KODE_POS` | teks | VARCHAR2(4000) | kolom CSV `SUMBER_KODE_POS` apa adanya |
+| `C_TINGKAT_KEYAKINAN` | teks | VARCHAR2(4000) | kolom CSV `TINGKAT_KEYAKINAN` apa adanya |
+| `C_TRADING` | teks | VARCHAR2(4000) | kolom CSV cargo `TRADING` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_DEPARTURE` | teks | VARCHAR2(4000) | kolom CSV cargo `DEPARTURE` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_DESTINATION` | teks | VARCHAR2(4000) | kolom CSV cargo `DESTINATION` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_GOODS` | teks | VARCHAR2(4000) | kolom CSV cargo `GOODS` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_GOODS_NAME` | teks | VARCHAR2(4000) | kolom CSV cargo `GOODS_NAME` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_PACKING` | teks | VARCHAR2(4000) | kolom CSV cargo `PACKING` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_CONVEYENCE` | teks | VARCHAR2(4000) | kolom CSV cargo `CONVEYENCE` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_CONVEYENCE_NAME` | teks | VARCHAR2(4000) | kolom CSV cargo `CONVEYENCE_NAME` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_COVERAGE_IDX` | teks | VARCHAR2(4000) | kolom CSV cargo `COVERAGE_IDX` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_COVERAGE_NAME` | teks | VARCHAR2(4000) | kolom CSV cargo `COVERAGE_NAME` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_TSI` | teks | VARCHAR2(4000) | kolom CSV cargo `TSI` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_AGENT` | teks | VARCHAR2(4000) | kolom CSV cargo `AGENT` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_DATASHIP` | teks | VARCHAR2(4000) | kolom CSV cargo `DATASHIP` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_INVOICE` | teks | VARCHAR2(4000) | kolom CSV cargo `INVOICE` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_ETD` | teks | VARCHAR2(4000) | kolom CSV cargo `ETD` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_BLNUMBER` | teks | VARCHAR2(4000) | kolom CSV cargo `BLNUMBER` apa adanya (migrasi 258, tiket 74 P6) |
+
+## T_NB_CSV_BARIS_ANEKA
+
+Tiket 73 P6 — migrasi 250 (K73-52 opsi 1): penampung baris pekerjaan unggah berjenis `aneka`; satu kolom `C_<judul>` VARCHAR2(4000) per judul yang dibaca InsertUploadAneka_act (35, urut KolomCsvAneka); kunci (UNGGAH_ID, NO_BARIS). Tabel sendiri TANPA FK: 250 berjalan sebelum 257 yang membuat T_NB_CSV_UNGGAH.
+
+| Kolom | Tipe | Tipe DDL (migrasi 250) | Isi |
+| --- | --- | --- | --- |
+| `UNGGAH_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_NB_CSV_UNGGAH.ID` (tanpa FK) |
+| `NO_BARIS` | angka bulat | NUMBER(10) NOT NULL | nomor baris data 1..n |
+| `C_NO` | teks | VARCHAR2(4000) | kolom CSV Aneka `NO` apa adanya |
+| `C_TYPE_ADDRESS` | teks | VARCHAR2(4000) | kolom CSV Aneka `TYPE_ADDRESS` apa adanya |
+| `C_ADDRESS` | teks | VARCHAR2(4000) | kolom CSV Aneka `ADDRESS` apa adanya |
+| `C_BUILDING_NO` | teks | VARCHAR2(4000) | kolom CSV Aneka `BUILDING_NO` apa adanya |
+| `C_POSTAL_CODE` | teks | VARCHAR2(4000) | kolom CSV Aneka `POSTAL_CODE` apa adanya |
+| `C_COUNTRY` | teks | VARCHAR2(4000) | kolom CSV Aneka `COUNTRY` apa adanya |
+| `C_OCCUPATION_NAME` | teks | VARCHAR2(4000) | kolom CSV Aneka `OCCUPATION_NAME` apa adanya |
+| `C_OBJECT_DESCRIPTION` | teks | VARCHAR2(4000) | kolom CSV Aneka `OBJECT_DESCRIPTION` apa adanya |
+| `C_SECTION` | teks | VARCHAR2(4000) | kolom CSV Aneka `SECTION` apa adanya |
+| `C_CURRENCY` | teks | VARCHAR2(4000) | kolom CSV Aneka `CURRENCY` apa adanya |
+| `C_TSI` | teks | VARCHAR2(4000) | kolom CSV Aneka `TSI` apa adanya |
+| `C_YEAR` | teks | VARCHAR2(4000) | kolom CSV Aneka `YEAR` apa adanya |
+| `C_PLACE_OF_MANUFACTURE` | teks | VARCHAR2(4000) | kolom CSV Aneka `PLACE_OF_MANUFACTURE` apa adanya |
+| `C_OBJECT_TYPE` | teks | VARCHAR2(4000) | kolom CSV Aneka `OBJECT_TYPE` apa adanya |
+| `C_NRT` | teks | VARCHAR2(4000) | kolom CSV Aneka `NRT` apa adanya |
+| `C_GRT` | teks | VARCHAR2(4000) | kolom CSV Aneka `GRT` apa adanya |
+| `C_DWT` | teks | VARCHAR2(4000) | kolom CSV Aneka `DWT` apa adanya |
+| `C_FLAGNAME` | teks | VARCHAR2(4000) | kolom CSV Aneka `FLAGNAME` apa adanya |
+| `C_CONSTRUCTION` | teks | VARCHAR2(4000) | kolom CSV Aneka `CONSTRUCTION` apa adanya |
+| `C_CLASSIFICATION` | teks | VARCHAR2(4000) | kolom CSV Aneka `CLASSIFICATION` apa adanya |
+| `C_COVERAGE_NAME` | teks | VARCHAR2(4000) | kolom CSV Aneka `COVERAGE_NAME` apa adanya |
+| `C_CALCULATE_METHOD` | teks | VARCHAR2(4000) | kolom CSV Aneka `CALCULATE_METHOD` apa adanya |
+| `C_DAY` | teks | VARCHAR2(4000) | kolom CSV Aneka `DAY` apa adanya |
+| `C_PCT_LOADING` | teks | VARCHAR2(4000) | kolom CSV Aneka `PCT_LOADING` apa adanya |
+| `C_PCT_SCALE` | teks | VARCHAR2(4000) | kolom CSV Aneka `PCT_SCALE` apa adanya |
+| `C_PCT_RATE` | teks | VARCHAR2(4000) | kolom CSV Aneka `PCT_RATE` apa adanya |
+| `C_PREMIUM` | teks | VARCHAR2(4000) | kolom CSV Aneka `PREMIUM` apa adanya |
+| `C_PCT_DISCOUNT` | teks | VARCHAR2(4000) | kolom CSV Aneka `PCT_DISCOUNT` apa adanya |
+| `C_DISCOUNT` | teks | VARCHAR2(4000) | kolom CSV Aneka `DISCOUNT` apa adanya |
+| `C_PCT_LOL` | teks | VARCHAR2(4000) | kolom CSV Aneka `PCT_LOL` apa adanya |
+| `C_LOL` | teks | VARCHAR2(4000) | kolom CSV Aneka `LOL` apa adanya |
+| `C_SERIALNO` | teks | VARCHAR2(4000) | kolom CSV Aneka `SERIALNO` apa adanya |
+| `C_CHASSISNUMBER` | teks | VARCHAR2(4000) | kolom CSV Aneka `CHASSISNUMBER` apa adanya |
+| `C_ENGINENUMBER` | teks | VARCHAR2(4000) | kolom CSV Aneka `ENGINENUMBER` apa adanya |
+| `C_KELURAHAN` | teks | VARCHAR2(4000) | kolom CSV Aneka `KELURAHAN` apa adanya |
+
+## T_NB_CSV_PESAN
+
+Tiket 75 — migrasi 257: galat dan pesan per baris pekerjaan unggah; kunci (UNGGAH_ID, URUT).
+
+| Kolom | Tipe | Tipe DDL (migrasi 257) | Isi |
+| --- | --- | --- | --- |
+| `UNGGAH_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_NB_CSV_UNGGAH.ID` (FK) |
+| `URUT` | angka bulat | NUMBER(10) NOT NULL | urutan per pekerjaan |
+| `JENIS` | teks | VARCHAR2(10) NOT NULL | galat / pesan |
+| `NO_BARIS` | angka bulat | NUMBER(10) | nomor baris data (NULL = tingkat berkas) |
+| `TEKS` | teks | VARCHAR2(4000) NOT NULL | teks galat / pesan |
 
 ## Kolom status aktif objek master (bahan menu master)
 

@@ -110,4 +110,16 @@ func (s *Service) SalinSpreadingAnekaLokasi(ctx context.Context, pelaku inti.Pel
 	if err := s.periksaTemplateLokasi(ctx, pelaku, id, ps, templat); err != nil {
 		return TampilanSpreadingAneka{}, err
 	}
-	d, err := s.bacaDataSpreadingAneka
+	d, err := s.bacaDataSpreadingAneka(ctx, id)
+	if err != nil {
+		return TampilanSpreadingAneka{}, err
+	}
+	i, err := idxLokasiSah(idxLokasi, len(d.lokasi))
+	if err != nil {
+		return TampilanSpreadingAneka{}, err
+	}
+	d.kasus.PercentShare = ps
+	hitungNRAneka(d.lokasi, ps)
+	salinTemplateAneka(d.lokasi[i:i+1], ps, templat, d.lini) // berbagi larik: objek d.lokasi ikut berubah
+	return s.tampilanSpreadingAneka(ctx, id, d, nil, false)
+}

@@ -211,7 +211,7 @@ describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode'
     const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
     expect(SUMBER).toContain('{!hanyaLihat && (!bacaSaja || akunIT) && (')
     // Tahap ubah: bilah CSV objek (tiket 66) + Insert Accumulation hanya IT; baca-saja: hanya Insert Accumulation (bila IT).
-    expect(SUMBER).toMatch(/\{!bacaSaja \? \(\s*<BilahCsvObjek\s+caseId=\{kasus\.caseId\}\s+akhir=\{akunIT && <TombolNonaktif label=\{P\.insertAccumulation\.label\} \/>\}/)
+    expect(SUMBER).toMatch(/\) : !bacaSaja && jenisCsv !== null \? \(\s*<BilahCsvObjek\s+(?:\/\/[^\n]*\s+)?key=\{kasus\.caseId\}\s+caseId=\{kasus\.caseId\}\s+(?:\/\/[^\n]*\s+)?jenis=\{jenisCsv\}\s+akhir=\{akunIT && <TombolNonaktif label=\{P\.insertAccumulation\.label\} \/>\}/)
     expect(SUMBER).toMatch(/\) : \(\s*<div className="nbf-opp__tombol">\s*<TombolNonaktif label=\{P\.insertAccumulation\.label\} \/>/)
   })
 
@@ -239,7 +239,7 @@ describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode'
     expect(SUMBER).not.toContain('dariServer !== null ? dariServer.lini?.fire === true')
     expect(SUMBER).toContain("(t !== 'Clauses' || kasusFire) &&")
     expect(SUMBER).toContain("(t !== 'Scoring Risk' || kasusFire)")
-    expect(SUMBER).toMatch(/\{tab === 'Object' && kasusFire \? \(\s*<TabObject caseId=\{kasus\.caseId\} insuredName=\{insured\} \/>/)
+    expect(SUMBER).toMatch(/\{tab === 'Object' && kasusFire \? \([\s\S]{0,400}?<TabObject caseId=\{kasus\.caseId\} insuredName=\{insured\} \/>/)
     // Tab Coverage FIRE (tiket 43).
     expect(SUMBER).toMatch(/: tab === 'Coverage' && kasusFire \? \(\s*<TabCoverage caseId=\{kasus\.caseId\} hanyaAkumulasi=\{akumulasiTerbuka\} \/>/)
   })

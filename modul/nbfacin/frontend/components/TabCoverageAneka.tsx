@@ -63,6 +63,7 @@ import {
   type PosisiObjekAneka,
 } from './coverageAneka'
 import FormCoverageAneka from './FormCoverageAneka'
+import PagerLokasi, { potongHalaman } from './PagerLokasi'
 
 /** Kunci baris terbuka (string) per lapisan. */
 const kunciObjek = (p: PosisiObjekAneka) => `o${p.l}-${p.k ?? 'g'}-${p.j}`
@@ -120,6 +121,7 @@ export default function TabCoverageAneka({ caseId, tampilan, aneka }: { caseId: 
   const proRateRef = useRef('')
   const [mataUang, setMataUang] = useState<string[]>([])
   const [terbuka, setTerbuka] = useState<string[]>([])
+  const [halLokasi, setHalLokasi] = useState(1)
   const [galat, setGalat] = useState<unknown>(null)
   const [menghitung, setMenghitung] = useState(0)
   const [menyimpan, setMenyimpan] = useState(false)
@@ -393,6 +395,8 @@ export default function TabCoverageAneka({ caseId, tampilan, aneka }: { caseId: 
       <Gagal galat={galat} />
       {menghitung > 0 && <div className="muted">{TEKS_COV_ANEKA.menghitung}</div>}
       {tersimpan && <div className="alert alert--ok">{TEKS_COV_ANEKA.tersimpan}</div>}
+      {/* Lokasi - 10 per halaman (work owner 11-10-2026) */}
+      <PagerLokasi total={lokasi.length} halaman={halLokasi} onPindah={setHalLokasi} />
       <div className="nbf-cov-wrap">
         <table className="nbf-tabel nbf-aneka-grid nbf-aneka-grid--lokasi">
           <Kepala kolom={GRID_COV_LOKASI_ANEKA} />
@@ -402,7 +406,7 @@ export default function TabCoverageAneka({ caseId, tampilan, aneka }: { caseId: 
                 <td colSpan={3}>{TEKS_INWARD.kosong}</td>
               </tr>
             )}
-            {lokasi.map((l, a) => {
+            {potongHalaman(lokasi, halLokasi).map(([l, a]) => {
               const kl = `l${a}`
               return [
                 <tr key={kl} className={terbuka.includes(kl) ? 'nbf-baris--terbuka' : undefined}>

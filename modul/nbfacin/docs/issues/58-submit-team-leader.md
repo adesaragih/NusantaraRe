@@ -139,6 +139,10 @@ Backend sesi c3:
   ReasFacInTeamLeader). Usul: bila tabel POOLDATA dipakai bersama Pega yang masih berjalan, JANGAN ubah master - pemetaan di
   kueri (`WORKBASKET IN (:lama, :baru)`) saat tahap UW dibangun; bila Pega sudah pensiun, DBA memperbarui 4 baris master.
   `[pertanyaan terbuka]` work owner / DBA.
+  - **Dijawab work owner 11-10-2026** (bug DEV: case di-Ask Junior UW B, Banding "belum pernah diproses approver di luar
+    marketing"): **DBA mengubah 4 baris master** `M_LIMIT_PROPERTYY` JABATAN JUW_B → WORKBASKET `ReasFacInJuniorUnderwritingB`.
+    Tanpa perubahan kode. Hanya tabel ini yang dicocokkan lewat WORKBASKET (kueri Banding); empat tabel `M_LIMIT_*` lain juga
+    memuat nama lama tetapi kolom itu tidak dibaca kode.
 - (b) Data login: `M_WORKBASKET` (nama tampil kotak masuk) dan `M_LOGIN_GO_WORKBASKET` (penugasan akun) wajib memuat
   `ReasFacInJuniorUnderwritingB` - tanpa itu tidak ada akun yang memegang antrean JUW B (kotak masuk kosong, case baca-saja).
   Data, bukan kode; DBA / admin login.

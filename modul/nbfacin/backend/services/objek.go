@@ -171,6 +171,12 @@ func (s *Service) BacaObjek(ctx context.Context, id string) ([]models.ObjekFire,
 	if errors.Is(err, repository.ErrKasusTidakAda) {
 		return nil, ErrKasusTidakAda
 	}
+	siapkanObjekBaca(baris)
+	return baris, err
+}
+
+// siapkanObjekBaca - olahan baca tab Object (GET utuh dan per halaman tiket 75 F3).
+func siapkanObjekBaca(baris []models.ObjekFire) {
 	// dateOfLoss teks Pega -> DD-MM-YYYY ke larik catatan BARU per objek (larik catatan dari repository tidak diubah;
 	// medan LossRecords objek diganti).
 	for i := range baris {
@@ -183,7 +189,6 @@ func (s *Service) BacaObjek(ctx context.Context, id string) ([]models.ObjekFire,
 		// Tiket 43: total per mata uang objek dihitung saat baca (tidak disimpan).
 		baris[i].TotalPerCurrency = TotalPerMataUang(baris[i].Items)
 	}
-	return baris, err
 }
 
 // GantiObjek - tombol Save tab Object: identitas (401) -> isian (400) -> basis data (503) ->
@@ -201,6 +206,9 @@ func (s *Service) GantiObjek(ctx context.Context, pelaku inti.Pelaku, id string,
 	}
 	if s.objek == nil || s.transaksi == nil {
 		return nil, ErrObjekTanpaDatabase
+	}
+	if err := s.cekKunciUnggah(ctx, id); err != nil { // tiket 75 K75-2
+		return nil, err
 	}
 	if !idKasusSah(id) {
 		return nil, ErrKasusTidakAda

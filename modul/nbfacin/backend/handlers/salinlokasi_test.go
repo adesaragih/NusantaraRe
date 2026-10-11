@@ -18,7 +18,7 @@ func TestSalinLokasi(t *testing.T) {
 	if k := kunciTagJSON(badanSalinLokasi{}); !reflect.DeepEqual(k, []string{"percentShare", "idxLokasi", "template"}) {
 		t.Errorf("badan: %v", k)
 	}
-	badan := `{"percentShare":"50","idxLokasi":1,"template":[{"treatyType":"10015","treatyName":"FACOUT","sharePercentage":"100","flagSpreading":"UJI"}]}`
+	badan := `{"percentShare":"50","idxLokasi":1,"template":[{"treatyType":"10015","treatyName":"FACOUT","sharePercentage":"100","flagSpreading":"SF-MR 2023"}]}`
 	src := &spreadingTiruanH{tersimpan: kasusSpreadingUji()}
 	svc := services.Baru(nil).DenganSpreading(src).DenganTransaksi(tanpaOracleKlausa)
 	kode, isi := minta(t, svc, "POST", "/api/nbfacin/kasus/S1/spreading/salin-lokasi", badan, "UJI-USER")
@@ -39,7 +39,7 @@ func TestSalinLokasi(t *testing.T) {
 	}{
 		"tanpa idxLokasi": {`{"percentShare":"50","template":[]}`, "UJI-USER", "idxLokasi", 400},
 		"idx di luar":     {strings.Replace(badan, `"idxLokasi":1`, `"idxLokasi":2`, 1), "UJI-USER", "idxLokasi 2", 400},
-		"flag wajib":      {strings.Replace(badan, `"flagSpreading":"UJI"`, `"flagSpreading":""`, 1), "UJI-USER", "flagSpreading wajib", 400},
+		"flag wajib":      {strings.Replace(badan, `"flagSpreading":"SF-MR 2023"`, `"flagSpreading":""`, 1), "UJI-USER", "flagSpreading wajib", 400},
 		"share huruf":     {strings.Replace(badan, `"sharePercentage":"100"`, `"sharePercentage":"x"`, 1), "UJI-USER", "template[0].sharePercentage", 400},
 		"tanpa identitas": {badan, "", "", 401},
 	} {

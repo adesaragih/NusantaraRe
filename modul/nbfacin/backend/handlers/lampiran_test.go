@@ -42,7 +42,7 @@ func (l *lampiranTiruanH) KategoriLampiran(context.Context) ([]string, error) {
 func (l *lampiranTiruanH) JumlahLampiran(_ context.Context, idPega string) (map[string]int, error) {
 	out := map[string]int{}
 	for _, d := range l.dok {
-		if d.IDPega == idPega {
+		if repository.IDPegaProduksi(d.IDPega) == repository.IDPegaProduksi(idPega) { // dua bentuk (idpegaproduksi.go)
 			out[d.Kategori2]++
 		}
 	}
@@ -55,7 +55,7 @@ func (l *lampiranTiruanH) isi(d models.DokumenPolis) models.DokumenPolis {
 func (l *lampiranTiruanH) DaftarLampiran(_ context.Context, idPega, kategori, _, _ string) ([]models.DokumenPolis, error) {
 	var out []models.DokumenPolis
 	for _, d := range l.dok {
-		if d.IDPega == idPega && d.Kategori2 == kategori {
+		if repository.IDPegaProduksi(d.IDPega) == repository.IDPegaProduksi(idPega) && d.Kategori2 == kategori {
 			out = append(out, l.isi(d))
 		}
 	}
@@ -63,7 +63,7 @@ func (l *lampiranTiruanH) DaftarLampiran(_ context.Context, idPega, kategori, _,
 }
 func (l *lampiranTiruanH) AmbilLampiran(_ context.Context, idPega, id, _, _ string) (models.DokumenPolis, error) {
 	d, ada := l.dok[id]
-	if !ada || d.IDPega != idPega {
+	if !ada || repository.IDPegaProduksi(d.IDPega) != repository.IDPegaProduksi(idPega) {
 		return d, repository.ErrLampiranTidakAda
 	}
 	return l.isi(d), nil
@@ -299,6 +299,7 @@ func TestGalatPolicy409(t *testing.T) {
 	for err, pesan := range map[error]string{
 		services.ErrBusinessOldIDTidakAda: "BusinessOldId case tidak dapat ditentukan dari tabel BUSINESS (Class of Business / Group Business); nomor polis tidak dapat dibentuk.",
 		services.ErrFacRetroBelumTersedia: "Case FacRetro belum dapat diselesaikan di sistem baru (tiket 65).",
+		services.ErrIDKapalFacIn:          "ID kapal cargo lebih dari 20 karakter - tidak muat kolom IDSHIP FACINOFFER / FACINPRODUCTION",
 	} {
 		w := httptest.NewRecorder()
 		tulisGalatSubmit(w, err)

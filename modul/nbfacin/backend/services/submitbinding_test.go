@@ -195,7 +195,7 @@ func TestTekanBinding(t *testing.T) {
 		t.Fatalf("%v %+v", err, tp)
 	}
 	b := st.tekan[0]
-	if b.CaseID != "UJI-NB-1" || b.IDPega != repository.AwalanIDPega+"UJI-NB-1" || b.Position != repository.WorkbasketMarketing || b.Flag != "2" ||
+	if b.CaseID != "UJI-NB-1" || b.IDPega != "UJI-NB-1" || b.Position != repository.WorkbasketMarketing || b.Flag != "2" ||
 		b.JSONData != `{"IDNewBisnis":"UJI-NB-1"}` || b.Riwayat.Keterangan != "Offer has been bind." || b.Riwayat.Posisi != "Binding" ||
 		b.Riwayat.Putaran != "2" || b.Riwayat.Approval != "Accept" || b.Riwayat.PIC != "Uji Pengguna" || b.Riwayat.AksesLogin != "UJI-MKT" {
 		t.Errorf("%+v", b)

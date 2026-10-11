@@ -54,6 +54,15 @@ func (c *csvTiruan) RWKelurahan(_ context.Context, zip, kel string) ([]models.RW
 	c.panggil = append(c.panggil, zip)
 	return c.rw[zip+"|"+kel], nil
 }
+
+// RWKodePos - tiket 73 P6: baris pertama kunci "zip|" (kelurahan kosong).
+func (c *csvTiruan) RWKodePos(_ context.Context, zip string) (models.RWCsv, bool, error) {
+	c.hitung("RWKodePos")
+	if b := c.rw[zip+"|"]; len(b) > 0 {
+		return b[0], true, nil
+	}
+	return models.RWCsv{}, false, nil
+}
 func (c *csvTiruan) IDRiskAddress(_ context.Context, a, z string) (string, error) {
 	c.hitung("IDRiskAddress")
 
@@ -158,16 +167,18 @@ func barisCsvUji(ubah ...string) map[string]string {
 
 // layananCsvUji - case UJI-NB-1 dengan satu objek lama, General tersimpan ber-Ceding C1.
 func layananCsvUji(c *csvTiruan, p *penambahCsvTiruan) (*Service, *models.Kasus, objekTiruan, *models.AlamatBaru) {
-	kasus := &models.Kasus{CaseID: "UJI-NB-1", General: models.General{ReffNumber: "UJI-SLIP-LAMA", StartDateTime: "20260101T050000.000 GMT",
-		EndDateTime: "20270101T050000.000 GMT", TypeFacultative: "Facultative In", CedingList: []models.Ceding{{ID: "C1", Name: "UJI CEDING"}},
-		Tersimpan: true}}
+	// Case FIRE (GroupPanel 006): gerbang CSV FIRE bug DEV 11-10-2026.
+	kasus := &models.Kasus{CaseID: "UJI-NB-1", Opportunity: models.Opportunity{ClassOfBusiness: "UJI KELAS", GroupBusinessID: "1"},
+		General: models.General{ReffNumber: "UJI-SLIP-LAMA", StartDateTime: "20260101T050000.000 GMT",
+			EndDateTime: "20270101T050000.000 GMT", TypeFacultative: "Facultative In", CedingList: []models.Ceding{{ID: "C1", Name: "UJI CEDING"}},
+			Tersimpan: true}}
 	ob := objekTiruan{ada: map[string][]models.ObjekFire{"UJI-NB-1": {{ObjectNo: "LAMA", ObjectType: "Office"}}}}
 	var zip string
 	alamat := &models.AlamatBaru{}
 	n := 0
 	svc := Baru(nil).DenganKasus(kasusTiruan{ada: map[string]*models.Kasus{"UJI-NB-1": kasus}}).DenganObjek(ob).DenganTransaksi(tanpaTx).
 		DenganPilihanItem(pilihanItemTiruan{&n}).DenganRW(rwTiruan{zip: &zip, alamat: alamat}).DenganCsvObjek(c).
-		DenganAddAkumulasi(addCsvTiruan{}, p).DenganJam(jamUjiCsv)
+		DenganAddAkumulasi(addCsvTiruan{}, p).DenganJam(jamUjiCsv).DenganTableOfLimit(tolTiruan{bisnis: satuBisnis("006", "24")})
 	return svc, kasus, ob, alamat
 }
 

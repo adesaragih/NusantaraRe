@@ -61,6 +61,7 @@ import {
   type PosisiItem,
 } from './salinCoverage'
 import { rapikanObjek } from './TabObject'
+import PagerLokasi, { potongHalaman } from './PagerLokasi'
 
 /** Total Gross Premium item = Σ Premium coverage (eksak); tanpa coverage -> nilai server. */
 export function totalPremiItem(coverages: CoverageObjek[] | undefined, dariServer: string | undefined): string {
@@ -193,6 +194,7 @@ function IsianNetRate({ nilai, onUbah }: { nilai: string; onUbah: (v: string) =>
 export default function TabCoverage({ caseId, hanyaAkumulasi = false }: { caseId: string; hanyaAkumulasi?: boolean }) {
   const [objek, setObjek] = useState<ObjekFire[] | null>(null)
   const [terbuka, setTerbuka] = useState<string[]>([])
+  const [halLokasi, setHalLokasi] = useState(1)
   const [galat, setGalat] = useState<unknown>(null)
   const [menyimpan, setMenyimpan] = useState(false)
   const [tersimpan, setTersimpan] = useState(false)
@@ -388,6 +390,8 @@ export default function TabCoverage({ caseId, hanyaAkumulasi = false }: { caseId
     <div className="nbf-objek nbf-cov-tab">
       <Gagal galat={galat} />
       {tersimpan && <div className="alert alert--ok">{TEKS_INWARD.tersimpan}</div>}
+      {/* Lokasi - 10 per halaman (work owner 11-10-2026) */}
+      <PagerLokasi total={objek.length} halaman={halLokasi} onPindah={setHalLokasi} />
       <div className="nbf-cov-wrap">
         <table className="nbf-tabel">
           <thead>
@@ -406,7 +410,7 @@ export default function TabCoverage({ caseId, hanyaAkumulasi = false }: { caseId
                 <td colSpan={4}>{TEKS_INWARD.kosong}</td>
               </tr>
             )}
-            {objek.map((x, o) => [
+            {potongHalaman(objek, halLokasi).map(([x, o]) => [
               <tr key={`o${o}`} className={terbuka.includes(`o${o}`) ? 'nbf-baris--terbuka' : undefined}>
                 <td>
                   <Buka buka={terbuka.includes(`o${o}`)} onKlik={() => setTerbuka((t) => balik(t, `o${o}`))} />

@@ -129,6 +129,6 @@ describe('TabCedant - total per mata uang (Dtl S62 IsFire, TotalSpreadAll)', () 
     }
   })
   it('layar memakai ringkasan Spreading per mata uang saja', () => {
-    expect(SUMBER).toContain('{sp !== null && <RingkasanSpreading v={sp} hanyaMataUang tanpaTopRisk={aneka} />}')
+    expect(SUMBER).toContain('{sp !== null && <RingkasanSpreading v={sp} hanyaMataUang tanpaTopRisk={aneka || cargo} />}')
   })
 })

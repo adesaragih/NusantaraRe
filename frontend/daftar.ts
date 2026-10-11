@@ -98,6 +98,7 @@ export function rakitModulFrontend(menu: BerkasMenu, rute: BerkasRute): ModulFro
         ...(m.antreanBeranda !== undefined ? { antreanBeranda: m.antreanBeranda } : {}),
         ...(m.daftarBeranda !== undefined ? { daftarBeranda: m.daftarBeranda } : {}),
         ...(m.menuAtas !== undefined ? { menuAtas: m.menuAtas } : {}),
+        ...(m.formBaruBerjendela === true ? { formBaruBerjendela: true } : {}),
         Rute: r,
       }
     })

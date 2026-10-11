@@ -10,6 +10,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 
 	"github.com/cockroachdb/apd/v3"
 
@@ -47,13 +48,15 @@ type FollowingOracle struct{ db *db.DB }
 // NewFollowingOracle merakit penyimpan Following Policy.
 func NewFollowingOracle(d *db.DB) *FollowingOracle { return &FollowingOracle{db: d} }
 
-// klausaFollowing - WHERE langkah 4.x dengan bind :1 (nilai sudah berbentuk akhir: awalan IDPEGA / pola LIKE disusun services).
+// klausaFollowing - WHERE langkah 4.x dengan bind :1 (nilai sudah berbentuk akhir: pola LIKE disusun services). IDPEGA (opsi 1 NB /
+// RNW / EDM) = case id POLOS dari services, dicocokkan dua bentuk :1 / :2 (polos, berawalan; idpegaproduksi.go) - lihat
+// bindFollowing.
 func klausaFollowing(prod, jenis string) (string, bool) {
 	k, ada := map[string]string{
 		CariFollowingNoPolis:  "PC0.NOPOLIS = :1",
-		CariFollowingIDPega:   "PC0.IDPEGA = :1",
+		CariFollowingIDPega:   "PC0.IDPEGA IN (:1, :2)",
 		CariFollowingNoEndors: "PC0.NOPOLIS IN (SELECT DISTINCT NOPOLIS FROM " + prod + " WHERE NOENDORS = :1)",
-		CariFollowingEDM:      "PC0.NOPOLIS IN (SELECT DISTINCT NOPOLIS FROM " + prod + " WHERE IDPEGA = :1)",
+		CariFollowingEDM:      "PC0.NOPOLIS IN (SELECT DISTINCT NOPOLIS FROM " + prod + " WHERE IDPEGA IN (:1, :2))",
 		CariFollowingReff:     "PC0.NOPOLIS IN (SELECT DISTINCT NOPOLIS FROM " + prod + " WHERE RISLIPCEDING LIKE :1)",
 		CariFollowingInsured:  "PC0.INSUREDNAME LIKE :1",
 		CariFollowingSOB:      "PC0.SOB LIKE :1",
@@ -65,21 +68,32 @@ func klausaFollowing(prod, jenis string) (string, bool) {
 
 // sqlDasarFollowing - BrowseDataViewPolis1 (kolom + subkueri RiSlipCeding apa adanya; DISTINCT atas tanggal mentah).
 func sqlDasarFollowing(prod, klausa string) string {
-	return "SELECT DISTINCT SUBSTR(PC0.IDPEGA, 19, 10) AS CASEID, PC0.NOPOLIS, PC0.BEGINDATE, PC0.ENDDATE, PC0.SOB, PC0.INSUREDNAME," +
+	return "SELECT DISTINCT SUBSTR(" + sqlCaseIDDariIDPega("PC0.IDPEGA") + ", 1, 10) AS CASEID, PC0.NOPOLIS, PC0.BEGINDATE, PC0.ENDDATE, PC0.SOB, PC0.INSUREDNAME," +
 		" PC0.QQNAME, (SELECT MAX(B.RISLIPCEDING) KEEP (DENSE_RANK LAST ORDER BY B.SPREAD_DATE) FROM " + prod +
 		" B WHERE B.NOPOLIS = PC0.NOPOLIS) AS RISLIP FROM " + prod + " PC0 WHERE " + klausa
 }
 
 func sqlJumlahFollowing(dasar string) string { return "SELECT COUNT(*) FROM (" + dasar + ")" }
 
-// sqlHalamanFollowing - Pega tanpa ORDER BY; urutan stabil NOPOLIS, CASEID, lalu kolom lain `[keputusan agent]`.
-func sqlHalamanFollowing(dasar string) string {
+// sqlHalamanFollowing - Pega tanpa ORDER BY; urutan stabil NOPOLIS, CASEID, lalu kolom lain `[keputusan agent]`. n = jumlah bind
+// klausa (offset / batas sesudahnya).
+func sqlHalamanFollowing(dasar string, n int) string {
 	return "SELECT CASEID, NOPOLIS, TO_CHAR(BEGINDATE, 'DD-MM-YYYY'), TO_CHAR(ENDDATE, 'DD-MM-YYYY'), SOB, INSUREDNAME, QQNAME, RISLIP" +
-		" FROM (" + dasar + ") ORDER BY NOPOLIS, CASEID, BEGINDATE, ENDDATE, SOB, INSUREDNAME, QQNAME OFFSET :2 ROWS FETCH NEXT :3 ROWS ONLY"
+		" FROM (" + dasar + ") ORDER BY NOPOLIS, CASEID, BEGINDATE, ENDDATE, SOB, INSUREDNAME, QQNAME OFFSET :" + strconv.Itoa(n+1) +
+		" ROWS FETCH NEXT :" + strconv.Itoa(n+2) + " ROWS ONLY"
+}
+
+// bindFollowing - argumen klausa: IDPEGA (opsi IDPega / EDM) dua bentuk dari case id polos; selain itu nilai apa adanya.
+func bindFollowing(jenis, nilai string) []any {
+	if jenis == CariFollowingIDPega || jenis == CariFollowingEDM {
+		p, a := DuaBentukIDPega(nilai)
+		return []any{p, a}
+	}
+	return []any{nilai}
 }
 
 func sqlAdaPolisFollowing(prod string) string {
-	return "SELECT COUNT(*) FROM " + prod + " WHERE IDPEGA = :1 AND NOPOLIS = :2 AND NOENDORS IS NULL"
+	return "SELECT COUNT(*) FROM " + prod + " WHERE IDPEGA IN (:1, :2) AND NOPOLIS = :3 AND NOENDORS IS NULL"
 }
 
 func sqlFollowing(general string) string {
@@ -115,15 +129,16 @@ func (r *FollowingOracle) CariFollowing(ctx context.Context, jenis, nilai string
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, 0, err
 	}
+	arg := bindFollowing(jenis, nilai)
 	var total int
-	if err := r.db.QueryRowContext(ctx, q, nilai).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, q, arg...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("repository: jumlah polis Following: %w", err)
 	}
-	q = sqlHalamanFollowing(dasar)
+	q = sqlHalamanFollowing(dasar, len(arg))
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, 0, err
 	}
-	rows, err := r.db.QueryContext(ctx, q, nilai, offset, batas)
+	rows, err := r.db.QueryContext(ctx, q, append(arg, offset, batas)...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("repository: cari polis Following: %w", err)
 	}
@@ -155,7 +170,8 @@ func (r *FollowingOracle) AdaPolisFollowing(ctx context.Context, caseID, noPolis
 		return false, err
 	}
 	var n int
-	if err := r.db.QueryRowContext(ctx, q, AwalanIDPega+caseID, noPolis).Scan(&n); err != nil {
+	polos, awalan := DuaBentukIDPega(caseID)
+	if err := r.db.QueryRowContext(ctx, q, polos, awalan, noPolis).Scan(&n); err != nil {
 		return false, fmt.Errorf("repository: polis Following: %w", err)
 	}
 	return n > 0, nil

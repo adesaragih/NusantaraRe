@@ -70,13 +70,13 @@ func jenisCariFollowing(opsi, filter string) (string, string, error) {
 		jenis, nilai = repository.CariFollowingNoPolis, filter
 	}
 	if opsi == "1" && (strings.Contains(filter, "NB-") || strings.Contains(filter, "RNW-")) {
-		jenis, nilai = repository.CariFollowingIDPega, repository.AwalanIDPega+filter
+		jenis, nilai = repository.CariFollowingIDPega, filter // IDPEGA dua bentuk dicocokkan repository (bindFollowing)
 	}
 	if strings.Contains(filter, "RNM-E") {
 		jenis, nilai = repository.CariFollowingNoEndors, filter
 	}
 	if opsi == "1" && strings.Contains(filter, "EDM-") {
-		jenis, nilai = repository.CariFollowingEDM, repository.AwalanIDPega+filter
+		jenis, nilai = repository.CariFollowingEDM, filter
 	}
 	switch opsi {
 	case "4":

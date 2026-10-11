@@ -59,7 +59,8 @@ func (r *SubmitOracle) tabelPolicy() (tabelPolicy, error) {
 
 // sqlCariJSONPolis - JSON_POLIS case (PK IDPEGA): NOPOLIS + TGL_PROD (jam dinding).
 func sqlCariJSONPolis(jp string) string {
-	return "SELECT NOPOLIS, TO_CHAR(TGL_PROD, 'DD/MM/YYYY HH24:MI:SS') FROM " + jp + " WHERE IDPEGA = :1"
+	return "SELECT NOPOLIS, TO_CHAR(TGL_PROD, 'DD/MM/YYYY HH24:MI:SS') FROM " + jp + " WHERE IDPEGA IN (:1, :2)" +
+		" ORDER BY TGL_INPUT DESC FETCH FIRST 1 ROWS ONLY" // IDPEGA dua bentuk (idpegaproduksi.go)
 }
 
 // sqlSisipJSONPolis - INSERT prosedur INSERTJSONPOLIS (TGL_INPUT bawaan sysdate; PRODKE '0'; NOENDORS / OLDNOPOLIS NULL - NB).
@@ -69,7 +70,7 @@ func sqlSisipJSONPolis(jp string) string {
 }
 
 func sqlHapusCedingProduksi(ceding string) string {
-	return "DELETE FROM " + ceding + " WHERE IDPEGA = :1"
+	return "DELETE FROM " + ceding + " WHERE IDPEGA IN (:1, :2)" // dua bentuk: ganti seluruh ceding case
 }
 
 // sqlSisipCedingProduksi - INSERT prosedur InsertUpdateCedingProduction + nilai yang UPDATE-nya isi untuk baris itu (PRODKE dari
@@ -79,7 +80,7 @@ func sqlHapusCedingProduksi(ceding string) string {
 func sqlSisipCedingProduksi(ceding, jp string) string {
 	return "INSERT INTO " + ceding + " (IDPEGA, NOPOLIS, NOENDORS, CEDINGID, CEDINGNAME, PCT_SHARE, PRODKE, NOPOLIS_ARAS)" +
 		" VALUES (:1, :2, NULL, :3, :4, " + angkaMasuk(":5") + ", (SELECT MAX(j.PRODKE) FROM " + jp +
-		" j WHERE j.IDPEGA = :6), REPLACE(:7, '.', ''))"
+		" j WHERE j.IDPEGA IN (:6, :7)), REPLACE(:8, '.', ''))"
 }
 
 func sqlAdaProfilRisiko(risiko string) string {
@@ -95,7 +96,7 @@ func sqlSisipProfilRisiko(risiko string) string {
 
 // sqlAdaFacInProduction - CekFacin_Sql (`select distinct(IDPEGA) ... WHERE IDPEGA = pzInsKey`).
 func sqlAdaFacInProduction(prod string) string {
-	return "SELECT COUNT(*) FROM " + prod + " WHERE IDPEGA = :1"
+	return "SELECT COUNT(*) FROM " + prod + " WHERE IDPEGA IN (:1, :2)" // dua bentuk: case lama tidak disisip ganda
 }
 
 // kolomFacInProduction - urutan kolom InsertTreatyProduction_Sql (79).
@@ -118,7 +119,7 @@ var kolomFacInProduction = []string{"IDPEGA", "NOPOLIS", "NOENDORS", "BUSINESSCO
 // diteruskan) = NULL.
 func nilaiKolomFacInProduction(kolom, mo string) string {
 	switch kolom {
-	case "BEGINDATE", "ENDDATE", "SPREAD_DATE":
+	case "BEGINDATE", "ENDDATE", "SPREAD_DATE", "SAILDATE":
 		return "TO_DATE(?, 'DD/MM/YYYY HH24:MI:SS')"
 	case "RATE", "PERCENT_RNM", "PERCENT_SHARE_SPREADED", "TSI_MENJADI", "PREMI_MENJADI", "TSI_SELISIH", "PREMI_SELISIH",
 		"PERCENT_RI_COMM", "PCT_RI_COMM_SELISIH", "RICOMM", "RICOMM_SELISIH", "LOL_MENJADI", "LOL_SELISIH", "PCT_BROKERGARE_FEE",
@@ -136,8 +137,8 @@ func nilaiKolomFacInProduction(kolom, mo string) string {
 		return "'NULL'"
 	case "PRORATE":
 		return "1"
-	case "NOENDORS", "TRADING_NAME", "CONVEYANCE_NAME", "TYPE_NAME", "MODEL_NAME", "IDSHIP", "FROMRUTE", "TORUTE", "SAILDATE",
-		"BINDER", "ISB2B", "ASKRED", "NO_MASTER_POLIS", "TYPE_EDM", "DEDUCTION2_MENJADI", "DEDUCTION2_SELISIH":
+	case "NOENDORS", "TYPE_NAME", "MODEL_NAME", "BINDER", "ISB2B", "ASKRED", "NO_MASTER_POLIS", "TYPE_EDM", "DEDUCTION2_MENJADI",
+		"DEDUCTION2_SELISIH":
 		return "NULL"
 	}
 	return "?"
@@ -179,7 +180,10 @@ func argFacInProduction(b models.BarisFacInProduction, noPolis, spreadDate strin
 		"BROKERAGE_FEE_SELISIH": d(b.BrokerageFee), "PCT_BROKERAGE_FEE_SELISIH": d(b.PctBrokerageFee),
 		"CEDINGID": k(b.CedingID), "SOBID": k(b.SOBID), "INSUREDID": k(b.InsuredID), "IDX_OBJECT_ITEM": k(b.IdxObjectItem),
 		"TSI100_MENJADI": d(b.TSI100), "TSI100_SELISIH": d(b.TSI100), "STATUS_BUSINESS": k(b.StatusBusiness),
-		"GROUPNAME": k(b.GroupName), "TOP_RISK": k(b.TopRisk), "NOSERIAL": noSerialProduksi(b.NoSerial)}
+		"GROUPNAME": k(b.GroupName), "TOP_RISK": k(b.TopRisk), "NOSERIAL": noSerialProduksi(b.NoSerial),
+		// tiket 74 P5: cabang Marine Cargo langkah 22; "" = NULL (cabang lain, sama dengan NULL tetap sebelumnya)
+		"TRADING_NAME": k(b.TradingName), "CONVEYANCE_NAME": k(b.ConveyanceName), "IDSHIP": k(b.IDShip),
+		"FROMRUTE": k(b.FromRute), "TORUTE": k(b.ToRute), "SAILDATE": k(b.SailDate)}
 	var arg []any
 	for _, kol := range kolomFacInProduction {
 		if kol == "MARKETINGOFFICERCODE" { // NVL(MOID case, GetMOID(clientid))
@@ -205,13 +209,13 @@ func noSerialProduksi(s string) string {
 // ---- tulis ---------------------------------------------------------------------------------------------------------
 
 // nomorPolis - (NOPOLIS, ProdDateTime "DD/MM/YYYY HH24:MI:SS" WIB, baru). JSON_POLIS case sudah ada -> dipakai ulang.
-func (r *SubmitOracle) nomorPolis(ctx context.Context, tx *db.Tx, jp, idPega string, p models.TulisanPolicy) (string, string, bool, error) {
+func (r *SubmitOracle) nomorPolis(ctx context.Context, tx *db.Tx, jp, polos, awalan string, p models.TulisanPolicy) (string, string, bool, error) {
 	q := sqlCariJSONPolis(jp)
 	if err := db.PeriksaSQL(q); err != nil {
 		return "", "", false, err
 	}
 	var no, prod sql.NullString
-	err := tx.QueryRowContext(ctx, q, idPega).Scan(&no, &prod)
+	err := tx.QueryRowContext(ctx, q, polos, awalan).Scan(&no, &prod)
 	if err == nil {
 		return no.String, prod.String, false, nil
 	}
@@ -246,25 +250,27 @@ func (r *SubmitOracle) nomorPolis(ctx context.Context, tx *db.Tx, jp, idPega str
 	return models.RakitNomorPolis(jenis, p.BusinessOldID, periode.MMYYYY, urut), lokal.Format(bentukTanggalPolis), true, nil
 }
 
-// hitung - SELECT COUNT(*) satu bind.
-func hitung(ctx context.Context, tx *db.Tx, q, aksi string, arg any) (int, error) {
+// hitung - SELECT COUNT(*) dengan bind berurutan.
+func hitung(ctx context.Context, tx *db.Tx, q, aksi string, arg ...any) (int, error) {
 	if err := db.PeriksaSQL(q); err != nil {
 		return 0, err
 	}
 	var n int
-	if err := tx.QueryRowContext(ctx, q, arg).Scan(&n); err != nil {
+	if err := tx.QueryRowContext(ctx, q, arg...).Scan(&n); err != nil {
 		return 0, fmt.Errorf("repository: %s: %w", aksi, err)
 	}
 	return n, nil
 }
 
-// tulisPolicy - lihat kepala berkas; dipanggil TulisSubmit sesudah posisi berhasil diubah. p.NomorPolis diisi.
-func (r *SubmitOracle) tulisPolicy(ctx context.Context, tx *db.Tx, idPega string, p *models.TulisanPolicy) error {
+// tulisPolicy - lihat kepala berkas; dipanggil TulisSubmit sesudah posisi berhasil diubah. p.NomorPolis diisi. IDPEGA tulisan =
+// case id polos, pembacaan dua bentuk (keputusan work owner 11-10-2026, idpegaproduksi.go).
+func (r *SubmitOracle) tulisPolicy(ctx context.Context, tx *db.Tx, caseID string, p *models.TulisanPolicy) error {
 	t, err := r.tabelPolicy()
 	if err != nil {
 		return err
 	}
-	noPolis, prod, baru, err := r.nomorPolis(ctx, tx, t.jp, idPega, *p)
+	idPega, awalan := DuaBentukIDPega(caseID)
+	noPolis, prod, baru, err := r.nomorPolis(ctx, tx, t.jp, idPega, awalan, *p)
 	if err != nil {
 		return err
 	}
@@ -276,7 +282,7 @@ func (r *SubmitOracle) tulisPolicy(ctx context.Context, tx *db.Tx, idPega string
 			return err
 		}
 	}
-	if _, err := jalankan(ctx, tx, sqlHapusCedingProduksi(t.ceding), "hapus "+TabelCedingProduksi, idPega); err != nil {
+	if _, err := jalankan(ctx, tx, sqlHapusCedingProduksi(t.ceding), "hapus "+TabelCedingProduksi, idPega, awalan); err != nil {
 		return err
 	}
 	sudah := map[string]bool{}
@@ -287,7 +293,7 @@ func (r *SubmitOracle) tulisPolicy(ctx context.Context, tx *db.Tx, idPega string
 		}
 		sudah[kunci] = true
 		if _, err := jalankan(ctx, tx, sqlSisipCedingProduksi(t.ceding, t.jp), TabelCedingProduksi, idPega, noPolis,
-			k(c.CedingID), k(c.CedingName), ikatDesimal(c.Share), idPega, noPolis); err != nil {
+			k(c.CedingID), k(c.CedingName), ikatDesimal(c.Share), idPega, awalan, noPolis); err != nil {
 			return err
 		}
 	}
@@ -302,7 +308,7 @@ func (r *SubmitOracle) tulisPolicy(ctx context.Context, tx *db.Tx, idPega string
 			return err
 		}
 	}
-	n, err = hitung(ctx, tx, sqlAdaFacInProduction(t.prod), "CekFacin "+TabelFacInProduction, idPega)
+	n, err = hitung(ctx, tx, sqlAdaFacInProduction(t.prod), "CekFacin "+TabelFacInProduction, idPega, awalan)
 	if err != nil || n > 0 {
 		return err
 	}

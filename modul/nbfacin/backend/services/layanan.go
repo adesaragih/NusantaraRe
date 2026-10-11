@@ -57,6 +57,11 @@ func DariDasar(d *inti.Dasar) *Service {
 		DenganSOB(repository.NewSOBOracle(d.DB())).
 		DenganObjek(repository.NewObjekOracle(d.DB())).DenganAkumulasiCoverage(repository.NewObjekOracle(d.DB())).
 		DenganObjekAneka(repository.NewObjekOracle(d.DB())).DenganLookupAneka(repository.NewLookupAnekaOracle(d.DB())).
+		DenganObjekCargo(repository.NewObjekOracle(d.DB())).DenganMasterCargo(repository.NewMasterCargoOracle(d.DB())). // tiket 74; MaxAge / agen menunggu DDL
+		DenganUnggahCsv(repository.NewUnggahCsvOracle(d.DB()), repository.NewObjekOracle(d.DB())).                      // tiket 75
+		DenganHalamanObjek(repository.NewObjekOracle(d.DB())).                                                          // tiket 75 F3
+		DenganUnggahCsvCargo(repository.NewObjekOracle(d.DB()), repository.NewKapalMasterOracle(d.DB())).               // tiket 74 P6
+		DenganUnggahCsvAneka(repository.NewObjekOracle(d.DB())).                                                        // tiket 73 P6
 		DenganRisk(repository.NewRiskOracle(d.DB())).
 		DenganRW(repository.NewRWOracle(d.DB())).DenganCsvObjek(repository.NewCsvObjekOracle(d.DB())).
 		DenganOccupation(repository.NewOccupationOracle(d.DB())).
@@ -105,6 +110,21 @@ type Service struct {
 	objek repository.PenyimpanObjek
 	// objekAneka - tab Object keluarga Aneka (tiket 73 P1); nil = tanpa basis data (503).
 	objekAneka repository.PenyimpanObjekAneka
+	// tiket 74 - tab Object + Coverage MARINE CARGO; masterCargo menunggu nama tabel DEV (nil = belum terpasang).
+	objekCargo  repository.PenyimpanObjekCargo
+	masterCargo PembacaMasterCargo
+	// tiket 75 - unggah CSV objek tanpa batas: pekerjaan + penampung (migrasi 257), penambah objek kelompok berikutnya; latar =
+	// pelaksana pekerjaan latar (nil = goroutine; uji: sinkron).
+	unggahCsv     repository.PenyimpanUnggahCsv
+	penambahObjek repository.PenambahObjek
+	// penulisCargoCsv / kapalMaster - tiket 74 P6: unggah CSV Marine Cargo (nil = tanpa basis data).
+	penulisCargoCsv repository.PenulisCargoCsv
+	kapalMaster     repository.PenyimpanKapalMaster
+	// penulisAnekaCsv - tiket 73 P6: unggah CSV Aneka / Marine Hull (nil = tanpa basis data).
+	penulisAnekaCsv repository.PenulisAnekaCsv
+	// halamanObjek - tiket 75 F3: tab Object per halaman + simpan perubahan saja (nil = tanpa basis data).
+	halamanObjek repository.PenyimpanHalamanObjek
+	latar        func(func())
 	// lookupAneka - pilihan kapal / tipe kendaraan form objek Aneka (tiket 73 P1); nil = 503.
 	lookupAneka repository.PembacaLookupAneka
 	// akumulasiCoverage - PUT …/akumulasi tahap uw (tiket 60); nil = 503.

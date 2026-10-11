@@ -6,6 +6,7 @@ package handlers
 //	GET    /api/nbfacin/kasus/{caseId}/lampiran/berkas?kategori=    berkas satu kategori
 //	POST   /api/nbfacin/kasus/{caseId}/lampiran/berkas              multipart (berkas, kategori) -> 201 {id}
 //	GET    /api/nbfacin/kasus/{caseId}/lampiran/berkas/{id}/isi     isi berkas (proksi), attachment + nosniff
+//	GET    /api/nbfacin/kasus/{caseId}/lampiran/berkas/{id}/office  View Office Online -> {url} (URL bertanda tangan https)
 //	POST   /api/nbfacin/kasus/{caseId}/lampiran/berkas/{id}/ulangi  antre ulang unggahan -> 204
 //	DELETE /api/nbfacin/kasus/{caseId}/lampiran/berkas/{id}         hapus FISIK (K-A) -> 204
 
@@ -31,6 +32,7 @@ func daftarkanRuteLampiran(mux *http.ServeMux, svc *services.Service, stubPelaku
 	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/lampiran/berkas", daftarBerkasLampiran(svc, stubPelaku))
 	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/lampiran/berkas", unggahLampiran(svc, stubPelaku))
 	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/lampiran/berkas/{id}/isi", unduhLampiran(svc, stubPelaku))
+	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/lampiran/berkas/{id}/office", officeLampiran(svc, stubPelaku))
 	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/lampiran/berkas/{id}/ulangi", ulangiLampiran(svc, stubPelaku))
 	mux.HandleFunc("DELETE /api/nbfacin/kasus/{caseId}/lampiran/berkas/{id}", hapusLampiran(svc, stubPelaku))
 }
@@ -66,7 +68,8 @@ func tulisGalatLampiran(w http.ResponseWriter, err error) {
 	case errors.Is(err, services.ErrLampiranTidakAda):
 		galat.Tulis(w, http.StatusNotFound, err.Error())
 	case errors.Is(err, services.ErrLampiranBelumTersimpan), errors.Is(err, services.ErrLampiranSudahTersimpan),
-		errors.Is(err, services.ErrLampiranTanpaBerkas), errors.Is(err, services.ErrBerkasSumberLampiranHilang):
+		errors.Is(err, services.ErrLampiranTanpaBerkas), errors.Is(err, services.ErrBerkasSumberLampiranHilang),
+		errors.Is(err, services.ErrLampiranOfficeTanpaStorage):
 		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, services.ErrKategoriLampiranTidakDikenal):
 		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
@@ -142,6 +145,21 @@ func unggahLampiran(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		_ = json.NewEncoder(w).Encode(struct {
 			ID string `json:"id"`
 		}{ID: id})
+	}
+}
+
+// officeLampiran - GET …/office: 200 {url}. ⛔ URL tidak ditulis ke log; Cache-Control no-store (URL bertanda tangan).
+func officeLampiran(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		u, err := svc.TautanOfficeLampiran(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("caseId"), r.PathValue("id"))
+		if err != nil {
+			tulisGalatLampiran(w, err)
+			return
+		}
+		w.Header().Set("Cache-Control", "no-store")
+		galat.TulisJSON(w, struct {
+			URL string `json:"url"`
+		}{u})
 	}
 }
 

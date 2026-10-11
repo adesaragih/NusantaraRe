@@ -273,7 +273,7 @@ var lebarCoverageAneka = []struct {
 }{
 	{"coverage", func(c models.CoverageAneka) string { return c.Coverage }, 50},
 	{"oldId", func(c models.CoverageAneka) string { return c.OldID }, 50},
-	{"coverageNote", func(c models.CoverageAneka) string { return c.CoverageNote }, 500},
+	{"coverageNote", func(c models.CoverageAneka) string { return c.CoverageNote }, 4000}, // migrasi 251
 	{"calculateMethodFacIn", func(c models.CoverageAneka) string { return c.CalculateMethodFacIn }, 50},
 	{"calculateMethod", func(c models.CoverageAneka) string { return c.CalculateMethod }, 50},
 	{"day", func(c models.CoverageAneka) string { return c.Day }, 50},
@@ -397,6 +397,9 @@ func (s *Service) GantiObjekAneka(ctx context.Context, pelaku inti.Pelaku, id st
 	}
 	if !idKasusSah(id) {
 		return nil, ErrKasusTidakAda
+	}
+	if err := s.cekKunciUnggah(ctx, id); err != nil { // tiket 73 P6: unggah CSV Aneka berjalan (K75-2)
+		return nil, err
 	}
 	if err := s.periksaMataUangAneka(ctx, lokasi); err != nil {
 		return nil, err

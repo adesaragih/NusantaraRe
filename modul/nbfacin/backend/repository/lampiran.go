@@ -78,7 +78,7 @@ func sqlKategoriLampiran(t string) string {
 }
 
 func sqlJumlahLampiran(t string) string {
-	return "SELECT KATEGORI_2, COUNT(*) FROM " + t + " WHERE IDPEGA = :1 AND KATEGORI_2 IS NOT NULL GROUP BY KATEGORI_2"
+	return "SELECT KATEGORI_2, COUNT(*) FROM " + t + " WHERE IDPEGA IN (:1, :2) AND KATEGORI_2 IS NOT NULL GROUP BY KATEGORI_2" // IDPEGA dua bentuk (idpegaproduksi.go)
 }
 
 // sqlDaftarLampiran - GetAllDocument + keberadaan objek (subkueri, bukan JOIN) + efek unggah TERAKHIR per dokumen.
@@ -94,7 +94,7 @@ func sqlDaftarLampiran(dok, obj, ob string, satu bool) string {
 	       (SELECT MAX(o.STATUS) KEEP (DENSE_RANK LAST ORDER BY o.DIBUAT, o.ID) FROM %s o
 	         WHERE o.MODUL = :1 AND o.JENIS_EFEK = :2 AND o.RUJUKAN = a.ID)
 	  FROM %s a
-	 WHERE %s AND a.IDPEGA = :4
+	 WHERE %s AND a.IDPEGA IN (:4, :5)
 	 ORDER BY a.ID
 	 FETCH FIRST %d ROWS ONLY`, obj, ob, dok, saring, batasBarisDokumenPolis)
 }
@@ -115,7 +115,7 @@ func sqlSisipLampiran(dok string) string {
 }
 
 func sqlHapusLampiran(dok string) string {
-	return "DELETE FROM " + dok + " WHERE ID = :1 AND IDPEGA = :2"
+	return "DELETE FROM " + dok + " WHERE ID = :1 AND IDPEGA IN (:2, :3)"
 }
 
 func sqlLinkStorage(obj string) string {
@@ -145,11 +145,14 @@ func sqlTokenStorageBerlaku(t string) string {
 		" WHERE APPNAME = :2 AND INPUTDATE > :3 ORDER BY INPUTDATE DESC FETCH FIRST 1 ROWS ONLY"
 }
 
-// sqlPungutEfekRujukan - pungutan outbox bersama + `AND RUJUKAN = :4` (efek MILIK aksi pemakai itu saja).
+// sqlPungutEfekRujukan - pungutan outbox bersama + `AND RUJUKAN = :4` (efek MILIK aksi pemakai itu saja). ⛔ Batasan Oracle:
+// `FETCH FIRST` tidak boleh bersama `FOR UPDATE` (ORA-02014, bug DEV 10-10-2026, K67-8) - kandidat lewat subkueri ROWNUM, kunci
+// di tabel dasar; bentuk yang sama dengan outbox.sqlPungutEfek (keputusan work owner 10-10-2026, cara 1).
 func sqlPungutEfekRujukan(t string) string {
 	return "SELECT ID, LINI, MODUL, JENIS_EFEK, RUJUKAN, MUATAN, PERCOBAAN FROM " + t +
+		" WHERE ID = (SELECT ID FROM (SELECT ID FROM " + t +
 		" WHERE STATUS = :1 AND JADWAL_BERIKUT <= :2 AND MODUL = :3 AND RUJUKAN = :4" +
-		" ORDER BY JADWAL_BERIKUT ASC FETCH FIRST 1 ROWS ONLY FOR UPDATE SKIP LOCKED"
+		" ORDER BY JADWAL_BERIKUT ASC) WHERE ROWNUM = 1) FOR UPDATE SKIP LOCKED"
 }
 
 func (r *LampiranOracle) tabel(nama ...string) ([]string, error) {
@@ -201,7 +204,8 @@ func (r *LampiranOracle) JumlahLampiran(ctx context.Context, idPega string) (map
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.QueryContext(ctx, sqlJumlahLampiran(t[0]), idPega)
+	polos, awalan := DuaBentukIDPega(idPega)
+	rows, err := r.db.QueryContext(ctx, sqlJumlahLampiran(t[0]), polos, awalan)
 	if err != nil {
 		return nil, fmt.Errorf("repository: menghitung %s: %w", TabelDokumenPolis, err)
 	}
@@ -223,7 +227,8 @@ func (r *LampiranOracle) baca(ctx context.Context, idPega, kunci, modul, jenis s
 	if err != nil {
 		return nil, err
 	}
-	rows, err := r.db.QueryContext(ctx, sqlDaftarLampiran(t[0], t[1], t[2], satu), modul, jenis, kunci, idPega)
+	polos, awalan := DuaBentukIDPega(idPega)
+	rows, err := r.db.QueryContext(ctx, sqlDaftarLampiran(t[0], t[1], t[2], satu), modul, jenis, kunci, polos, awalan)
 	if err != nil {
 		return nil, fmt.Errorf("repository: membaca %s: %w", TabelDokumenPolis, err)
 	}
@@ -325,7 +330,8 @@ func (r *LampiranOracle) HapusLampiran(ctx context.Context, tx *db.Tx, idPega, i
 	if err != nil {
 		return err
 	}
-	hasil, err := tx.ExecContext(ctx, sqlHapusLampiran(t[0]), id, idPega)
+	polos, awalan := DuaBentukIDPega(idPega)
+	hasil, err := tx.ExecContext(ctx, sqlHapusLampiran(t[0]), id, polos, awalan)
 	if err != nil {
 		return fmt.Errorf("repository: menghapus dokumen %s: %w", id, err)
 	}

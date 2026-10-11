@@ -260,3 +260,17 @@ type RWCsv struct {
 type MataUangCsv struct {
 	ID, OldID, Currency string
 }
+
+// HalamanObjek - satu halaman tab Object FIRE (tiket 75 F3): Total lokasi yang cocok dengan pencarian; Lokasi dan IDLokasi
+// (T_LOCATIONLIST.ID) sejajar, urut SEQ_NO.
+type HalamanObjek struct {
+	Total    int
+	Lokasi   []ObjekFire
+	IDLokasi []string
+}
+
+// LokasiUbah - lokasi tab Object yang diubah (PATCH …/objek, tiket 75 F3): ID = T_LOCATIONLIST.ID dari GET …/objek/halaman.
+type LokasiUbah struct {
+	ID    string
+	Objek ObjekFire
+}

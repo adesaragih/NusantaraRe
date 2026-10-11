@@ -19,6 +19,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"nusantarare/inti/backend/db"
@@ -39,6 +40,19 @@ type tulisObjek struct {
 	t   tabelObjek
 	p   penulisBaris
 	uid func() (string, error)
+	// awal - SEQ_NO lokasi = awal + urutan (tiket 75: kelompok berikutnya unggah CSV menambah sesudah lokasi yang sudah ada); 0 =
+	// jalur lama.
+	awal int
+	// seq - bila tidak nil: SEQ_NO lokasi ke-i = seq[i], awal diabaikan (tiket 75 F3: lokasi diubah ditulis ulang di tempatnya).
+	seq []int
+}
+
+// seqNo - SEQ_NO lokasi ke-i (0..).
+func (w *tulisObjek) seqNo(i int) int {
+	if w.seq != nil {
+		return w.seq[i]
+	}
+	return w.awal + i + 1
 }
 
 // penghitungID - lintasan hitung: jumlah ID per sequence (urutan kemunculan pertama dicatat); tidak menulis apa pun.
@@ -114,15 +128,89 @@ func kolomArray(baris [][]any) []any {
 	return kolom
 }
 
+// kolomArrayBertipe - kolomArray dengan SATU tipe Go per kolom (bug DEV 10-10-2026: Save Spreading Aneka ORA-01722 di
+// T_SPREADINGLIST). Sebab `[terverifikasi: go-ora v2.8.19]`: INSERT array-bind (command.go Stmt._exec, cabang bulkExec)
+// menyandi tiap elemen dengan SATU ParameterInfo yang dipakai ulang - encodeValue memanggil par.init() (parameter_encode.go
+// L516: CharsetID / CharsetForm / ContFlag = 0) lalu setDataType menurut tipe Go elemen itu; nil -> NCHAR TANPA charset
+// (L16-18), string -> NCHAR + charset server (L98-102). DataType kolom = elemen non-kosong terakhir, sedangkan CharsetID /
+// CharsetForm yang dikirim di kepala bind (parameter.go write L373-374) = milik elemen TERAKHIR. Kolom teks yang baris
+// terakhirnya NULL dan baris sebelumnya berisi terkirim sebagai NCHAR ber-charset 0; dampaknya di server (ORA-01722 di
+// TO_NUMBER angkaMasuk) `[dugaan]` - tidak dapat dibuktikan dari kode klien.
+// Perbaikan: kolom teks yang memuat NULL diikat sql.NullString di SETIAP baris (NULL = Valid false; setDataType cabang
+// tyNullString = cabang string L98-102, nilai lewat driver.Valuer) - satu tipe Go per kolom, kepala bind sama di posisi mana
+// pun; kolom tanpa NULL apa adanya. Kolom bercampur tipe, atau tipe bukan teks yang bercampur NULL, = galat (tidak ditebak).
+// Dipakai jalur Aneka (sisipAnekaBerkelompok) dan jalur FIRE (sisipBerkelompok - pencegahan, keputusan work owner 10-10-2026,
+// pengecualian sadar dari "jangan ubah yang sudah berhasil"; isi data yang disimpan tidak berubah).
+func kolomArrayBertipe(baris [][]any) ([]any, error) {
+	kolom := kolomArray(baris)
+	for c, k := range kolom {
+		v := k.([]any)
+		var tipe reflect.Type
+		adaNil := false
+		for _, x := range v {
+			if x == nil {
+				adaNil = true
+				continue
+			}
+			if t := reflect.TypeOf(x); tipe == nil {
+				tipe = t
+			} else if t != tipe {
+				return nil, fmt.Errorf("repository: kolom %d array-bind bercampur tipe %v dan %v", c+1, tipe, t)
+			}
+		}
+		if !adaNil {
+			continue
+		}
+		if tipe != nil && tipe != tipeTeks {
+			return nil, fmt.Errorf("repository: kolom %d array-bind bertipe %v bercampur NULL", c+1, tipe)
+		}
+		for r, x := range v {
+			s, ok := x.(string)
+			v[r] = sql.NullString{String: s, Valid: ok}
+		}
+	}
+	return kolom, nil
+}
+
+var tipeTeks = reflect.TypeOf("")
+
 // sisipBerkelompok - lihat kepala berkas.
 func sisipBerkelompok(ctx context.Context, e eksekutorKelompok, t tabelObjek, id string, baris []models.ObjekFire,
 	uid func() (string, error)) error {
+	return sisipBerkelompokMulai(ctx, e, t, id, baris, uid, 0)
+}
+
+// sisipBerkelompokMulai - sisipBerkelompok dengan SEQ_NO lokasi mulai awal+1 (tiket 75).
+func sisipBerkelompokMulai(ctx context.Context, e eksekutorKelompok, t tabelObjek, id string, baris []models.ObjekFire,
+	uid func() (string, error), awal int) error {
+	return sisipBerkelompokPosisi(ctx, e, t, id, baris, uid, awal, nil)
+}
+
+// sisipBerkelompokPosisi - sisipBerkelompok dengan SEQ_NO lokasi awal+1.. atau, bila seq tidak nil, seq[i] (tiket 75 F3).
+func sisipBerkelompokPosisi(ctx context.Context, e eksekutorKelompok, t tabelObjek, id string, baris []models.ObjekFire,
+	uid func() (string, error), awal int, seq []int) error {
+	if seq != nil && len(seq) != len(baris) {
+		return fmt.Errorf("repository: %d SEQ_NO untuk %d lokasi", len(seq), len(baris))
+	}
 	hitung := &penghitungID{n: map[string]int{}}
 	nolUID := func() (string, error) { return "", nil }
 	if err := (&tulisObjek{t: t, p: hitung, uid: nolUID}).sisipObjek(ctx, id, baris); err != nil {
 		return err
 	}
-	// Sequence ber-jumlah sama -> satu kueri (urutan kemunculan pertama dipertahankan).
+	kumpulan, err := ambilIDBerkelompok(ctx, e, hitung)
+	if err != nil {
+		return err
+	}
+	kel := &penulisKelompok{id: kumpulan, indeks: map[string]*kelompokSisip{}}
+	if err := (&tulisObjek{t: t, p: kel, uid: uid, awal: awal, seq: seq}).sisipObjek(ctx, id, baris); err != nil {
+		return err
+	}
+	return jalankanPenulisKelompok(ctx, e, kel)
+}
+
+// ambilIDBerkelompok - ID tiap sequence hasil lintasan hitung; sequence ber-jumlah sama -> satu kueri (urutan kemunculan pertama
+// dipertahankan).
+func ambilIDBerkelompok(ctx context.Context, e eksekutorKelompok, hitung *penghitungID) (map[string][]string, error) {
 	kumpulan := map[string][]string{}
 	var jumlah []int
 	perJumlah := map[int][]string{}
@@ -136,27 +224,54 @@ func sisipBerkelompok(ctx context.Context, e eksekutorKelompok, t tabelObjek, id
 	for _, n := range jumlah {
 		ids, err := e.nomorBerkelompok(ctx, perJumlah[n], n)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		for i, s := range perJumlah[n] {
 			kumpulan[s] = ids[i]
 		}
 	}
-	kel := &penulisKelompok{id: kumpulan, indeks: map[string]*kelompokSisip{}}
-	if err := (&tulisObjek{t: t, p: kel, uid: uid}).sisipObjek(ctx, id, baris); err != nil {
-		return err
-	}
+	return kumpulan, nil
+}
+
+// jalankanPenulisKelompok - semua ID terpakai (lintasan hitung = tulis), lalu setiap kelompok dijalankan urut kemunculan (induk
+// sebelum anak).
+func jalankanPenulisKelompok(ctx context.Context, e eksekutorKelompok, kel *penulisKelompok) error {
 	for s, sisa := range kel.id {
 		if len(sisa) != 0 {
 			return fmt.Errorf("repository: %d ID %s tidak terpakai (lintasan hitung dan tulis berbeda)", len(sisa), s)
 		}
 	}
 	for _, k := range kel.kelompok {
-		for awal := 0; awal < len(k.baris); awal += ukuranKelompok {
-			akhir := min(awal+ukuranKelompok, len(k.baris))
-			if err := e.sisipArray(ctx, k.q, k.tabel, kolomArray(k.baris[awal:akhir]), akhir-awal); err != nil {
-				return err
+		if err := jalankanKelompok(ctx, e, k, false); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// jalankanKelompok - satu kelompok SQL (bug DEV 10-10-2026 ORA-01722): bind diperiksa dulu (periksaBindBaris), lalu array-bind
+// potongan ukuranKelompok (kolomArrayBertipe) atau - perBaris - satu eksekusi per baris dengan nilai apa adanya (n == 1 ->
+// argEksekusi bind skalar, sama dengan jalur lama per baris). Galat Oracle dibungkus tabel, rentang baris, dan jumlah bind.
+func jalankanKelompok(ctx context.Context, e eksekutorKelompok, k *kelompokSisip, perBaris bool) error {
+	ukuran, cara := ukuranKelompok, "array-bind"
+	if perBaris {
+		ukuran, cara = 1, "per baris"
+	}
+	for awal := 0; awal < len(k.baris); awal += ukuran {
+		akhir := min(awal+ukuran, len(k.baris))
+		potong := k.baris[awal:akhir]
+		if err := periksaBindBaris(k.q, k.tabel, potong, awal); err != nil {
+			return err
+		}
+		kolom := kolomArray(potong)
+		if !perBaris {
+			var err error
+			if kolom, err = kolomArrayBertipe(potong); err != nil {
+				return fmt.Errorf("%w (%s)", err, k.tabel)
 			}
+		}
+		if err := e.sisipArray(ctx, k.q, k.tabel, kolom, akhir-awal); err != nil {
+			return fmt.Errorf("%w (%s baris %d-%d dari %d, %d bind, %s)", err, k.tabel, awal+1, akhir, len(k.baris), len(potong[0]), cara)
 		}
 	}
 	return nil
@@ -245,6 +360,33 @@ func (o oracleKelompok) sisipArray(ctx context.Context, q, tabel string, kolom [
 		return fmt.Errorf("repository: %s: %d baris tersisip, seharusnya %d", tabel, m, n)
 	}
 	return nil
+}
+
+// PenambahObjek - tiket 75: lokasi objek DITAMBAH ke case (tanpa menghapus yang ada) - kelompok kedua dst. unggah CSV objek.
+type PenambahObjek interface {
+	// TambahObjek - sentuh case (kunci + 404), pastikan General, sisip baris dengan SEQ_NO lokasi mulai awal+1.
+	TambahObjek(ctx context.Context, tx *db.Tx, id string, baris []models.ObjekFire, awal int) error
+}
+
+// TambahObjek - lihat PenambahObjek.
+func (r *ObjekOracle) TambahObjek(ctx context.Context, tx *db.Tx, id string, baris []models.ObjekFire, awal int) error {
+	t, err := r.tabel()
+	if err != nil {
+		return err
+	}
+	hasil, err := jalankan(ctx, tx, sqlSentuhCase(t.work), "menyentuh "+TabelWorkPolis, id, LiniFacIn)
+	if err != nil {
+		return err
+	}
+	if n, err := hasil.RowsAffected(); err != nil {
+		return err
+	} else if n == 0 {
+		return ErrKasusTidakAda
+	}
+	if _, err := jalankan(ctx, tx, sqlPastikanGeneral(t.general), "memastikan "+TabelGeneralPolis, id, id); err != nil {
+		return err
+	}
+	return sisipBerkelompokMulai(ctx, oracleKelompok{d: r.db, tx: tx}, t, id, baris, uidAcak, awal)
 }
 
 // sisipObjekBerkelompok - GantiObjek: jalur berkelompok atas transaksi tx.

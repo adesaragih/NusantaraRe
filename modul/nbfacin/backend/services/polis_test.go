@@ -36,7 +36,7 @@ func (p *polisTiruan) RingkasanPolis(_ context.Context, noPolis, prodKe string) 
 // TestJenisCariPolis - GetListViewPolicy_act blok 8: sama dengan tiket 70 kecuali opsi 5 / 6 awalan dan opsi 7 UPPER awalan;
 // langkah 6 kutip dibuang.
 func TestJenisCariPolis(t *testing.T) {
-	a := repository.AwalanIDPega
+	a := "" // IDPEGA polos dari services; dua bentuk dicocokkan repository (bindFollowing)
 	for nama, c := range map[string]struct{ opsi, filter, jenis, nilai string }{
 		"nopolis":        {"2", "RNM-F1", "nopolis", "RNM-F1"},
 		"id NB":          {"1", "NB-12", "idpega", a + "NB-12"},

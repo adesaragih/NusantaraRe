@@ -67,6 +67,10 @@ type kasusKabel struct {
 	Lini         liniKabel `json:"lini"`
 	// TampilanAneka - tiket 73 P1: kontainer form objek Aneka + sakelar (services.TampilanAneka).
 	TampilanAneka tampilanAnekaKabel `json:"tampilanAneka"`
+	// JumlahLokasi - tiket 75 F3: jumlah lokasi objek FIRE (layar memilih tab Object per halaman); null bila tak terbaca.
+	JumlahLokasi *int `json:"jumlahLokasi"`
+	// JenisCsv - tiket 73 P6: template CSV objek ('fire' | 'cargo' | 'aneka' | 'marinehull' | 'cpm' | ''), services.LiniKasus.
+	JenisCsv string `json:"jenisCsv"`
 }
 
 // tampilanAnekaKabel - services.TampilanAneka; kontainer selalu larik ("C1".."C9", [] di luar gerbang tab Object Aneka).
@@ -95,6 +99,7 @@ type liniKabel struct {
 	Liability       bool `json:"liability"`
 	Bonding         bool `json:"bonding"`
 	Golf            bool `json:"golf"`
+	MarineCargo     bool `json:"marineCargo"` // tiket 74 P0
 }
 
 // denganAksesTab - aksesLossRecord / aksesKorespondensi dari satu pembacaan lunak JOB_POSITION; bolehUbah / alasanBacaSaja
@@ -111,7 +116,7 @@ func denganAksesTab(out kasusKabel, svc *services.Service, r *http.Request, stub
 	l := svc.LiniKasus(r.Context(), r.PathValue("caseId"))
 	out.BusinessType = l.BusinessType
 	out.Lini = liniKabel{Fire: l.Fire, Aneka: l.Aneka, AnekaNotBonding: l.AnekaNotBonding, Liability: l.Liability, Bonding: l.Bonding,
-		Golf: l.Golf}
+		Golf: l.Golf, MarineCargo: l.MarineCargo}
 	a := l.TampilanAneka
 	if a.Kontainer == nil {
 		a.Kontainer = []string{}
@@ -120,6 +125,8 @@ func denganAksesTab(out kasusKabel, svc *services.Service, r *http.Request, stub
 		TanamanHasil: a.TanamanHasil, Engineering: a.Engineering, Bonding: a.Bonding, Briguna: a.Briguna, TopRisk: a.TopRisk,
 		SectionLol: a.SectionLol, JumlahSatuan: a.JumlahSatuan,
 		CurrencyCoverage: a.CurrencyCoverage, MBD: a.MBD}
+	out.JumlahLokasi = svc.JumlahLokasi(r.Context(), r.PathValue("caseId"))
+	out.JenisCsv = l.JenisCsv
 	return out
 }
 

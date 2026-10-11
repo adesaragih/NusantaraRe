@@ -58,18 +58,18 @@ func (r *PolisOracle) tabel() (tabelPolis, error) {
 
 // sqlSistemBaru - ekspresi: case ber-IDPEGA `kolom` ada di T_WORK_POLIS LINI FAC (bind :n = LINI).
 func sqlSistemBaru(work, kolom, bind string) string {
-	return "(SELECT COUNT(*) FROM " + work + " w WHERE w.ID = SUBSTR(" + kolom + ", 19) AND w.LINI = " + bind + ")"
+	return "(SELECT COUNT(*) FROM " + work + " w WHERE w.ID = " + sqlCaseIDDariIDPega(kolom) + " AND w.LINI = " + bind + ")"
 }
 
 // sqlVersiPolis - GetProdKeOldData_SQL + IDPEGA (label versi = substring(IDPEGA, 18) Java = SUBSTR(IDPEGA, 19)). :1 LINI, :2 NOPOLIS.
 func sqlVersiPolis(jp, work string) string {
-	return "SELECT j.PRODKE, SUBSTR(j.IDPEGA, 19), " + sqlSistemBaru(work, "j.IDPEGA", ":1") + " FROM " + jp +
+	return "SELECT j.PRODKE, " + sqlCaseIDDariIDPega("j.IDPEGA") + ", " + sqlSistemBaru(work, "j.IDPEGA", ":1") + " FROM " + jp +
 		" j WHERE j.NOPOLIS = :2 ORDER BY j.TGL_INPUT DESC, j.PRODKE DESC"
 }
 
 // sqlVersiProduksi - polis tanpa baris JSON_POLIS: satu versi "0" (IDPEGA terkecil ber-NOENDORS kosong). :1 LINI, :2 NOPOLIS.
 func sqlVersiProduksi(prod, work string) string {
-	return "SELECT SUBSTR(x.IDPEGA, 19), " + sqlSistemBaru(work, "x.IDPEGA", ":1") + " FROM (SELECT MIN(p.IDPEGA) AS IDPEGA FROM " +
+	return "SELECT " + sqlCaseIDDariIDPega("x.IDPEGA") + ", " + sqlSistemBaru(work, "x.IDPEGA", ":1") + " FROM (SELECT MIN(p.IDPEGA) AS IDPEGA FROM " +
 		prod + " p WHERE p.NOPOLIS = :2 AND p.NOENDORS IS NULL) x WHERE x.IDPEGA IS NOT NULL"
 }
 
@@ -89,18 +89,18 @@ func sqlIDPegaProduksi(prod string) string {
 // kolomBarisPolis - kepala (13) + baris (8 teks/tanggal) + angka (5); RiSlipCeding = BrowseDataViewPolis1 (RISLIPCEDING terakhir
 // menurut SPREAD_DATE se-NOPOLIS).
 func sqlBarisPolis(prod string) string {
-	return "SELECT SUBSTR(p.IDPEGA, 19), p.NOPOLIS, p.NOENDORS, p.INSUREDNAME, p.QQNAME, p.SOB, p.CEDINGCO, " +
+	return "SELECT " + sqlCaseIDDariIDPega("p.IDPEGA") + ", p.NOPOLIS, p.NOENDORS, p.INSUREDNAME, p.QQNAME, p.SOB, p.CEDINGCO, " +
 		"TO_CHAR(p.BEGINDATE, 'DD-MM-YYYY'), TO_CHAR(p.ENDDATE, 'DD-MM-YYYY'), p.POLICYTYPE, " +
 		"(SELECT MAX(B.RISLIPCEDING) KEEP (DENSE_RANK LAST ORDER BY B.SPREAD_DATE) FROM " + prod + " B WHERE B.NOPOLIS = :1), " +
 		"p.GROUPNAME, p.STATUS_BUSINESS, p.NO_MASTER_POLIS, p.OBJECTNO, p.RISK_LOCATION, p.OBJECT_ITEM, p.COVERAGENOTE, " +
 		"p.ACCUMULATIONCODE, p.CURR_ID, p.RATE, p.JN_REAS, " + angkaKeluar("p.TSI100_MENJADI") + ", " + angkaKeluar("p.TSI_MENJADI") +
 		", " + angkaKeluar("p.PREMI_MENJADI") + ", " + angkaKeluar("p.PERCENT_SHARE_SPREADED") + ", " + angkaKeluar("p.RICOMM") +
-		" FROM " + prod + " p WHERE p.IDPEGA = :2 AND p.NOPOLIS = :3 ORDER BY p.OBJECTNO, p.IDX_OBJECT_ITEM, p.COVERAGENOTE, p.JN_REAS"
+		" FROM " + prod + " p WHERE p.IDPEGA IN (:2, :3) AND p.NOPOLIS = :4 ORDER BY p.OBJECTNO, p.IDX_OBJECT_ITEM, p.COVERAGENOTE, p.JN_REAS"
 }
 
 // sqlCedingPolis - CEDING_FACINPRODUCTION versi itu, urut kode / nama `[keputusan agent]` (tanpa kolom urutan).
 func sqlCedingPolis(ceding string) string {
-	return "SELECT CEDINGNAME, " + angkaKeluar("PCT_SHARE") + " FROM " + ceding + " WHERE IDPEGA = :1 ORDER BY CEDINGID, CEDINGNAME"
+	return "SELECT CEDINGNAME, " + angkaKeluar("PCT_SHARE") + " FROM " + ceding + " WHERE IDPEGA IN (:1, :2) ORDER BY CEDINGID, CEDINGNAME"
 }
 
 // ---- baca ----------------------------------------------------------------------------------------------------------
@@ -207,7 +207,9 @@ func (r *PolisOracle) RingkasanPolis(ctx context.Context, noPolis, prodKe string
 	if err := db.PeriksaSQL(q); err != nil {
 		return h, err
 	}
-	rows, err := r.db.QueryContext(ctx, q, noPolis, idPega, noPolis)
+	// IDPEGA versi dicocokkan dua bentuk: JSON_POLIS lama berawalan yang dipakai ulang bersama ceding / produksi polos (idpegaproduksi.go).
+	polos, awalan := DuaBentukIDPega(idPega)
+	rows, err := r.db.QueryContext(ctx, q, noPolis, polos, awalan, noPolis)
 	if err != nil {
 		return h, fmt.Errorf("repository: ringkasan polis: %w", err)
 	}
@@ -248,7 +250,7 @@ func (r *PolisOracle) RingkasanPolis(ctx context.Context, noPolis, prodKe string
 	if err := db.PeriksaSQL(q); err != nil {
 		return h, err
 	}
-	cr, err := r.db.QueryContext(ctx, q, idPega)
+	cr, err := r.db.QueryContext(ctx, q, polos, awalan)
 	if err != nil {
 		return h, fmt.Errorf("repository: ceding polis: %w", err)
 	}

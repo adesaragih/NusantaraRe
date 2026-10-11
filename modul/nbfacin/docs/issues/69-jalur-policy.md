@@ -423,3 +423,55 @@ Oracle nyata menunggu DEV.
   dipetakan; tanpa pembaca kasus -> "" = tanpa gerbang; case tidak ada -> 404). Migrasi UPDATE label -> kode: **TIDAK** (keputusan
   yang sama). Uji: `TestProteksiPayment` (+ kode 1 / 0 / 2), `TestPolicyTypeKasusPayment`, `TestSimpanPaymentMasterPolicy` (Save
   Payment premi 0: Individual / "0" memuat pesan, Master / "1" tidak). Mutasi 3 / 3 mati.
+
+## Catatan silang — prakondisi `.pxListSubscript>1` (11-10-2026, tiket 74 P5)
+
+`[terverifikasi]` Langkah INSERT cabang-cabang `SaveTreatyProduction_Act` (FACINPRODUCTION, Aneka / Marine) berprakondisi
+`.pxListSubscript>1` (T=2 lanjut / F=3 lewati). `[belum terverifikasi]` `SaveFacinProdFireNB_Act` (cabang FIRE tiket ini) memuat
+30 kemunculan `pxListSubscript` dengan bentuk lain (`>=1`, `==1`, `>2`…`>9`; `NB FacIn\Activity\SaveFacinProdFireNB_Act.xml`,
+`grep -o "pxListSubscript[^<]\{0,30\}" | sort | uniq -c`) — belum ditelusur apakah INSERT-nya berprakondisi yang sama.
+Port sistem baru menulis SEMUA baris spreading. **Keputusan work owner 11-10-2026
+(K74-23, `docs/issues/74-marine-cargo.md`):** tetap begitu — kode tiket ini tidak diubah.
+
+## IDPEGA = case id polos (keputusan work owner 11-10-2026, lewat sesi 9d; sesi c3)
+
+**Keputusan (PENYIMPANGAN SADAR dari pzInsKey Pega):** "semua yang masuk ke facinproduction dan json_polis, kolom idpega nya sesuai case
+id … PERBAIKI". Cakupannya diperluas dua kali: "riwayat akseptasi, FACINOFFER, dan JSON_OFFER UBAH JUGA", lalu FACINPERFORMANCE dan
+DOCUMENT_POLIS ("IYA ITU UBAH JUGA").
+
+- **Tulisan:** semua tulisan IDPEGA / ID_PEGA nbfacin memakai case id POLOS (= T_WORK_POLIS.ID, mis. "NB-151033"):
+  - `services/submit.go` `idPega()` = `repository.IDPegaProduksi`;
+  - `tulisPolicy` menerima case id;
+  - FACINPRODUCTION FIRE / Aneka / cargo lewat `dasarBarisProduksi`;
+  - FACINOFFER sudah polos sebelumnya (= pyID Pega).
+  - Tabel: JSON_POLIS, FACINPRODUCTION, CEDING_FACINPRODUCTION, HISTORYAKSEPTASIPEGA (ID_PEGA), HISTORYAKSEPTASIPRODUCTION,
+    FACINPERFORMANCE, JSON_OFFER, FACINOFFER, DOCUMENT_POLIS (jalur nbfacin `repository/lampiran.go` saja;
+    `inti/backend/dokumenpolis` tidak disentuh).
+- **Pembaca menerima DUA bentuk** (`IN (:polos, :berawalan)`, `repository/idpegaproduksi.go` `DuaBentukIDPega` /
+  `sqlCaseIDDariIDPega`), sehingga baris lama berawalan tetap terbaca:
+  - selesai Policy: cari JSON_POLIS (pakai ulang nomor polis), hapus ceding, PRODKE ceding, CekFacin (case lama tidak disisip ganda);
+  - View Policy `polis.go`: case id versi / sistem baru, baris produksi, ceding;
+  - Following `following.go`: CASEID, cari IDPEGA / EDM, polis milik case;
+  - kasus ganda (case sendiri dikecualikan dua bentuk);
+  - GetCountAccumulation (FACINPRODUCTION case sendiri dua bentuk; FACINOFFER pyID tetap);
+  - riwayat: grid ViewSuggest + syarat IsFlagAsk, NOURUT berlanjut, Banding, catatan Pega penanya;
+  - kotak masuk (`IN (w.ID, :awalan || w.ID)`);
+  - JSON_OFFER: cek sudah ada (tidak disisip ganda), ubah JSONDATA, TGL_BIND;
+  - FACINOFFER: hapus;
+  - lampiran: jumlah, daftar, ambil (isi / office / ulangi), hapus.
+- **Tanpa migrasi dan tanpa UPDATE data dari kode.** Usulan penyeragaman data lama untuk DBA (DITULIS saja, tidak wajib karena
+  pembaca sudah dua bentuk): `docs/alat/seragamkan_idpega_nbfacin.sql`, berisi hitungan sebelum / sesudah dan cek bentrok PK
+  JSON_POLIS; dibatasi case T_WORK_POLIS LINI FAC ber-ID NB-%.
+- **Sisa bentuk berawalan di kode:** hanya di sisi PEMBACA (`DuaBentukIDPega`, `sqlCaseIDDariIDPega`, argumen kedua NOURUT / TGL_BIND,
+  kotak masuk). Tidak ada lagi tulisan berawalan. Frontend tidak memakai IDPEGA. Tidak ditemukan pembaca lintas modul yang mencari
+  dokumen case NB FacIn lewat IDPEGA (`inti/backend/dokumenpolis` melayani modul lain dengan kuncinya sendiri).
+- **Uji:**
+  - `repository/idpegaproduksi_test.go`: dua bentuk dari polos / berawalan, ekspresi case id, dan sensus kebalikan bahwa 20 pembaca
+    ber-IN dua bentuk;
+  - uji teks SQL repository diperbarui;
+  - services: tulisan riwayat / Pega / binding / produksi / lampiran ber-IDPEGA polos;
+  - handlers: fixtur dokumen lama berawalan tetap tampil dan terbuka (test double meniru pencocokan dua bentuk).
+  - Mutasi 5/5 tertangkap (idPega berawalan, CekFacin satu bentuk, DuaBentuk tanpa awalan, FACINPRODUCTION berawalan, test double
+    satu bentuk).
+  - Urutan tanggal riwayat campuran polos / berawalan dijamin `ORDER BY TGL_INP DESC, NOURUT DESC` atas gabungan IN. Ini tidak dapat
+    diuji tanpa Oracle (`[dugaan]` sampai dicoba di DEV).

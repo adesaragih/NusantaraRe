@@ -33,7 +33,8 @@ func (l lookupAnekaTiruan) CariOkupasiAneka(_ context.Context, bisnis, kata stri
 func (l lookupAnekaTiruan) CariKapal(_ context.Context, kata string) ([]models.BarisKapal, error) {
 	*l.kata = kata
 	return []models.BarisKapal{{ID: "99", Nama: "UJI KAPAL", Flag: "UJI", Tahun: "2001", NRT: "1", GRT: "2", DWT: "3",
-		Klasifikasi: "K", Konstruksi: "BAJA"}}, nil
+		Klasifikasi: "K", Konstruksi: "BAJA", ShipTypeID: "ST1", ShipTypeName: "CARGO VESSEL", Register: "R1", Imo: "I1", YMake2: "2010",
+		FormerShipName: "LAMA", Rebuilt: "2015"}}, nil
 }
 
 func (l lookupAnekaTiruan) DaftarTipeKendaraan(context.Context) ([]models.BarisTipeKendaraan, error) {
@@ -46,7 +47,7 @@ func TestLookupAneka(t *testing.T) {
 	var kata string
 	svc := services.Baru(nil).DenganLookupAneka(lookupAnekaTiruan{&kata})
 	kode, isi := minta(t, svc, "GET", "/api/nbfacin/kapal?cari=uji%20kapal", "", "")
-	if kode != 200 || kata != "uji kapal" || isi != `{"baris":[{"id":"99","nama":"UJI KAPAL","flag":"UJI","tahun":"2001","nrt":"1","grt":"2","dwt":"3","klasifikasi":"K","konstruksi":"BAJA"}]}` {
+	if kode != 200 || kata != "uji kapal" || isi != `{"baris":[{"id":"99","nama":"UJI KAPAL","flag":"UJI","tahun":"2001","nrt":"1","grt":"2","dwt":"3","klasifikasi":"K","konstruksi":"BAJA","shipTypeId":"ST1","shipTypeName":"CARGO VESSEL","register":"R1","imo":"I1","yMake2":"2010","remark":"","formerShipName":"LAMA","rebuilt":"2015"}]}` {
 		t.Errorf("kapal: %d %q %s", kode, kata, isi)
 	}
 	if kode, isi := minta(t, svc, "GET", "/api/nbfacin/tipe-kendaraan", "", ""); kode != 200 || isi != `{"baris":[]}` {

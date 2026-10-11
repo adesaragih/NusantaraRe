@@ -237,6 +237,11 @@ type PenyimpanTokenStorage interface {
 // sumberTokenStorage - GET_TOKEN_STORAGE ditiru tanpa CALL (ADR-0043; `inti/backend/layanan`): token berlaku dipakai ulang
 // beserta sisa umurnya (hanya yang sisanya > margin - penyimpangan sadar kecil pola Treaty Contract Out); bila tidak ada,
 // dirakit dengan garam STORAGE_TOKEN_SALT dan disimpan berumur satu menit.
+// Bug DEV 11-10-2026 (lampiran 'gagal-permanen' "STORAGE_TOKEN_SALT kosong", keputusan work owner "tiru menu Product Name
+// Life" = `masterproductnamelife/backend/services/mpnl_storage.go` tokenStorage): garam HANYA dituntut saat merakit token baru -
+// APPNAME diperiksa lebih dulu; garam kosong dan tidak ada token bersisa > margin -> token berlaku APA PUN (`INPUTDATE > saat`,
+// seperti procedure / MPNL) dipakai; baru bila itu pun tidak ada -> ErrGaramTokenKosong. Dengan garam terisi perilaku lama
+// (margin, rakit baru) tidak berubah.
 type sumberTokenStorage struct {
 	transaksi Transaksi
 	penyimp   PenyimpanTokenStorage
@@ -245,9 +250,6 @@ type sumberTokenStorage struct {
 }
 
 func (s sumberTokenStorage) TokenBaru(ctx context.Context) (string, time.Time, error) {
-	if strings.TrimSpace(s.garam) == "" {
-		return "", time.Time{}, layanan.ErrGaramTokenKosong
-	}
 	if s.penyimp == nil || s.transaksi == nil {
 		return "", time.Time{}, db.ErrTanpaOracle
 	}
@@ -271,6 +273,17 @@ func (s sumberTokenStorage) TokenBaru(ctx context.Context) (string, time.Time, e
 			return err
 		}
 		if lama != "" {
+			tok, sampai = lama, saat.Add(sisa)
+			return nil
+		}
+		if strings.TrimSpace(s.garam) == "" {
+			// tanpa garam: token berlaku apa pun (sisa > 0), seperti MPNL / procedure GET_TOKEN_STORAGE.
+			if lama, sisa, err = s.penyimp.TokenStorageBerlaku(ctx, tx, app, saat, 0); err != nil {
+				return err
+			}
+			if lama == "" {
+				return layanan.ErrGaramTokenKosong
+			}
 			tok, sampai = lama, saat.Add(sisa)
 			return nil
 		}

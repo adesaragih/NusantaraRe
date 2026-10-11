@@ -625,8 +625,11 @@ func adaItemFire(k models.KasusSpreading) bool {
 // dibaca di luar tx (penyimpan objek Aneka tidak menerima tx).
 func (s *Service) bacaSpreadingRingkas(ctx context.Context, tx *db.Tx, id string) (models.KasusSpreading, error) {
 	k, err := s.spreading.BacaSpreading(ctx, tx, id)
-	if err != nil || s.objekAneka == nil || adaItemFire(k) {
+	if err != nil || adaItemFire(k) {
 		return k, err
+	}
+	if s.objekAneka == nil {
+		return s.spreadingRingkasCargo(ctx, k, id)
 	}
 	lokasi, err := s.objekAneka.BacaObjekAneka(ctx, id)
 	if errors.Is(err, repository.ErrKasusTidakAda) {
@@ -636,7 +639,7 @@ func (s *Service) bacaSpreadingRingkas(ctx context.Context, tx *db.Tx, id string
 		return k, err
 	}
 	if !adaObjekAneka(lokasi) {
-		return k, nil
+		return s.spreadingRingkasCargo(ctx, k, id)
 	}
 	kb, _ := s.kasusBisnisDari(ctx, id)
 	return kasusSpreadingAneka(k, lokasi, liniSpreadingDari(id, kb)), nil
@@ -912,6 +915,9 @@ func (s *Service) SimpanSpreadingAneka(ctx context.Context, pelaku inti.Pelaku, 
 	if s.transaksi == nil {
 		return TampilanSpreadingAneka{}, ErrSpreadingTanpaDatabase
 	}
+	if err := s.cekKunciUnggah(ctx, id); err != nil { // tiket 73 P6: Save menulis ulang pohon Aneka (K75-2)
+		return TampilanSpreadingAneka{}, err
+	}
 	var l11 *dasarLangkah11
 	var baris11 []models.BarisDeduction
 	if uw {
@@ -919,7 +925,9 @@ func (s *Service) SimpanSpreadingAneka(ctx context.Context, pelaku inti.Pelaku, 
 		if err != nil {
 			return TampilanSpreadingAneka{}, err
 		}
-		tot, adaTop := totalAneka(d.lokasi, d.kasus, d.lini)
+		// Salinan dalam: totalLokasiAneka menimpa ClaimEstimation baris (skala 20); d.lokasi sudah dihitung + dibulatkan
+		// hitungSaveSpreadingAneka dan itulah yang ditulis (bug DEV 10-10-2026 CLAIM_ESTIMATION desimal 20 / ORA-01722).
+		tot, adaTop := totalAneka(salinDalamAneka(d.lokasi), d.kasus, d.lini)
 		if pesan := periksaJenisTreaty(totalMataUang(tot, adaTop), batas); len(pesan) > 0 {
 			return TampilanSpreadingAneka{}, fmt.Errorf("%w: %s", ErrMasukanSpreading, pesan[0])
 		}

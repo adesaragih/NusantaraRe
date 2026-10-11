@@ -169,7 +169,7 @@ func TestSisipAnekaBerkelompok(t *testing.T) {
 			{OccupationID: "OK2"}}, ObjekGolf: []models.ObjekAneka{pesawat}},
 		{ObjectNo: "2"},
 	}
-	e := &eksekutorTiruan{u: &urutTiruan{n: map[string]int{}}}
+	e := &eksekutorTiruan{u: &urutTiruan{n: map[string]int{}}, seragam: true}
 	baru, ganti, err := sisipAnekaBerkelompok(context.Background(), e, ta, "K1", lokasi, uidUrut())
 	if err != nil {
 		t.Fatal(err)
@@ -281,7 +281,7 @@ func TestSisipCoverageAneka(t *testing.T) {
 	lokasi := []models.LokasiAneka{{Okupasi: []models.OkupasiAneka{{Objek: []models.ObjekAneka{
 		{ObjectName: "A", Coverages: cov}, {ObjectName: "B"}, {ObjectName: "C", Coverages: []models.CoverageAneka{}}}}},
 		ObjekGolf: []models.ObjekAneka{{ObjectName: "G", Coverages: []models.CoverageAneka{{Coverage: "CG"}}}}}}
-	e := &eksekutorTiruan{u: &urutTiruan{n: map[string]int{}}}
+	e := &eksekutorTiruan{u: &urutTiruan{n: map[string]int{}}, seragam: true}
 	baru, ganti, err := sisipAnekaBerkelompok(context.Background(), e, ta, "K1", lokasi, uidUrut())
 	if err != nil {
 		t.Fatal(err)
@@ -387,7 +387,7 @@ func TestSisipSpreadingAneka(t *testing.T) {
 	lokasi := []models.LokasiAneka{{Okupasi: []models.OkupasiAneka{{Objek: []models.ObjekAneka{
 		{Currency: "USD", Coverages: []models.CoverageAneka{{Currency: "IDR", Spreading: baris}, {Spreading: baris[:1]}}},
 		{Coverages: []models.CoverageAneka{{Spreading: baris[1:]}}}}}}}}
-	e := &eksekutorTiruan{u: &urutTiruan{n: map[string]int{}}}
+	e := &eksekutorTiruan{u: &urutTiruan{n: map[string]int{}}, seragam: true}
 	if _, _, err := sisipAnekaBerkelompok(context.Background(), e, ta, "K1", lokasi, uidUrut()); err != nil {
 		t.Fatal(err)
 	}
@@ -418,6 +418,7 @@ func TestSisipSpreadingAneka(t *testing.T) {
 			t.Errorf("spreading %d: %v", i, a)
 		}
 	}
+	// Per baris (tabelPerBarisAneka, bug DEV 10-10-2026): nilai apa adanya seperti spreading FIRE, NULL = nil.
 	if spr[0].arg[8] != "40" || spr[0].arg[7] != "UJI OR" || spr[1].arg[7] != nil || spr[1].arg[8] != nil {
 		t.Errorf("isi baris: %v / %v", spr[0].arg[6:9], spr[1].arg[6:9])
 	}

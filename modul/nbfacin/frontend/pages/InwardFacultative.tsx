@@ -38,6 +38,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { BelumTersedia, Field, Gagal, Pilih, StripTab, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
 import {
+  AMBANG_HALAMAN_OBJEK,
   ambilKasus,
   daftarMarketing,
   simpanGeneral,
@@ -58,13 +59,17 @@ import TabDeduction from '../components/TabDeduction'
 import TabPayment from '../components/TabPayment'
 import TabLossRecord from '../components/TabLossRecord'
 import TabCorrespondence from '../components/TabCorrespondence'
-import BilahCsvObjek from '../components/BilahCsvObjek'
+import BilahCsvObjek, { type JenisCsv } from '../components/BilahCsvObjek'
 import BlokLampiran from '../components/BlokLampiran'
 import BlokEmailType, { useSubmitMarketing } from '../components/BlokEmailType'
 import BacaSajaKasus, { PILIH_UBAH_AKUMULASI } from '../components/BacaSajaKasus'
 import TabScoring, { nadaKelas } from '../components/TabScoring'
 import TabObject from '../components/TabObject'
+import TabObjectHalaman from '../components/TabObjectHalaman'
 import TabObjectAneka from '../components/TabObjectAneka'
+import TabCoverageCargo from '../components/TabCoverageCargo'
+import TabObjectCargo from '../components/TabObjectCargo'
+import TabSpreadingCargo from '../components/TabSpreadingCargo'
 import TabCoverageAneka from '../components/TabCoverageAneka'
 import TabSpreadingAneka from '../components/TabSpreadingAneka'
 import TanggalDMY from '../components/TanggalDMY'
@@ -77,6 +82,7 @@ import {
   TAB_DETAIL,
   TEKS_FORM_OPPORTUNITY,
   TEKS_EMAIL_TYPE,
+  TEKS_CSV_OBJEK,
   TEKS_INWARD,
   TOMBOL_KAKI_INWARD as KAKI,
 } from '../labels'
@@ -326,8 +332,14 @@ export default function InwardFacultative({
   const lini = dariServer?.lini
   const tampilanAneka = dariServer?.tampilanAneka
   const kasusAneka = !kasusFire && lini !== undefined && tampilanAneka !== undefined && (lini.anekaNotBonding || lini.golf || lini.bonding)
+  // Tiket 74 P1 MARINE CARGO: When `IsMarineCargo` (lini backend `marineCargo`); FIRE dan Aneka tetap menang (tidak berubah).
+  const kasusCargo = !kasusFire && !kasusAneka && lini?.marineCargo === true
+  // Bilah CSV per importer. FIRE / Marine Cargo tetap dari penanda lama; Marine Hull (tiket 73 P6) dari `jenisCsv` server
+  // (Pega IsMarineHull). Aneka umum / CPM: template Pega belum dikirim (K73-60) -> tetap pesan "belum tersedia".
+  const jenisCsv: JenisCsv | null = kasusFire ? 'fire' : kasusCargo ? 'cargo' : dariServer?.jenisCsv === 'marinehull' ? 'marinehull' : null
   // Submit + blok Email Type: FIRE dan (tiket 73 P4) keluarga Aneka - kabel `…/submit` sama; proteksi per lini di backend.
-  const bolehSubmit = kasusFire || kasusAneka
+  // Tiket 74 P5: Marine Cargo juga (proteksi per lini di backend: ship data, Top Risk, coverage, spreading).
+  const bolehSubmit = kasusFire || kasusAneka || kasusCargo
   // Tab Loss Record (tiket 55) dan Correspondence (tiket 56) hanya bila backend mengizinkan (POSITION "IT"). Clauses dan Scoring
   // Risk hanya FIRE (`InputInwardFacultativeDtl.xml`: Clauses `IsOilGas || IsFire`, Scoring Risk `IsFire`).
   const tabTampil = TAB_DETAIL.filter(
@@ -479,9 +491,17 @@ export default function InwardFacultative({
         {!hanyaLihat && (!bacaSaja || akunIT) && (
           <div className="nbf-inward__csv nbf-inward__bilah">
             <strong>{P.judulCsv.label}</strong>
-            {!bacaSaja ? (
+            {/* Bug DEV 11-10-2026: CSV FIRE terunggah ke case MARINE CARGO. Pega `ChooseActivityMappingCSV_Act` menjalankan
+                InsertUploadFire_act HANYA bila IsFire (L439/L499); Marine / Aneka / Briguna punya impor sendiri (belum diport). */}
+            {!bacaSaja && jenisCsv === null ? (
+              <div className="alert alert--info">{TEKS_CSV_OBJEK.belumUntukCob(op.groupBusiness ?? '')}</div>
+            ) : !bacaSaja && jenisCsv !== null ? (
               <BilahCsvObjek
+                // Satu bilah per case: status unggahan case lain tidak boleh tertinggal (bug DEV 10-10-2026, tiket 75).
+                key={kasus.caseId}
                 caseId={kasus.caseId}
+                // Tiket 74 P6 / 73 P6: importer menurut COB (Pega ChooseActivityMappingCSV_Act).
+                jenis={jenisCsv}
                 akhir={akunIT && <TombolNonaktif label={P.insertAccumulation.label} />}
                 onTersimpan={() => setVersiDetail((n) => n + 1)}
               />
@@ -507,7 +527,12 @@ export default function InwardFacultative({
           <div className="nbf-inward__detail">
             <StripTab tab={tabTampil} aktif={tab} onPilih={setTab} />
             {tab === 'Object' && kasusFire ? (
-              <TabObject caseId={kasus.caseId} insuredName={insured} />
+              // Tiket 75 F3 (K75-3): case besar per halaman dari server; case biasa tetap TabObject (alur lama, tidak berubah).
+              (dariServer?.jumlahLokasi ?? 0) > AMBANG_HALAMAN_OBJEK ? (
+                <TabObjectHalaman caseId={kasus.caseId} insuredName={insured} />
+              ) : (
+                <TabObject caseId={kasus.caseId} insuredName={insured} />
+              )
             ) : tab === 'Coverage' && kasusFire ? (
               <TabCoverage caseId={kasus.caseId} hanyaAkumulasi={akumulasiTerbuka} />
             ) : tab === 'Clauses' && kasusFire ? (
@@ -537,6 +562,18 @@ export default function InwardFacultative({
             ) : tab === 'Premium Deduction / Brokerage Fee' && kasusAneka ? (
               <TabDeduction caseId={kasus.caseId} aneka />
             ) : tab === 'Payment' && kasusAneka ? (
+              <TabPayment caseId={kasus.caseId} />
+            ) : tab === 'Object' && kasusCargo ? (
+              <TabObjectCargo caseId={kasus.caseId} />
+            ) : tab === 'Coverage' && kasusCargo ? (
+              <TabCoverageCargo caseId={kasus.caseId} />
+            ) : tab === 'Spreading' && kasusCargo ? (
+              <TabSpreadingCargo caseId={kasus.caseId} tahapUw={dariServer?.ubahBarisSpreading === true} />
+            ) : tab === 'Inw Fac Cedant Panels' && kasusCargo ? (
+              <TabCedant caseId={kasus.caseId} cargo />
+            ) : tab === 'Premium Deduction / Brokerage Fee' && kasusCargo ? (
+              <TabDeduction caseId={kasus.caseId} cargo />
+            ) : tab === 'Payment' && kasusCargo ? (
               <TabPayment caseId={kasus.caseId} />
             ) : (
               dariServer !== null && !kasusFire ? (

@@ -494,3 +494,32 @@ func TestSalinSpreadingProteksi(t *testing.T) {
 		}
 	}
 }
+
+// TestKapasitasLokasiBatas - tiket 48 (laporan work owner 11-10-2026, GetKapasitasTreaty cabang IsFire 7.2.5.3.20.5 L10118 /
+// DDL 6.2.4.3.19.5): lokasi NON top risk TSI RNM > maxtsi (QS 300 + SPL 400) -> "TSI in Location <n> exceeds treaty capacity"
+// (n = nomor lokasi 1-based, Local.idxloc); TEPAT 700 tidak; lokasi kedua bernomor 2; top risk tetap pesan lama.
+func TestKapasitasLokasiBatas(t *testing.T) {
+	ctx := context.Background()
+	src := &spreadingTiruan{kap: &kapasitasUji}
+	k := kasusSatuCoverage("70") // TSI RNM 700 = maxtsi
+	hitungNR(&k)
+	if pesan, err := spreadingOtomatis(ctx, src, &k); err != nil || len(pesan) != 0 {
+		t.Errorf("tepat 700: %v %v", pesan, err)
+	}
+	k = kasusSatuCoverage("70")
+	l2 := k.Lokasi[0]
+	l2.ObjectNo, l2.Items = "2", []models.ItemSpreading{l2.Items[0]}
+	l2.Items[0].Coverages = []models.CoverageSpreading{l2.Items[0].Coverages[0]}
+	l2.Items[0].Coverages[0].TSILiability = d("1001") // 700.7 > 700
+	k.Lokasi = append(k.Lokasi, l2)
+	hitungNR(&k)
+	if pesan, err := spreadingOtomatis(ctx, src, &k); err != nil || len(pesan) != 1 || pesan[0] != "TSI in Location 2 exceeds treaty capacity" {
+		t.Errorf("lokasi 2: %v %v", pesan, err)
+	}
+	k = kasusSatuCoverage("71")
+	k.Lokasi[0].IsTopRisk = true
+	hitungNR(&k)
+	if pesan, err := spreadingOtomatis(ctx, src, &k); err != nil || len(pesan) != 1 || pesan[0] != pesanKapasitasTop {
+		t.Errorf("top risk: %v %v", pesan, err)
+	}
+}

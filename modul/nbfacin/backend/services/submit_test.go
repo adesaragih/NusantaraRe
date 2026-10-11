@@ -38,6 +38,8 @@ type submitTiruan struct {
 	// tiket 69a: GetCountAccumulation per ACCUMULATIONCODE; argumen terakhir dicatat.
 	akumulasi    map[string]int
 	argAkumulasi []string
+	// tiket 57 "IS ada Ask ?": catatan HISTORYAKSEPTASIPEGA terbaru non-marketing {STATUS, WORKBASKET}; nil = tidak ada.
+	pegaTerakhir []string
 }
 
 func (s *submitTiruan) HitungAkumulasiBerjalan(_ context.Context, kode, tanggal, pzInsKey, pyID string) (int, error) {
@@ -81,6 +83,14 @@ func (s *submitTiruan) RiwayatAkseptasi(context.Context, string) ([]models.Riway
 func (s *submitTiruan) OpsiBanding(_ context.Context, idPega, _ string) ([]string, error) {
 	s.idBanding = idPega
 	return s.banding, nil
+}
+
+// CatatanPegaNonMarketing - tiket 57 "IS ada Ask ?": catatan terbaru non-marketing (pega[0] = STATUS, pega[1] = WORKBASKET).
+func (s *submitTiruan) CatatanPegaNonMarketing(context.Context, string) (string, string, bool, error) {
+	if len(s.pegaTerakhir) < 2 {
+		return "", "", false, nil
+	}
+	return s.pegaTerakhir[0], s.pegaTerakhir[1], true, nil
 }
 func (s *submitTiruan) SebabDecline(context.Context) ([]models.BarisCauseOfDecline, error) {
 	return s.sebab, nil
@@ -246,7 +256,7 @@ func TestTampilanSubmit(t *testing.T) {
 	st.riwayat = []models.RiwayatAkseptasi{{Tanggal: "07-10-2026 22:04", PIC: "UJI", Approval: "Accept", Status: "Offer", Comment: "ok"}}
 	svc := layananSubmit(st)
 	v, err := svc.TampilanSubmit(ctx, pelakuMkt, "UJI-NB-1")
-	if err != nil || !v.BolehSubmit || v.Alasan != "" || len(v.Riwayat) != 1 || st.idBanding != "ASM-FW-GISFW-WORK UJI-NB-1" ||
+	if err != nil || !v.BolehSubmit || v.Alasan != "" || len(v.Riwayat) != 1 || st.idBanding != "UJI-NB-1" ||
 		!reflect.DeepEqual(v.OpsiBanding, []string{"SENIORUW", "JUW_B"}) || len(v.SebabTc) != 14 ||
 		v.SebabTc[0].Opsi == nil || len(v.SebabTc[0].Opsi) != 0 || len(v.SebabNonTc) != 7 || v.PctRnmRIComm != "10" || v.PctRnmRate != "" {
 		t.Fatalf("%v %+v", err, v)
@@ -295,7 +305,7 @@ func TestAjukanSubmit(t *testing.T) {
 		mauRiwayat := models.RiwayatProduksi{TypePolis: "NB", Posisi: "Offer", PIC: "Uji Pengguna", TglInp: "07/10/2026 22:04:05",
 			Div: "UJI-DIV", Type: "F", Putaran: "1", Approval: label, Keterangan: w.Riwayat.Keterangan, AksesLogin: "UJI-MKT",
 			PercentRNM: w.Riwayat.PercentRNM}
-		if w.IDPega != "ASM-FW-GISFW-WORK UJI-NB-1" || w.PosisiLama != "Offer" || w.Riwayat != mauRiwayat ||
+		if w.IDPega != "UJI-NB-1" || w.PosisiLama != "Offer" || w.Riwayat != mauRiwayat ||
 			w.Riwayat.PercentRNM.String() != "12.5" || w.Pega != (models.RiwayatPega{Status: strings.ToUpper(label), Username: "Uji Pengguna",
 			Workbasket: "ReasFacInMarketing"}) || (w.Performance != nil) != (c.isi.EmailType == "7") {
 			t.Errorf("%s tulisan: %+v", c.isi.EmailType, w)
@@ -455,5 +465,27 @@ func TestPotongKomentar(t *testing.T) {
 	}
 	if s := potongKomentar(strings.Repeat("é", 3000)); len(s) != 4000 || !strings.HasPrefix(s, "é") {
 		t.Errorf("multibita %d", len(s))
+	}
+}
+
+// TestBandingJabatanDanAtasan - bug DEV 10-10-2026: opsi = [JABATAN, JABATAN_ATASAN] baris pertama (repository); bandingAktif
+// menampilkan keduanya bila punya tujuan SetBanding_ACT, menyaring atasan kosong / tak dikenal; validasi Submit menerima atasan.
+func TestBandingJabatanDanAtasan(t *testing.T) {
+	for _, k := range []struct{ opsi, mau []string }{
+		{[]string{"KADIVTEKNIK", "DIREKTURTEKNIK"}, []string{"KADIVTEKNIK", "DIREKTURTEKNIK"}},
+		{[]string{"KADIVTEKNIK", ""}, []string{"KADIVTEKNIK"}},
+		{[]string{"KADIVTEKNIK", "MANAGERTEKNIK"}, []string{"KADIVTEKNIK"}},
+		{[]string{"KADIVTEKNIK", "KADIVTEKNIK"}, []string{"KADIVTEKNIK"}},
+	} {
+		if got := bandingAktif(k.opsi); !reflect.DeepEqual(got, k.mau) {
+			t.Errorf("%v: %v", k.opsi, got)
+		}
+	}
+	isi := models.IsiSubmit{EmailType: models.EmailTypeBanding, BandingTo: "DIREKTURTEKNIK", Comment: "uji"}
+	if _, err := rapikanIsiSubmit(TahapMarketing, isi, []string{"KADIVTEKNIK", "DIREKTURTEKNIK"}, nil, nil); err != nil {
+		t.Errorf("atasan ditolak: %v", err)
+	}
+	if _, err := rapikanIsiSubmit(TahapMarketing, isi, []string{"KADIVTEKNIK"}, nil, nil); err == nil {
+		t.Error("bukan pilihan diterima")
 	}
 }

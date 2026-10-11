@@ -39,6 +39,7 @@ import {
 } from '../api'
 import { SPREADING as S, SPREADING_ANEKA as A, TEKS_ANEKA, TEKS_SPREADING as T } from '../labels'
 import CopySpreadingLokasi from './CopySpreadingLokasi'
+import PagerLokasi, { potongHalaman } from './PagerLokasi'
 import { barisLengkapAneka, barisSahAneka, gantiBarisAneka, kunciCoverageSpreading, type PosisiCoverageSpreading } from './spreadingAneka'
 import { RingkasanSpreading, barisLebih, barisSpreadingKosong, lebihDari100, templateLebih, treatyKembar } from './TabSpreading'
 
@@ -120,6 +121,7 @@ export default function TabSpreadingAneka({ caseId, tahapUw = false }: { caseId:
   const [menyimpan, setMenyimpan] = useState(false)
   const [tersimpan, setTersimpan] = useState(false)
   const [terbuka, setTerbuka] = useState<string[]>([])
+  const [halLokasi, setHalLokasi] = useState(1)
   const [pesanTemplate, setPesanTemplate] = useState<string[]>([])
   const nomor = useRef(0)
   const nomorTemplate = useRef(0)
@@ -514,7 +516,8 @@ export default function TabSpreadingAneka({ caseId, tahapUw = false }: { caseId:
         )}
       </section>
 
-      {/* Lokasi → okupasi | Golf → objek → coverage → spreading */}
+      {/* Lokasi → okupasi | Golf → objek → coverage → spreading; 10 lokasi per halaman (work owner 11-10-2026) */}
+      <PagerLokasi total={v.lokasi.length} halaman={halLokasi} onPindah={setHalLokasi} />
       <div className="nbf-cov-wrap">
         <table className="nbf-tabel nbf-aneka-grid nbf-aneka-grid--lokasi">
           <Kepala kolom={A.kolomLokasi} />
@@ -526,7 +529,7 @@ export default function TabSpreadingAneka({ caseId, tahapUw = false }: { caseId:
                 </td>
               </tr>
             )}
-            {v.lokasi.map((l, a) => {
+            {potongHalaman(v.lokasi, halLokasi).map(([l, a]) => {
               const kl = `l${a}`
               return [
                 <tr key={kl} className={terbuka.includes(kl) ? 'nbf-baris--terbuka' : undefined}>

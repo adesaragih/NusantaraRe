@@ -90,6 +90,10 @@ var amandemenLebar = map[string]string{
 	// Dilebarkan VARCHAR2(4000) - bug DEV 06-10-2026 (Zone > 1000 byte; ZONES.DESCRIPTION view atas JSON), perintah work
 	// owner "buat 4000". Migrasi 204.
 	"T_COVERAGELIST.ZONE": "VARCHAR2(4000)",
+	// Bug DEV 11-10-2026 (CSV Marine Hull ORA-12899, pola butir 80): Coverage Note = lebar sumbernya POOLDATA.COVERAGE.NAME
+	// VARCHAR2(4000) (`DDL\COVERAGE.txt`); rancangan 500. Migrasi 251. (T_ADDITIONALCOVERAGE.COVERAGE_NOTE tetap 500: tabelnya lahir di
+	// 256, sesudah 251 menurut urutan nama berkas.)
+	"T_COVERAGELIST.COVERAGE_NOTE": "VARCHAR2(4000)",
 	// Tiket 54 (pola butir 80): kolom Scoring Risk = lebar sumbernya - TopRiskLocation = .Property.RiskLocation.ASMAddress
 	// (T_RISKLOCATION.ASM_ADDRESS 4000, 192), OccupationCode / OccupationNote = OccupationList(1).OccupationId / Name
 	// (T_OCCUPATIONLIST 1000, 189). Migrasi 205.

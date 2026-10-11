@@ -14,7 +14,7 @@ import ViewPolicy from './pages/ViewPolicy'
 import { pasangKlikBaris } from './components/klikBaris'
 import './nbfacin.css'
 
-export function RuteNbFacIn({ halaman, masuk, onPindah, bukaKasus, onBeranda }: PropsRute<HalamanNbFacIn>) {
+export function RuteNbFacIn({ halaman, masuk, onPindah, bukaKasus, onBeranda, onBukaMenu }: PropsRute<HalamanNbFacIn>) {
   // Case yang baru dibuat Create opportunity - dibawa ke layar Inward Facultative (assignment pertama).
   // Komponen rute tetap terpasang selama modul aktif, jadi keadaan ini bertahan saat pindah halaman.
   const [kasus, setKasus] = useState<KasusBaru | null>(null)
@@ -84,6 +84,7 @@ export function RuteNbFacIn({ halaman, masuk, onPindah, bukaKasus, onBeranda }: 
       {halaman === 'nbfacin-opportunity' && (
         <FormOpportunity
           pemilik={masuk.nama ?? masuk.akunID}
+          onBukaMenu={onBukaMenu}
           onDibuat={(k) => {
             setKasus(k)
             onPindah('nbfacin-inward')

@@ -59,7 +59,7 @@ func TestSelesaiPolicyTulisan(t *testing.T) {
 		b.ObjectItem, b.CurrID, b.ObjectNameID, b.IdxObjectItem, b.Coverage, b.CoverageNote, b.AccumulationCode, b.OccupationCode,
 		b.MarketingCode, b.InsuredName, b.RISlipCeding, b.GroupType, b.QQName, b.LayerNo, b.PolicyType, b.CedingID, b.SOBID,
 		b.InsuredID, b.StatusBusiness, b.GroupName, b.TopRisk, b.JnReas, b.RoadName, b.BuildingNo}
-	mau := []string{"ASM-FW-GISFW-WORK UJI-NB-1", "", "UJI CEDING A;UJI CEDING B", "UJI SOB", "20/10/2026 00:00:00",
+	mau := []string{"UJI-NB-1", "", "UJI CEDING A;UJI CEDING B", "UJI SOB", "20/10/2026 00:00:00",
 		"20/10/2027 00:00:00", "UJI PROV", "UJI KOTA", "UJI KEC", "UJI MESIN", "IDR", "UJI01", "1", "FLEXAS", "UJI", "UJI-AKU",
 		"2001", "UJI-MC", "UJI TERTANGGUNG", "UJI SLIP", "2", "UJI QQ", "NULL", "2", "C1;C2", "UJI-SOB", "UJI-ORG", "1", "UJI GRUP",
 		"false", "10001", "", "NO. "}

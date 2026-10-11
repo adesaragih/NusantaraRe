@@ -166,7 +166,10 @@ type HasilSubmit struct {
 }
 
 // idPega - pzInsKey kasus.
-func idPega(id string) string { return repository.AwalanIDPega + id }
+// idPega - IDPEGA tulisan sistem baru = case id POLOS (keputusan work owner 11-10-2026, PENYIMPANGAN SADAR dari pzInsKey Pega:
+// JSON_POLIS, FACINPRODUCTION, CEDING_FACINPRODUCTION, HISTORYAKSEPTASIPEGA / PRODUCTION, FACINPERFORMANCE, JSON_OFFER, FACINOFFER,
+// DOCUMENT_POLIS). Pembaca repository mencocokkan dua bentuk (repository.DuaBentukIDPega).
+func idPega(id string) string { return repository.IDPegaProduksi(id) }
 
 // awalanNBStatus - `@replaceAll(pyWorkIDPrefix,"-","")` = "NB".
 func awalanNBStatus() string { return strings.ReplaceAll(repository.AwalanCaseNB, "-", "") }
@@ -594,6 +597,15 @@ func (s *Service) AjukanSubmit(ctx context.Context, pelaku inti.Pelaku, id strin
 		return HasilSubmit{}, err
 	}
 	w := s.tulisanSubmit(tahap, id, pelaku, isi, k, akun)
+	if tahap == TahapMarketing && isi.EmailType == models.EmailTypeAccept { // tiket 57 "IS ada Ask ?" (submitask.go)
+		posisi, status, ask, err := s.tujuanAskMarketing(ctx, id)
+		if err != nil {
+			return HasilSubmit{}, err
+		}
+		if ask {
+			w.PosisiBaru, w.NBStatus = posisi, status
+		}
+	}
 	if tahap == TahapBinding {
 		s.lengkapiTulisanBinding(&w, id, pelaku, isi, k)
 	}
