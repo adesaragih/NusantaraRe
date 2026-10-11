@@ -53,6 +53,14 @@
 > seharusnya gagal.** Pada jalankan pertama sesudah suntingan 2026-09-19, butir uji masih
 > berbunyi *"AC **112** butir terakhir"* dan hasilnya **⛔ SALAH** — sebab dua AC baru sudah
 > ditambahkan. ⚠️ **Uji yang tidak pernah gagal tidak membuktikan apa pun.**
+>
+> ⛔ **RALAT 10-10-2026, dalam blok yang sama.** Kalimat lamanya dikutip utuh, tidak dihapus: *"butir register
+> terdaftar 25 · tertutup 5 · memblokir 5"* → angka di atas tetap cacah **tanda sebagaimana tertulis 19-09-2026**.
+> Seluruh blok RALAT 10-10-2026 di berkas ini berupa baris kutipan `>`, jadi **kedua cara hitung membuangnya**, dan
+> tidak satu tanda pun dicabut (aturan RALAT). ⭐ **Keadaannya bergeser sesudah tahap 1 dibangun 10-10-2026**
+> (`MODUL.md`, `PARITAS.md`, `OQ.md`): butir **1** tidak lagi memblokir — data polis dibaca dari `JSON_POLIS.DATA_JSON`
+> (RALAT AC 15); butir **6** terjawab — ADR-0030 + keanggotaan workbasket (RALAT AC 72–74); butir **23** terjawab —
+> `STRUKTUR-TABEL-CLAIM-FACIN.md` ada (RALAT AC 112). Rinciannya di blok RALAT bertanggal sama di bab masing-masing.
 
 **Tanda golongan.** Setiap butir dibuka tanda golongan dan — di bab *Acceptance Criteria* — ditutup
 Bab asalnya.
@@ -130,6 +138,14 @@ Yang berubah bagi orang yang memakainya:
 
 Yang **tidak** berubah: bentuk data tiga tingkat *(objek → item objek → penyesuaian)*, roster
 penyetuju, penyimpanan berkas di Google Storage, dan penomoran lewat stored procedure.
+
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: "Yang **tidak** berubah: bentuk data tiga
+> tingkat *(objek → item objek → penyesuaian)*, roster penyetuju, penyimpanan berkas di Google Storage, dan penomoran
+> lewat stored procedure." → **dua di antaranya berubah.** ⭐ **Penomoran** ditulis ulang di aplikasi lewat
+> `inti/backend/penomor` — ADR-0043 (`docs/bersama/adr/0043-penomoran-di-aplikasi.md`) meng-*supersede* ADR-0006, nol
+> panggilan procedure (rincian di RALAT AC 9). ⭐ **Roster penyetuju**: tahap 1 hanya menulis tangga awal dari roster
+> `EMAILKOMITE` FACIN; siapa memutuskan per tingkat mengikuti pola workbasket Komite Claim Prop — tahap 2, modul
+> `komiteclaimfacin`, tanpa menu (OQ-CFI-04; RALAT AC 48). Bentuk tiga tingkat dan Google Storage tetap.
 
 ---
 
@@ -437,6 +453,15 @@ dimuat** sebagai satu nilai turunan, dan **ke-38 rule `When` diganti SATU fungsi
 **Alasannya:** ke-38 rule itu menguji **satu halaman yang sama** untuk memilah lini; memindahkannya
 satu per satu berarti membawa **38 potong logika yang masing-masing berisi satu keputusan**.
 
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⭐ `[keputusan work owner — atas rekomendasi
+> asisten]` **`Quotation` dibaca SEKALI saat kasus dimuat** sebagai satu nilai turunan, dan **ke-38 rule `When` diganti
+> SATU fungsi klasifikasi lini**."* → yang dibangun 10-10-2026 adalah **satu TEMPAT**, bukan satu fungsi: korpus memuat
+> **60** rule `When` (`PINDAI.md` §1), dan setiap `When` yang dipakai section / activity menjadi **satu fungsi Go
+> bernama sama** di `backend/models/lini.go` (`IsPA_PNC` → `IsPAPNC`), ditambah `GolonganLini` sebagai pemilih varian
+> grid; `IsPEGAPROD` menjadi flag lingkungan (`IS_PEGA_PROD`, `models/konteks.go`). Halaman yang diuji =
+> `OfferFacIn.QuotationData` hasil salinan `JSON_POLIS.DATA_JSON` (`CopyNB_Act`), dibaca ulang setiap kasus dimuat.
+> AC 13 (*satu tempat, nol salinan kedua*) tetap terpenuhi.
+
 ✅ `[keputusan work owner]` **2026-09-19** — *"MASIH PROSES DEVELOP, (T_QUOTATIONDATA)"*.
 
 ⭐ **Nama tabelnya `T_QUOTATIONDATA`.** ⚠️ **Tetapi ia MASIH DIBANGUN**, dan `[terverifikasi]`
@@ -446,6 +471,15 @@ tabel Pega yang sudah berjalan.
 ⛔ **Butir 1 MENYEMPIT, tidak tertutup.** Yang tertutup: **nama tabelnya**. Yang **masih terbuka**:
 **nama kolomnya**, dan **kapan tabel itu siap**. ⚠️ **AC 14 tetap tanpa sasaran uji yang konkret**
 sampai kolomnya ada. Bab 19 butir 1.
+
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⭐ **Nama tabelnya `T_QUOTATIONDATA`.** ⚠️
+> **Tetapi ia MASIH DIBANGUN**, dan `[terverifikasi]` **tidak ada di korpus mana pun** — **0 berkas** dari 482
+> menyebutnya."* → `T_QUOTATIONDATA` **sudah ada**: dibuat migrasi NB Fac In `183`
+> (`modul/nbfacin/backend/migrations/183_t_quotationdata.sql`, ditambah ALTER `184` / `185` / `199`), dan ⛔ **tanpa satu
+> pun kolom `Business*`** (`BusinessType` / `BusinessCode` / `BusinessName` / `StatusBusiness` tidak punya kolom).
+> ⭐ Claim Fac In **tidak membacanya**: data polis — termasuk keempat properti yang diuji rule lini — dibaca dari
+> `JSON_POLIS.DATA_JSON` (halaman `OfferFacIn`, `CopyNB_Act`; `PINDAI.md` §4). Polis tanpa `JSON_POLIS` ditolak terang
+> (OQ-CFI-11); polis yang lahir di NB Fac In sistem baru belum terbaca (OQ-CFI-30). Butir 1 tidak lagi memblokir.
 
 #### Rule dipisahkan dari kehidupannya
 
@@ -553,6 +587,14 @@ tidak dapat diterangkan**, dan selisih itu akan tampak seperti cacat migrasi pad
 ✅ Sejalan **ADR-0003** dan aturan ketelitian yang sudah dipakai `STRUKTUR-TABEL-CLAIM-PROP`.
 ✅ **Butir 14 DITUTUP.**
 
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⭐ **uang dihitung sampai 20 angka dengan 8
+> di belakang koma, tanpa pembulatan di tengah jalan; satu-satunya titik pembulatan ada di batas penyimpanan; tampilan
+> layar 4 angka di belakang koma.**"* → ketelitian yang dibangun **`NUMBER(38,10)`** untuk uang, persen, share, dan kurs
+> (migrasi `560`–`567`; Claim Prop `521`–`531` memakai bentuk yang sama, jadi tabel bersama tetap satu ketelitian).
+> Hitungan memakai `inti/backend/uang` / `apd.Decimal` — nol `float`; pembulatan hanya di penyimpanan dan tampilan
+> (`PARITAS.md` §8 butir 16). ⚠️ ADR-0016 (`NUMBER(38,8)`) **usang** untuk modul ini (prompt implementasi work owner
+> 09/10-10-2026; `MODUL.md` bab Keputusan). Prinsip *tanpa pembulatan di tengah jalan* tetap berlaku.
+
 #### Muara `Local.TotalAdjustment`
 
 ⚠️ **Jebakan nama:** `Local.TotalAdjustment` *(properti pada halaman `Local`)* **bukan** parameter
@@ -640,10 +682,27 @@ nomor urut** yang sama dengan modul lain.
 ⚠️ `[terverifikasi]` Penerbitan lembar muka digerbangi penanda **CFS** dan **PrintFaceClaim**, yang
 disetel rule validasi estimasi — lihat Bab 5.
 
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⭐ Enam rule dokumen, dan penomorannya memakai
+> **stored procedure pembangkit nomor urut** yang sama dengan modul lain."* → **penomoran tidak lagi lewat procedure**:
+> isi `PROC_GENERATE_SEQUENCE_NUMBER` ditulis ulang di `inti/backend/penomor` (ADR-0043 meng-*supersede* ADR-0006),
+> dipanggil `backend/repository/nomor.go`. Bentuk nomor: `KODE_PRODUKSI` NONLIFE + huruf (**K** klaim · **G** PLA treaty
+> · **P** DLA fac · **S** DLA treaty) + `BusinessOldId` + `"."` + `MM.YYYY` + `"."` + urut 5 digit; periode dari tanggal
+> tutup buku (`PINDAI.md` §5, `PARITAS.md` §7 butir 11). ⭐ **Jenis dokumen yang hidup di XML lebih dari tiga**: Claim
+> Face Sheet per lini, ditambah empat jenis — PLA, Draft DLA, DLA (fac / treaty), dan nota akseptasi
+> `PrintPDFAccep_MultiAksep`. Aliran HTML/PDF-nya tidak diekspor (OQ-CFI-20): nomor, data, dan penanda ditulis seperti
+> XML, berkas PDF belum dibuat.
+
 ### Bab 11 — Penyimpanan berkas
 
 ✅ `[terverifikasi]` Berkas **tetap disimpan di Google Storage**; token diterbitkan **Oracle**, bukan
 aplikasi.
+
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"✅ `[terverifikasi]` Berkas **tetap disimpan di
+> Google Storage**; token diterbitkan **Oracle**, bukan aplikasi."* → Google Storage tetap, tetapi **token diterbitkan
+> aplikasi**: penyimpanan bersama `inti/backend/penyimpanan` (padanan `T_STORAGE_IMAGE`) memakai token
+> `inti/backend/layanan` yang meniru `GetTokenStorage_SQL` dengan garam dari env `STORAGE_TOKEN_SALT` — **bukan** dari
+> basis data; garam kosong = gagal terang. Lampiran klaim tercatat di `DOCUMENT_CLAIM` + `T_STORAGE_IMAGE`
+> (`backend/services/lampiran.go`, `repository/lampiran.go`).
 
 ⭐ `[terverifikasi]` *(ronde ulang §B7)* Salinan pembuat pengenal berkas di modul ini **lebih baru**
 daripada salinan Claim Prop, dan bedanya **bermakna**: ketelitian cap waktu naik dari **milidetik ke
@@ -681,6 +740,10 @@ daripada salinan Claim Prop — tambahannya **`avi`** dan **`mp4`**.
 ⛔ `[terverifikasi]` **Nol jejak outbox, nol antre-ulang, dan nol penanganan kegagalan** pada hampir
 seluruh efek keluar. ⚠️ **Penyimpangan sadar** — Bab 17 titik 10 dan 11 *(pertentangan ADR-0008 dan
 ADR-0015)*.
+
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: "⚠️ **Penyimpangan sadar** — Bab 17 titik 10 dan
+> 11 *(pertentangan ADR-0008 dan ADR-0015)*." → outbox yang dibangun **lebih sempit** dari titik 11 — lihat RALAT
+> 10-10-2026 di AC 60.
 
 #### Alamat layanan keluar
 
@@ -732,12 +795,34 @@ transaksi.** ⛔ Kedelapan `COMMIT;` **tidak direplikasi**.
 ⚠️ **Satu pengecualian: pembangkit nomor urut.** Nomornya **harus bertahan walau transaksi induknya
 batal** — kalau ikut dibatalkan, nomor yang sama **terpakai ulang**. ✅ Sejalan **ADR-0006**.
 
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⚠️ **Satu pengecualian: pembangkit nomor
+> urut.** Nomornya **harus bertahan walau transaksi induknya batal** — kalau ikut dibatalkan, nomor yang sama
+> **terpakai ulang**. ✅ Sejalan **ADR-0006**."* → **pengecualian itu tidak ada lagi.** Nomor diterbitkan
+> `inti/backend/penomor` **di dalam transaksi aksi** (`SELECT … FOR UPDATE` atas penghitung `GENERATE_SEQUENCE_NUMBER`,
+> lalu naikkan) dan **ikut batal bila aksinya batal** — penghitung yang ikut di-*rollback* tidak menerbitkan nomor yang
+> sama dua kali. Urut sequence tetap dapat berlubang, sama seperti Pega (`backend/repository/nomor.go`). ADR-0043
+> meng-*supersede* ADR-0006 untuk nomor bisnis.
+
 **Alasannya:** `COMMIT;` di tengah pekerjaan orang lain membuat kegagalan separuh jalan meninggalkan
 **data separuh tersimpan**, dan ⛔ **pemanggilnya tidak dapat memulihkannya** — transaksinya sudah
 ditutup oleh rule yang ia panggil.
 
 ⚠️ **Perlu diingat saat membangun:** rule-rule ini bernama **`RDBList`** — yang menurut namanya
 membaca — padahal **menyimpan dan menutup transaksi**.
+
+> ⛔ **RALAT 10-10-2026 — rencana tulisan ke tabel warisan yang tidak pernah tertulis.** Kalimat lamanya dikutip utuh,
+> tidak dihapus: *"✅ `[keputusan work owner — atas rekomendasi asisten]` **2026-09-19** — **Satu aksi pengguna, satu
+> transaksi.** ⛔ Kedelapan `COMMIT;` **tidak direplikasi**."* → keputusannya berdiri, tetapi spec ini **tidak pernah
+> menyebut tabel warisan mana yang ditulis di dalam transaksi itu**. Yang dibangun 10-10-2026 (`repository/tulisan.go`,
+> `PARITAS.md`, `MODUL.md` bab Keputusan), semuanya **di dalam satu transaksi per aksi**, nol procedure, nol `COMMIT`:
+>
+> - `OS_AKSEPTASI_KLAIM` — CFS: baris **STS 0** per estimasi; Close Claim: **STS 4**; DLA: `UPDATE DLA_NO, DLA_DATE`
+>   menurut `AcceptedNo`; `DATA_JSON` diisi format `GetPageJSONString`. **STS 1** = akseptasi komite = tahap 2.
+> - `JSON_KLAIM` — tanpa `DATA_JSON` (keputusan work owner).
+> - `PROGRESSCLAIM` / `SUBPROGRESSCLAIM` — logika `PEGA_PROGRESSCLAIM` / `PEGA_SUBPROGRESSCLAIM` ditulis ulang, procedure
+>   tidak dipanggil.
+> - `CATASTROPHE`; `DOCUMENT_CLAIM` + `T_STORAGE_IMAGE` (lampiran); `MONITORING_KLAIM_LOG`; kronologi di `T_VIEW_SUGGEST`.
+> - Efek keluar hanya lewat outbox (`T_LOG_SERVICE_RNM`) dan **hanya di produksi** — lihat RALAT AC 60.
 
 ### Bab 14 — Jejak audit
 
@@ -784,11 +869,26 @@ ketiga kalinya**.
 ⛔ **Butir 6 MENYEMPIT, tidak tertutup.** Yang diputuskan **cara menetapkannya**; **isinya sendiri
 belum ditulis di mana pun**. Bab 19 butir 6.
 
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⛔ **Butir 6 MENYEMPIT, tidak tertutup.** Yang
+> diputuskan **cara menetapkannya**; **isinya sendiri belum ditulis di mana pun**. Bab 19 butir 6."* → isinya kini
+> **tertulis dan dibangun**: ADR-0030 (`docs/bersama/adr/0030-aturan-peran-ditetapkan-sekali-lintas-modul.md`) +
+> keanggotaan workbasket, ditegakkan di lapisan layanan (`backend/services/layanan.go` `Pemegang`): **Input Register** dan
+> **Input Estimasi** = pembuat kasus; **Choose Surveyor** = anggota workbasket `ReasKlaimTeknik` (`ReasPNCTeknik` di XML
+> tidak ada di DEV, `PINDAI.md` §2). Server menolak setiap tulisan ke kasus yang sudah ditutup (`ErrKasusTertutup`) dan ke
+> adjustment yang sedang di komite (`ErrAdjustmentDiKomite`). Lihat juga RALAT AC 72–74.
+
 ### Bab 16 — Vonis 15 ADR
 
 ⚠️ **Dasar bab ini:** `[keputusan work owner]` **2026-09-19** *(A4-4)* — *"ADR berlaku
 lintas-modul"*. Kelima belas ADR **mengikat seluruh modul**, bukan hanya Claim Life. Karena itu
 keenam pertentangan di bawah **menjadi penyimpangan sadar**, dan masuk Bab 17.
+
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"Kelima belas ADR **mengikat seluruh modul**,
+> bukan hanya Claim Life."* → vonis di bab ini tetap atas **15 ADR pertama** sebagaimana dinilai 19-09-2026, tetapi
+> ADR kini tinggal di `OUTPUT_HASIL_RNM/docs/bersama/adr/` dan berjumlah **43 catatan (0001–0043)** — **44 berkas**
+> bersama `00-INDEKS.md`. Yang menyentuh modul ini sesudahnya antara lain ADR-0016 (presisi, usang untuk modul ini —
+> RALAT Bab 6), ADR-0029 (batas transaksi), ADR-0030 (aturan peran — RALAT Bab 15), ADR-0043 (penomoran di aplikasi —
+> RALAT Bab 10 / AC 9).
 
 | ADR | Pokok | Vonis | Bukti satu baris |
 | --- | --- | --- | --- |
@@ -820,6 +920,12 @@ keenam pertentangan di bawah **menjadi penyimpangan sadar**, dan masuk Bab 17.
 >
 > ⭐ Ditambah satu vonis yang **sudah bergeser** sesudahnya: **ADR-0012** dari *"tidak dapat
 > diputuskan"* menjadi **TIDAK MENYENTUH** *(ronde 3 §D5)*.
+
+> ⛔ **RALAT 10-10-2026.** Baris tabel lamanya dikutip utuh, tidak dihapus: *"| **0006** | penomoran lewat stored
+> procedure | ✅ **MENDUKUNG** | procedure yang **sama** dipakai |"* → **ADR-0006 di-*supersede* ADR-0043**
+> (*penomoran dijalankan aplikasi, bukan stored procedure*, 27-09-2026): sistem baru tidak memanggil procedure; logikanya
+> ditulis ulang di `inti/backend/penomor`. Vonis "MENDUKUNG" hanya berlaku bagi perilaku Pega yang dibaca, bukan bagi
+> bentuk yang dibangun.
 
 ⛔ **Nol revisi ADR diusulkan.** ADR hanya dicabut work owner.
 
@@ -907,6 +1013,11 @@ mekanisme lompatannya.
 **Preseden.** Bentuk AC dan sambungan uji mengikuti `claim-prop/spec.md` dan
 `komite-claim-prop/spec.md`, yang keduanya sudah dipakai menurunkan tiket.
 
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"**Preseden.** Bentuk AC dan sambungan uji
+> mengikuti `claim-prop/spec.md` dan `komite-claim-prop/spec.md`, yang keduanya sudah dipakai menurunkan tiket."* →
+> letak kini `APP_RNM/modul/claimprop/docs/spec.md` dan `APP_RNM/modul/komiteclaimprop/docs/spec.md` (folder `.scratch`
+> lama tidak lagi menjadi sumber).
+
 ⚠️ **Yang belum dapat diuji sama sekali:** ke-14 AC ber-`[terbuka]`. Ia **menandai tempat yang belum
 punya sasaran uji**, dan ⛔ **tidak boleh ditambal dengan tebakan**.
 
@@ -957,6 +1068,16 @@ tulis: laporkan, jangan dilaksanakan.*
    polis **gagal**. *(Bab 1)*
 9. `[terverifikasi]` Nomor klaim dibuat oleh **stored procedure pembangkit nomor urut**, bukan
    dihitung aplikasi. Test yang menemukan dua klaim bernomor sama **gagal**. *(Bab 10 · ADR-0006)*
+
+   > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"Nomor klaim dibuat oleh **stored procedure
+   > pembangkit nomor urut**, bukan dihitung aplikasi."* → **kebalikannya**: nomor dihitung aplikasi lewat
+   > `inti/backend/penomor` (ADR-0043 meng-*supersede* ADR-0006; isi `PROC_GENERATE_SEQUENCE_NUMBER` dibaca, tidak
+   > dipanggil). Nomor terbit **di dalam transaksi aksi** dan ikut batal bila aksinya gagal (urut dapat berlubang, sama
+   > seperti Pega). Bentuk: `KODE_PRODUKSI` NONLIFE + huruf (**K** klaim · **G** PLA treaty · **P** DLA fac · **S** DLA
+   > treaty) + `BusinessOldId` + `"."` + `MM.YYYY` + `"."` + urut 5 digit; periode dari tanggal tutup buku
+   > (`backend/repository/nomor.go`, `PARITAS.md` §7 butir 11). Sasaran uji "dua klaim bernomor sama gagal" tetap.
+   > Nomor kasus `CLM-` / `KMT-` (pengenal kerja, bukan nomor klaim) dari `SEQ_WORK_CLAIM` (OQ-CFI-02).
+
 10. `[terverifikasi]` Pengguna **diperingatkan** bila klaim dengan tanggal kejadian sama sudah ada
     pada polis yang sama. Test yang tidak memunculkan peringatan itu **gagal**. *(Bab 5)*
 11. `[terverifikasi]` Penyebab kerugian diambil dari **daftar baku**, bukan diketik bebas. Test yang
@@ -975,6 +1096,13 @@ tulis: laporkan, jangan dilaksanakan.*
     `[keputusan work owner]` 2026-09-19. ⛔ **Nama kolomnya belum**, dan `[terverifikasi]` **tabelnya
     belum ada** — **0 dari 482 berkas** menyebutnya; ia **sedang dibangun**. Karena itu **AC 14
     tetap tanpa sasaran uji yang konkret**. ⛔ Jangan ditambal dengan tebakan. *(Bab 4)*
+
+    > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⛔ **Nama kolomnya belum**, dan
+    > `[terverifikasi]` **tabelnya belum ada** — **0 dari 482 berkas** menyebutnya; ia **sedang dibangun**."* →
+    > `T_QUOTATIONDATA` **ada** (migrasi NB Fac In `183`, + `184` / `185` / `199`) dan **tanpa kolom `Business*`**.
+    > Claim Fac In **tidak membacanya**: nilai penawaran dibaca dari `JSON_POLIS.DATA_JSON` (halaman `OfferFacIn`,
+    > `CopyNB_Act`), sekali setiap kasus dimuat — sasaran uji AC 14 kini konkret pada sumber itu. Lihat RALAT Bab 4.
+
 16. `[keputusan work owner]` ⚠️ `[penyimpangan sadar]` Rule klasifikasi warisan **dipindahkan sekali
     sebagai satu himpunan**; hidup-matinya **tidak ikut dipindahkan**. Test yang menemukan rule yang
     sama disalin dua kali untuk dua modul **gagal**. ⭐ **Dasarnya kini terbukti, bukan diasumsikan:**
@@ -1064,17 +1192,34 @@ tulis: laporkan, jangan dilaksanakan.*
     test yang menemukan **pembulatan di tengah jalan** **gagal**; test yang menemukan ketelitian
     **berbeda dari Claim Prop** pada tabel akseptasi bersama **gagal**. ⭐ Tampilan layar **4 angka
     di belakang koma**. *(Bab 6 · Bab 17 titik 7 · ADR-0003)*
+
+    > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"Seluruh nilai uang **bertipe desimal** di
+    > setiap lapisan — penyimpanan, perhitungan, dan kontrak layanan, dengan ⭐ **20 angka, 8 di belakang koma**."* →
+    > ketelitiannya **`NUMBER(38,10)`** (uang, persen, share, kurs; migrasi `560`–`567`, sama dengan tabel Claim Prop
+    > `521`–`531`); hitungan lewat `inti/backend/uang` / `apd.Decimal`, nol `float`. ADR-0016 (`NUMBER(38,8)`) usang
+    > untuk modul ini. Lihat RALAT Bab 6.
+
 40. `[keputusan work owner]` ⚠️ `[penyimpangan sadar]` **Tidak ada nilai uang yang disimpan sebagai
     teks.** Test yang menemukan sebuah nilai uang perlu **ditambal pemisah desimalnya** sebelum dapat
     dihitung **gagal**. *(Bab 6 · Bab 17 titik 7)*
 41. `[terverifikasi]` Setiap nilai uang tersimpan lengkap dengan **mata uang** dan **kursnya**. Test
     yang menemukan nilai uang tanpa keduanya **gagal**. *(Bab 1 · 7)*
+
+    > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"Setiap nilai uang tersimpan lengkap dengan
+    > **mata uang** dan **kursnya**."* → kurs disimpan **hanya di tempat XML menulisnya** (mis. `KURS` estimasi /
+    > adjustment, `KURS_OBJECT_ITEM` item — katalog `backend/models/katalog_tabel.go`), bukan di setiap nilai uang.
+    > Test yang menuntut kurs di samping setiap nilai uang akan menuntut kolom yang tidak punya penulis di XML.
+
 42. `[keputusan work owner]` ⭐ **Ketelitiannya SAMA dengan Claim Prop** — 20 angka, 8 di belakang
     koma, tampilan 4. Test yang menemukan kedua modul memakai ketelitian berbeda pada tabel
     akseptasi bersama **gagal**. *(Bab 6)*
 
     > ✅ **butir 14 DITUTUP 2026-09-19.** Teks lamanya **dikutip, tidak dihapus**: *"`[terbuka]`
     > **butir 14** — ⛔ **ketelitian desimal yang dipakai belum ditetapkan** untuk modul ini."*
+
+    > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⭐ **Ketelitiannya SAMA dengan Claim Prop** —
+    > 20 angka, 8 di belakang koma, tampilan 4."* → *sama dengan Claim Prop* tetap benar, tetapi angkanya
+    > **`NUMBER(38,10)`** — lihat RALAT 10-10-2026 di AC 39 dan Bab 6.
 
 114. `[terbuka]` **butir 25** — ⭐ **BARU 2026-09-19.** ⛔ **Berapa banyak klaim lama sudah memuat
      keadaan yang kini menjadi galat** — estimasi bernilai-dan-berpersentase nol, atau estimasi
@@ -1101,6 +1246,15 @@ tulis: laporkan, jangan dilaksanakan.*
 48. `[terverifikasi]` Roster penyetuju menyimpan **akun operator** sebagai pengenal penyetuju dan
     **jabatan** sebagai keterangan, dengan keputusan mulai **kosong**. Test yang menukar keduanya
     **gagal**. *(Bab 9 · ADR-0014)*
+
+    > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"Roster penyetuju menyimpan **akun
+    > operator** sebagai pengenal penyetuju dan **jabatan** sebagai keterangan, dengan keputusan mulai **kosong**."* →
+    > tahap 1 menulis tangga awal kasus `KMT-` TT2 dari roster `EMAILKOMITE` FACIN (`SetListKomite_act`; keputusan
+    > `0` = menunggu) dengan `T_WORK_CLAIM.POSITION` = `OPERATOR_ID` tingkat 1 (`PARITAS.md` §5). ⭐ **Roster menurut
+    > jabatan → workbasket**: siapa yang memutuskan di tiap tingkat mengikuti pola Komite Claim Prop (workbasket, tanpa
+    > menu) dan menjadi pekerjaan **tahap 2**, modul `komiteclaimfacin` (OQ-CFI-04). Test atas keputusan per tingkat
+    > belum punya sasaran di modul ini.
+
 49. `[terbuka]` **butir 2** — ⛔ **kenapa nomor komite ditulis dua kali berturut-turut** tidak ada
     di korpus, sehingga **tidak diketahui apakah penulisan pertama memang dianggap kurang**.
     *(Bab 9)*
@@ -1111,14 +1265,32 @@ tulis: laporkan, jangan dilaksanakan.*
 
 51. `[terverifikasi]` Modul menerbitkan **lembar muka klaim**, **nota kerugian sementara**, dan
     **nota kerugian tetap**. Test yang menemukan jenis dokumen di luar ketiganya **gagal**. *(Bab 10)*
+
+    > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"Test yang menemukan jenis dokumen di luar
+    > ketiganya **gagal**."* → di XML **nota akseptasi `PrintPDFAccep_MultiAksep` juga hidup** (`SaveAcceptation`
+    > langkah 12): jenis dokumen = **empat** — PLA, Draft DLA, DLA (fac **P** / treaty **S**), nota akseptasi — **ditambah
+    > Claim Face Sheet per lini**. Aliran HTML/PDF-nya tidak diekspor (OQ-CFI-20), jadi tahap 1 menulis nomor, data, dan
+    > penanda seperti XML tanpa berkas PDF. Test yang menolak nota akseptasi akan salah.
+
 52. `[terverifikasi]` Penomoran dokumen memakai **pembangkit nomor urut yang sama** dengan penomoran
     klaim. Test yang menemukan dua dokumen bernomor sama **gagal**. *(Bab 10 · 13)*
+
+    > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"Penomoran dokumen memakai **pembangkit nomor
+    > urut yang sama** dengan penomoran klaim."* → tetap satu penghitung, tetapi kini `inti/backend/penomor` di aplikasi
+    > (huruf **G** PLA treaty · **P** DLA fac · **S** DLA treaty), bukan procedure — lihat RALAT 10-10-2026 di AC 9.
 
 ### Penyimpanan berkas
 
 53. `[terverifikasi]` Berkas lampiran **tetap disimpan di Google Storage**; token diterbitkan
     **basis data**, bukan aplikasi. Test yang menemukan aplikasi menerbitkan token sendiri **gagal**.
     *(Bab 11 · ADR-0010)*
+
+    > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"Berkas lampiran **tetap disimpan di Google
+    > Storage**; token diterbitkan **basis data**, bukan aplikasi."* → token diterbitkan **aplikasi**: penyimpanan bersama
+    > `inti/backend/penyimpanan` + `inti/backend/layanan` meniru `GetTokenStorage_SQL` dengan garam dari env
+    > `STORAGE_TOKEN_SALT` (bukan dari basis data; kosong = gagal terang). Test di atas akan salah; sasaran yang benar:
+    > berkas tetap di Google Storage dan garam tidak pernah muncul di pesan galat. Lihat RALAT Bab 11.
+
 54. `[keputusan work owner]` Pengenal berkas dibuat dengan cara **yang sudah ditambal** — ketelitian
     **nanodetik** **dan** nilai unik sejagat. Test yang menemukan **dua unggahan berdekatan
     menghasilkan pengenal sama** **gagal**. *(Bab 11)*
@@ -1147,6 +1319,17 @@ tulis: laporkan, jangan dilaksanakan.*
     transaksional** dengan jaminan **at-least-once**; keputusan tidak dianggap tuntas sampai seluruh
     efek terkirim atau ditandai **perlu intervensi**. Test yang menemukan efek keluar berjalan
     **tanpa jejak outbox** **gagal**. *(Bab 12 · Bab 17 titik 11 · ADR-0015)*
+
+    > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"Efek keluar dijalankan lewat **outbox
+    > transaksional** dengan jaminan **at-least-once**; keputusan tidak dianggap tuntas sampai seluruh efek terkirim atau
+    > ditandai **perlu intervensi**."* → yang dibangun **lebih sempit**: efek keluar (konversi, kasir, DLA, surel)
+    > **diantre ke outbox `T_LOG_SERVICE_RNM` hanya bila `IS_PEGA_PROD`** (`backend/services/efek.go`), di transaksi aksi
+    > yang sama; di luar produksi nol baris. ⛔ Modul ini **belum punya pekerja outbox** (`backend/modul.go`
+    > `JalankanPekerja` → `inti.TanpaPekerja()`); pelaksananya (`PelaksanaClaimFacIn`) **berhenti terang** —
+    > `ErrPengirimStubNonProduksi` di luar produksi, `ErrKasirBelumDisetujui` / `ErrArasapasBelumDisetujui` di produksi —
+    > sampai panggilan nyata disetujui manusia. ⛔ **Tanpa dedupe**: klik ulang selagi kiriman pertama antre dapat
+    > mengantre muatan kedua (OQ-CFI-26). Sasaran "nol efek tanpa jejak outbox" tetap.
+
 61. `[keputusan work owner]` ⚠️ `[penyimpangan sadar]` **Seluruh** alamat layanan keluar di-*lookup*
     dari **tabel tautan layanan**. Test yang menemukan satu pun alamat ditanam sebagai URL langsung,
     konstanta, atau env var **gagal**. *(Bab 12 · Bab 17 titik 9 · ADR-0013)*
@@ -1168,6 +1351,12 @@ tulis: laporkan, jangan dilaksanakan.*
 67. `[keputusan work owner]` ⚠️ **Pengecualian: pembangkit nomor urut.** Nomor yang sudah terbit
     **tidak ikut dibatalkan** saat transaksi induknya batal. Test yang menemukan nomor yang sama
     **terpakai ulang** sesudah pembatalan **gagal**. *(Bab 13 · ADR-0006)*
+
+    > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"Nomor yang sudah terbit **tidak ikut
+    > dibatalkan** saat transaksi induknya batal."* → **kebalikannya**: nomor terbit di dalam transaksi aksi lewat
+    > `inti/backend/penomor` dan **ikut batal** bila aksinya gagal (urut dapat berlubang, sama seperti Pega). Tidak ada
+    > pengecualian transaksi lagi. Sasaran yang tetap: nomor yang **tersimpan** tidak pernah kembar. ADR-0043
+    > meng-*supersede* ADR-0006 — lihat RALAT Bab 13 dan AC 9.
 
 ### Jejak audit
 
@@ -1195,6 +1384,15 @@ tulis: laporkan, jangan dilaksanakan.*
 74. `[terverifikasi]` Penonaktifan tombol pada layar estimasi dan penyesuaian **ditiru apa adanya**,
     dan ia bergantung **keadaan data**. Test yang menemukannya bergantung peran **gagal** sampai
     butir 6 dijawab. *(Bab 15)*
+
+    > ⛔ **RALAT 10-10-2026 atas AC 72–74.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⛔ **Isinya masih belum
+    > ditulis di mana pun**, sehingga AC wewenang **tetap tanpa sasaran uji**."* → butir 6 **terjawab**: ADR-0030 +
+    > keanggotaan workbasket, ditegakkan di lapisan layanan (`backend/services/layanan.go` `Pemegang`,
+    > `services/aksi.go`). **Input Register** / **Input Estimasi** = pembuat kasus (`CREATE_OP`); **Choose Surveyor** =
+    > anggota workbasket `ReasKlaimTeknik` (`ReasPNCTeknik` di XML tidak ada di DEV). Server menolak tulisan ke kasus
+    > tertutup (`ErrKasusTertutup`) dan ke adjustment yang sedang di komite (`ErrAdjustmentDiKomite`); bukan pemegang =
+    > 403. Penonaktifan tombol menurut keadaan data (AC 74) tetap ditiru, **di samping** gerbang pemegang itu. Sasaran
+    > uji AC 72–74 kini ada.
 
 ### Migrasi
 
@@ -1257,10 +1455,20 @@ tulis: laporkan, jangan dilaksanakan.*
     dua tingkat **gagal**. *(Bab 1 · 8 · ADR-0011)*
 93. `[terverifikasi]` Roster penyetuju ditiru apa adanya. Test yang mengubah bentuknya **gagal**.
     *(Bab 9 · ADR-0014)*
+
+    > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"Roster penyetuju ditiru apa adanya."* →
+    > pemutus per tingkat menurut jabatan beralih ke **workbasket** pola Komite Claim Prop (tahap 2, `komiteclaimfacin`,
+    > OQ-CFI-04) — lihat RALAT 10-10-2026 di AC 48.
+
 94. `[terverifikasi]` Penyimpanan berkas ditiru apa adanya. Test yang memindahkannya keluar dari
     Google Storage **gagal**. *(Bab 11 · ADR-0010)*
 95. `[terverifikasi]` Penomoran lewat stored procedure ditiru apa adanya. Test yang menghitung nomor
     di aplikasi **gagal**. *(Bab 10 · ADR-0006)*
+
+    > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"Penomoran lewat stored procedure ditiru apa
+    > adanya. Test yang menghitung nomor di aplikasi **gagal**."* → **dibalik**: nomor **dihitung di aplikasi**
+    > (`inti/backend/penomor`, ADR-0043); test yang menemukan panggilan procedure-lah yang gagal. Lihat RALAT AC 9.
+
 96. `[terverifikasi]` ⭐ Mekanisme wewenang kirim komite bergantung jenis klaim **TIDAK ADA** di modul
     ini — **nol** di seluruh 482 berkas. Test yang membangunnya **gagal**. *(Bab 16 · ADR-0012)*
 97. `[terverifikasi]` Daftar jenis berkas yang diterima mengikuti daftar yang ada. Test yang menerima
@@ -1325,6 +1533,12 @@ tulis: laporkan, jangan dilaksanakan.*
      seluruh AC yang menyebut *"tersimpan"* **belum punya sasaran uji di tingkat kolom**. ⚠️ Ini
      **tidak menahan spec**, tetapi **menahan tiket**. *(Out of Scope)*
 
+     > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⛔ **bentuk tabel dan relasinya belum
+     > ada** untuk modul ini"* → **sudah ada**: `docs/STRUKTUR-TABEL-CLAIM-FACIN.md` (dengan **lampiran pengikat**
+     > kolom DDL yang dibaca penjaga `inti/backend/penjaga`) dan `docs/RELASI-TABEL-CLAIM-FACIN.md`; DDL migrasi
+     > `560`–`567`; katalog properti → kolom `backend/models/katalog_tabel.go`. Butir 23 terjawab; AC "tersimpan" kini
+     > punya sasaran uji di tingkat kolom.
+
 ---
 
 **Jumlah AC: 114.** **AC tanpa tanda golongan: 0.** **AC ber-`[terbuka]`: 20** — butir
@@ -1359,6 +1573,15 @@ tulis: laporkan, jangan dilaksanakan.*
 7. **Nama tabel dan kolom polis** sebagai sumber nilai penawaran — butir register 1.
 8. **Penggolongan ketujuh pesan validasi** — butir register 12.
 9. **Migrasi penuh lawan koeksistensi** — butir register 15.
+
+> ⛔ **RALAT 10-10-2026 atas butir 1, 6, dan 7.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⛔ Modul ini **belum
+> punya** `STRUKTUR-TABEL` maupun `RELASI-TABEL`."* · *"⛔ Belum ditulis di mana pun — lihat butir register 6."* ·
+> *"**Nama tabel dan kolom polis** sebagai sumber nilai penawaran — butir register 1."* →
+>
+> - **Butir 1:** `STRUKTUR-TABEL-CLAIM-FACIN.md` (dengan lampiran pengikat yang dibaca penjaga) dan
+>   `RELASI-TABEL-CLAIM-FACIN.md` **ada** — RALAT AC 112.
+> - **Butir 6:** aturan peran = ADR-0030 + keanggotaan workbasket, dibangun 10-10-2026 — RALAT AC 72–74.
+> - **Butir 7:** sumber nilai penawaran = `JSON_POLIS.DATA_JSON` (`OfferFacIn`), bukan `T_QUOTATIONDATA` — RALAT AC 15.
 
 ---
 
@@ -1395,6 +1618,22 @@ ia dicoret dan tetap terbaca.
 | **23** | **Bentuk tabel dan relasinya** — ⭐ `[keputusan work owner]` **2026-09-19: DITUNDA sampai Komite Claim Fac In selesai, lalu keduanya dibuat BERSAMAAN.** ⚠️ Alasannya: `[terverifikasi]` **81 dari 112** identitas rule Komite Claim Fac In juga ada di modul ini, dan ronde 1 modul itu menemukan tabel akseptasi klaim **disentuh 24 kali di sana lawan 27 kali di sini** — keduanya **berbagi tabel**. ⛔ Membangun strukturnya terpisah mengundang **dua bentuk kolom untuk satu tabel yang sama**. ⚠️ **Yang berubah KAPAN ia dikerjakan, bukan statusnya** — ia **tetap memblokir tiket**. | asisten + DBA | ⚠️ **ya untuk tiket**, tidak untuk spec |
 | ⭐ **24** | **BARU** — ketepatan klasifikasi lini **bergantung modul lain** yang mengisi halaman penawaran, dan ⛔ **nol pemeriksaan** di modul ini akan mengatakannya bila propertinya kosong. Apa yang dilakukan aplikasi dalam keadaan itu belum diputuskan | work owner | ⚠️ **ya** — AC 113 |
 | ⭐ **25** | **BARU** — **berapa banyak klaim lama sudah memuat keadaan yang kini menjadi galat** *(estimasi nol-nol, estimasi melebihi nilai pertanggungan)*. Di sistem lama hanya **2** dari 7 pemeriksaan yang menghalangi; kini **ketujuhnya** | asisten + DBA | ⚠️ **ya untuk MIGRASI**, tidak untuk pembangunan |
+
+> ⛔ **RALAT 10-10-2026 atas baris 1, 6, 14, dan 23 tabel di atas.** Baris tabel tidak dapat memuat blok kutipan, jadi
+> ralatnya di sini; kalimat lamanya dikutip utuh, tidak dihapus:
+>
+> - **1** — *"⛔ **kolomnya belum**, dan `[terverifikasi]` **tabelnya belum ada** *(0 dari 482 berkas)* — **sedang
+>   dibangun**"* → `T_QUOTATIONDATA` ada (NB Fac In `183`), tanpa kolom `Business*`; Claim Fac In membaca
+>   `JSON_POLIS.DATA_JSON`. **Tidak lagi memblokir.**
+> - **6** — *"⛔ **Isinya masih belum ditulis di mana pun.**"* → ADR-0030 + keanggotaan workbasket, dibangun.
+>   **Terjawab.**
+> - **14** — *"**20 angka, 8 di belakang koma, tampilan 4** — **sama dengan Claim Prop**"* → `NUMBER(38,10)`, tetap
+>   sama dengan Claim Prop.
+> - **23** — *"**Bentuk tabel dan relasinya** — ⭐ `[keputusan work owner]` **2026-09-19: DITUNDA sampai Komite Claim
+>   Fac In selesai, lalu keduanya dibuat BERSAMAAN.**"* → STRUKTUR dan RELASI ada; lampiran pengikat STRUKTUR mengikat
+>   DDL `561`–`562`. **Terjawab.**
+>
+> Ringkas di bawah adalah keadaan 19-09-2026 dan tidak dihitung ulang.
 
 **Ringkas:** **25 butir terdaftar** · ✅ **tertutup 5** *(9 · 10 · 12 · 14 · 22)* ·
 ⭐ **masih terbuka 20** · ⚠️ **memblokir 5** — butir **1 · 6 · 23 · 24 · 25**.
@@ -1536,3 +1775,9 @@ CLAUDE.md                                    — nol disunting
 ⛔ **Nol kode Go/React · nol `CREATE TABLE` · nol DDL · nol nomor baris XML dikutip · nol nilai
 rahasia disalin · nol keputusan work owner BARU dibuat · nol butir `[terbuka]` ditutup · nol ADR
 direvisi.**
+
+> ⛔ **RALAT 10-10-2026.** Baris lamanya dikutip utuh, tidak dihapus: *"docs\adr\                   15 berkas        — nol
+> disunting"* · *".scratch\claim-prop\        27 berkas        — nol disunting"* · *".scratch\komite-claim-prop\ 27
+> berkas        — nol disunting"* → letak itu **tidak berlaku lagi**. ADR kini di `OUTPUT_HASIL_RNM/docs/bersama/adr/`
+> — **44 berkas**: `00-INDEKS.md` + **43 ADR** (0001–0043). Dokumen Claim Prop di `APP_RNM/modul/claimprop/docs/`, Komite
+> Claim Prop di `APP_RNM/modul/komiteclaimprop/docs/`. Angka lampiran ini adalah keadaan 19-09-2026.

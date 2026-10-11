@@ -37,12 +37,34 @@ Sesudah tiket ini, Data lama **berpindah dengan benar**, nama yang menyesatkan *
 - [ ] **AC 105–113** — sisa yang ditegaskan
 - [ ] ⭐ Tiap perilaku paritas punya **uji yang membuktikannya** — ⛔ supaya tidak 'terperbaiki' diam-diam oleh pengembang berikutnya
 
+> ⛔ **RALAT 10-10-2026.** Butir lamanya dikutip utuh, tidak dihapus: *"**AC 92–98** — paritas yang ditegaskan"* dan
+> *"**AC 105–113** — sisa yang ditegaskan"* → beberapa AC yang ditutup tiket ini **diralat di spec**:
+>
+> - **AC 93** — roster menurut jabatan → pemutus per tingkat lewat **workbasket** pola Komite Claim Prop (tahap 2,
+>   `komiteclaimfacin`, OQ-CFI-04).
+> - **AC 95** — **dibalik**: penomoran dihitung aplikasi (`inti/backend/penomor`, ADR-0043 meng-*supersede* ADR-0006).
+> - **AC 112** — `STRUKTUR-TABEL-CLAIM-FACIN.md` (dengan lampiran pengikat) dan `RELASI-TABEL-CLAIM-FACIN.md` **sudah
+>   ada**; butir 23 terjawab.
+> - **AC 109** tetap: properti klasifikasi diisi — bertentangan dengan premis tiket 02 / 13 (lihat RALAT di sana).
+>
+> Paritas yang sengaja **diubah** dicatat sebagai `[penyimpangan sadar]` di `docs/PARITAS.md` §7–§8 (OQ-CFI-03); §7
+> menyebut uji untuk tiap perbaikan.
+
 ## Butir `[terbuka]` yang menyentuh tiket ini
 
 | Butir | Isinya | Menahan? |
 | --- | --- | --- |
 | **29** | Cacah baris lama terdampak — `[data DBA]` | ⚠️ menahan **cacah**, tidak menahan cara migrasinya |
 | **1** | Kolom tabel data kutipan — `[data DBA]` | ⚠️ menahan pemetaan kolom lama |
+
+> ⛔ **RALAT 10-10-2026.** Baris lamanya dikutip utuh, tidak dihapus: *"| **29** | Cacah baris lama terdampak —
+> `[data DBA]`"* dan *"| **1** | Kolom tabel data kutipan — `[data DBA]` | ⚠️ menahan pemetaan kolom lama"* →
+>
+> - ⛔ **Butir 29 TIDAK ADA di register mana pun** — register spec berakhir di butir **25**, register
+>   `STRUKTUR-TABEL-CLAIM-FACIN.md` §6 di butir **13**. Isinya paling dekat dengan butir **25** spec (cacah klaim lama
+>   yang kini menjadi galat, AC 114 — memblokir migrasi).
+> - **Butir 1** (register spec): tidak menahan lagi — data polis dibaca dari `JSON_POLIS.DATA_JSON`, bukan dari
+>   `T_QUOTATIONDATA` (yang ada di NB Fac In `183`, tanpa kolom `Business*`).
 
 ## Perintah verifikasi
 

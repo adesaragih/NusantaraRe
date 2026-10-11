@@ -365,23 +365,6 @@ func (g *Gudang) OJKGrupTreaty(ctx context.Context, grupID string) (string, erro
 		fmt.Sprintf(`SELECT TO_CHAR(OJKBUSINESSID) FROM %s WHERE TO_CHAR(ID) = :1 FETCH FIRST 1 ROWS ONLY`, t), grupID)
 }
 
-// GrupBisnisDariGrupTreaty - [keputusan work owner 06-10-2026] nama grup bisnis kontrak tanpa Class of
-// Business: dari tabel BUSINESS lewat ID grup - TREATYGROUP.COAID = BUSINESS.BUSINESSGROUPID - lalu
-// BUSINESSGROUPNAME (satu nama per grup, dicek di DEV 06-10-2026). Nol baris = "".
-func (g *Gudang) GrupBisnisDariGrupTreaty(ctx context.Context, grupID string) (string, error) {
-	b, err := g.nama(tabelBisnis)
-	if err != nil {
-		return "", err
-	}
-	tg, err := g.nama(tabelGrupTreaty)
-	if err != nil {
-		return "", err
-	}
-	return g.satuTeks(ctx, "membaca grup bisnis", fmt.Sprintf(`SELECT b.BUSINESSGROUPNAME FROM %s b
-	  JOIN %s t ON b.BUSINESSGROUPID = TO_CHAR(t.COAID)
-	 WHERE TO_CHAR(t.ID) = :1 AND b.BUSINESSGROUPNAME IS NOT NULL ORDER BY b.ID FETCH FIRST 1 ROWS ONLY`, b, tg), grupID)
-}
-
 // OldIDGrupTreaty = RDB `FetchTreatyGroupOLDID` (`FetchTreatyGroupOldID`).
 func (g *Gudang) OldIDGrupTreaty(ctx context.Context, grupID string) (string, error) {
 	t, err := g.nama(tabelGrupTreaty)

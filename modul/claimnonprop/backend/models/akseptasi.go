@@ -181,8 +181,7 @@ func SusunSpreadingAkseptasiKlaim(h *Halaman) error {
 // ProtectNilaiClaim (17). Hardcode CLMNP-232 / CLMNP-861 / CLMNP-975 dibuang (OQ-CNP-03); langkah 12-14 (Summary XOL
 // tingkat klaim) = medan turunan.
 func AdjClaimCNP(h *Halaman, n, idx int) error {
-	b, err := adj(h, n)
-	if err != nil {
+	if _, err := adj(h, n); err != nil {
 		return err
 	}
 	xol := h.AmbilDaftar(JalurAdj(n, AnakXOL))
@@ -276,8 +275,7 @@ func AdjClaimCNP(h *Halaman, n, idx int) error {
 	if err := SebarAkseptasi(h, n); err != nil { // 15
 		return err
 	}
-	ProtectNilaiClaim(h, n) // 17
-	_ = b
+	ProtectNilaiClaim(h, n)                // 17
 	return SusunSpreadingAkseptasiKlaim(h) // 16
 }
 
@@ -549,9 +547,9 @@ func ProteksiKirimKomite(k *Konteks, h *Halaman, n int, email string) (CekKomite
 	h.BersihkanPesan() // 1
 	h.Setel("IsError", "")
 	c := CekKomite{PolicyNo: h.Ambil(CD + "PolicyData.PolicyNo"), EmailPelaku: email}
-	h.Setel(JalurAdjProp(n, "DataCommitteeTreaty.CircumCauseOfLoss"), h.Ambil(CD+"CNPCircumtances")) // 2
-	k.Riwayat(h, TeksKirimKomite)                                                                    // 3
-	semuaUR := len(h.AmbilDaftar(JalurAdj(n, AnakXOL))) > 0                                          // 4
+	b["DataCommitteeTreaty.CircumCauseOfLoss"] = h.Ambil(CD + "CNPCircumtances") // 2 (properti baris akseptasi)
+	k.Riwayat(h, TeksKirimKomite)                                                // 3
+	semuaUR := len(h.AmbilDaftar(JalurAdj(n, AnakXOL))) > 0                      // 4
 	for _, s := range h.AmbilDaftar(JalurAdj(n, AnakXOL)) {
 		if s["TreatyName"] != TreatyUR {
 			semuaUR = false
@@ -625,11 +623,6 @@ func ProteksiKirimKomite(k *Konteks, h *Halaman, n int, email string) (CekKomite
 	return c, nil
 }
 
-// JalurAdjProp - jalur satu properti baris AdjustmentList(n) (`AdjustmentList(n).prop`).
-func JalurAdjProp(n int, prop string) string {
-	return fmt.Sprintf("%s(%d).%s", DaftarAdjustment, n, prop)
-}
-
 // MelebihiEstimasi = ProteksiSendKomiteCNP_Act langkah 23: per mata uang Summary XOL, total klaim Loss Allocation
 // ber-To XOL (`TempTotalClaim` CountLossAllocation_act: Value + fee - Salvage; TPL tidak ada di halaman itu = 0) melebihi
 // CNPTotalClaim Summary XOL.
@@ -659,7 +652,7 @@ func MelebihiEstimasi(h *Halaman) (bool, error) {
 // ---------------------------------------------------------------- Kasir
 
 // KonfigKasir - nilai tetap muatan Kasir (HitServiceToKasir_Act 9.3: CompanyName, LjtdId, LdcId, StsAp, StsSyariah,
-// Deductible, KaliDeduct). Isinya dibaca dari konfigurasi ber-embed `services/konfigurasi/kasir.json` (pola Komite Claim
+// Deductible, KaliDeduct). Isinya dibaca dari konfigurasi ber-embed `backend/konfigurasi/kasir.json` (pola Komite Claim
 // Prop), bukan literal di sini.
 type KonfigKasir struct {
 	CompanyName, LjtdID, LdcID, LdcIDSyariah, StsAp string
@@ -697,17 +690,26 @@ func TanggalBolehBayar(akseptasi time.Time) string {
 
 // SusunMuatanKasir = HitServiceToKasir_Act langkah 9.1-9.6 untuk setiap Spreading In akseptasi `n`: Nett = Total Claim -
 // Premium Spreaded baris spreading. ⚠️ LbuID = `pyWorkPage.OfferFacIn.QuotationData.BusinessOldId` (langkah 9.3) - properti
-// tanpa penulis di korpus Non Prop, jadi kosong (persis XML; PARITAS, OQ).
-func SusunMuatanKasir(h *Halaman, n int, email, pelaku string, cfg KonfigKasir) ([]MuatanKasir, error) {
+// tanpa penulis di korpus Non Prop, jadi kosong (persis XML; PARITAS, OQ-CNP-37). `syariah` = When `IsPEGASyariah`
+// (langkah 9.4: LdcId syariah) - di Pega pemeriksaan node server, tanpa padanan di aplikasi ini (OQ-CNP-40).
+// AcceptedDate kosong = TglAksep / TglBolehBayar kosong (persis XML); terisi tetapi tak terbaca = galat.
+func SusunMuatanKasir(h *Halaman, n int, email, pelaku string, cfg KonfigKasir, syariah bool) ([]MuatanKasir, error) {
 	b, err := adj(h, n)
 	if err != nil {
 		return nil, err
 	}
 	var kal Kalkulator
-	tgl, _ := UraiTanggal(b["AcceptedDate"])
 	tglAksep, boleh := "", ""
-	if !tgl.IsZero() {
+	if teks := strings.TrimSpace(b["AcceptedDate"]); teks != "" {
+		tgl, ok := UraiTanggal(teks)
+		if !ok {
+			return nil, fmt.Errorf("models: AcceptedDate akseptasi %d tidak terbaca: %q", n, teks)
+		}
 		tglAksep, boleh = tgl.Format("02-01-2006"), TanggalBolehBayar(tgl)
+	}
+	ldc := cfg.LdcID
+	if syariah {
+		ldc = cfg.LdcIDSyariah
 	}
 	user := b["pxCreateOperator"]
 	if user == "" {
@@ -723,7 +725,7 @@ func SusunMuatanKasir(h *Halaman, n int, email, pelaku string, cfg KonfigKasir) 
 			LbuID: h.Ambil(OQ + "BusinessOldId"), NoPolis: h.Ambil(CD + "PolicyData.PolicyNo"),
 			AcceptType: b["PaymentType"], Kepada: b["PayableTo"], AccountNo: akun, TglAksep: tglAksep,
 			Nett: Teks(kal.Kurang(kal.B(s, "TotalClaim"), kal.B(s, "PremiumSpreaded"))), Deductible: "0", KaliDeduct: "0", StsSyariah: "0",
-			CompanyName: cfg.CompanyName, LjtdID: cfg.LjtdID, LdcID: cfg.LdcID, StsAp: cfg.StsAp,
+			CompanyName: cfg.CompanyName, LjtdID: cfg.LjtdID, LdcID: ldc, StsAp: cfg.StsAp,
 			LkuID: s["CurrencyID"], LbgID: s["IDOfBank"], TglBolehBayar: boleh, Email: email, UserInput: user})
 	}
 	return out, kal.Galat()

@@ -48,8 +48,6 @@ type Gudang struct {
 	PKPAgen map[string]string  // STS_PKP per ID agen; tak terdaftar = StsPKP
 	StsPKP  string
 	OJK     string
-	// GrupBisnis - nama grup bisnis per TreatyGroupID (`GrupBisnisDariGrupTreaty`).
-	GrupBisnis map[string]string
 	// OldIDGrup - hasil RDB `FetchTreatyGroupOLDID` (`OldIDGrupTreaty`).
 	OldIDGrup string
 	urutPol   int
@@ -70,16 +68,15 @@ type Gudang struct {
 // Baru menyusun gudang kosong.
 func Baru() *Gudang {
 	return &Gudang{
-		Kasus:      map[string]models.Kasus{},
-		Halaman:    map[string]*models.Halaman{},
-		Nama:       map[string]string{},
-		Kontrak:    map[string]models.BarisKontrak{},
-		Bisnis:     map[string]models.BarisBisnis{},
-		Master:     map[string]models.MasterXOL{},
-		GrupBisnis: map[string]string{},
-		Closing:    25,
-		OJK:        "UJI-OJK",
-		OldIDGrup:  "UJI-OLD",
+		Kasus:     map[string]models.Kasus{},
+		Halaman:   map[string]*models.Halaman{},
+		Nama:      map[string]string{},
+		Kontrak:   map[string]models.BarisKontrak{},
+		Bisnis:    map[string]models.BarisBisnis{},
+		Master:    map[string]models.MasterXOL{},
+		Closing:   25,
+		OJK:       "UJI-OJK",
+		OldIDGrup: "UJI-OLD",
 	}
 }
 
@@ -248,7 +245,7 @@ func (g *Gudang) DaftarKasus(_ context.Context, s models.SaringanKasus) ([]model
 		r := models.RingkasanKasus{ID: id, StatusWork: k.StatusWork, PositionNote: k.PositionNote, NoPolis: k.NoPolis,
 			TglCreate: k.TglCreate, NamaPembuat: g.NamaPembuat[id]}
 		if h := g.Halaman[id]; h != nil {
-			r.BusinessName = h.Ambil(models.HalamanQuotation + ".BusinessName")
+			r.TreatyGroupName = h.Ambil(models.HalamanPolis + ".TreatyGroupName") // g.TREATY_GROUP_NAME
 			r.InsuredName = h.Ambil(models.HalamanQuotation + ".InsuredName")
 			r.MarketingName = h.Ambil(models.HalamanQuotation + ".MarketingName")    // q.MARKETING_NAME, sama dengan repository
 			r.NBStatus = h.Ambil("NBStatus")                                         // g.NB_STATUS
@@ -443,10 +440,7 @@ func (g *Gudang) NamaMataUang(_ context.Context, id string) (string, error) {
 	return strings.TrimPrefix(id, "UJI-ID-"), nil
 }
 
-func (g *Gudang) OJKGrupTreaty(context.Context, string) (string, error) { return g.OJK, nil }
-func (g *Gudang) GrupBisnisDariGrupTreaty(_ context.Context, grupID string) (string, error) {
-	return g.GrupBisnis[grupID], nil
-}
+func (g *Gudang) OJKGrupTreaty(context.Context, string) (string, error)   { return g.OJK, nil }
 func (g *Gudang) OldIDGrupTreaty(context.Context, string) (string, error) { return g.OldIDGrup, nil }
 func (g *Gudang) KlienDariNama(context.Context, string) (string, error)   { return "", nil }
 func (g *Gudang) StsPKPAgen(_ context.Context, sobID string) (string, error) {

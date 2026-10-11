@@ -6,9 +6,11 @@ package models
 
 import "context"
 
-// MasterTreaty - halaman `pyWorkPage.TreatyInMaster`: JSON master treaty (`GetLimitsTreatyIn_SQL`: M_TREATY_IN /
-// M_TREATY_IN_EDM `where id = IDMaster`, lalu Java `adoptJSONObject` - SetValueToClaim_Act langkah 3-4). Hanya medan
-// yang DIBACA rule Claim Prop terjangkau (sensus `TreatyInMaster.*` 07-10-2026).
+// MasterTreaty - halaman `pyWorkPage.TreatyInMaster` (SetValueToClaim_Act langkah 3-4). Hanya medan yang DIBACA rule
+// Claim Prop terjangkau (sensus `TreatyInMaster.*` 07-10-2026). Sumbernya TABEL RELASIONAL TREATY_IN /
+// TREATYINDETAILJOINEDM, bukan JSON M_TREATY_IN (perintah work owner 10-10-2026; repository.MasterTreaty). RNM Share
+// dipilih per treaty group klaim (`ShareMaster`); Bordeaux / BordereauxNote / AccountingMode / CashLossList /
+// SpreadingList tanpa sumber relasional = kosong.
 type MasterTreaty struct {
 	ID                   string
 	TreatyContractName   string
@@ -24,7 +26,6 @@ type MasterTreaty struct {
 	Commencement         string // tanggal halaman ("2006-01-02")
 	Termination          string
 	TreatyYear           string
-	RNMShareP            string
 	StatusAkseptasi      string
 	Limits               []LimitMaster
 }

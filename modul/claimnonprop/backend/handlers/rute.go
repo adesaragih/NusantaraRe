@@ -11,9 +11,10 @@
 //	GET  /api/claim-non-prop/acuan                                        daftar pilihan bersama
 //	GET  /api/claim-non-prop/hak                                          switch Teknik (anggota ReasKlaimTeknik)
 //	GET  /api/claim-non-prop/berkas-polis?nopolis=                        berkas NB / EDM Treaty In (View polis)
+//	GET|POST /api/claim-non-prop/kasus/{id}/lampiran...                   lampiran klaim pola Claim Prop (lampiran.go)
 //
-// Nol rute lampiran: korpus Non Prop tidak memuat section / harness unggahan (prompt §6 butir 7); ViewAttachmentNP
-// dibaca lewat pilihan `lampiranBayar`.
+// Lampiran klaim mengikuti Claim Prop (perintah work owner 09-10-2026); korpus Non Prop sendiri tanpa section unggahan.
+// ViewAttachmentNP (lampiran invoice pembayaran) dibaca lewat pilihan `lampiranBayar`.
 package handlers
 
 import (
@@ -27,6 +28,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/penyimpanan"
 	"nusantarare/modul/claimnonprop/backend/models"
 	"nusantarare/modul/claimnonprop/backend/services"
 )
@@ -48,6 +50,12 @@ func DaftarkanRute(mux *http.ServeMux, l *services.Layanan, stubPelaku bool) {
 	mux.HandleFunc("GET "+Prefix+"/acuan", h.acuan)
 	mux.HandleFunc("GET "+Prefix+"/hak", h.hak)
 	mux.HandleFunc("GET "+Prefix+"/berkas-polis", h.berkasPolis)
+	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/lampiran", h.lampiran)
+	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/lampiran", h.unggahLampiran)
+	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/lampiran/{lid}/isi", h.unduhLampiran)
+	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/lampiran/{lid}/office", h.officeLampiran)
+	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/lampiran/{lid}/hapus", h.hapusLampiran)
+	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/lampiran/kategori", h.pindahKategoriLampiran)
 }
 
 // Router menyusun mux tersendiri - untuk uji.
@@ -84,6 +92,14 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		}{"validasi layar gagal: " + strings.Join(v.Pesan, "; "), v.Pesan, v.Layar})
 	case errors.Is(err, services.ErrTanpaOracle):
 		galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+	case errors.Is(err, penyimpanan.ErrObjekTidakAda):
+		galat.Tulis(w, http.StatusConflict, err.Error())
+	case errors.Is(err, penyimpanan.ErrBerkasDitolak):
+		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, penyimpanan.ErrStorageBelumSiap):
+		galat.Tulis(w, http.StatusServiceUnavailable, err.Error())
+	case errors.Is(err, penyimpanan.ErrStorageGagal):
+		galat.Tulis(w, http.StatusBadGateway, err.Error())
 	case errors.Is(err, inti.ErrTanpaIdentitas):
 		galat.Tulis(w, http.StatusUnauthorized, err.Error())
 	case errors.Is(err, inti.ErrTanpaWewenang):

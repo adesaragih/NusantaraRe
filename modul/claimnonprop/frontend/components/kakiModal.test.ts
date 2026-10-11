@@ -49,6 +49,29 @@ describe('pisahKakiModal', () => {
     expect(m.batal).toBe('No')
   })
 
+  // Claim Non Prop: baris tombol ber-layout Inline (`sebaris`) - Section KomiteCLMNP / CloseClaimMD.
+  it('baris tombol sebaris di akhir isi pindah ke kaki; Cancel tidak digambar ulang', () => {
+    const sebaris: Tata = {
+      jenis: 'bagian',
+      letak: 'sebaris',
+      anak: [
+        tombol('SendClaimToCommittee', 'Send Claim to Committee', 'CreateChildKomiteCNP'),
+        tombol('CancelKomite', 'Cancel', 'TutupModal'),
+      ],
+    }
+    const m = pisahKakiModal([medan('Remarks', 'Remarks'), sebaris])
+    expect(m.isi.map((t) => t.label)).toEqual(['Remarks'])
+    expect(m.kaki.map((t) => t.id)).toEqual(['SendClaimToCommittee'])
+    expect(m.batal).toBe('Cancel')
+  })
+
+  it('sebaris berisi medan tidak dipindah', () => {
+    const sebaris: Tata = { jenis: 'bagian', letak: 'sebaris', anak: [medan('Pct', 'Pct'), tombol('X', 'X', 'Aksi')] }
+    const m = pisahKakiModal([sebaris])
+    expect(m.isi).toHaveLength(1)
+    expect(m.kaki).toEqual([])
+  })
+
   it('tanpa tombol penutup: batal bawaan Modal', () => {
     expect(pisahKakiModal([medan('Remarks', 'Remarks')]).batal).toBeUndefined()
   })

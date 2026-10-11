@@ -35,11 +35,33 @@ Sesudah tiket ini, Penilai dapat **menyerahkan penyesuaian ke komite**, dan ⭐ 
 - [ ] ⭐ Jalur **tutup klaim** dan **tolak klaim** membentuk komite **satu jenjang**
 - [ ] ⛔ Tiket ini **berhenti di kontrak muatan** — ⭐ perilaku komite ada di putaran sisi komite
 
+> ⛔ **RALAT 10-10-2026.** Butir lamanya dikutip utuh, tidak dihapus: *"⭐ **Data kutipan disalin UTUH**, ⛔ bukan daftar
+> medan bernama — ⚠️ daftar bernama itulah yang melahirkan cacat MBU dan Travel"* dan *"⭐ Jalur **tutup klaim** dan
+> **tolak klaim** membentuk komite **satu jenjang**"* →
+>
+> - Premis *"cacat MBU dan Travel"* **bertentangan dengan AC 109** (properti klasifikasi benar-benar diisi). Tahap 1
+>   **tidak menyalin data kutipan** ke kasus `KMT-`: kasus komite TT2 lahir di `T_WORK_CLAIM` (`LINI = 'FACIN'`,
+>   `TAHAP Komite_Flow`) + `T_GENERAL_KOMITE` (`ADJUSTMENT_ID` = ID stabil adjustment) + `T_KOMITE_KOMITELIST`; muatan
+>   outbox surel hanya pengenal (`PARITAS.md` §5). Apa yang dibaca sisi komite = **tahap 2** (`komiteclaimfacin`);
+>   *"disalin UTUH"* **perlu dicek terhadap XML** Komite Claim FacIn sebelum dijadikan kontrak.
+> - Jalur **tolak klaim (TT3)** dan **tutup tanpa bayar (TT4)** melahirkan kasus komite **tanpa adjustment**, padahal
+>   `T_GENERAL_KOMITE.ADJUSTMENT_ID` NOT NULL — tombol **Yes** keduanya **nonaktif** (**OQ-CFI-27**); Close langsung
+>   (tanpa CWP) dibangun. Bundel adjustment PT 2 ke satu `KMT-` tidak dibangun (**OQ-CFI-28**).
+> - Komite mengikuti **pola Komite Claim Prop, tanpa menu** (OQ-CFI-04); nomor `KMT-` dari `SEQ_WORK_CLAIM`
+>   (OQ-CFI-02).
+
 ## Butir `[terbuka]` yang menyentuh tiket ini
 
 | Butir | Isinya | Menahan? |
 | --- | --- | --- |
 | **6** | Isi daftar jabatan dan susunan jenjang | ⛔⛔ **MENAHAN** penentuan jumlah jenjang |
+
+> ⛔ **RALAT 10-10-2026.** Baris lamanya dikutip utuh, tidak dihapus: *"Isi daftar jabatan dan susunan jenjang | ⛔⛔
+> **MENAHAN** penentuan jumlah jenjang"* → **tidak menahan lagi**: tahap 1 menulis tangga awal dari roster `EMAILKOMITE`
+> FACIN (`SetListKomite_act`: anggota aktif ber-`LIMIT_BOTTOM` ≤ batas; aturan khusus objek retro memakai `LIMIT_TOP`
+> baris *Technic Div. Head*), dengan `T_WORK_CLAIM.POSITION` = `OPERATOR_ID` tingkat 1 (`backend/models/komite.go`,
+> `repository/komite.go`). ⭐ **Pemutus menurut jabatan → workbasket**, pola Komite Claim Prop, di **tahap 2**
+> (`komiteclaimfacin`, OQ-CFI-04). Wewenang membuka / menyerahkan = ADR-0030 + workbasket (RALAT tiket 08).
 
 ## Perintah verifikasi
 

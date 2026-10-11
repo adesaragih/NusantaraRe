@@ -234,7 +234,7 @@ func sqlDaftarKasus(kerja, gen, quot string, s models.SaringanKasus) (string, []
 		args = append(args, v)
 		return fmt.Sprintf(":%d", len(args))
 	}
-	fmt.Fprintf(&b, `SELECT w.ID, q.BUSINESS_NAME, q.INSURED_NAME, q.MARKETING_NAME, g.NB_STATUS,
+	fmt.Fprintf(&b, `SELECT w.ID, g.TREATY_GROUP_NAME, q.INSURED_NAME, q.MARKETING_NAME, g.NB_STATUS,
 	        w.STATUS_WORK, g.POSITION_NOTE, g.NOPOLIS, TO_CHAR(w.TGL_CREATE, '%s'), w.CREATE_OP_NAME,
 	        q.PROPORTIONAL_TYPE, g.CEDING_CO_NAME, TO_CHAR(g.START_DATE, '%s'), TO_CHAR(w.TGL_UPDATE, '%s'),
 	        TO_CHAR(g.TGL_PROD, '%s')
@@ -397,7 +397,7 @@ func (g *Gudang) DaftarKasus(ctx context.Context, s models.SaringanKasus) ([]mod
 		if err := rows.Scan(&r.ID, &bis, &ins, &mkt, &nb, &st, &pn, &np, &tg, &pembuat, &jenis, &ceding, &mulai, &ubah, &prod); err != nil {
 			return nil, fmt.Errorf("repository: membaca baris daftar kasus: %w", err)
 		}
-		r.BusinessName, r.InsuredName, r.MarketingName = teks(bis), teks(ins), teks(mkt)
+		r.TreatyGroupName, r.InsuredName, r.MarketingName = teks(bis), teks(ins), teks(mkt)
 		r.NBStatus, r.StatusWork, r.PositionNote, r.NoPolis, r.TglCreate = teks(nb), teks(st), teks(pn), teks(np), teks(tg)
 		r.NamaPembuat, r.JenisProporsi = teks(pembuat), teks(jenis)
 		r.CedingCoName, r.StartDate, r.TglUpdate = teks(ceding), teks(mulai), teks(ubah)

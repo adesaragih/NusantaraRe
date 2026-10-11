@@ -158,8 +158,8 @@ func TestTanggaKomiteHanyaTingkat1(t *testing.T) {
 }
 
 func TestNomorKlaimDanPLA(t *testing.T) {
-	if got := RakitNomorKlaim("RNM-K", "22", "04.2026", 4); got != "RNM-K22.04.2026.TX00004" {
-		t.Errorf("nomor klaim = %s (DEV CLMNP-3998: RNM-K22.04.2026.TX00004)", got)
+	if got := RakitNomorKlaim("UJI-K", "22", "04.2026", 4); got != "UJI-K22.04.2026.TX00004" {
+		t.Errorf("nomor klaim = %s (bentuk nomor kasus DEV CLMNP-3998)", got)
 	}
 	pla := RakitNomorPLA("22", time.Date(2026, 10, 9, 10, 0, 0, 0, Jakarta), 1)
 	if pla != "RNM-M22.10.2026.TX00001" {
@@ -178,9 +178,9 @@ func TestNomorKlaimDanPLA(t *testing.T) {
 // (SaveDataToOSAksep_Act 15.8.1: EstimationDate = "") - OQ, PARITAS.
 func TestDataJSONOSSamaDenganBarisDEV(t *testing.T) {
 	h := halamanDEV3998()
-	h.Setel(CD+"NoClaim", "RNM-K22.04.2026.TX00004")
-	h.Setel(CD+"IDMaster", "1001789")
-	h.Setel(TM+"ID", "1001789")
+	h.Setel(CD+"NoClaim", "UJI-K22.04.2026.TX00004")
+	h.Setel(CD+"IDMaster", "UJI-1001789")
+	h.Setel(TM+"ID", "UJI-1001789")
 	if err := HitungKlaim(konteksUji(), h, masterDEV1001789()); err != nil {
 		t.Fatal(err)
 	}
@@ -194,10 +194,10 @@ func TestDataJSONOSSamaDenganBarisDEV(t *testing.T) {
 	}
 	b := SusunBarisOS(h, "CLMNP-000001", StsOSOutstanding, p)
 	dev := "{\n\"Adjusterfee\":\"0\"\n,\"CNPOthersFee\":\"0\"\n,\"Currency\":\"IDR\"\n,\"CurrencyID\":\"10026\"\n" +
-		",\"EstimationDate\":\"20260504\"\n,\"GrossValue\":\"3100000000.000000000000000\"\n,\"IDMasterTreaty\":\"1001789\"\n" +
-		",\"KursValue\":\"1.0\"\n,\"NoClaim\":\"RNM-K22.04.2026.TX00004\"\n,\"PersenRNM\":\"30\"\n" +
-		",\"PolicyNo\":\"RNM-QR.T14.04.2025.11346\"\n,\"pxObjClass\":\"ASM-FW-GCNMFW-Data-osAkseptasi\"\n" +
-		",\"pzInsKey\":\"ASM-FW-GCNMFW-WORK CLMNP-3998\"\n,\"Salvage\":\"0\"\n,\"Type\":\"0\"\n,\"TypeLoss\":\"XL 1ST LAYER\"\n" +
+		",\"EstimationDate\":\"20260504\"\n,\"GrossValue\":\"3100000000.000000000000000\"\n,\"IDMasterTreaty\":\"UJI-1001789\"\n" +
+		",\"KursValue\":\"1.0\"\n,\"NoClaim\":\"UJI-K22.04.2026.TX00004\"\n,\"PersenRNM\":\"30\"\n" +
+		",\"PolicyNo\":\"UJI-QR.T14.04.2025.00001\"\n,\"pxObjClass\":\"ASM-FW-GCNMFW-Data-osAkseptasi\"\n" +
+		",\"pzInsKey\":\"ASM-FW-GCNMFW-WORK UJI-CLMNP-3998\"\n,\"Salvage\":\"0\"\n,\"Type\":\"0\"\n,\"TypeLoss\":\"XL 1ST LAYER\"\n" +
 		",\"TypeLossID\":\"10046\"\n,\"Value\":\"930000000.000000000000000\"\n}\n"
 	got, ingin := pasanganJSON(t, b.DataJSON), pasanganJSON(t, dev)
 	var kunciSama []string
@@ -228,7 +228,7 @@ func TestDataJSONOSSamaDenganBarisDEV(t *testing.T) {
 	if !strings.HasPrefix(b.DataJSON, "{\n") || !strings.HasSuffix(b.DataJSON, "\n}\n") {
 		t.Errorf("bentuk GetPageJSONString salah: %q", b.DataJSON)
 	}
-	if b.CaseID != "CLMNP-000001" || b.StsReject != "0" || b.MasterID != "1001789" {
+	if b.CaseID != "CLMNP-000001" || b.StsReject != "0" || b.MasterID != "UJI-1001789" {
 		t.Errorf("kolom OS = %+v", b)
 	}
 }
@@ -256,4 +256,32 @@ func pasanganJSON(t *testing.T, s string) jsonDatar {
 		out.nilai[k] = v
 	}
 	return out
+}
+
+// Muatan Kasir: LdcId syariah hanya bila IsPEGASyariah (langkah 9.4, OQ-CNP-40); AcceptedDate tak terbaca = galat, bukan
+// TglAksep kosong diam-diam; Tgl Boleh Bayar ikut perbaikan butir 5.
+func TestMuatanKasirSyariahDanTanggalAkseptasi(t *testing.T) {
+	cfg := KonfigKasir{CompanyName: "UJI-CO", LjtdID: "UJI-LJTD", LdcID: "UJI-LDC", LdcIDSyariah: "UJI-LDCS", StsAp: "0"}
+	susun := func(tgl string, syariah bool) ([]MuatanKasir, error) {
+		h := HalamanBaru()
+		h.SetelDaftar(DaftarAdjustment, []Baris{{"AcceptedDate": tgl, "AcceptedNo": "UJI-AKSEP", "NoAccount": "1-2"}})
+		h.SetelDaftar(JalurAdj(1, AnakSpreadIn), []Baris{{"TotalClaim": "100", "PremiumSpreaded": "10", "CurrencyID": "10026"}})
+		return SusunMuatanKasir(h, 1, "UJI-EMAIL", "UJI-PELAKU", cfg, syariah)
+	}
+	m, err := susun("2026-12-27", false)
+	if err != nil || len(m) != 1 {
+		t.Fatalf("muatan = %v, %v", m, err)
+	}
+	if m[0].LdcID != "UJI-LDC" || m[0].TglAksep != "27-12-2026" || m[0].TglBolehBayar != "01-02-2027" || !SamaAngka(m[0].Nett, "90") {
+		t.Errorf("muatan konvensional = %+v", m[0])
+	}
+	if m, err = susun("2026-12-27", true); err != nil || m[0].LdcID != "UJI-LDCS" {
+		t.Errorf("muatan syariah = %+v, %v", m, err)
+	}
+	if m, err = susun("", false); err != nil || m[0].TglAksep != "" || m[0].TglBolehBayar != "" {
+		t.Errorf("tanggal kosong = %+v, %v", m, err)
+	}
+	if _, err = susun("bukan-tanggal", false); err == nil {
+		t.Error("AcceptedDate tak terbaca diterima diam-diam")
+	}
 }

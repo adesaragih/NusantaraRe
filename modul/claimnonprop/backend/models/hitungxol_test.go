@@ -33,7 +33,7 @@ func konteksUji() *Konteks {
 
 // masterDEV1001789 - layer, kurs, MDP, dan spreading master 1001789 DEV (M_TREATY_IN.JSONDATA, baca-saja 09-10-2026):
 // layer 1 limit 3,1 M retensi 2,4 M; layer 2 limit 6,5 M retensi 5,5 M; layer 3 limit 25 M retensi 12 M; RNM 30%;
-// Share(1) 100% 2024 QS 155M TRT dipecah QS (R/I) 60% / QS (OR) 40%.
+// Share(1) 100% (spreading TRT, nama diganti UJI-) dipecah QS (R/I) 60% / QS (OR) 40%. ID master diberi awalan UJI-.
 func masterDEV1001789() MasterTreaty {
 	grup := []string{"PROPERTY", "ENGINEERING", "GENERAL ACCIDENT"}
 	layer := func(n, limit, ded, mdp string) LimitXOL {
@@ -42,14 +42,14 @@ func masterDEV1001789() MasterTreaty {
 			IsCombineMDP: "false", NoRIPCalculation: "false", TreatyGroups: grup,
 			MDPList: []NilaiMataUang{{Currency: "IDR", Value: mdp}}}
 	}
-	return MasterTreaty{ID: "1001789", ProportionType: ProporsiMaster, AccountingModeNonProp: ModeLoss, RNMShare: "30",
+	return MasterTreaty{ID: "UJI-1001789", ProportionType: ProporsiMaster, AccountingModeNonProp: ModeLoss, RNMShare: "30",
 		Limits: []LimitXOL{
 			layer("1", "3100000000", "2400000000", "1311300000.0000036000000000"),
 			layer("2", "6500000000", "5500000000", "526500000.000000"),
 			layer("3", "25000000000", "12000000000", "562499999.99999964000000000"),
 		},
 		CurrencyList: []KursMaster{{Currency: "IDR", Conversion: "1"}, {Currency: "USD", Conversion: "15500"}},
-		Share: []ShareXOL{{SpreadingTypeIDXOL: "10241", SpreadingTypeXOL: "2024 QS 155M TRT", SpreadingTotalPctXOL: "100",
+		Share: []ShareXOL{{SpreadingTypeIDXOL: "10241", SpreadingTypeXOL: "UJI QS TRT", SpreadingTotalPctXOL: "100",
 			SpreadingListXOL: []SpreadingMaster{{ReinsTypeID: "10004", ReinsTypeName: "QS (R/I)", Pct: "60"},
 				{ReinsTypeID: "10028", ReinsTypeName: "QS (OR)", Pct: "40"}}}},
 	}

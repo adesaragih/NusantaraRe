@@ -20,10 +20,14 @@ import (
 )
 
 // KlaimTreatyKomite adalah yang Komite Claim Prop butuhkan dari Claim Prop.
+//
+// Kasus komite Close Without Payment (TT 4, `SendCloseClaimToKomite` -> `KomitePost_Close`; perintah work owner
+// 10-10-2026) tidak menunjuk baris adjustment: `adjID` KOSONG berarti "tanpa adjustment" - `BacaKlaimTreaty` menjawab
+// `Adjustment = 0` dan `TulisBalikKlaimTreaty` menolak ubahan `Adjustment`.
 type KlaimTreatyKomite interface {
 	// BacaKlaimTreaty membaca halaman kasus klaim induk seperti dibuka Claim Prop (`pyWorkCover` / `TempOpenPage`),
-	// beserta posisi baris adjustment `adjID`. `tx` nil = baca tanpa kunci (layar); terisi = di dalam transaksi
-	// Submit, sesudah `KunciKlaimTreaty`.
+	// beserta posisi baris adjustment `adjID` (kosong = kasus komite TT 4, `Adjustment = 0`). `tx` nil = baca tanpa
+	// kunci (layar); terisi = di dalam transaksi Submit, sesudah `KunciKlaimTreaty`.
 	//
 	// Langkah XML: Section `ShowTransfer` (panel klaim induk, grid Insured Interests / Count Claim Amount / Loss
 	// Allocation / Estimation List / Total Original Currency Estimation / Spreading In / Spreading Out, blok
@@ -39,7 +43,19 @@ type KlaimTreatyKomite interface {
 	// S19 / S36 Obj-Save `TempOpenPage`). Ubahan hanya pada jalur daftar putih `JalurHeaderKomite` dan
 	// `PropAdjustmentKomite`; jalur lain -> `ErrUbahanKlaimTreatyTidakSah`.
 	TulisBalikKlaimTreaty(ctx context.Context, tx *db.Tx, klaimID, adjID string, u UbahanKlaimTreaty) error
+	// TutupKlaimTreaty = `KomitePost_Close` S17 (`pxForceCaseClose` TempOpenPage, `WorkStatus "Resolved-Completed"`,
+	// `CloseAllSubCases true`): kasus klaim induk ditutup Resolved-Completed bersama kasus komitenya yang masih terbuka,
+	// KECUALI `komiteID` (kasus komite yang sedang memutus - ditutup modul Komite sendiri di transaksi yang sama).
+	// Kasus klaim yang sudah ditutup -> `ErrKlaimTreatyTertutup`.
+	TutupKlaimTreaty(ctx context.Context, tx *db.Tx, klaimID, komiteID string, saat time.Time) error
 }
+
+// Jalur `KlaimTreaty.Nilai` yang bukan properti halaman klaim (kepala work object, hanya-baca): pembuat kasus klaim
+// induk - `KomitePost_Close` S13 `DataIn.CARI6` / `CARI7` (`TempOpenPage.pxCreateOpName` / `pxCreateOperator`).
+const (
+	JalurPembuatKlaimTreaty     = "pxCreateOperator"
+	JalurNamaPembuatKlaimTreaty = "pxCreateOpName"
+)
 
 // KlaimTreaty adalah salinan baca halaman kasus klaim induk.
 type KlaimTreaty struct {
@@ -49,7 +65,7 @@ type KlaimTreaty struct {
 	// Daftar - jalur daftar -> baris (`ClaimData.InterestList`, `ClaimData.AdjustmentList`,
 	// `ClaimData.AdjustmentList(n).SpreadingAdjustment`, ...). Baris = properti -> nilai.
 	Daftar map[string][]map[string]string
-	// Adjustment - posisi (1..n) baris `adjID` di `ClaimData.AdjustmentList`.
+	// Adjustment - posisi (1..n) baris `adjID` di `ClaimData.AdjustmentList`; 0 = kasus komite tanpa adjustment (TT 4).
 	Adjustment int
 	// Tertutup - kasus klaim sudah ditutup (`T_WORK_CLAIM.STATUS_WORK` terisi).
 	Tertutup bool

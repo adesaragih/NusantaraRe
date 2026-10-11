@@ -11,7 +11,7 @@ import OutstandingClaimLife from './pages/OutstandingClaimLife'
 import RegisterKlaim from './pages/RegisterKlaim'
 import './claimlife.css'
 
-export function RuteClaimLife({ halaman, masuk, onPindah }: PropsRute<HalamanClaimLife>) {
+export function RuteClaimLife({ halaman, masuk, onPindah, onBukaModul }: PropsRute<HalamanClaimLife>) {
   // Kasus yang sedang dibuka. Kosong berarti belum ada yang dipilih.
   const [kasus, setKasus] = useState('')
 
@@ -21,6 +21,7 @@ export function RuteClaimLife({ halaman, masuk, onPindah }: PropsRute<HalamanCla
       {halaman === 'inbox' && (
         <InboxClaimLife
           peran={masuk.peran}
+          onBukaModul={onBukaModul}
           onBuka={(workID) => {
             // ⚠️ Baris Inbox membuka layar TAHAPnya. Tab Outstanding
             // membuka `OSClaimLife`; tahap lain menyusul bersama

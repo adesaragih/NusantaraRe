@@ -438,20 +438,21 @@ func LayarOutstanding() []Unsur {
 			tombol("ChooseMasterIn", "Choose Master In", "PilihMaster:IN"),
 			tombolOQ("ViewMaster", "View Master", OQViewMaster),
 		}, false),
+		// Rupa ikut Claim Prop (perintah work owner 09-10-2026 "ikuti tampilan klaim prop"): Claim Information kartu
+		// sendiri di atas tab, tombol layar satu baris aksi tanpa kartu - di XML Claim Information tab pertama layout group
+		// (`[penyimpangan sadar]` tata letak, PARITAS §9; isi, kondisi, dan aksi tidak berubah).
+		bagian("Claim Information", info),
 		sebaris("", ro(medan(TM+"RNMShare", "RNM Share", KAngka)), label("%")),
 		letak(LetakTab,
-			bagian("Claim Information", info),
 			bagian("Interests", sectionInterest(false)),
 			bagian("Estimation", estimasi),
 			bagian("Spreading", bagian("Spreading Claim", gridSpreadingKlaim(true)...)),
 		),
-		sebaris("",
-			tombol("Save", "Save", "SaveDataToJClaim"),
-			naJika(tombol("SaveToIssueRNM", "Save to issue RNM", "SaveDataToOSAksep"), atau(ro1, proteksiIssue)),
-			naJika(tombol("PrintCFS", "Print CFS", "GenerateCFS"), atau(beda("IsOutstanding", "1"), isCFS)),
-			naJika(tombol("PrintPLA", "Print PLA", "BukaPLA"), atau(sama(CD+"IsPLA", "1"), sama(CD+"IsPLA", "1A"))),
-			naJika(tombol("Submit", "Submit", "Submit"), atau(beda("IsCFS", "1"), beda("IsOutstanding", "1"))),
-		),
+		tombol("Save", "Save", "SaveDataToJClaim"),
+		naJika(tombol("SaveToIssueRNM", "Save to issue RNM", "SaveDataToOSAksep"), atau(ro1, proteksiIssue)),
+		naJika(tombol("PrintCFS", "Print CFS", "GenerateCFS"), atau(beda("IsOutstanding", "1"), isCFS)),
+		naJika(tombol("PrintPLA", "Print PLA", "BukaPLA"), atau(sama(CD+"IsPLA", "1"), sama(CD+"IsPLA", "1A"))),
+		naJika(tombol("Submit", "Submit", "Submit"), atau(beda("IsCFS", "1"), beda("IsOutstanding", "1"))),
 		gridRiwayat(false),
 	}
 }
@@ -539,8 +540,8 @@ func LayarAkseptasi() []Unsur {
 			tampil(tombol("ViewPaymentAttachment", "View Payment Attachment", "LihatLampiranBayar"), acc),
 			tombol("ClaimHistoryMasterID", "Claim History Master ID", "LihatRiwayatMaster"),
 		}, true),
+		bagian("Claim Information", info), // rupa ikut Claim Prop (lihat LayarOutstanding)
 		letak(LetakTab,
-			bagian("Claim Information", info),
 			bagian("Interests", sectionInterest(true)),
 			bagian("Estimation", estimasi),
 			bagian("Acceptation", sectionAcceptation()),

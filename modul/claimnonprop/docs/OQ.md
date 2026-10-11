@@ -1,6 +1,8 @@
 # OQ — pertanyaan terbuka modul Claim Non Prop
 
-> Dibuat 09-10-2026 dari pindai baca-saja ([`PINDAI.md`](PINDAI.md)). Belum ada kode.
+> Dibuat 09-10-2026 dari pindai baca-saja ([`PINDAI.md`](PINDAI.md)). Tahap 1 dibangun 09-10-2026: OQ-CNP-01, 04, 05,
+> 06 diputuskan work owner; OQ lain memakai kolom **Rekomendasi** sebagai bawaan (prompt tahap 1 §3). OQ baru dari tahap
+> bangun ada di bagian D. Status setiap tombol: [`PARITAS.md`](PARITAS.md).
 >
 > Pengelompokan per pemilik jawaban mengikuti `modul/claimprop/docs/OQ.md`:
 > - **work owner:** keputusan.
@@ -86,3 +88,20 @@ claimprop 537. Penulisan ke DEV menunggu izin work owner saat tahap bangun.
 | **OQ-CNP-30** | `STS_REJECT = 5` (Save Previously Paid) 0 baris di DEV. Tombol itu pernah dipakai? | Dibangun persis XML. |
 | **OQ-CNP-31** | URL `insertClaimFinalOrClosed` / `insertClaimReject` tertulis mati di connector; `M_LINK_SERVICE` DEV tidak punya kategorinya. Nama kunci konfigurasinya? | Efek outbox berhenti terang, seperti Claim Prop. |
 | **OQ-CNP-32** | `REINSURANCE.TRLOSS_DETAIL_T` (syarat Kasir: akseptasi sudah terkonversi) tidak terbaca dari akun DEV. | Sama dengan OQ-CP-11: Kasir hanya jalan di produksi. |
+
+## D. Ditemukan saat bangun (09-10-2026)
+
+| OQ | Pemilik | Pertanyaan | Bawaan hari ini | Bukti |
+| --- | --- | --- | --- | --- |
+| **OQ-CNP-33** | pemilik ekspor Pega | Sel grid panel `AdjustmentDetailNP` (Add Claim Acceptation, Add Loss Allocation, Currency / angka / To XOL) memanggil `AddListClaimNP_Act`, `SetCurrency_Act`, `CountClaimTNP_Act`, `AddLossAlocation_Act`, `CountLossAllocation_act` dengan kelas `ASM-FW-GCNMFW-Data-Adjustment`; activity itu hanya ada di kelas Work. Versi kelas Data-Adjustment ada di Pega? | Tombol Add nonaktif, sel postValue; Rate of Exchange (kelas Work) tetap menghitung tingkat klaim. | `Section/AdjustmentDetailNP.xml` r1 / r2 |
+| **OQ-CNP-34** | work owner / DBA | View Payment Status (`DetailPaymentStsCNP`, `GetDetailPaymentStatus_Act`) memanggil layanan REST luar (`M_LINK_SERVICE`). Boleh dipanggil dari aplikasi, dan kunci konfigurasinya apa? Di Input Acceptation tombolnya tanpa aksi. | Tombol nonaktif. | `Section/OutstandingClaim(1).xml` b109 |
+| **OQ-CNP-35** | pemilik ekspor Pega | `view.CARI21` (RO medan Currency / Value pane InputDtlInterest) tidak punya penulis di korpus. | Dianggap kosong (medan dapat diisi). | `Section/InputDtlInterest.xml` |
+| **OQ-CNP-36** | work owner / DBA | CWP Yes (`CreateChildKomiteCloseNP_Act`) membuat kasus komite tanpa baris akseptasi, padahal `T_GENERAL_KOMITE.ADJUSTMENT_ID` NOT NULL. Kasus komite CWP ditulis bagaimana (kolom nullable lewat DBA, atau rujukan lain)? | Tombol Yes nonaktif. | `Activity/CreateChildKomiteCloseNP_Act.xml`, katalog DEV |
+| **OQ-CNP-37** | pemilik ekspor Pega | Properti tanpa penulis di korpus: `OfferFacIn.QuotationData.BusinessOldId` (nomor PLA, LbuID Kasir), `ClaimData.QuotationData.BusinessName`, `ValueAdjustment` (tangga komite), `FlagProrate` (popup reinstatement), `TotalListClaimAmount(IDR)`, `TotalEstimasi`, `ProtectEndDate`, `IsTreatyIn`. Penulisnya rule apa? | Kosong persis XML (tangga memakai nilai 0, nomor PLA tanpa kode bisnis lama). | `PARITAS.md` §8 |
+| **OQ-CNP-38** | pemilik ekspor Pega | Baris DEV `OS_AKSEPTASI_KLAIM` STS 0 memuat kunci DATA_JSON `EstimationDate`, `PolicyNo`, `pzInsKey` yang tidak ditulis halaman `SaveDataToOSAksep_Act` ekspor. Rule Pega hidup lebih baru dari ekspor? | Ikut XML ekspor. | `repository/sqldev_test.go`, DEV CLMNP-3998 |
+| **OQ-CNP-39** | DBA | Sequence `PLATNP_SEQ` (`GenerateNoPLATNP`) tidak terlihat dari akun DEV (`ALL_SEQUENCES`, `ALL_SYNONYMS`, `ALL_OBJECTS` 09-10-2026; yang ada `PLATREATYIN_SEQ`, `PLA_SEQ`), padahal prompt tahap 1 §4 mencatatnya "ada". Ada di skema lain tanpa hak baca, atau belum dibuat? | Print PLA berhenti terang (409) tanpa nomor. | katalog DEV |
+| **OQ-CNP-40** | work owner | When `IsPEGASyariah` (Kasir langkah 9.4: LdcId syariah) memeriksa nama node server Pega, bukan data kasus. Aplikasi baru satu instans: kapan muatan Kasir memakai LdcId syariah? | Selalu konvensional (`ldcId`); parameter `syariah` sudah ada di `SusunMuatanKasir`. | `When/IsPEGASyariah.xml`, `HitServiceToKasir_Act` 9.4 |
+| **OQ-CNP-41** | work owner / tim inti | Lanjutan OQ-CNP-04: kata sandi Edit XOL Allocation "ke konfigurasi", tetapi modul dilarang membaca env (ADR-U-0013) dan sandi tidak boleh di repo. Jalur konfigurasi rahasia modul dari inti, atau diganti hak akses? | Tombol Edit XOL Allocation nonaktif. | `EditXOLAlokasi` |
+| **OQ-CNP-42** | work owner | `TotalKomite` hanya ditulis `CreateChildKomiteCNP_Act` 26.11 SESUDAH penyerahan, padahal "Send to Committe" tampil hanya bila `TotalKomite != ''` - persis XML tombol itu tak pernah tampil untuk akseptasi baru (Pega hidup jelas menyerahkan: DEV `HISTORYAKSEPTASIPEGA`). | `[penyimpangan sadar]`: TotalKomite = cacah calon tangga saat layar disusun (pola Claim Prop). Konfirmasi atau sebut penulisnya. | `Section/AdjustmentDetailNP.xml` b261, `models/komite.go` |
+| **OQ-CNP-43** | work owner | `SaveDataToOSAksep_Act` langkah 8 menolak bila `ClaimData.QuotationData.BusinessOldId` kosong, padahal pengisinya (15.2-15.3) jalan SESUDAHNYA - persis XML Save to issue RNM tidak pernah lolos untuk kasus baru (DEV punya 1.684 kasus ber-OS). | `[penyimpangan sadar]`: OLDID dibaca lebih dulu (GetDataBusiness menurut nama bisnis). Konfirmasi. | `models/outstanding.go` `PeriksaSimpanOS` |
+| **OQ-CNP-44** | work owner | Perbaikan OQ-CNP-05 butir 3 diturunkan dari langkah 7.3 / 7.4: konjungsi `.Currency != Curr1` yang meniadakan `Curr1 == .Currency` dibuang, sisanya dipakai (baris Spreading In bermata uang rekening 1 / 2 yang nomor rekeningnya bukan rekening 1 maupun 2 = "Error No Account"). Maksud ini benar? | Dibangun seperti itu (uji `TestProteksiKomiteRekeningSalahDanIsErrorDireset`). | `ProteksiSendKomiteCNP_Act` 7.3 / 7.4 |

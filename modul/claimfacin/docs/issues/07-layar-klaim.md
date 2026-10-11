@@ -10,6 +10,16 @@ Hari ini Penilai **belum punya layar** untuk melihat klaim, objeknya, estimasiny
 
 Sesudah tiket ini, Penilai melihat klaim **utuh dalam satu layar** — objek, item, estimasi, pembagian, penyesuaian — dan dapat menyunting yang memang boleh disunting.
 
+> ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"Sesudah tiket ini, Penilai melihat klaim **utuh
+> dalam satu layar** — objek, item, estimasi, pembagian, penyesuaian"* → **bertentangan dengan AC 100** (layar
+> estimasi, penyesuaian, dan akseptasi **terpisah**; menggabungkannya menjadi satu layar **gagal**). Yang dibangun
+> 10-10-2026 mengikuti section XML: **tiga layar, satu per assignment** — **Input Register** (`InputRegister`),
+> **Input Estimasi** (`InputEstimasiAdmin`), **Choose Surveyor** (`ClaimSurvey` / `InputAdjustment`) — masing-masing
+> **bertab** (mis. Register / Policy Detail & Claims History / Progress Claim; Estimation / View Registration; Claim
+> Details / Policy Details and Claim History), dengan grid bertingkat objek → item → estimasi / adjustment
+> (`PINDAI.md` §3, `PARITAS.md` §2–§4, `backend/models/layar_register.go` / `layar_estimasi.go` /
+> `layar_adjustment.go`). Bagian lain tiket (penyuntingan ditolak di layar **dan** di layanan) tetap.
+
 ## Area codebase
 
 - Antarmuka klaim
@@ -37,6 +47,12 @@ Sesudah tiket ini, Penilai melihat klaim **utuh dalam satu layar** — objek, it
 | Butir | Isinya | Menahan? |
 | --- | --- | --- |
 | **11** | ⚠️ **29 medan bergantung jenis objek** — menjadi kolom, atau dibaca dari polis | ⚠️ **menahan bentuk layar objek** |
+
+> ⛔ **RALAT 10-10-2026.** Baris lamanya dikutip utuh, tidak dihapus: *"⚠️ **29 medan bergantung jenis objek** — menjadi
+> kolom, atau dibaca dari polis"* → ⚠️ **ruang nomor**: butir **11** di sini = register **`STRUKTUR-TABEL-CLAIM-FACIN.md`
+> §6**, bukan butir 11 spec (mesin tiket). Terjawab oleh yang dibangun: **dibaca dari polis** — `KUNCI_POLIS` menunjuk
+> letak objek, halaman polis dibaca ulang dari `JSON_POLIS` setiap muat; grid objek per lini dipilih `GolonganLini`
+> (`backend/models/lini.go`). Tidak menahan lagi.
 
 ## Perintah verifikasi
 

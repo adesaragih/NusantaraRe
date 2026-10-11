@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { MENU, PERAN, type KodePeran } from '../../../../inti/frontend/labels'
+import TabelKomite from '../components/TabelKomite'
 import { TAHAP, TAHAP_ID } from '../labels'
 import { Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { unduhXlsx, type KolomEksporXlsx } from '../../../../inti/frontend/lib/exportXlsx'
@@ -128,9 +129,11 @@ export interface InboxProps {
   onBuka: (workID: string) => void
   /** Membuka halaman Register — tombol kepala, `Register_Flow.xml:155`. */
   onRegister: () => void
+  /** `PropsRute.onBukaModul` - tabel komite di bawah inbox: kasus komite dibuka di tempat (menu komite dihapus). */
+  onBukaModul?: (modul: string, id: string) => boolean
 }
 
-export default function InboxClaimLife({ peran, onBuka, onRegister }: InboxProps) {
+export default function InboxClaimLife({ peran, onBuka, onRegister, onBukaModul }: InboxProps) {
   const tab = tabUntuk(peran)
   const [aktif, setAktif] = useState<NomorTahap | null>(tab[0]?.nomor ?? null)
   const [hal, setHal] = useState<HalamanInbox | null>(null)
@@ -158,12 +161,15 @@ export default function InboxClaimLife({ peran, onBuka, onRegister }: InboxProps
 
   if (tab.length === 0) {
     return (
-      <Kosong
-        pesan={
-          'Tidak ada antrian untuk peran Anda. Keempat antrian Claim Life ' +
-          'dipegang ReasLifeAdmin, ReasLifeMedicalAdvisor, dan ReasLifeSPV.'
-        }
-      />
+      <>
+        <Kosong
+          pesan={
+            'Tidak ada antrian untuk peran Anda. Keempat antrian Claim Life ' +
+            'dipegang ReasLifeAdmin, ReasLifeMedicalAdvisor, dan ReasLifeSPV.'
+          }
+        />
+        <TabelKomite peran={peran} onBukaModul={onBukaModul} />
+      </>
     )
   }
 
@@ -286,6 +292,7 @@ export default function InboxClaimLife({ peran, onBuka, onRegister }: InboxProps
           </nav>
         </>
       )}
+      <TabelKomite peran={peran} onBukaModul={onBukaModul} />
     </section>
   )
 }

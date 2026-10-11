@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { bolehTambahKlaim, jenisDaftar, switchTeknikAktif, TAB_INBOX } from './inbox'
+import { bolehTambahKlaim, jenisDaftar, switchTeknikAktif, TAB_INBOX, tabelKomiteTampil } from './inbox'
 
 describe('halaman awal Claim Non Prop', () => {
   it('dua tab saja, berurut Process lalu Resolve', () => {
@@ -21,9 +21,17 @@ describe('halaman awal Claim Non Prop', () => {
   })
 
   it('switch Teknik hanya dapat dinyalakan anggota ReasKlaimTeknik', () => {
-    expect(switchTeknikAktif({ workbasketTeknik: true })).toBe(true)
-    expect(switchTeknikAktif({ workbasketTeknik: false })).toBe(false)
+    expect(switchTeknikAktif({ workbasketTeknik: true, komite: false })).toBe(true)
+    expect(switchTeknikAktif({ workbasketTeknik: false, komite: true })).toBe(false)
     expect(switchTeknikAktif(null)).toBe(false)
+  })
+
+  // Menu Komite Claim Non Prop disembunyikan (perintah work owner 09-10-2026, pola Claim Prop): tabel komite di bawah
+  // inbox hanya bagi pemegang workbasket roster EMAILKOMITE NONPROP, tanpa switch dan tanpa ikut tab.
+  it('tabel komite hanya bagi pemegang workbasket roster komite NONPROP', () => {
+    expect(tabelKomiteTampil({ workbasketTeknik: false, komite: true })).toBe(true)
+    expect(tabelKomiteTampil({ workbasketTeknik: true, komite: false })).toBe(false)
+    expect(tabelKomiteTampil(null)).toBe(false)
   })
 
   it('Add Claim hanya di tab Process saat switch Teknik mati', () => {

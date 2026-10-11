@@ -1,6 +1,6 @@
 # 03: Layar komite — 93 kolom, tiga wajah menurut jalur
 
-**Status:** dibangun — wajah TT 2 saja *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+**Status:** dibangun — wajah TT 2 saja *(RALAT 08-10-2026; status lama: `ready-for-agent`)*. **RALAT 10-10-2026:** wajah TT 4 (CLOSE) dibangun — OQ-CP-06 selesai (`docs/PARITAS.md` §2 dan §3a).
 
 > **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
 >

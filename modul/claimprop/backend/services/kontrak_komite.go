@@ -13,6 +13,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/kontrak"
@@ -77,7 +78,7 @@ func (k KlaimUntukKomite) BacaKlaimTreaty(ctx context.Context, tx *db.Tx, klaimI
 		}
 	}
 	n := posisiAdjustment(h, adjID)
-	if n == 0 {
+	if n == 0 && adjID != "" { // adjID kosong = kasus komite Close Without Payment (Adjustment 0)
 		return kontrak.KlaimTreaty{}, kontrak.ErrAdjustmentTreatyTidakAda
 	}
 	out := kontrak.KlaimTreaty{Nilai: map[string]string{}, Daftar: map[string][]map[string]string{}, Adjustment: n,
@@ -85,6 +86,8 @@ func (k KlaimUntukKomite) BacaKlaimTreaty(ctx context.Context, tx *db.Tx, klaimI
 	for j, v := range h.Nilai {
 		out.Nilai[j] = v
 	}
+	out.Nilai[kontrak.JalurPembuatKlaimTreaty] = kasus.PembuatID
+	out.Nilai[kontrak.JalurNamaPembuatKlaimTreaty] = kasus.PembuatNama
 	for j, rows := range h.Daftar {
 		salin := make([]map[string]string, 0, len(rows))
 		for _, b := range rows {
@@ -173,15 +176,20 @@ func (k KlaimUntukKomite) TulisBalikKlaimTreaty(ctx context.Context, tx *db.Tx, 
 		return galatKasus(err)
 	}
 	n := posisiAdjustment(h, adjID)
-	if n == 0 {
+	switch {
+	case adjID == "" && len(u.Adjustment) > 0: // kasus komite Close Without Payment: tanpa baris adjustment
+		return fmt.Errorf("%w: ubahan adjustment tanpa baris adjustment", kontrak.ErrUbahanKlaimTreatyTidakSah)
+	case adjID != "" && n == 0:
 		return kontrak.ErrAdjustmentTreatyTidakAda
 	}
 	for j, v := range u.Header {
 		h.Setel(j, v)
 	}
-	b := h.AmbilDaftar(models.DaftarAdjustment)[n-1]
-	for p, v := range u.Adjustment {
-		b[p] = v
+	if n > 0 {
+		b := h.AmbilDaftar(models.DaftarAdjustment)[n-1]
+		for p, v := range u.Adjustment {
+			b[p] = v
+		}
 	}
 	if len(u.FacRetro) > 0 && len(h.AmbilDaftar(models.DaftarFacRetro)) == 0 {
 		rows := make([]models.Baris, 0, len(u.FacRetro))
@@ -198,4 +206,25 @@ func (k KlaimUntukKomite) TulisBalikKlaimTreaty(ctx context.Context, tx *db.Tx, 
 		return err
 	}
 	return k.l.g.SentuhKasus(ctx, tx, klaimID, k.l.jam())
+}
+
+// TutupKlaimTreaty - lihat `kontrak.KlaimTreatyKomite` (KomitePost_Close S17 pxForceCaseClose, CloseAllSubCases).
+func (k KlaimUntukKomite) TutupKlaimTreaty(ctx context.Context, tx *db.Tx, klaimID, komiteID string, saat time.Time) error {
+	if err := k.siap(); err != nil {
+		return err
+	}
+	kasus, err := k.l.g.Keadaan(ctx, tx, klaimID)
+	if err != nil {
+		return galatKasus(err)
+	}
+	if kasus.Tertutup() {
+		return kontrak.ErrKlaimTreatyTertutup
+	}
+	if err := k.l.g.TutupKasus(ctx, tx, klaimID, kasus.Tahap, saat); err != nil {
+		if errors.Is(err, repository.ErrTahapBerubah) {
+			return kontrak.ErrKlaimTreatyTertutup
+		}
+		return err
+	}
+	return k.l.g.TutupKomiteTerbuka(ctx, tx, klaimID, komiteID, saat)
 }

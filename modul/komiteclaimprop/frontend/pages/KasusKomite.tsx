@@ -349,7 +349,7 @@ export default function KasusKomite({
               {salah.acceptStatus && <span className="field__error">{salah.acceptStatus}</span>}
             </div>
 
-            {tampilSubjectivity(isi) && (
+            {isian.adjustment && tampilSubjectivity(isi) && (
               <label className="komiteclaimprop__centang">
                 <input
                   type="checkbox"
@@ -360,7 +360,7 @@ export default function KasusKomite({
                 {isian.label.isSubjectivity}
               </label>
             )}
-            {tampilCatatanSubjectivity(isi) && (
+            {isian.adjustment && tampilCatatanSubjectivity(isi) && (
               <label className="komiteclaimprop__isian-blok">
                 <span className="komiteclaimprop__label">
                   {isian.label.subjectivityNote} <span className="field__req">*</span>
@@ -381,24 +381,28 @@ export default function KasusKomite({
                 {salah.subjectivityNote && <span className="field__error">{salah.subjectivityNote}</span>}
               </label>
             )}
-            <label className="komiteclaimprop__centang">
-              <input
-                type="checkbox"
-                checked={isi.usulTutup}
-                disabled={kunci || !terbuka}
-                onChange={(e) => ubah('usulTutup', e.target.checked)}
-              />
-              {isian.label.usulTutup}
-            </label>
-            <label className="komiteclaimprop__centang">
-              <input
-                type="checkbox"
-                checked={isi.usulCadang}
-                disabled={kunci || !terbuka}
-                onChange={(e) => ubah('usulCadang', e.target.checked)}
-              />
-              {isian.label.usulCadang}
-            </label>
+            {isian.adjustment && (
+              <label className="komiteclaimprop__centang">
+                <input
+                  type="checkbox"
+                  checked={isi.usulTutup}
+                  disabled={kunci || !terbuka}
+                  onChange={(e) => ubah('usulTutup', e.target.checked)}
+                />
+                {isian.label.usulTutup}
+              </label>
+            )}
+            {isian.adjustment && (
+              <label className="komiteclaimprop__centang">
+                <input
+                  type="checkbox"
+                  checked={isi.usulCadang}
+                  disabled={kunci || !terbuka}
+                  onChange={(e) => ubah('usulCadang', e.target.checked)}
+                />
+                {isian.label.usulCadang}
+              </label>
+            )}
             <label className="komiteclaimprop__isian-blok">
               <span className="komiteclaimprop__label">
                 {isian.label.comment} <span className="field__req">*</span>

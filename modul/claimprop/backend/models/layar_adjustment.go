@@ -231,16 +231,16 @@ func LayarKomite(n int, lolos bool) []Unsur {
 }
 
 // LayarTutupKlaim - Section `PreventRejectClaimProp`. Layout S22 (Remark, visible never) dan S28-29 (pesan sukses
-// komite) tidak dibangun; "Yes" tutup tanpa pembayaran nonaktif (OQ-CP-06).
+// komite) tidak dibangun; "Yes" tutup tanpa pembayaran = `SendCloseClaimToKomite` (perintah work owner 10-10-2026).
 func LayarTutupKlaim() []Unsur {
-	cwp := "TempCommiteClaim.AllocationShareSalvage"
+	cwp := PropCentangTutupTanpaBayar
 	return []Unsur{
 		medan(cwp, "Close Without Payment", KCentang),
-		medan("TempCommiteClaim.CircumtansesCouseOfLoss", "Chronology", KArea),
+		medan(PropKronologiTutup, "Chronology", KArea),
 		wajibU(medan("TempCommiteClaim.Remarks", "Remarks", KArea)),
 		tampil(bagian("",
 			label("Are you sure want close this claim without payment?"),
-			tombolOQ("CloseWithoutPayment", "Yes", OQTutupTanpaBayar),
+			tombol("CloseWithoutPayment", "Yes", "SendCloseClaimToKomite"),
 			tombol("CloseNo", "No", "TutupModal"),
 		), sama(cwp, "true")),
 		tampil(bagian("",

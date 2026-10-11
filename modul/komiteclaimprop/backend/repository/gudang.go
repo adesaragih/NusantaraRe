@@ -99,11 +99,42 @@ func (g *Gudang) BacaKasus(ctx context.Context, tx *db.Tx, id string, kunci bool
 	if err != nil {
 		return models.Kasus{}, fmt.Errorf("repository: membaca kasus komite: %w", err)
 	}
-	return models.Kasus{ID: n[0].String, KlaimID: n[1].String, AdjustmentID: n[2].String, Loop: int(loop.Int64),
+	k := models.Kasus{ID: n[0].String, KlaimID: n[1].String, AdjustmentID: n[2].String, Loop: int(loop.Int64),
 		Count: int(count.Int64), AcceptStatus: strings.TrimSpace(n[5].String), UsulTutup: strings.TrimSpace(n[6].String),
 		UsulCadang: strings.TrimSpace(n[7].String), Subjectivity: strings.TrimSpace(n[14].String),
 		SubjectivityNote: n[15].String, Tahap: n[8].String, StatusWork: n[9].String, PembuatID: n[10].String,
-		PembuatNama: n[11].String, TglCreate: waktuDB(n[12].String), TglUpdate: waktuDB(n[13].String)}, nil
+		PembuatNama: n[11].String, TglCreate: waktuDB(n[12].String), TglUpdate: waktuDB(n[13].String),
+		TransferType: models.TransferAdjustment}
+	if k.AdjustmentID == "" { // Close Without Payment (TT 4): kolom bersama migrasi komiteclaimfacin 642 / 643
+		if err := g.bacaTeksTutup(ctx, tx, gen, &k); err != nil {
+			return models.Kasus{}, err
+		}
+	}
+	return k, nil
+}
+
+// sqlTeksTutup - jenis penyerahan dan teks Chronology kasus komite tanpa adjustment. Hanya dibaca untuk kasus itu,
+// sehingga kasus TT 2 tidak bergantung kolom migrasi komiteclaimfacin 642 / 643.
+func sqlTeksTutup(gen string) string {
+	return fmt.Sprintf(`SELECT TRANSFER_TYPE, KOMITE_CIRCUM_CAUSE_OF_LOSS FROM %s WHERE ID = :1`, gen)
+}
+
+// bacaTeksTutup mengisi TransferType / Kronologi kasus tanpa adjustment; jenis selain TT 4 ditolak (Claim Prop tanpa
+// penulis TT 3).
+func (g *Gudang) bacaTeksTutup(ctx context.Context, tx *db.Tx, gen string, k *models.Kasus) error {
+	q := sqlTeksTutup(gen)
+	if err := db.PeriksaSQL(q); err != nil {
+		return err
+	}
+	var tt, kron sql.NullString
+	if err := g.barisAtau(ctx, tx, q, k.ID).Scan(&tt, &kron); err != nil {
+		return fmt.Errorf("repository: membaca jenis penyerahan kasus komite: %w", err)
+	}
+	if strings.TrimSpace(tt.String) != models.TransferTutup {
+		return fmt.Errorf("%w: kasus %q tanpa adjustment ber-TRANSFER_TYPE %q", ErrKasusTidakAda, k.ID, tt.String)
+	}
+	k.TransferType, k.Kronologi = models.TransferTutup, kron.String
+	return nil
 }
 
 // sqlSimpanKepala - KomitePostAdjustment S25 (`KomiteCount := KomiteLoop` saat tolak) + S40 (`KomiteCount + 1`),

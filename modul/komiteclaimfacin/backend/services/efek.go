@@ -1,0 +1,127 @@
+package services
+
+// Untuk apa berkas ini: PELAKSANA OUTBOX Komite Claim Fac In - menjalankan satu baris T_LOG_SERVICE_RNM
+// `MODUL = komiteclaimfacin` (pola pelaksana Komite Claim Prop / Non Prop, DISALIN bukan diimpor) - dan perakit email
+// `SusunEmailKomite` (subjek, penerima, akun, CC dirakit SAAT DIKIRIM dari pengenal MUATAN).
+//
+// ⛔ Non-produksi: baris berhenti `gagal-permanen` dengan `ErrPengirimStubNonProduksi` (nol panggilan keluar).
+// Produksi: alamat M_LINK_SERVICE di-resolve sungguhan (kunci VERBATIM dari activity) lalu berhenti terang
+// (`…BelumDisetujui`) sampai manusia menyetujui panggilan nyata. Badan email (stream) tidak diekspor korpus (OQ-KCFI-01):
+// subjek dan penerima tetap dirakit lebih dulu - terbukti dapat disusun sebelum panggilan nyatanya ditahan.
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/layanan"
+	"nusantarare/inti/backend/outbox"
+	"nusantarare/modul/komiteclaimfacin/backend/models"
+	"nusantarare/modul/komiteclaimfacin/backend/repository"
+)
+
+// Penyusun merakit isi efek dari pengenal MUATAN - `*Layanan`.
+type Penyusun interface {
+	SusunEmailKomite(ctx context.Context, komiteID string, isi map[string]string) (models.SurelKomite, error)
+}
+
+// ErrPenyusunBelumDisambung - pelaksana dirakit tanpa perakit isi (salah rakit).
+var ErrPenyusunBelumDisambung = errors.New("services: perakit isi efek Komite Claim Fac In belum disambung")
+
+// PelaksanaKomiteClaimFacIn menjalankan baris outbox modul ini.
+type PelaksanaKomiteClaimFacIn struct {
+	Lingkungan inti.Lingkungan
+	Resolver   layanan.ResolverEndpoint
+	Penyusun   Penyusun
+}
+
+// Laksanakan memenuhi `outbox.PelaksanaEfek`.
+func (p PelaksanaKomiteClaimFacIn) Laksanakan(ctx context.Context, _ *db.Tx, b outbox.BarisEfekKeluar) error {
+	if b.Modul != repository.ModulOutbox {
+		return fmt.Errorf("%w: pelaksana Komite Claim Fac In menerima baris modul %q", galat.ErrPermintaanTidakSah, b.Modul)
+	}
+	var m MuatanOutbox
+	if err := json.Unmarshal([]byte(b.Muatan), &m); err != nil {
+		return fmt.Errorf("%w: muatan outbox Komite Claim Fac In tak terbaca: %v", galat.ErrPermintaanTidakSah, err)
+	}
+	switch b.Jenis {
+	case JenisEfekKonversi, JenisEfekKasir, JenisEfekEmailKomite:
+	default:
+		return fmt.Errorf("%w: jenis efek Komite Claim Fac In %q", galat.ErrPermintaanTidakSah, b.Jenis)
+	}
+	if !p.Lingkungan.AdalahProduksi() {
+		return outbox.ErrPengirimStubNonProduksi
+	}
+	if b.Jenis == JenisEfekEmailKomite {
+		if p.Penyusun == nil {
+			return ErrPenyusunBelumDisambung
+		}
+		if _, err := p.Penyusun.SusunEmailKomite(ctx, m.KomiteID, isiTeks(m.Isi)); err != nil {
+			return err
+		}
+		return outbox.EfekEmail{}.Jalankan(ctx, outbox.MuatanEfek{KlaimID: m.KlaimID})
+	}
+	if p.Resolver == nil {
+		return layanan.ErrResolverBelumDiputuskan
+	}
+	if _, err := layanan.AlamatLayanan(ctx, p.Resolver, layanan.KunciLayanan{Kategori1: m.Kategori1,
+		Kategori2: m.Kategori2}); err != nil {
+		return err
+	}
+	if b.Jenis == JenisEfekKasir {
+		return outbox.ErrKasirBelumDisetujui
+	}
+	return outbox.ErrArasapasBelumDisetujui
+}
+
+// isiTeks - `MuatanOutbox.Isi` (objek JSON) sebagai teks per kunci.
+func isiTeks(v any) map[string]string {
+	out := map[string]string{}
+	if m, ok := v.(map[string]any); ok {
+		for k, x := range m {
+			if s, ok := x.(string); ok {
+				out[k] = s
+			}
+		}
+	}
+	return out
+}
+
+// SusunEmailKomite = SendEmailKlaim_KMT S3-S18 (TT2) / KomitePost_Reject S13.10 (TT3 / TT4) untuk satu baris efek
+// email-komite: penerima tingkat berikut (KomiteID workbasket -> email semua anggotanya; akun -> email akun) atau
+// pembuat kasus komite, subjek VERBATIM, akun pengirim, CC.
+func (l *Layanan) SusunEmailKomite(ctx context.Context, komiteID string, isi map[string]string) (models.SurelKomite,
+	error) {
+	k, kl, err := l.muat(ctx, nil, komiteID, false)
+	if err != nil {
+		return models.SurelKomite{}, err
+	}
+	jenis, penerima := isi[IsiJenis], isi[IsiPenerima]
+	var kepada []string
+	if jenis == models.EmailPenyetujuBerikut {
+		if kepada, err = l.a.EmailAnggotaWorkbasket(ctx, penerima); err != nil {
+			return models.SurelKomite{}, err
+		}
+	}
+	if len(kepada) == 0 { // akun (bukan workbasket) atau pembuat kasus (S13 pyEmailAddress)
+		e, err := l.a.EmailPelaku(ctx, penerima)
+		if err != nil {
+			return models.SurelKomite{}, err
+		}
+		if e != "" {
+			kepada = []string{e}
+		}
+	}
+	if len(kepada) == 0 {
+		return models.SurelKomite{}, fmt.Errorf("%w: penerima email kasus komite %s tanpa alamat", ErrKasusTidakAda,
+			komiteID)
+	}
+	return models.SurelKomite{Akun: models.AkunSurel(k.TransferType, kepada, l.surel),
+		CC: models.CCSurel(k.TransferType, l.surel), Kepada: kepada,
+		Subjek: models.SubjekSurel(k.TransferType, jenis, k.KlaimID, k.ID,
+			models.NamaTertanggungSurel(k.TransferType, kl.Nilai), kl.Nilai["ClaimData.DateOfLoss"])}, nil
+}

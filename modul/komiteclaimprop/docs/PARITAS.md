@@ -29,7 +29,7 @@ Pra-proses `SetKomiteList_Act` (TT 2): total per mata uang tanpa baris `Acceptan
 | Sel / blok (VERBATIM) | Sumber | Status |
 | --- | --- | --- |
 | Judul "CLAIM COMMITTEE -" + "ADJUSTMENT" | label ber-`pyCondition .TransferType =='2'` | dibangun |
-| Judul "CLOSE" (TT 4) / "REJECT" (TT 3) | `pyCondition` TT 4 / TT 3 | di luar lingkup — TT 4 OQ-CP-06; TT 3 tanpa penulis (Claim Prop hanya menulis TT 2 `AddKomiteTreatyChild_ACT` dan TT 4 `SendCloseClaimToKomite`; `3` hanya dibaca `SendEmailKlaimRejectClose`) |
+| Judul "CLOSE" (TT 4) / "REJECT" (TT 3) | `pyCondition` TT 4 / TT 3 | TT 4 **dibangun** 10-10-2026 (OQ-CP-06 selesai, §3a): judul "CLOSE", tujuh container `.TransferType =2` tidak tampil (estimasi hanya Estimation List), teks komite = Circumstances (kronologi pop-up) + Remarks (`ClaimData.Remark_Close`), Subjectivity / dua Propose tidak tampil; TT 3 di luar lingkup — tanpa penulis (Claim Prop hanya menulis TT 2 `AddKomiteTreatyChild_ACT` dan TT 4 `SendCloseClaimToKomite`; `3` hanya dibaca `SendEmailKlaimRejectClose`) |
 | No Claim di kepala "Claim Treaty", "sample text" | `pyVisible` NEVER | mati |
 | "Claim Analysis" (label Heading 2) | — | dibangun |
 | Class of Business · Ceding · Source of Business · Policy No · Policy No Ceding · Insured Name | `pyWorkCover.*` | dibangun |
@@ -118,6 +118,30 @@ lalu S41 Commit. Di sini keputusan + tangga + nomor + tulis balik + tabel warisa
 transaksi aplikasi; Submit yang gagal di tengah batal utuh. Panggilan keluar baru berjalan sesudah commit (outbox) —
 urutan efek keluar sengaja diubah (keputusan 14, 20).
 
+## 3a. `KomitePost` S3 → `KomitePost_Close` (TT 4, Close Without Payment; dibangun 10-10-2026)
+
+Kasus TT 4 lahir dari Claim Prop `SendCloseClaimToKomite` (OQ-CP-06 selesai): `ADJUSTMENT_ID` NULL, `TRANSFER_TYPE` 4,
+kronologi di `KOMITE_CIRCUM_CAUSE_OF_LOSS` (kolom migrasi komiteclaimfacin 641-643, bersama). Satu tingkat (roster PROP
+"Claim Dept. Head"). `models.RencanakanTutup` + `services.jalan.laksanakan`, satu transaksi seperti §3.
+
+| Langkah | Isi Pega | Sistem baru | Status |
+| --- | --- | --- | --- |
+| S1 | Obj-Open-By-Handle klaim induk (prakondisi nonaktif) | kontrak `BacaKlaimTreaty` (adjID kosong) | dibangun |
+| S2-S4 | teks "Accepted - Close Claim by " / "Rejected - Close Claim  by " + jabatan (dua spasi VERBATIM), DataTransform ke kronologi klaim | `UbahanKlaimTreaty.Riwayat` | dibangun |
+| S5-S6 | tangga baris berjalan (keputusan, komentar, tanggal) | `UbahAnggota` | dibangun |
+| S7-S9 | Obj-Save + `UpdateWorkObject` | `TulisBalikKlaimTreaty` (Adjustment ubahan ditolak bila adjID kosong) | dibangun |
+| S10 | `InsertJsonClaimTreaty_act` (tanpa gerbang) | `SalinJSONKlaim` | dibangun |
+| S11 | OS close (S11.3 AcceptStatus 1) | `models.SusunOSTutup` → `SisipOS`, `STS_REJECT` 4, DATA_JSON `JSONHalamanPega` | dibangun |
+| S12.1-S12.7 | PDF stream `CommitteCloseClaim` → `HTMLToPDF` → `InsertDocument_Act` | — | **nonaktif-OQ** OQ-KCP-08 (stream tidak diekspor) |
+| S12.8 | `SendEmailWithAttachments` (IsPEGAPROD) | — | **nonaktif-OQ** OQ-KCP-08 (lampiran = PDF S12) |
+| S13 | `CLAIMREJECTED` (S13.2 AcceptStatus 1) | `repository.SisipKlaimDitolak`; Remark = `ClaimData.Remark_Close`, pembuat dari kontrak `pxCreateOperator` / `pxCreateOpName` | dibangun |
+| S14-S15 | `stsReject` 4 → `KonversiKlaim_Act` (AcceptStatus 1) | outbox `konversi-klaim` `STS_REJECT` 4 (hanya IsPEGAPROD) | dibangun |
+| S16 | KomiteCount + 1 | kepala komite | dibangun |
+| S17 | `pxForceCaseClose` (AcceptStatus 1) | kontrak `TutupKlaimTreaty`: klaim induk Resolved-Completed + kasus komite terbuka lain klaim itu ditutup | dibangun |
+| — | `HISTORYAKSEPTASIPEGA` (TT 2 S32-S33) | tidak ditulis | sesuai XML (`KomitePost_Close` tanpa langkah ini) |
+
+Ditolak (AcceptStatus 2): riwayat S3, tangga, JSON_KLAIM, Count + 1 saja — klaim induk tetap terbuka.
+
 ## 4. Activity yang dipanggil
 
 | Activity | Langkah | Sistem baru | Status |
@@ -142,7 +166,8 @@ urutan efek keluar sengaja diubah (keputusan 14, 20).
 | `getStatusKonversi_Act` | IsPEGAPROD → REINSURANCE.TRLOSS_DETAIL_T | `repository.Acuan.StatusKonversi` di S3 Submit | dibangun — hanya IsPEGAPROD, DEV tidak dijalankan (keputusan work owner 08-10-2026); hak baca diminta DBA. Konversi S29 asinkron: di produksi status bisa belum "1" saat Submit → Kasir lewat tombol "Acceptation" Claim Prop |
 | `GetEmailCeding_SQL` | `gl.f_get_email` | `repository.Acuan.EmailCeding` | dibangun — DEV ORA-00904 (OQ DBA) |
 | `CountEstimation_Act`, `CountSpreading_act`, `CurencyEstimation_Act`, `SetCurencyList_act`, `AddEstimation_Act`, … (berkelas Work-ClaimTreaty) | sel hanya-baca ShowTransfer | — | di luar lingkup (spec Out of Scope 2) |
-| `SaveRejectTreatyIn_Act_KMT`, `KomitePost_Close`, `KomitePost_Reject` | TT 3 / TT 4 | — | di luar lingkup |
+| `KomitePost_Close` | TT 4 | §3a | dibangun 10-10-2026, kecuali S12 (OQ-KCP-08) |
+| `SaveRejectTreatyIn_Act_KMT`, `KomitePost_Reject` | TT 3 | — | di luar lingkup |
 
 ## 5. Data lama (tiket 13)
 
@@ -162,4 +187,5 @@ jejak komite. Alat pemuat komite dibuang; AC 83 diralat.
 | ~~OQ-KCP-05~~ | DIABAIKAN work owner 08-10-2026: 166 baris OS status 1 DEV berbentuk lain | — |
 | ~~OQ-KCP-07~~ | DIJAWAB 08-10-2026 "A": pustaka Go `github.com/go-pdf/fpdf` v0.9.0 (MIT, Go murni) di go.mod; PDF dibangun; unggah + baris dokumen klaim disambung (work owner "OKE", pola Bordereaux) | — |
 | ~~OQ-KCP-06~~ | DIJAWAB 08-10-2026 "a": penyerahan ulang subjectivity dibangun di Claim Prop dan komite | — |
-| OQ-CP-06 | Jalur Close tanpa pembayaran (TT 4) | work owner (ditunda 08-10-2026) |
+| ~~OQ-CP-06~~ | SELESAI 10-10-2026: jalur Close tanpa pembayaran (TT 4) dibangun (§3a); di DEV menunggu `-migrate` 641-643 | — |
+| OQ-KCP-08 | `KomitePost_Close` S12: stream `CommitteCloseClaim` (PDF, disetujui maupun ditolak) tidak diekspor, maka PDF + `InsertDocument_Act` + email `SendEmailWithAttachments` S12.8 tidak dibangun | pemilik ekspor Pega |
