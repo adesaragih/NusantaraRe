@@ -3858,3 +3858,19 @@
 .treatyin tr.trin__baris-buka {
   cursor: pointer;
 }
+
+/* Rincian satu baris spreading manual (tab Share Non-Prop). */
+.treatyin .tl-spread-rincian {
+  display: grid;
+  gap: 8px;
+  padding: 4px 0 8px;
+}
+
+.treatyin .tl-spread-rincian__tabel {
+  width: 100%;
+}
+
+.treatyin .tl-spread-rincian__tabel th,
+.treatyin .tl-spread-rincian__tabel td {
+  padding: 6px 8px;
+}

@@ -108,6 +108,7 @@ function MedanNP({
   bisaUbah,
   onUbah,
   onLepas,
+  teks = false,
 }: {
   label: string
   nilai: string
@@ -115,6 +116,8 @@ function MedanNP({
   bisaUbah: boolean
   onUbah: (v: string) => void
   onLepas?: () => void
+  /** Teks bebas — huruf boleh (Layer/Part), tidak disaring `saringAngka`. */
+  teks?: boolean
 }) {
   // ⭐ Peristiwa `change` Pega — Activity berjalan HANYA bila nilainya
   // BERUBAH sejak medan dimasuki (8 Oktober 2026). Sebelumnya setiap
@@ -151,7 +154,7 @@ function MedanNP({
           value={bisaUbah ? nilai : tampil(nilai, desimal)}
           readOnly={!bisaUbah}
           onChange={(v) => {
-            onUbah(saringAngka(v))
+            onUbah(teks ? v : saringAngka(v))
           }}
         />
       ) : (
@@ -458,14 +461,19 @@ export function RincianLayer({
       }}
     />
   )
-  const selMatriks = (kunci: string, desimal: number | null, label: string) =>
+  const selMatriks = (kunci: string, desimal: number | null, _label: string) =>
     bisaUbah ? (
-      <input
-        className="field__input"
+      // ⛔ `FieldAngka`, BUKAN input mentah + `saringAngka`: penyaring itu
+      // menganggap titik pemisah DESIMAL, sehingga `2.000.000.000` menjadi
+      // `2.000000000` = 2 — limit mengecil dan ROL % membengkak
+      // (33.390.000.000 vs Pega 33,39). `FieldAngka` memperlakukan titik
+      // sebagai ribuan dan koma sebagai desimal, lalu menyimpan bentuk kabel.
+      <FieldAngka
+        label=""
         value={teksDari(l, kunci)}
-        aria-label={label}
-        onChange={(e) => {
-          onUbah({ ...l, [kunci]: saringAngka(e.target.value) })
+        desimal={desimal === null ? 2 : desimal}
+        onChange={(v) => {
+          onUbah({ ...l, [kunci]: v })
         }}
       />
     ) : (
@@ -490,10 +498,12 @@ export function RincianLayer({
           `[Layer ▾] [1] Part of [Layer ▾] [1]`. */}
       <TataPegaBlok tata="alir">
         <PilihNP label="" nilai={teksDari(l, 'LayerType')} opsi={opsi.jenisLayer ?? []} bisaUbah={bisaUbah} onUbah={set('LayerType')} />
-        <MedanNP label="" nilai={teksDari(l, 'Layer')} desimal={null} bisaUbah={bisaUbah} onUbah={set('Layer')} />
+        {/* ⭐ Layer dan Part boleh HURUF (permintaan pemakai 10 Oktober 2026) —
+            bukan kontrol Number, jadi tidak disaring `saringAngka`. */}
+        <MedanNP label="" nilai={teksDari(l, 'Layer')} desimal={null} bisaUbah={bisaUbah} onUbah={set('Layer')} teks />
         <TeksPega>{LIMITS_NP.partOf}</TeksPega>
         <PilihNP label="" nilai={teksDari(l, 'LayerPartType')} opsi={opsi.jenisLayer ?? []} bisaUbah={bisaUbah} onUbah={set('LayerPartType')} />
-        <MedanNP label="" nilai={teksDari(l, 'LayerPart')} desimal={null} bisaUbah={bisaUbah} onUbah={set('LayerPart')} />
+        <MedanNP label="" nilai={teksDari(l, 'LayerPart')} desimal={null} bisaUbah={bisaUbah} onUbah={set('LayerPart')} teks />
       </TataPegaBlok>
 
       {/* Grid Treaty Group — `masterDetail`, rincian `CoBList`. */}
@@ -637,12 +647,13 @@ export function RincianLayer({
                     if (aksi !== undefined) hitung(aksi, r)
                   }}
                 >
-                  <input
-                    className="field__input"
+                  {/* `FieldAngka` — lihat `selMatriks`: titik = ribuan, bukan desimal. */}
+                  <FieldAngka
+                    label=""
                     value={v}
-                    aria-label={k.label}
-                    onChange={(e) => {
-                      ubahSel(saringAngka(e.target.value))
+                    desimal={k.desimal === null ? 2 : k.desimal}
+                    onChange={(x) => {
+                      ubahSel(x)
                     }}
                   />
                 </PemicuUbah>

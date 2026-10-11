@@ -374,11 +374,23 @@ func TreatyNonPropSetSpreading(h *Halaman) error {
 	}
 	if share1["SpreadingTypeXOL"] == "" { // 4
 		rnm := angkaMaster(k, h, "RNMShare")
+		total := apd.New(0, 0)
 		for _, x := range mAnak(h, "Share", 1, "SpreadingListXOL") { // 4.1
 			baris = append(baris, Baris{"TreatyType": x["ReinsTypeID"], "Currency": p.teks("Currency"),
 				"CurrencyID": p.teks("IDCurrency"), "PremiumSpreaded": nol, "SplitRNMSharePct": x["Pct"],
 				"SharePercentage": formatAngka(k.Kali(k.BagiBulat(angkaBaris(k, x, "Pct"), rnm, 20), seratus))})
+			total = k.Tambah(total, angkaBaris(k, x, "Pct"))
 			sprderror = PesanSpreadingMaster
+		}
+		// ⭐ MENYIMPANG DARI PEGA (permintaan pemakai 11-10-2026, master
+		// 1002314: spreading manual ORS 15% = RNM Share 15%): spreading MANUAL
+		// yang totalnya sama dengan RNM Share sudah lengkap - pesan langkah 7
+		// tidak dipasang. Pega memasangnya untuk SETIAP spreading manual.
+		// Selisih mutlak lawan TETAPAN toleransi 0,0001 poin persen (AC 25:
+		// pembandingan dua nilai wajib bertoleransi): |total − RNM| × 10.000 ≤ 1.
+		selisih := k.Kali(new(apd.Decimal).Abs(k.Kurang(total, rnm)), apd.New(10000, 0))
+		if len(baris) > 0 && !rnm.IsZero() && selisih.Cmp(apd.New(1, 0)) <= 0 {
+			sprderror = ""
 		}
 	}
 	if p.teks("FlagRetroTreaty") == "true" { // 6

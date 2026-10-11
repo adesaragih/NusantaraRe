@@ -483,3 +483,56 @@ describe('Summarry of RNM Share — angka dibulatkan dan tidak membungkus', () =
     expect(CSS).not.toMatch(/[\s,>]col\s*\{[^}]*white-space/)
   })
 })
+
+// ⭐ 11 Oktober 2026 — permintaan pemakai (tangkapan Pega "2026 QS 212M TRT ·
+// 16,50" → `QS (R/I)` 60 / `QS (OR)` 40): Reins Type spreading manual SELAIN
+// ORS memperlihatkan anak susunannya dan bagian OR / R/I dari backend.
+describe('rincian spreading manual — anak susunan seperti Pega', () => {
+  const sebar = {
+    ReinsTypeName: '2026 QS 212M TRT',
+    ReinsTypeID: '10260',
+    ParentReinsTypeID: '',
+    Pct: '14',
+    Rp: '',
+    Usd: '',
+    Currency: 'IDR',
+    Value: '5775000000',
+    RnmLimitList: [nilai('IDR', '5775000000')],
+    GrossPremiumList: [nilai('IDR', '264356120')],
+    GrossPremiumMinList: [],
+    DeductionTotalList: [],
+    NetPremiumList: [],
+    BreakDownSprdListXOL: [
+      { ReinsTypeName: 'QS (R/I)', ReinsTypeID: '10004', Currency: 'IDR', Amount: '3465000000', SharePct: '60' },
+      { ReinsTypeName: 'QS (OR)', ReinsTypeID: '10028', Currency: 'IDR', Amount: '2310000000', SharePct: '40' },
+    ],
+    RNMSpreadedListXOL: [nilai('IDR', '2310000000')],
+    RNMSpreadedListRIXOL: [nilai('IDR', '3465000000')],
+    RNMSpreadedListGrossXOL: [nilai('IDR', '105742448')],
+    RNMSpreadedListGrossRIXOL: [nilai('IDR', '158613672')],
+  }
+
+  it('tabel Spread · Currency · Share (%) · Amount dan kolom OR / R/I terisi untuk QS', () => {
+    const html = renderToStaticMarkup(
+      <RincianShare
+        b={baris({ SpreadingTypeXOL: '', SpreadingTypeIDXOL: '', SpreadingListXOL: [sebar] })}
+        induk={[]}
+        bisaUbah={false}
+        modeUbah={false}
+        onUbah={() => undefined}
+        hitung={() => undefined}
+      />,
+    )
+    expect(html).toContain('<th scope="col">Spread</th>')
+    expect(html).toMatch(/<td>QS \(R\/I\)<\/td><td>IDR<\/td><td class="tl-angka">60,00<\/td><td class="tl-angka">3\.465\.000\.000,00<\/td>/)
+    expect(html).toMatch(/<td>QS \(OR\)<\/td><td>IDR<\/td><td class="tl-angka">40,00<\/td><td class="tl-angka">2\.310\.000\.000,00<\/td>/)
+    // Spreading OR / R/I Limit dan MDP dari backend.
+    for (const angka of ['5.775.000.000,00', '2.310.000.000,00', '3.465.000.000,00', '105.742.448,00', '158.613.672,00']) {
+      expect(html).toContain(angka)
+    }
+  })
+
+  it('memilih Reins Type langsung menjalankan SetSpreadingXOL (`spreading-pct`)', () => {
+    expect(KOMP).toMatch(/onUbah\(baru\)\s*hitung\('spreading-pct', \{ dasar: baru \}\)/)
+  })
+})

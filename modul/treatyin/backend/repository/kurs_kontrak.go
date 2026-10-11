@@ -69,7 +69,17 @@ func (g *Gudang) BacaKursKontrak(ctx context.Context, masterID, tahunTreaty stri
 	q := fmt.Sprintf(`SELECT k.ID, k.CURRENCY, k.IDCURRENCY, k.TOIDR, k.STARTDATE, k.ENDDATE
 		FROM %s h JOIN %s k ON k.ID = h.IDKURS
 		WHERE h.MASTERID = :1 AND k.TREATYYEAR = :2 ORDER BY h.URUTAN`, hub, kurs)
-	return g.bacaBarisKurs(ctx, q, masterID, strings.TrimSpace(tahunTreaty))
+	baris, err := g.bacaBarisKurs(ctx, q, masterID, strings.TrimSpace(tahunTreaty))
+	if err != nil {
+		return nil, err
+	}
+	// ⭐ Baris yang tercatat MILIK kontrak ini bertanda `Tetap` (10 Oktober
+	// 2026): layar membedakannya dari baris cadangan seluruh-tahun di atas,
+	// yang bukan input kontrak ini dan tidak boleh ikut tercatat saat Save.
+	for i := range baris {
+		baris[i].Tetap = true
+	}
+	return baris, nil
 }
 
 // kursMilikLain — ID kurs yang tercatat milik kontrak SELAIN `masterID`.

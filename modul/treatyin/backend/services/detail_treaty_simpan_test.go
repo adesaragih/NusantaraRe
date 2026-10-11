@@ -108,3 +108,28 @@ func TestPenyesuaianBelumTuntasDetailTidakDisentuh(t *testing.T) {
 		t.Error("Save penyesuaian menyentuh TREATYINDETAILEDM")
 	}
 }
+
+// ⭐ 10 Oktober 2026 — Submit terakhir (Accept Director → Resolve Complete)
+// kontrak NON-PROPORTIONAL ber-Spreading Type bernama harus menulis baris
+// `TREATYINDETAIL`. Dulu nol baris (cabang [5.4.2] tanpa langkah `RNM Limit`).
+func TestDirectorAcceptNonPropSpreadingBernamaMenulisDetail(t *testing.T) {
+	g := gudangSimpan()
+	g.dokumenTersimpan["1001001"]["Position"] = models.PosisiDirector
+	g.dokumenTersimpan["1001001"]["StatusAkseptasi"] = "Accept"
+	for k, v := range dokNP(shareNP("2026 UJI QS")) {
+		g.dokumenTersimpan["1001001"][k] = v
+	}
+	_, err := services.LayananDengan(g).KirimKontrak(context.Background(), director, services.MasukanKirim{
+		MasukanSimpan: services.MasukanSimpan{IDKontrak: "1001001"}, Aksi: services.AksiAkseptasi, Pilihan: "Accept",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := g.disimpan[0]
+	if r.Detail == nil || len(r.Detail.Baris) == 0 {
+		t.Fatalf("Submit terakhir NP tidak menulis baris detail: %+v", r.Detail)
+	}
+	if b := r.Detail.Baris[0]; b.Teks["TREATYID"] != "1001001" || b.Teks["PROPORTIONTYPE"] != "NonProportional" {
+		t.Errorf("baris %v", b.Teks)
+	}
+}

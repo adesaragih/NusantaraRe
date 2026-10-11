@@ -280,7 +280,12 @@ func (l *Layanan) BacaKontrakWarisan(ctx context.Context, p inti.Pelaku, id stri
 	if idTreaty == "" {
 		idTreaty = id
 	}
-	SiapkanShareNP(&k.ShareNP, LayerDariPohon(k.LimitsPohon), idTreaty)
+	// Anak susunan spreading manual dibaca dari RD (`SetSpreadingXOL` [5.3]).
+	src := &sumberGudang{ctx: ctx, g: l.gudang, induk: map[string][]models.SusunanSpreading{}, anak: map[string][]models.SusunanSpreading{}}
+	SiapkanShareNP(&k.ShareNP, LayerDariPohon(k.LimitsPohon), idTreaty, src, k.TanggalMulaiAsli)
+	if src.err != nil {
+		return models.KontrakWarisan{}, src.err
+	}
 
 	// ⭐ TANGGAL DI DALAM LARIK ikut diterjemahkan.
 	//

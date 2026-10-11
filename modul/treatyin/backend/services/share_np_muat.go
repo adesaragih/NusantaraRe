@@ -70,8 +70,11 @@ func ShareDariPendaratan(sp models.SharePendaratan, medan map[string]string) mod
 	return s
 }
 
-// SiapkanShareNP mengisi larik turunan saat kontrak dibuka.
-func SiapkanShareNP(s *models.ShareNP, layers []LayerNP, idKontrak string) {
+// SiapkanShareNP mengisi larik turunan saat kontrak dibuka. `src` / `mulai`
+// (Commencement YYYYMMDD) = sumber anak susunan spreading manual
+// (`SetSpreadingXOL` [5.3]); `src` nil = tanpa rincian anak.
+func SiapkanShareNP(s *models.ShareNP, layers []LayerNP, idKontrak string, src SumberSpreading, mulai string) {
+	k := konteksShare{src: src, idKontrak: idKontrak, mulai: mulai}
 	lengkapiShare(s)
 	calc := angka(s.RNMShare)
 	fac := angka(s.FacultativeShare)
@@ -101,7 +104,7 @@ func SiapkanShareNP(s *models.ShareNP, layers []LayerNP, idKontrak string) {
 			if b.SpreadingTypeXOL != "" {
 				sebarLama(b, true, idKontrak)
 			} else {
-				sebarManual(b)
+				sebarManual(b, k.anakSpreading)
 			}
 		}
 	}
@@ -111,11 +114,7 @@ func SiapkanShareNP(s *models.ShareNP, layers []LayerNP, idKontrak string) {
 	q := apd.New(0, 0)
 	for _, larik := range [][]models.BarisShareNP{s.Share, s.FacultativeShareList} {
 		for i := range larik {
-			for _, sp := range larik[i].SpreadingListXOL {
-				if sp.ReinsTypeName == namaQSOR {
-					q = angka(sp.Pct)
-				}
-			}
+			q = persenORBaris(&larik[i], q) // `ORS` = 100 % OR (10 Oktober 2026)
 			sebarBrokerage(&larik[i], q, idKontrak)
 		}
 	}
@@ -162,10 +161,14 @@ func barisShareKosong() models.BarisShareNP {
 }
 
 func lengkapiSpreading(sp *models.BarisSpreadingNP) {
-	for _, l := range []*[]models.NilaiMataUang{&sp.RnmLimitList, &sp.GrossPremiumList, &sp.GrossPremiumMinList, &sp.DeductionTotalList, &sp.NetPremiumList} {
+	larik := []*[]models.NilaiMataUang{&sp.RnmLimitList, &sp.GrossPremiumList, &sp.GrossPremiumMinList, &sp.DeductionTotalList, &sp.NetPremiumList}
+	for _, l := range append(larik, larikSebaranSpreading(sp)...) {
 		if *l == nil {
 			*l = []models.NilaiMataUang{}
 		}
+	}
+	if sp.BreakDownSprdListXOL == nil {
+		sp.BreakDownSprdListXOL = []models.BarisPecahanSpreadingNP{}
 	}
 }
 

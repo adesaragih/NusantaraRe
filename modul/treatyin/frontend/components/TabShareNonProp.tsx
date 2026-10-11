@@ -37,7 +37,7 @@
 // ⛔ Hasil suntingan dan hitungan hidup di salinan layar ini; jalur Save
 // menunggu keputusan pemilik proses.
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { formatNumber } from '../../../../inti/frontend/lib/format'
 import { Field } from '../../../../inti/frontend/components/ui/dasar'
@@ -50,6 +50,7 @@ import {
   type AksiShareNP,
   type BarisDeduksiShare,
   type BarisReinsShare,
+  type BarisSpreadingShare,
   type BarisShareNP,
   type NilaiShare,
   type OpsiLimits,
@@ -421,6 +422,70 @@ function RincianCoBBaca({ g }: { g: GrupShareBaca }) {
   )
 }
 
+/**
+ * Rincian SATU baris spreading manual (`Reins Type · Pct Share`), seperti
+ * Pega: tabel `Spread · Currency · Share (%) · Amount` (anak susunan induk,
+ * `BreakDownSprdListXOL`), lalu lima baris dasar · Spreading OR · Spreading R/I.
+ *
+ * ⭐ 11 Oktober 2026 (permintaan pemakai, tangkapan Pega "2026 QS 212M TRT ·
+ * 16,50" → `QS (R/I)` 60 / `QS (OR)` 40): seluruh angka dari backend
+ * (`sebarManual` → `pecahSpreading`, `SetSpreadingXOL` [5.3.8]–[5.9]) untuk
+ * SEMUA Reins Type — sebelumnya dihitung di layar dan hanya untuk `ORS`.
+ */
+function RincianBarisSpreading({ b, s }: { b: BarisShareNP; s: BarisSpreadingShare }) {
+  const kosong: NilaiShare[] = []
+  const baris = {
+    ...(b as BarisShareNP),
+    RnmLimitList: s.RnmLimitList,
+    GrossPremiumMinList: s.GrossPremiumMinList,
+    GrossPremiumList: s.GrossPremiumList,
+    DeductionTotalList: s.DeductionTotalList,
+    NetPremiumList: s.NetPremiumList,
+    RNMSpreadedListXOL: s.RNMSpreadedListXOL ?? kosong,
+    RNMSpreadedListRIXOL: s.RNMSpreadedListRIXOL ?? kosong,
+    RNMSpreadedListGrossMinXOL: s.RNMSpreadedListGrossMinXOL ?? kosong,
+    RNMSpreadedListGrossRIMinXOL: s.RNMSpreadedListGrossRIMinXOL ?? kosong,
+    RNMSpreadedListGrossXOL: s.RNMSpreadedListGrossXOL ?? kosong,
+    RNMSpreadedListGrossRIXOL: s.RNMSpreadedListGrossRIXOL ?? kosong,
+    RNMSpreadedListDeductXOL: s.RNMSpreadedListDeductXOL ?? kosong,
+    RNMSpreadedListDeductRIXOL: s.RNMSpreadedListDeductRIXOL ?? kosong,
+    RNMSpreadedListNetXOL: s.RNMSpreadedListNetXOL ?? kosong,
+    RNMSpreadedListNetRIXOL: s.RNMSpreadedListNetRIXOL ?? kosong,
+  } as BarisShareNP
+  const pecahan = s.BreakDownSprdListXOL ?? []
+  return (
+    <div className="tl-spread-rincian">
+      {pecahan.length > 0 && (
+        <table className="trin__tabel tl-spread-rincian__tabel">
+          <thead>
+            <tr>
+              <th scope="col">Spread</th>
+              <th scope="col">Currency</th>
+              <th scope="col" className="tl-angka">
+                Share (%)
+              </th>
+              <th scope="col" className="tl-angka">
+                Amount
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {pecahan.map((p, i) => (
+              <tr key={i}>
+                <td>{p.ReinsTypeName}</td>
+                <td>{p.Currency}</td>
+                <td className="tl-angka">{uang(p.SharePct)}</td>
+                <td className="tl-angka">{uang(p.Amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <TabelRincianSpreading b={baris} />
+    </div>
+  )
+}
+
 /** Judul baris: `Layer 1 Part of Layer 1`. */
 export function judulBarisShare(b: BarisShareNP): string {
   return [b.LayerType, b.Layer, SHARE_NP.bagianOf, b.LayerPartType, b.LayerPart].filter((x) => x !== '').join(' ')
@@ -503,7 +568,8 @@ export function RincianShare({
                     </tr>
                   )}
                   {b.SpreadingListXOL.map((s, i) => (
-                    <tr key={i}>
+                    <Fragment key={i}>
+                    <tr>
                       <td>
                         {sunting ? (
                           <select
@@ -511,8 +577,13 @@ export function RincianShare({
                             aria-label={kolom[0]}
                             value={s.ReinsTypeID}
                             onChange={(e) => {
-                              // postValue saja — namanya diisi `SetSpreadingXOL`.
-                              onUbah({ ...b, SpreadingListXOL: ganti(b.SpreadingListXOL, i, { ...s, ReinsTypeID: e.target.value }) })
+                              // ⭐ 11 Oktober 2026: memilih Reins Type langsung
+                              // menjalankan `SetSpreadingXOL` (aksi `spreading-pct`)
+                              // — nama dan rincian anak susunannya tampil seketika,
+                              // tidak menunggu Pct Share disunting.
+                              const baru = { ...b, SpreadingListXOL: ganti(b.SpreadingListXOL, i, { ...s, ReinsTypeID: e.target.value }) }
+                              onUbah(baru)
+                              hitung('spreading-pct', { dasar: baru })
                             }}
                           >
                             <option value="">{SHARE_NP.pilihKosong}</option>
@@ -555,6 +626,16 @@ export function RincianShare({
                         </td>
                       )}
                     </tr>
+                    {/* Rincian baris — hanya spreading MANUAL (grid `Pct Share`);
+                        spreading lama (bernama) punya blok rincian sendiri. */}
+                    {!lama && (
+                      <tr>
+                        <td colSpan={2 + (sunting ? 1 : 0)}>
+                          <RincianBarisSpreading b={b} s={s} />
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>

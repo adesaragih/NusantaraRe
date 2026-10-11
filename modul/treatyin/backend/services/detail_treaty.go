@@ -33,6 +33,8 @@ package services
 //     pun mengisi `SaveData.LIMITCURRENCY`, sehingga syarat Gross Premium
 //     `.Currency == SaveData.LIMITCURRENCY` (gagal → Exit Iteration) tidak
 //     pernah benar untuk mata uang terisi — cabang ini menyisipkan NOL baris.
+//     ⭐ DIPERBAIKI 10 Oktober 2026 (permintaan pemakai): langkah `RNM Limit`
+//     (`batasRNM`) kini dijalankan per baris `RnmLimitList` di cabang ini juga.
 //     Cabang EDM yang setara (`[7.2.2.1]`) dan cabang "type > 1" Treaty In
 //     (`[5.4.3.2.1]`) mempunyai langkah `RNM Limit` yang mengisinya.
 //  2. EDM Proportional (`[6]`): empat `RDB-List` sisipan ber-EPI memanggil
@@ -271,8 +273,14 @@ func (p *penyusunDetail) cabangNonProporsionalTreatyIn() {
 			p.sd["TREATYGROUP"] = teksDok(g, "TreatyGroup")
 			p.sd["TREATYGROUPID"] = teksDok(g, "TreatyGroupID")
 			if teksDok(sh, "SpreadingTypeXOL") != "" { // [5.4.2] UNTUK SPREADING TYPE 1
-				// ⚠️ Nol langkah `RNM Limit` di sini (lihat kepala berkas, 1).
-				for range barisDok(sh["RnmLimitList"]) {
+				// ⭐ MENYIMPANG DARI EKSPOR (permintaan pemakai 10 Oktober 2026:
+				// "perbaiki tombol force edit non prop, agar menyimpan ke
+				// treatyindetail"). Ekspor tidak punya langkah `RNM Limit` di
+				// sini, sehingga `LIMITCURRENCY` kosong dan cabang ini menyisipkan
+				// NOL baris (lihat kepala berkas, 1). Langkah yang sama dengan
+				// `[5.4.3.2.1]` / `[7.2.2.1]` dijalankan per baris `RnmLimitList`.
+				for _, r := range barisDok(sh["RnmLimitList"]) {
+					p.batasRNM(r)
 					p.premiShare(sh)
 				}
 			} else { // [5.4.3] UNTUK SPREADING TYPE > 1
@@ -307,15 +315,39 @@ func (p *penyusunDetail) spreadingShare(sh map[string]any) {
 				p.sd["NETPREMIVALUE"] = teksDok(n, "Value")
 			}
 		}
-		for _, r := range barisDok(sp["RnmLimitList"]) { // [5.4.3.3]
+		// ⭐ MENYIMPANG DARI EKSPOR (permintaan pemakai 10 Oktober 2026: Force
+		// Edit non-prop harus menyimpan ke `TREATYINDETAIL`). `RnmLimitList`
+		// TINGKAT SPREADING hanya diisi rincian anak yang tak tercapai di
+		// Non-Prop (`sebarManual`), jadi untuk spreading manual ia kosong dan
+		// cabang ini menyisipkan NOL baris. Yang dibutuhkan loop ini hanya
+		// MATA UANG limit, dan itu sama dengan `RnmLimitList` layer.
+		rnmSebar := barisDok(sp["RnmLimitList"])
+		if len(rnmSebar) == 0 {
+			rnmSebar = barisDok(sh["RnmLimitList"])
+		}
+		// ⭐ Gross / Net TINGKAT SPREADING juga tidak tersimpan — hanya dihitung
+		// saat layar memuat (`sebarManual`). Bila kosong, diturunkan dari
+		// larik baris Share dengan faktor yang sama (Pct ÷ % RNM Share).
+		grossSebar := p.larikSebar(sp, sh, "GrossPremiumList")
+		netSebar := p.larikSebar(sp, sh, "NetPremiumList")
+		nilaiSebar := teksDok(sp, "Value")
+		for _, r := range rnmSebar { // [5.4.3.3]
 			p.sd["LIMITCURRENCY"] = teksDok(r, "Currency")
-			for _, gp := range barisDok(sp["GrossPremiumList"]) { // [5.4.3.3.2]
+			// ⭐ MENYIMPANG DARI EKSPOR (permintaan pemakai 11 Oktober 2026):
+			// `SpreadingListXOL.Value` tidak pernah diisi aplikasi ini, jadi
+			// `SPREAD_RNM_SHARE_VALUE` kosong. Baris Pega lama memperlihatkan
+			// rumusnya: RNM Limit layer (mata uang yang sama) × Pct ÷ % RNM
+			// Share — 7.837.500.000 × 14 ÷ 19 = 5.775.000.000 (kontrak 1002304).
+			if nilaiSebar == "" {
+				p.sd["SPREAD_RNM_SHARE_VALUE"] = p.nilaiSebarRNM(sh, sp, p.sd["LIMITCURRENCY"])
+			}
+			for _, gp := range grossSebar { // [5.4.3.3.2]
 				if teksDok(gp, "Currency") != p.sd["LIMITCURRENCY"] { // F=4
 					continue
 				}
 				p.sd["MDPCURRENCY"] = teksDok(gp, "Currency")
 				p.sd["MDPVALUE"] = teksDok(gp, "Value")
-				for _, n := range barisDok(sp["NetPremiumList"]) { // [5.4.3.3.2.2]
+				for _, n := range netSebar { // [5.4.3.3.2.2]
 					if teksDok(n, "Currency") != p.sd["LIMITCURRENCY"] { // F=4
 						continue
 					}
@@ -543,4 +575,71 @@ func elemenKe(xs []map[string]any, i int) map[string]any {
 		return xs[i]
 	}
 	return map[string]any{}
+}
+
+// larikSebar - larik `kunci` TINGKAT SPREADING; bila kosong, larik baris Share
+// dikali `Pct ÷ RNMShare` (rumus `sebarManual`). Tanpa % RNM Share yang sah
+// tidak ada yang dikarang: larik kosong dikembalikan apa adanya.
+func (p *penyusunDetail) larikSebar(sp, sh map[string]any, kunci string) []map[string]any {
+	if ada := barisDok(sp[kunci]); len(ada) > 0 {
+		return ada
+	}
+	rnm := angka(teksDok(sh, "RNMShare"))
+	if rnm.IsZero() {
+		rnm = angka(teksDok(p.doc, "RNMShare"))
+	}
+	if rnm.IsZero() {
+		return nil
+	}
+	f := bagiBulatDes(angka(teksDok(sp, "Pct")), rnm, 20)
+	out := []map[string]any{}
+	for _, x := range barisDok(sh[kunci]) {
+		salin := map[string]any{}
+		for k, v := range x {
+			salin[k] = v
+		}
+		salin["Value"] = teks(kali(angka(teksDok(x, "Value")), f))
+		out = append(out, salin)
+	}
+	return out
+}
+
+// nilaiSebarRNM - RNM Limit layer bermata uang `mu` × `Pct ÷ RNMShare` satu baris
+// spreading. Tanpa % RNM Share atau limit bermata uang itu: kosong (tidak dikarang).
+func (p *penyusunDetail) nilaiSebarRNM(sh, sp map[string]any, mu string) string {
+	rnmTeks := teksDok(sh, "RNMShare")
+	if strings.TrimSpace(rnmTeks) == "" {
+		rnmTeks = teksDok(p.doc, "RNMShare")
+	}
+	rnm, ok := p.desimal(rnmTeks, "RNMShare")
+	if !ok || rnm.IsZero() {
+		return ""
+	}
+	pct, ok := p.desimal(teksDok(sp, "Pct"), "SpreadingListXOL.Pct")
+	if !ok {
+		return ""
+	}
+	for _, l := range barisDok(sh["RnmLimitList"]) {
+		if teksDok(l, "Currency") != mu {
+			continue
+		}
+		lim, ok := p.desimal(teksDok(l, "Value"), "RnmLimitList.Value")
+		if !ok {
+			return ""
+		}
+		ctx := apd.BaseContext.WithPrecision(40)
+		var kali, hasil apd.Decimal
+		if _, err := ctx.Mul(&kali, lim, pct); err != nil {
+			p.catat(fmt.Errorf("SPREAD_RNM_SHARE_VALUE: %w", err))
+			return ""
+		}
+		if _, err := ctx.Quo(&hasil, &kali, rnm); err != nil {
+			p.catat(fmt.Errorf("SPREAD_RNM_SHARE_VALUE: %w", err))
+			return ""
+		}
+		var r apd.Decimal
+		r.Reduce(&hasil)
+		return r.Text('f')
+	}
+	return ""
 }

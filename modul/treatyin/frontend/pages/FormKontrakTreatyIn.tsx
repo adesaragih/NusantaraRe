@@ -382,7 +382,7 @@ export default function FormKontrakTreatyIn({ idKontrak, mode: modeRute = 'lihat
       ),
       ...tambahan,
     },
-    kurs: kursBerubah(kurs, warisan?.kurs ?? [], tahunTreaty),
+    kurs: kursBerubah(kurs, warisan?.kurs ?? [], tahunTreaty, idKontrak === ''),
   })
 
   /** Satu penekanan tombol tulis; sesudah berhasil, data dibaca ulang dari tabel. */
