@@ -86,11 +86,15 @@ export const TAB_NB = [
 ] as const
 export type TabNB = (typeof TAB_NB)[number]
 
-/** Tab yang berisi di nbfacin - hanya kasus FIRE (`kasusFire`; di sini When `IsFire` dari server). */
-export const TAB_BERISI_NB: readonly TabNB[] = ['Object', 'Coverage', 'Spreading', 'Inw Fac Cedant Panels']
-
 /** `TEKS_INWARD.isiTab` / `kosong`. */
-export const TEKS_NB = { isiTab: 'Isi tab', kosong: 'No items', spreadingKosong: 'Belum ada spreading.' } as const
+export const TEKS_NB = {
+  isiTab: 'Isi tab',
+  kosong: 'No items',
+  spreadingKosong: 'Belum ada spreading.',
+  /** `TEKS_INWARD.cobBelum` nbfacin - isi tab COB di luar FIRE / Aneka / Marine Cargo. */
+  cobBelum: (tab: string, cob: string) =>
+    `Tab ${tab} untuk Class of Business ${cob} belum tersedia di sistem baru (saat ini baru FIRE).`,
+} as const
 
 export const KOLOM_OBJEK_NB = ['Top Risk', 'No.', 'Object Name', 'Location'] as const
 export const UKURAN_OBJEK_NB = 10
@@ -411,6 +415,8 @@ export const FORM_DEDUCTIBLE_NB = {
   condition: 'Condition',
   amount: 'Amount',
   timeExcess: 'Time Excess (In Days)',
+  /** `FORM_COVERAGE_CARGO.deskripsi` - Deductible Marine Cargo. */
+  deskripsi: 'Deskripsi',
 } as const
 export const OPSI_MINMAX_NB: OpsiNB[] = [
   { value: '1', label: 'Min' },
@@ -576,7 +582,9 @@ export interface UmumPolisNB {
   mulai: string
   penawaran: string
   jenisPolis: string
+  /** Risk Scoring (`Section\Periode.xml`: `.ScoringRisk.FinalScore` + lencana `.NoteFinalScore`, tersimpan). */
   riskScoring: string
+  catatanSkor: string
   kelas: string
   typeFac: string
   sob: string
@@ -606,7 +614,8 @@ export function umumNB(h: Halaman): UmumPolisNB {
     mulai: tanggalNB(nilaiNB(h, 'PolicyData.StartDateTime')),
     penawaran: tanggalNB(nilaiNB(h, 'PolicyData.OfferingDate')),
     jenisPolis: q('PolicyType'),
-    riskScoring: '',
+    riskScoring: nilaiNB(h, 'ScoringRisk.FinalScore'),
+    catatanSkor: nilaiNB(h, 'ScoringRisk.NoteFinalScore'),
     kelas: q('BusinessName'),
     typeFac: q('TypeFacultative'),
     sob: q('SobName'),
@@ -622,15 +631,15 @@ export function umumNB(h: Halaman): UmumPolisNB {
 // ---------------------------------------------------------------- aritmetika eksak (BigInt)
 
 /** Bilangan desimal eksak: nilai = n / 10^s. */
-interface Eksak {
+export interface Eksak {
   n: bigint
   s: number
 }
 
-const NOL: Eksak = { n: 0n, s: 0 }
+export const NOL: Eksak = { n: 0n, s: 0 }
 
 /** Teks desimal bertitik -> eksak; kosong / tak terbaca = 0 (`nolBila` nbfacin). */
-function eksak(t: string | undefined): Eksak {
+export function eksak(t: string | undefined): Eksak {
   const m = /^([+-]?)(\d*)(?:\.(\d*))?$/.exec((t ?? '').trim())
   if (!m || ((m[2] ?? '') === '' && (m[3] ?? '') === '')) return NOL
   const pecahan = m[3] ?? ''
@@ -640,15 +649,15 @@ function eksak(t: string | undefined): Eksak {
 
 const skalakan = (a: Eksak, s: number) => a.n * 10n ** BigInt(s - a.s)
 
-function tambahE(a: Eksak, b: Eksak): Eksak {
+export function tambahE(a: Eksak, b: Eksak): Eksak {
   const s = Math.max(a.s, b.s)
   return { n: skalakan(a, s) + skalakan(b, s), s }
 }
 
-const kaliE = (a: Eksak, b: Eksak): Eksak => ({ n: a.n * b.n, s: a.s + b.s })
+export const kaliE = (a: Eksak, b: Eksak): Eksak => ({ n: a.n * b.n, s: a.s + b.s })
 
 /** a / b dibulatkan setengah-ke-atas menjauhi nol pada `skala` desimal; b = 0 -> 0 (`bagiSkala` nbfacin). */
-function bagiE(a: Eksak, b: Eksak, skala: number): Eksak {
+export function bagiE(a: Eksak, b: Eksak, skala: number): Eksak {
   if (b.n === 0n) return NOL
   // a/b = (a.n / 10^a.s) / (b.n / 10^b.s); hasil x 10^skala
   const pembilang = a.n * 10n ** BigInt(skala + b.s)
@@ -660,9 +669,9 @@ function bagiE(a: Eksak, b: Eksak, skala: number): Eksak {
   return { n: negatif ? -q : q, s: skala }
 }
 
-const bulatE = (a: Eksak, skala: number) => (a.s <= skala ? a : bagiE(a, { n: 1n, s: 0 }, skala))
+export const bulatE = (a: Eksak, skala: number) => (a.s <= skala ? a : bagiE(a, { n: 1n, s: 0 }, skala))
 
-function bandingE(a: Eksak, b: Eksak): number {
+export function bandingE(a: Eksak, b: Eksak): number {
   const s = Math.max(a.s, b.s)
   const x = skalakan(a, s)
   const y = skalakan(b, s)
@@ -670,7 +679,7 @@ function bandingE(a: Eksak, b: Eksak): number {
 }
 
 /** Teks bertitik tanpa nol ekor. */
-function teksE(a: Eksak): string {
+export function teksE(a: Eksak): string {
   const negatif = a.n < 0n
   const digit = (negatif ? -a.n : a.n).toString().padStart(a.s + 1, '0')
   const bulat = digit.slice(0, digit.length - a.s)
@@ -679,14 +688,14 @@ function teksE(a: Eksak): string {
   return negatif && t !== '0' ? '-' + t : t
 }
 
-const SERATUS: Eksak = { n: 100n, s: 0 }
+export const SERATUS: Eksak = { n: 100n, s: 0 }
 const SEPULUH_RIBU: Eksak = { n: 10000n, s: 0 }
 
 /** `persenDari` nbfacin: x × y / 100 (20 desimal). */
-const persenDari = (x: Eksak, y: Eksak) => bagiE(kaliE(x, y), SERATUS, 20)
+export const persenDari = (x: Eksak, y: Eksak) => bagiE(kaliE(x, y), SERATUS, 20)
 
 /** `simpan8` nbfacin: setengah-ke-atas 8 desimal. */
-const simpan8 = (a: Eksak) => teksE(bulatE(a, 8))
+export const simpan8 = (a: Eksak) => teksE(bulatE(a, 8))
 
 // ---------------------------------------------------------------- Object Item / Coverage (dihitung seperti nbfacin)
 
@@ -812,7 +821,7 @@ export interface RingkasanUangSpreadingNB {
   premium: string
 }
 
-interface TotalE {
+export interface TotalE {
   currency: string
   treatyType: string
   share: Eksak
@@ -826,7 +835,7 @@ interface TotalE {
 /** `catatanTerorisme` nbfacin (SumTSIPremiSpreadedRNM_FIRE_Act .4.4). */
 const CATATAN_TERORISME = 'TERRORISM & SABOTAGE'
 
-const cariTotal = (t: readonly TotalE[], jenis: string, uang: string) =>
+export const cariTotal = (t: readonly TotalE[], jenis: string, uang: string) =>
   t.findIndex((x) => x.treatyType === jenis && x.currency === uang)
 
 const keTotalNB = (t: TotalE, nama: string): TotalSpreadingNB => ({
@@ -917,6 +926,24 @@ export function hitungSpreadingNB(h: Halaman): HasilSpreadingNB {
     })
     lokasiE.push({ top, total })
   })
+  return ringkasSpreadingNB(lokasiE, namaTreaty, adaTop)
+}
+
+/** Total per lokasi (`LokasiSpreading` nbfacin: IsTopRisk + Total) bahan `ringkasSpreadingNB`. */
+export interface LokasiTotalE {
+  top: boolean
+  total: TotalE[]
+}
+
+/**
+ * Tahap `totalMataUang` + `ringkasan` nbfacin (`spreading.go`) atas total per lokasi - dipakai FIRE (`hitungSpreadingNB`) dan
+ * lini lain yang hanya berbeda akumulasi per lokasinya (Aneka `totalAneka`, Cargo `totalCargo`).
+ */
+export function ringkasSpreadingNB(
+  lokasiE: readonly LokasiTotalE[],
+  namaTreaty: ReadonlyMap<string, string>,
+  adaTop: boolean,
+): HasilSpreadingNB {
   // totalMataUang
   const perUang: TotalE[] = []
   for (const l of lokasiE) {

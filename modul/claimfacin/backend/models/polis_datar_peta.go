@@ -35,6 +35,15 @@ var tabelPolisDatar = map[string]TabelPolisDatar{
 		{Nama: "DWT", Medan: "DWT"},
 		{Nama: "GRT", Medan: "GRT"},
 		{Nama: "NRT", Medan: "NRT"},
+		// grid Additional Ship tab Object Marine Cargo (`InputDtlCargo_FacIn` .PolicyData.Ship.AdditionalShip; migrasi nbfacin 256)
+		{Nama: "SHIP_REF_ID", Medan: "ID"},
+		{Nama: "REGISTER", Medan: "REGISTER"},
+		{Nama: "NM_SHIP", Medan: "NM_SHIP"},
+		{Nama: "VOYAGE_NO", Medan: "VOYAGE_NO"},
+		{Nama: "SHIPTYPE_ID", Medan: "SHIPTYPE_ID"},
+		{Nama: "FLAG_NAME", Medan: "FLAG_NAME"},
+		{Nama: "Y_MAKE1", Medan: "Y_MAKE1"},
+		{Nama: "CONST", Medan: "CONST"},
 	}},
 	"T_ANEKALIST": {Daftar: true, Src: true, Kolom: []KolomPolisDatar{
 		{Nama: "BUILT_IN", Medan: "BuiltIn"},
@@ -58,6 +67,29 @@ var tabelPolisDatar = map[string]TabelPolisDatar{
 		{Nama: "IDX_ANEKA", Medan: "IdxAneka"},
 		{Nama: "IDX_OCCUPATION", Medan: "IdxOccupation"},
 		{Nama: "IDX_LOCATION", Medan: "IdxLocation"},
+		// form objek Aneka tampilan polis NB - amandemen loader nbfacin `amandemenAneka` (migrasi nbfacin 214)
+		{Nama: "NO_KONTRAK", Medan: "NO_KONTRAK"},
+		{Nama: "NO_KTP", Medan: "NO_KTP"},
+		{Nama: "NO_NPWP", Medan: "NO_NPWP"},
+		{Nama: "OTHERS", Medan: "Others"},
+		{Nama: "INVOICE_NO", Medan: "InvoiceNo"},
+		{Nama: "MAINTENANCE_PERIOD", Medan: "MaintenancePeriod"},
+		{Nama: "NO_OF_TREE", Medan: "NoOfTree"},
+		{Nama: "AREA_HECTAR", Medan: "AreaHectar"},
+		{Nama: "LIMIT_IDEMNITY_DAY", Medan: "LimitIdemnityDay"},
+		{Nama: "LIMIT_IDEMNITY_MONTH", Medan: "LimitIdemnityMonth"},
+		{Nama: "LIMIT_OF_LIABILITY", Medan: "LimitOfLiability"},
+		{Nama: "FLAG_DELETE", Medan: "FlagDelete"},
+		{Nama: "ALM_RISK_ID", Medan: "AlmRiskID"},
+		{Nama: "LOAN_ACCOUNT_NUMBER", Medan: "LoanAccountNumber"},
+		{Nama: "LOAN_NAME", Medan: "LoanName"},
+		{Nama: "JOB", Medan: "Job"},
+		{Nama: "DEPOSIT_ACCOUNT_NO", Medan: "DepositAccountNo"},
+		{Nama: "ID_CARD_NO", Medan: "IDCardNo"},
+		{Nama: "INSTITUTION", Medan: "Institution"},
+		{Nama: "LOAN_TYPE", Medan: "LoanType"},
+		{Nama: "DATE_OF_BIRTH", Medan: "DateOfBirth"},
+		{Nama: "SALARY", Medan: "Salary"},
 	}},
 	"T_ASMHEIR": {Daftar: true, Src: false, Kolom: []KolomPolisDatar{
 		{Nama: "ASM_GENDER", Medan: "ASMGender"},
@@ -98,6 +130,11 @@ var tabelPolisDatar = map[string]TabelPolisDatar{
 		{Nama: "TRADING_ID", Medan: "TradingID"},
 		{Nama: "TRADING_NOTE", Medan: "TradingNote"},
 		{Nama: "IDX_CARGO", Medan: "IdxCargo"},
+		// tab Object Marine Cargo tampilan polis NB - kolom migrasi nbfacin 256 (medan .PolicyData Pega, dilipat V-24b)
+		{Nama: "INVOICE_DATE", Medan: "InvoiceDate"},
+		{Nama: "MAX_AGE", Medan: "MaxAge"},
+		{Nama: "MAX_AGE_DETAIL", Medan: "MaxAgeDetail"},
+		{Nama: "FLAG_DELETE", Medan: "FlagDelete"},
 	}},
 	"T_CEDINGCEDANTLIST": {Daftar: true, Src: false, Kolom: []KolomPolisDatar{
 		{Nama: "CEDING_CO", Medan: "CedingCo"},
@@ -217,12 +254,21 @@ var tabelPolisDatar = map[string]TabelPolisDatar{
 		{Nama: "PREMIUM", Medan: "Premium"},
 		{Nama: "SUM_TOTAL_PAYMENT", Medan: "SumTotalPayment"},
 		{Nama: "TSI", Medan: "TSI"},
+		// PAY_* = `.Policy.Payment.*` baris CurrencyList (Section PaymentCurrencyList / CoverageCommisionList NB FacIn)
+		{Nama: "PAY_PREMIUM", Medan: "Policy.Payment.Premium"},
+		{Nama: "PAY_COMMISION", Medan: "Policy.Payment.Commision"},
+		{Nama: "PAY_DEDUCTION2", Medan: "Policy.Payment.Deduction2"},
+		{Nama: "PAY_BROKERAGE_FEE", Medan: "Policy.Payment.BrokerageFee"},
+		{Nama: "PAY_PPH", Medan: "Policy.Payment.PPh"},
+		{Nama: "PAY_PPN", Medan: "Policy.Payment.PPN"},
+		{Nama: "PAY_NET_PREMIUM", Medan: "Policy.Payment.NetPremium"},
 	}},
 	"T_DATASCORINGRISKLIST": {Daftar: true, Src: false, Kolom: []KolomPolisDatar{
 		{Nama: "OCCUPATION_CODE", Medan: "OccupationCode"},
 		{Nama: "OCCUPATION_NOTE", Medan: "OccupationNote"},
 		{Nama: "SCORE", Medan: "Score"},
 		{Nama: "TOP_RISK_LOCATION", Medan: "TopRiskLocation"},
+		{Nama: "INDEX_LOCATION", Medan: "IndexLocation"}, // Dominant Risk (nbfacin repository/scoring.go)
 	}},
 	"T_DEDUCTIBLELIST": {Daftar: true, Src: true, Kolom: []KolomPolisDatar{
 		{Nama: "AMOUNT", Medan: "Amount"},
@@ -672,6 +718,10 @@ var tabelPolisDatar = map[string]TabelPolisDatar{
 		{Nama: "OFFERING_DATE", Medan: "PolicyData.OfferingDate"},
 		{Nama: "OFFICER_FAC_OUT", Medan: "OfficerFacOut"},
 		{Nama: "PPN_CHECK", Medan: "PPnCheck"},
+		// tab Premium Deduction / Payment tampilan polis NB (nilai tersimpan; lipatan V-22b PolicyData/Payment)
+		{Nama: "PAY_RI_COMMISION", Medan: "PolicyData.Payment.RICommision"},
+		{Nama: "PAY_PCT_BROKERAGE_FEE", Medan: "PolicyData.Payment.PctBrokerageFee"},
+		{Nama: "PAY_INSTALLMENT", Medan: "PolicyData.Payment.Installment"},
 		{Nama: "PARAM_CONDITION", Medan: "ParamCondition"},
 		{Nama: "PERCENT_SHARE", Medan: "PercentShare"},
 		{Nama: "POLICY_MASTER_ID_PEGA", Medan: "PolicyMasterIDPega"},
@@ -699,6 +749,32 @@ var tabelPolisDatar = map[string]TabelPolisDatar{
 	}},
 	"T_LC": {Daftar: false, Src: false, Kolom: []KolomPolisDatar{
 		{Nama: "LC", Medan: "LC"},
+		// kartu LC tab Object Marine Cargo (`InputDtlCargo_FacIn` .PolicyData.LC.*; migrasi nbfacin 256)
+		{Nama: "LCBANK", Medan: "LCBANK"},
+		{Nama: "LC_NUMBER", Medan: "LCNumber"},
+		{Nama: "LC_CONDITION", Medan: "LCCondition"},
+		{Nama: "LC_REMARK", Medan: "LCRemark"},
+		{Nama: "LC_END_DATE", Medan: "LCEndDate"},
+	}},
+	// T_CLAUSELIST - tab Clauses FIRE (nbfacin migrasi 197: `OfferFacIn.ClauseList = pyWorkPage.ClauseList`, satu baris per
+	// argumen; kolom klausa berulang). Isi klausa / argumen tidak dimuat (kartu tampilan NB hanya Code / bahasa / jumlah
+	// argumen / Title / Description).
+	"T_CLAUSELIST": {Daftar: true, Src: false, Kolom: []KolomPolisDatar{
+		{Nama: "SEQ_NO", Medan: "SeqNo"}, // SEQ_NO sama = satu klausa (nbfacin repository/klausa.go kumpulkanKlausa)
+		{Nama: "CLAUSE_CODE", Medan: "ClauseCode"},
+		{Nama: "CLAUSE_TITLE", Medan: "ClauseTitle"},
+		{Nama: "CLAUSE_DESCRIPTION", Medan: "ClauseDescription"},
+		{Nama: "CLAUSE_LANGUAGE", Medan: "ClauseLanguage"},
+		{Nama: "CLAUSE_LANGUAGE_ID", Medan: "ClauseLanguageID"},
+		{Nama: "ARGUMENT_COUNT", Medan: "ArgumentCount"},
+	}},
+	// T_SURVEYAGENT - kartu Survey Agent tab Object Marine Cargo (`.PolicyData.SurveyAgent.*`; migrasi nbfacin 256).
+	"T_SURVEYAGENT": {Daftar: false, Src: false, Kolom: []KolomPolisDatar{
+		{Nama: "ASM_AGENT_ID", Medan: "ASMAgentID"},
+		{Nama: "FULL_NAME", Medan: "pyFullName"},
+		{Nama: "ADDRESS", Medan: "pyAddress"},
+		{Nama: "CITY", Medan: "pyCity"},
+		{Nama: "COUNTRY", Medan: "pyCountry"},
 	}},
 	"T_LISTCAUSEOFLOSS": {Daftar: true, Src: false, Kolom: []KolomPolisDatar{
 		{Nama: "CLAIM", Medan: "Claim"},
@@ -747,6 +823,28 @@ var tabelPolisDatar = map[string]TabelPolisDatar{
 		{Nama: "GRTRT", Medan: "GRTRT"},
 		{Nama: "NRTRT", Medan: "NRTRT"},
 		{Nama: "TYPE_OF_VESSEL", Medan: "TypeOfVessel"},
+		{Nama: "LENGTHM", Medan: "LENGTHM"}, // amandemenKapal nbfacin (migrasi 214)
+		{Nama: "BREADTHM", Medan: "BREADTHM"},
+		{Nama: "DEPTHM", Medan: "DEPTHM"},
+	}},
+	// T_MEMORANDUMACCEPT - halaman .MemorandumAccept baris Aneka (amandemenMemorandum nbfacin, migrasi 214; Bonding).
+	"T_MEMORANDUMACCEPT": {Daftar: false, Src: false, Kolom: []KolomPolisDatar{
+		{Nama: "SURETY_TYPE", Medan: "SuretyType"},
+		{Nama: "APPLICATION_NUMBER", Medan: "ApplicationNumber"},
+		{Nama: "ACCUMULATION", Medan: "Accumulation"},
+		{Nama: "COLLATERAL", Medan: "Collateral"},
+		{Nama: "INSURED_SIUP", Medan: "InsuredSiup"},
+		{Nama: "KEY_PERSON", Medan: "KeyPerson"},
+		{Nama: "ORIGINAL_RATE", Medan: "OriginalRate"},
+		{Nama: "PRINCIPALS_OUT_GO", Medan: "PrincipalsOutGo"},
+		{Nama: "TYPE_OF_WORDING", Medan: "TypeOfWording"},
+		{Nama: "BUILDING_STATUS", Medan: "BuildingStatus"},
+		{Nama: "SUPPORTING_DOCUMENT", Medan: "SupportingDocument"},
+		{Nama: "PRINCIPALS_DATA", Medan: "PrincipalsData"},
+		{Nama: "CONCLUSIONS_PROPOSALS", Medan: "ConclusionsProposals"},
+		{Nama: "PRINCIPALS_BACKGROUND", Medan: "PrincipalsBackground"},
+		{Nama: "SUMMARY_FINANCIAL", Medan: "SummaryFinancial"},
+		{Nama: "PRINCIPALS_GUARANTEE", Medan: "PrincipalsGuarantee"},
 	}},
 	"T_OCCUPATIONLIST": {Daftar: true, Src: true, Kolom: []KolomPolisDatar{
 		{Nama: "CATEGORY", Medan: "Category"},
@@ -938,14 +1036,22 @@ var tabelPolisDatar = map[string]TabelPolisDatar{
 		{Nama: "STATUS", Medan: "Status"},
 	}},
 	"T_SCORING_FACTOR": {Daftar: true, Src: false, Kolom: []KolomPolisDatar{
+		// FACTOR_GROUP / FACTOR_NAME = nama halaman Pega (aturan loader V-30); PERCENT_LOSS_RATIO = `.LossRatio.LossRatio
+		// .PercentLossRatio` (nbfacin repository/scoring.go)
+		{Nama: "FACTOR_GROUP", Medan: "FactorGroup"},
+		{Nama: "FACTOR_NAME", Medan: "FactorName"},
+		{Nama: "PERCENT_LOSS_RATIO", Medan: "PercentLossRatio"},
 		{Nama: "CHECKED", Medan: "Checked"},
 		{Nama: "REMARKS", Medan: "Remarks"},
 		{Nama: "SCORE_PER_FACTOR", Medan: "ScorePerFactor"},
 	}},
 	"T_SCORING_OPTION": {Daftar: true, Src: false, Kolom: []KolomPolisDatar{
+		{Nama: "CHECK_BOX", Medan: "CheckBox"}, // ChechBoxN Pega: "true" / "false" (aturan loader V-30)
+		{Nama: "OPTION_NO", Medan: "OptionNo"},
 		{Nama: "SCORE", Medan: "Score"},
 	}},
 	"T_SHIP": {Daftar: false, Src: false, Kolom: []KolomPolisDatar{
+		{Nama: "SHIP_REF_ID", Medan: "ID"}, // `.PolicyData.Ship.ID` (BrowseShip)
 		{Nama: "AGE", Medan: "AGE"},
 		{Nama: "CONST", Medan: "CONST"},
 		{Nama: "DWT", Medan: "DWT"},
@@ -1016,6 +1122,9 @@ var tabelPolisDatar = map[string]TabelPolisDatar{
 		{Nama: "OBJECT_NAME_HE", Medan: "ObjectNameHE"},
 		{Nama: "TYPE", Medan: "Type"},
 		{Nama: "TYPE_NAME", Medan: "TypeName"},
+		{Nama: "CHASSIS_NUMBER", Medan: "ChassisNumber"}, // amandemenHE nbfacin (migrasi 214)
+		{Nama: "ENGINE_NUMBER", Medan: "EngineNumber"},
+		{Nama: "OBJECT_ID_HE", Medan: "ObjectIdHE"},
 	}},
 	"T_VEHICLELIST": {Daftar: true, Src: false, Kolom: []KolomPolisDatar{
 		{Nama: "BRAND", Medan: "Brand"},
@@ -1044,7 +1153,8 @@ var tabelPolisDatar = map[string]TabelPolisDatar{
 // barisnya menurut SRC_PATH baris itu sendiri.
 var sisiPolisDatar = []SisiPolisDatar{
 	{Tabel: "T_ACCESSORYLIST", Induk: "T_VEHICLELIST", Jalur: []string{"VehicleList/AccessoryList"}},
-	{Tabel: "T_ADDITIONALCOVERAGE", Induk: "T_COVERAGELIST", Jalur: []string{"VehicleList/CoverageList/AdditionalCoverage"}},
+	{Tabel: "T_ADDITIONALCOVERAGE", Induk: "T_COVERAGELIST", Jalur: []string{"VehicleList/CoverageList/AdditionalCoverage",
+		"CargoList/CoverageList/AdditionalCoverage"}}, // Warranty Extension Marine Cargo
 	{Tabel: "T_ADDITIONALSHIP", Induk: "T_SHIP", Jalur: []string{"CargoList/Ship/AdditionalShip"}},
 	{Tabel: "T_ANEKALIST", Induk: "T_OCCUPATIONLIST", Jalur: []string{"LocationList/Property/RiskLocation/OccupationList/AnekaList"}},
 	{Tabel: "T_ANEKALIST", Induk: "T_RISKLOCATION", Jalur: []string{"LocationList/Property/RiskLocation/AnekaList"}},
@@ -1104,10 +1214,15 @@ var sisiPolisDatar = []SisiPolisDatar{
 	{Tabel: "T_FR_TOTALTSIPREMIRETRO", Induk: "T_FR_PROPERTY", Jalur: []string{"FacRetroList/LocationList/Property/TotalTSIPremiRetro"}},
 	{Tabel: "T_FR_WPC", Induk: "T_FR_PRINTRISLIP", Jalur: []string{"FacRetroList/PrintRISlip/WPC"}},
 	{Tabel: "T_LC", Induk: "T_CARGOLIST", Jalur: []string{"CargoList/LC"}},
+	{Tabel: "T_SURVEYAGENT", Induk: "T_CARGOLIST", Jalur: []string{"CargoList/SurveyAgent"}},
+	{Tabel: "T_CLAUSELIST", Induk: "T_GENERAL_POLIS", Jalur: []string{"ClauseList"}},
 	{Tabel: "T_LISTCAUSEOFLOSS", Induk: "T_PROPERTY", Jalur: []string{"LocationList/Property/ListCauseOfLoss"}},
 	{Tabel: "T_LISTINSTALLMENT", Induk: "T_CURRENCYLIST", Jalur: []string{"CurrencyList/ListInstallment"}},
 	{Tabel: "T_LOCATIONLIST", Induk: "T_GENERAL_POLIS", Jalur: []string{"LocationList"}},
 	{Tabel: "T_MARINEHULL", Induk: "T_ANEKALIST", Jalur: []string{"LocationList/Property/RiskLocation/OccupationList/AnekaList/MarineHull"}},
+	{Tabel: "T_MEMORANDUMACCEPT", Induk: "T_ANEKALIST", Jalur: []string{
+		"LocationList/Property/RiskLocation/OccupationList/AnekaList/MemorandumAccept",
+		"LocationList/Property/RiskLocation/AnekaList/MemorandumAccept"}}, // jalurMemorandum nbfacin
 	{Tabel: "T_OCCUPATIONLIST", Induk: "T_PROPERTY", Jalur: []string{"LocationList/Property/OccupationList"}},
 	{Tabel: "T_OCCUPATIONLIST", Induk: "T_RISKLOCATION", Jalur: []string{"LocationList/Property/RiskLocation/OccupationList"}},
 	{Tabel: "T_OCCUPATIONLIST", Induk: "T_VEHICLELIST", Jalur: []string{"VehicleList/OccupationList"}},

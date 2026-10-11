@@ -18,7 +18,7 @@ export function TeksNB({
   lebar,
 }: {
   label: string
-  nilai: string
+  nilai: ReactNode
   kiri?: boolean
   angka?: boolean
   lebar?: boolean
@@ -101,6 +101,7 @@ export function GridNB({
   ukuran,
   kosong = TEKS_NB.kosong,
   label,
+  selaluBuka = false,
 }: {
   kolom: readonly (string | KolomNB)[]
   baris: readonly (readonly ReactNode[])[]
@@ -108,6 +109,8 @@ export function GridNB({
   ukuran?: number
   kosong?: string
   label?: string
+  /** Rincian setiap baris selalu tampil tanpa tombol buka (grid coverage Marine Cargo nbfacin: baris + form). */
+  selaluBuka?: boolean
 }) {
   const [buka, setBuka] = useState<ReadonlySet<number>>(() => new Set())
   const [hal, setHal] = useState(1)
@@ -116,7 +119,8 @@ export function GridNB({
   const halIni = Math.min(hal, nHal)
   const awal = ukuran ? (halIni - 1) * ukuran : 0
   const potong = ukuran ? baris.slice(awal, awal + ukuran) : baris
-  const lebar = ks.length + (rinci ? 1 : 0)
+  const panah = !!rinci && !selaluBuka
+  const lebar = ks.length + (panah ? 1 : 0)
   const balik = (i: number) =>
     setBuka((s) => {
       const b = new Set(s)
@@ -154,7 +158,7 @@ export function GridNB({
       <table className="claimfacin__tabel" aria-label={label}>
         <thead>
           <tr>
-            {rinci && <th />}
+            {panah && <th />}
             {ks.map((k, i) => (
               <th key={i}>{k.angka ? <span className="claimfacin__angka">{k.label}</span> : k.label}</th>
             ))}
@@ -170,15 +174,15 @@ export function GridNB({
           )}
           {potong.map((sel, j) => {
             const i = awal + j
-            const terbuka = buka.has(i)
+            const terbuka = selaluBuka || buka.has(i)
             return (
               <Fragment key={i}>
                 <tr
-                  className={rinci ? 'inbox__baris' : undefined}
-                  aria-expanded={rinci ? terbuka : undefined}
-                  onClick={rinci ? () => balik(i) : undefined}
+                  className={panah ? 'inbox__baris' : undefined}
+                  aria-expanded={panah ? terbuka : undefined}
+                  onClick={panah ? () => balik(i) : undefined}
                 >
-                  {rinci && (
+                  {panah && (
                     <td>
                       <span className="claimfacin__panah" aria-hidden="true">
                         {terbuka ? '▾' : '▸'}

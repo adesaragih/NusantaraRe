@@ -9,8 +9,6 @@ import type { Baris, Halaman } from '../api'
 import {
   ALAMAT_NB,
   AKUMULASI_KOSONG_NB,
-  CEDANT_NB,
-  CEDANT_NB_LABEL,
   FLOOD_STATUS_TAMPIL_NB,
   FORM_COV_NB,
   FORM_DEDUCTIBLE_NB,
@@ -50,7 +48,6 @@ import {
   OPSI_MINMAX_NB,
   OPSI_OWNERSHIP_NB,
   OPSI_ROOF_NB,
-  OPSI_SHARE_CEDANT_NB,
   OPSI_TYPE_DEDUCTIBLE2_NB,
   OPSI_TYPE_DEDUCTIBLE_NB,
   OPSI_WALL_NB,
@@ -81,6 +78,7 @@ import {
   tanggalNB,
   totalCoverageLokasiNB,
   totalTSIItemNB,
+  type HasilSpreadingNB,
   type SubTabObjekNB,
   type TotalSpreadingNB,
 } from '../polisNB'
@@ -153,6 +151,37 @@ function SubObjekNB({ h, n, b, tab }: { h: Halaman; n: number; b: Baris; tab: Su
   }
 }
 
+/**
+ * Blok Risk Address (Section ObjectDetails; form lokasi Aneka `InputDtlObjectLocation_FacIn` memakai blok yang sama) atas
+ * baris LocationList. `topRisk` = centang Top Risk lokasi Aneka (`tampilanAneka.topRisk`).
+ */
+export function RiskAddressNB({ b, topRisk }: { b: Baris; topRisk?: boolean }) {
+  const p = (k: string) => v(b, 'Property.' + k)
+  return (
+    <section className="claimfacin__nb-blok">
+      <h5 className="claimfacin__nb-subjudul">{ALAMAT_NB.judulRisk}</h5>
+      {topRisk && <CentangNB label={ALAMAT_NB.topRisk} nilai={benarNB(p('IsTopRisk'))} />}
+      <div className="claimfacin__nb-kolom">
+        <div className="claimfacin__nb-tumpuk">
+          <TeksNB label={ALAMAT_NB.type} nilai={p('RoadType')} />
+          <TeksNB label={ALAMAT_NB.address} nilai={p('RoadName')} />
+          <TeksNB label={ALAMAT_NB.buildingNo} nilai={p('BuildingNo')} />
+          <TeksNB label={ALAMAT_NB.zipCode} nilai={p('RiskLocation.ASMZipCode')} />
+          <TeksNB label={ALAMAT_NB.country} nilai={p('Country')} />
+        </div>
+        <div className="claimfacin__nb-tumpuk">
+          <TeksNB label={ALAMAT_NB.territory} nilai={p('RiskLocation.ASMRW')} />
+          <TeksNB label={ALAMAT_NB.city} nilai={p('RiskLocation.ASMCity')} />
+          <TeksNB label={ALAMAT_NB.district} nilai={p('RiskLocation.ASMDistrict')} />
+          <TeksNB label={ALAMAT_NB.province} nilai={p('Province')} />
+          <TeksNB label={ALAMAT_NB.riskAddressId} nilai={p('AlmRiskID')} />
+        </div>
+      </div>
+      <TeksNB label={ALAMAT_NB.riskLocation} nilai={p('RiskLocation.ASMAddress')} lebar />
+    </section>
+  )
+}
+
 /** Sub-tab Object Address (Section ObjectDetails): tiga blok. */
 function AlamatNB({ b }: { b: Baris }) {
   const p = (k: string) => v(b, 'Property.' + k)
@@ -174,26 +203,7 @@ function AlamatNB({ b }: { b: Baris }) {
           </div>
         </div>
       </section>
-      <section className="claimfacin__nb-blok">
-        <h5 className="claimfacin__nb-subjudul">{ALAMAT_NB.judulRisk}</h5>
-        <div className="claimfacin__nb-kolom">
-          <div className="claimfacin__nb-tumpuk">
-            <TeksNB label={ALAMAT_NB.type} nilai={p('RoadType')} />
-            <TeksNB label={ALAMAT_NB.address} nilai={p('RoadName')} />
-            <TeksNB label={ALAMAT_NB.buildingNo} nilai={p('BuildingNo')} />
-            <TeksNB label={ALAMAT_NB.zipCode} nilai={p('RiskLocation.ASMZipCode')} />
-            <TeksNB label={ALAMAT_NB.country} nilai={p('Country')} />
-          </div>
-          <div className="claimfacin__nb-tumpuk">
-            <TeksNB label={ALAMAT_NB.territory} nilai={p('RiskLocation.ASMRW')} />
-            <TeksNB label={ALAMAT_NB.city} nilai={p('RiskLocation.ASMCity')} />
-            <TeksNB label={ALAMAT_NB.district} nilai={p('RiskLocation.ASMDistrict')} />
-            <TeksNB label={ALAMAT_NB.province} nilai={p('Province')} />
-            <TeksNB label={ALAMAT_NB.riskAddressId} nilai={p('AlmRiskID')} />
-          </div>
-        </div>
-        <TeksNB label={ALAMAT_NB.riskLocation} nilai={p('RiskLocation.ASMAddress')} lebar />
-      </section>
+      <RiskAddressNB b={b} />
       <section className="claimfacin__nb-blok">
         <h5 className="claimfacin__nb-subjudul">{ALAMAT_NB.judulBangunan}</h5>
         <div className="claimfacin__nb-kolom">
@@ -612,8 +622,8 @@ const kondisiDeductible = (d: Baris) =>
     ? v(d, 'InputCondition')
     : labelKode(OPSI_KONDISI_DEDUCTIBLE_NB, v(d, 'Condition'))
 
-/** Grid Deductible (`GridDeductible`) + form baris dua kolom. */
-function DeductibleNB({ rows }: { rows: Baris[] }) {
+/** Grid Deductible (`GridDeductible`) + form baris dua kolom; `deskripsi` = isian Deskripsi Marine Cargo (`descriptions`). */
+export function DeductibleNB({ rows, deskripsi }: { rows: Baris[]; deskripsi?: boolean }) {
   return (
     <GridNB
       kolom={kolomAngka(KOLOM_DEDUCTIBLE_NB, ['Pct Deductible', 'Amount'])}
@@ -664,6 +674,7 @@ function DeductibleNB({ rows }: { rows: Baris[] }) {
               )}
               <TeksNB label={FORM_DEDUCTIBLE_NB.timeExcess} nilai={v(d, 'TimeExcess')} />
             </div>
+            {deskripsi && <TeksNB label={FORM_DEDUCTIBLE_NB.deskripsi} nilai={v(d, 'Descriptions')} lebar />}
           </div>
         )
       }}
@@ -710,7 +721,29 @@ export function TabSpreadingNB({ h }: { h: Halaman }) {
         ])}
         rinci={(i) => <SpreadingLokasiNB h={h} n={i + 1} total={s.lokasi[i] ?? []} />}
       />
-      <section className="claimfacin__nb-ringkasan">
+      <RingkasanSpreadingNB s={s} />
+    </div>
+  )
+}
+
+/** Ringkasan spreading (`RingkasanSpreading` nbfacin): per treaty (8 kolom) dan per mata uang (5 kolom). */
+export function RingkasanSpreadingNB({
+  s,
+  hanyaMataUang = false,
+  tanpaTopRisk = false,
+}: {
+  s: HasilSpreadingNB
+  /** Hanya grid per mata uang (`RingkasanSpreading hanyaMataUang` - tab Inw Fac Cedant Panels nbfacin). */
+  hanyaMataUang?: boolean
+  /** Tanpa kolom Total TSI Top Risk Spreaded (`tanpaTopRisk` - Cedant Aneka / Marine Cargo). */
+  tanpaTopRisk?: boolean
+}) {
+  const kolomUang = SPREADING_NB.kolomRingkasanMataUang.filter(
+    (k) => !tanpaTopRisk || k !== 'Total TSI Top Risk Spreaded',
+  )
+  return (
+    <section className="claimfacin__nb-ringkasan">
+      {!hanyaMataUang && (
         <GridNB
           kolom={kolomAngka(SPREADING_NB.kolomRingkasanTreaty, ANGKA_TOTAL)}
           baris={s.treaty.map((t) => {
@@ -718,18 +751,42 @@ export function TabSpreadingNB({ h }: { h: Halaman }) {
             return [...r.slice(0, 6), angkaNB(t.claimAmountIDR), r[6]]
           })}
         />
-        <GridNB
-          kolom={kolomAngka(SPREADING_NB.kolomRingkasanMataUang, ANGKA_TOTAL)}
-          baris={s.mataUang.map((t) => [
-            t.currency,
-            angkaNB(t.tsiTopRisk),
-            angkaNB(t.tsi),
-            angkaNB(t.lol),
-            angkaNB(t.premium),
-          ])}
-        />
-      </section>
-    </div>
+      )}
+      <GridNB
+        kolom={kolomAngka(kolomUang, ANGKA_TOTAL)}
+        baris={s.mataUang.map((t) => [
+          t.currency,
+          ...(tanpaTopRisk ? [] : [angkaNB(t.tsiTopRisk)]),
+          angkaNB(t.tsi),
+          angkaNB(t.lol),
+          angkaNB(t.premium),
+        ])}
+      />
+    </section>
+  )
+}
+
+/** Grid baris SpreadingList coverage (`SPREADING.kolomSpreading` nbfacin). */
+export function BarisSpreadingNB({ rows }: { rows: Baris[] }) {
+  return (
+    <GridNB
+      kosong={TEKS_NB.spreadingKosong}
+      kolom={kolomAngka(SPREADING_NB.kolomSpreading, [
+        '% Share',
+        'TSI 100% Spreaded',
+        'TSI Spreaded (RNM)',
+        'Limit Of Liability',
+        'Premium Spreaded',
+      ])}
+      baris={rows.map((r) => [
+        v(r, 'TreatyName') || v(r, 'TreatyType'),
+        angkaNB(v(r, 'SharePercentage')),
+        angkaNB(v(r, 'TSIGrossSpreaded')),
+        angkaNB(v(r, 'TSISpreaded')),
+        angkaNB(v(r, 'ClaimEstimation')),
+        angkaNB(v(r, 'PremiumSpreaded')),
+      ])}
+    />
   )
 }
 
@@ -758,9 +815,31 @@ function SpreadingLokasiNB({ h, n, total }: { h: Halaman; n: number; total: Tota
   )
 }
 
+/** Lima angka detail coverage tab Spreading (`SPREADING.detailCoverage`). */
+export function DetailCoverageSpreadingNB({ c }: { c: Baris }) {
+  const D = SPREADING_NB.detailCoverage
+  return (
+    <dl className="claimfacin__nb-angka-lima">
+      {(
+        [
+          [D.tsi, 'TSI'],
+          [D.tsiLiability, 'TSILiability'],
+          [D.tsiNusantaraRe, 'TSINusantaraRe'],
+          [D.premium, 'Premium'],
+          [D.premiNusantaraRe, 'PremiNusantaraRe'],
+        ] as const
+      ).map(([l, k]) => (
+        <div key={k}>
+          <dt>{l}</dt>
+          <dd>{angkaNB(v(c, k))}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
 function SpreadingItemNB({ h, n, j }: { h: Halaman; n: number; j: number }) {
   const cov = daftarNB(h, coverageNB(n, j))
-  const D = SPREADING_NB.detailCoverage
   return (
     <GridNB
       kolom={kolomAngka(SPREADING_NB.kolomCoverage, ['‰ Standard Rate', 'Gross Premium', 'Premium RNM'])}
@@ -777,74 +856,11 @@ function SpreadingItemNB({ h, n, j }: { h: Halaman; n: number; j: number }) {
         const rows = daftarNB(h, spreadingNB(n, j, m + 1))
         return (
           <div className="claimfacin__nb-isi">
-            <dl className="claimfacin__nb-angka-lima">
-              {(
-                [
-                  [D.tsi, 'TSI'],
-                  [D.tsiLiability, 'TSILiability'],
-                  [D.tsiNusantaraRe, 'TSINusantaraRe'],
-                  [D.premium, 'Premium'],
-                  [D.premiNusantaraRe, 'PremiNusantaraRe'],
-                ] as const
-              ).map(([l, k]) => (
-                <div key={k}>
-                  <dt>{l}</dt>
-                  <dd>{angkaNB(v(c, k))}</dd>
-                </div>
-              ))}
-            </dl>
-            <GridNB
-              kosong={TEKS_NB.spreadingKosong}
-              kolom={kolomAngka(SPREADING_NB.kolomSpreading, [
-                '% Share',
-                'TSI 100% Spreaded',
-                'TSI Spreaded (RNM)',
-                'Limit Of Liability',
-                'Premium Spreaded',
-              ])}
-              baris={rows.map((r) => [
-                v(r, 'TreatyName') || v(r, 'TreatyType'),
-                angkaNB(v(r, 'SharePercentage')),
-                angkaNB(v(r, 'TSIGrossSpreaded')),
-                angkaNB(v(r, 'TSISpreaded')),
-                angkaNB(v(r, 'ClaimEstimation')),
-                angkaNB(v(r, 'PremiumSpreaded')),
-              ])}
-            />
+            <DetailCoverageSpreadingNB c={c} />
+            <BarisSpreadingNB rows={rows} />
           </div>
         )
       }}
     />
-  )
-}
-
-// ---------------------------------------------------------------- Inw Fac Cedant Panels
-
-/** Tab Inw Fac Cedant Panels (`TabCedant`): blok atas label kiri + grid CedingCedantList. */
-export function TabCedantNB({ h }: { h: Halaman }) {
-  const C = CEDANT_NB_LABEL
-  const rows = daftarNB(h, CEDANT_NB)
-  return (
-    <div className="claimfacin__nb-isi">
-      <div className="claimfacin__nb-blok claimfacin__nb-cedant">
-        <TeksNB kiri label={C.sob} nilai={h.nilai['OfferFacIn.QuotationData.SobName'] ?? ''} />
-        <RadioNB
-          kiri
-          label={C.shareCedantType}
-          pilihan={OPSI_SHARE_CEDANT_NB.map((o) => o.value)}
-          opsiLabel={(p) => labelKode(OPSI_SHARE_CEDANT_NB, p)}
-          nilai={nilaiNB(h, 'ShareCedantType')}
-        />
-        <TeksNB kiri label={C.percentShare} nilai={angkaNB(nilaiNB(h, 'PercentShare'))} angka />
-        <TeksNB kiri label={C.totalTsi} nilai={angkaNB(nilaiNB(h, 'TotalTSINusaReSpreading'))} angka />
-        <TeksNB kiri label={C.totalPremi} nilai={angkaNB(nilaiNB(h, 'TotalPremiNusaRe'))} angka />
-      </div>
-      <div className="claimfacin__nb-cedant-grid">
-        <GridNB
-          kolom={[C.kolomCeding, uang(C.kolomShare)]}
-          baris={rows.map((r) => [v(r, 'CedingCoName'), angkaNB(v(r, 'ShareCeding'))])}
-        />
-      </div>
-    </div>
   )
 }

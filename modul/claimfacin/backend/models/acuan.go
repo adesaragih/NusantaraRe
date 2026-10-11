@@ -113,6 +113,11 @@ type Acuan interface {
 	NamaPelaku(ctx context.Context, akun string) (string, error)
 	// EmailPelaku = `OperatorID.pyAddress` (M_LOGIN_GO.EMAIL).
 	EmailPelaku(ctx context.Context, akun string) (string, error)
+	// JabatanPelaku - M_LOGIN_GO.JOB_POSITION akun ("" bila tidak ada) - penanda tab IT tampilan polis NB.
+	JabatanPelaku(ctx context.Context, akun string) (string, error)
+	// PolisNBIT - isi tab Loss Record / Correspondence kasus NB polis (`kasus` kosong = dicari seperti DokumenPolisDatar;
+	// tanpa kasus = kedua tab kosong).
+	PolisNBIT(ctx context.Context, nopolis, prodke, kasus string) (PolisNBIT, error)
 	// EstimasiKasusTerbuka = GetDataEstimation (`SUM(CLAIM_VALUE) REINSURANCE.TRLOSS_DETAIL_T WHERE NO_SPK = pyID AND
 	// NO_AKSEP IS NULL`) - HANYA dipanggil di produksi (skema luar tidak terbaca dari akun DEV, pola OQ-CP-11).
 	EstimasiKasusTerbuka(ctx context.Context, kasusID string) (string, error)

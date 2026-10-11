@@ -280,3 +280,243 @@ func TestSusunPolisDatarTampilanNB(t *testing.T) {
 	periksa(l+"(1).FEAList", "PrivateTruckBrigade", "1")
 	periksa(l+"(1).Property.PropertyItemList(1).CoverageList(1).DeductibleList", "Amount", "5000")
 }
+
+func TestSusunPolisDatarAnekaTampilanNB(t *testing.T) {
+	// Tab Object Aneka tampilan polis NB (work owner 11-10-2026 "tampilan view polis yang belum tergenerate tolong
+	// diperbaiki. cek tampilan nya di nb facin!"): medan form objek NB (migrasi nbfacin 214) - kolom tambahan T_ANEKALIST,
+	// halaman .MarineHull / .VehicleHE / .AviationHull / .MemorandumAccept - sampai ke baris AnekaList halaman klaim.
+	const okup = "LocationList/Property/RiskLocation/OccupationList"
+	akar := models.BarisPolisDatar{ID: "UJI-NB-3"}
+	baris := map[[2]string][]models.BarisPolisDatar{
+		{"T_LOCATIONLIST", "T_GENERAL_POLIS"}: {{ID: "31", Induk: "UJI-NB-3"}},
+		{"T_PROPERTY", "T_LOCATIONLIST"}:      {{ID: "41", Induk: "31", Nilai: map[string]string{"ObjectNo": "1"}}},
+		{"T_RISKLOCATION", "T_PROPERTY"}:      {{ID: "51", Induk: "41", Nilai: map[string]string{"ASMAddress": "UJI JALAN"}}},
+		{"T_OCCUPATIONLIST", "T_RISKLOCATION"}: {{ID: "61", Induk: "51", Src: okup,
+			Nilai: map[string]string{"OccupationId": "UJI-OC1"}}},
+		{"T_ANEKALIST", "T_OCCUPATIONLIST"}: {{ID: "71", Induk: "61", Src: okup + "/AnekaList",
+			Nilai: map[string]string{"ObjectName": "UJI KAPAL", "NO_KONTRAK": "UJI-K1", "NO_KTP": "UJI-KTP", "Others": "UJI CATATAN",
+				"LoanAccountNumber": "UJI-L1", "LimitOfLiability": "100", "NoOfTree": "7"}}},
+		{"T_MARINEHULL", "T_ANEKALIST"}:       {{ID: "72", Induk: "71", Nilai: map[string]string{"NRTRT": "10", "LENGTHM": "50"}}},
+		{"T_VEHICLEHE", "T_ANEKALIST"}:        {{ID: "73", Induk: "71", Nilai: map[string]string{"ChassisNumber": "UJI-CH1"}}},
+		{"T_AVIATIONHULL", "T_ANEKALIST"}:     {{ID: "74", Induk: "71", Nilai: map[string]string{"Pilots": "2"}}},
+		{"T_MEMORANDUMACCEPT", "T_ANEKALIST"}: {{ID: "75", Induk: "71", Nilai: map[string]string{"Collateral": "UJI JAMINAN"}}},
+	}
+	doc, err := models.SusunPolisDatar(akar, bacaUji(baris))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := json.Marshal(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := models.HalamanBaru()
+	if err := models.TerapkanPolis(h, b); err != nil {
+		t.Fatal(err)
+	}
+	an := h.AmbilDaftar(models.DaftarLokasiPolis + "(1).Property.RiskLocation.OccupationList(1).AnekaList")
+	if len(an) != 1 {
+		t.Fatalf("AnekaList: %+v", an)
+	}
+	for k, mau := range map[string]string{
+		"NO_KONTRAK": "UJI-K1", "NO_KTP": "UJI-KTP", "Others": "UJI CATATAN", "LoanAccountNumber": "UJI-L1",
+		"LimitOfLiability": "100", "NoOfTree": "7", "MarineHull.NRTRT": "10", "MarineHull.LENGTHM": "50",
+		"VehicleHE.ChassisNumber": "UJI-CH1", "AviationHull.Pilots": "2", "MemorandumAccept.Collateral": "UJI JAMINAN",
+	} {
+		if an[0][k] != mau {
+			t.Errorf("AnekaList %s = %q, mau %q", k, an[0][k], mau)
+		}
+	}
+	for _, tb := range []string{"T_MARINEHULL", "T_AVIATIONHULL", "T_MEMORANDUMACCEPT"} {
+		if !models.TabelTampilanNB(tb) {
+			t.Errorf("%s harus tabel tampilan NB (dimuat hanya bila berindeks induk)", tb)
+		}
+	}
+}
+
+func TestSusunPolisDatarCargoTampilanNB(t *testing.T) {
+	// Tab Object / Coverage Marine Cargo tampilan polis NB (work owner 11-10-2026 "cek tampilan nya di nb facin!"): Ship,
+	// LC, Survey Agent, Additional Ship (anak Ship), Warranty Extension (AdditionalCoverage) sampai ke baris CargoList.
+	akar := models.BarisPolisDatar{ID: "UJI-NB-4"}
+	baris := map[[2]string][]models.BarisPolisDatar{
+		{"T_CARGOLIST", "T_GENERAL_POLIS"}: {{ID: "31", Induk: "UJI-NB-4",
+			Nilai: map[string]string{"TradingNote": "UJI DAGANG", "InvoiceDate": "20260105", "MaxAgeDetail": "UJI MAKS"}}},
+		{"T_SHIP", "T_CARGOLIST"}:        {{ID: "41", Induk: "31", Nilai: map[string]string{"NM_SHIP": "UJI KAPAL", "ID": "UJI-S1"}}},
+		{"T_ADDITIONALSHIP", "T_SHIP"}:   {{ID: "42", Induk: "41", Nilai: map[string]string{"NM_SHIP": "UJI KAPAL 2", "VOYAGE_NO": "UJI-V1"}}},
+		{"T_LC", "T_CARGOLIST"}:          {{ID: "43", Induk: "31", Nilai: map[string]string{"LC": "true", "LCBANK": "UJI BANK"}}},
+		{"T_SURVEYAGENT", "T_CARGOLIST"}: {{ID: "44", Induk: "31", Nilai: map[string]string{"pyFullName": "UJI SURVEYOR"}}},
+		{"T_COVERAGELIST", "T_CARGOLIST"}: {{ID: "51", Induk: "31", Src: "CargoList/CoverageList",
+			Nilai: map[string]string{"CoverageNote": "UJI ICC A"}}},
+		{"T_ADDITIONALCOVERAGE", "T_COVERAGELIST"}: {{ID: "52", Induk: "51", Nilai: map[string]string{"Coverage": "UJI-W1"}}},
+	}
+	doc, err := models.SusunPolisDatar(akar, bacaUji(baris))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := json.Marshal(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := models.HalamanBaru()
+	if err := models.TerapkanPolis(h, b); err != nil {
+		t.Fatal(err)
+	}
+	cg := h.AmbilDaftar(models.AwalanPolis + ".CargoList")
+	if len(cg) != 1 {
+		t.Fatalf("CargoList: %+v", cg)
+	}
+	for k, mau := range map[string]string{"TradingNote": "UJI DAGANG", "InvoiceDate": "20260105", "MaxAgeDetail": "UJI MAKS",
+		"Ship.NM_SHIP": "UJI KAPAL", "Ship.ID": "UJI-S1", "LC.LCBANK": "UJI BANK", "SurveyAgent.pyFullName": "UJI SURVEYOR"} {
+		if cg[0][k] != mau {
+			t.Errorf("CargoList %s = %q, mau %q", k, cg[0][k], mau)
+		}
+	}
+	if as := h.AmbilDaftar(models.AwalanPolis + ".CargoList(1).Ship.AdditionalShip"); len(as) != 1 || as[0]["VOYAGE_NO"] != "UJI-V1" {
+		t.Errorf("AdditionalShip: %+v", as)
+	}
+	if w := h.AmbilDaftar(models.AwalanPolis + ".CargoList(1).CoverageList(1).AdditionalCoverage"); len(w) != 1 || w[0]["Coverage"] != "UJI-W1" {
+		t.Errorf("AdditionalCoverage: %+v", w)
+	}
+	for _, tb := range []string{"T_SHIP", "T_LC", "T_SURVEYAGENT", "T_ADDITIONALSHIP", "T_ADDITIONALCOVERAGE"} {
+		if !models.TabelTampilanNB(tb) {
+			t.Errorf("%s harus tabel tampilan NB (dimuat hanya bila berindeks induk)", tb)
+		}
+	}
+}
+
+func TestSusunPolisDatarPaymentTampilanNB(t *testing.T) {
+	// Tab Premium Deduction / Payment tampilan polis NB (keputusan work owner 11-10-2026: nilai TERSIMPAN): PAY_* akar ->
+	// PolicyData.Payment, CurrencyList PAY_* -> Policy.Payment (jalur Pega `PaymentCurrencyList`), ListInstallment.
+	akar := models.BarisPolisDatar{ID: "UJI-NB-5", Nilai: map[string]string{"PolicyData.Payment.RICommision": "12.5",
+		"PolicyData.Payment.Installment": "2"}}
+	baris := map[[2]string][]models.BarisPolisDatar{
+		{"T_CURRENCYLIST", "T_GENERAL_POLIS"}: {{ID: "31", Induk: "UJI-NB-5",
+			Nilai: map[string]string{"Name": "IDR", "Policy.Payment.Commision": "125", "SumTotalPayment": "800"}}},
+		{"T_LISTINSTALLMENT", "T_CURRENCYLIST"}: {{ID: "41", Induk: "31",
+			Nilai: map[string]string{"InstallmentNo": "1", "PaymentTotal": "400"}}},
+	}
+	doc, err := models.SusunPolisDatar(akar, bacaUji(baris))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := json.Marshal(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := models.HalamanBaru()
+	if err := models.TerapkanPolis(h, b); err != nil {
+		t.Fatal(err)
+	}
+	if v := h.Ambil(models.AwalanPolis + ".PolicyData.Payment.RICommision"); v != "12.5" {
+		t.Errorf("RICommision %q", v)
+	}
+	cu := h.AmbilDaftar(models.AwalanPolis + ".CurrencyList")
+	if len(cu) != 1 || cu[0]["Policy.Payment.Commision"] != "125" || cu[0]["SumTotalPayment"] != "800" {
+		t.Fatalf("CurrencyList: %+v", cu)
+	}
+	if ci := h.AmbilDaftar(models.AwalanPolis + ".CurrencyList(1).ListInstallment"); len(ci) != 1 || ci[0]["PaymentTotal"] != "400" {
+		t.Errorf("ListInstallment: %+v", ci)
+	}
+	for _, tb := range []string{"T_CURRENCYLIST", "T_LISTINSTALLMENT"} {
+		if !models.TabelTampilanNB(tb) {
+			t.Errorf("%s harus tabel tampilan NB", tb)
+		}
+	}
+	akarSpec, _ := models.TabelPolisDatarDari(models.TabelAkarPolisDatar)
+	ada := map[string]string{}
+	for _, k := range akarSpec.Kolom {
+		ada[k.Nama] = k.Medan
+	}
+	for kol, mau := range map[string]string{"PAY_RI_COMMISION": "PolicyData.Payment.RICommision",
+		"PAY_PCT_BROKERAGE_FEE": "PolicyData.Payment.PctBrokerageFee", "PAY_INSTALLMENT": "PolicyData.Payment.Installment"} {
+		if ada[kol] != mau {
+			t.Errorf("peta T_GENERAL_POLIS %s -> %q, mau %q", kol, ada[kol], mau)
+		}
+	}
+}
+
+func TestSusunPolisDatarClausesTampilanNB(t *testing.T) {
+	// Tab Clauses tampilan polis NB (FIRE): T_CLAUSELIST (nbfacin 197, satu baris per argumen) -> OfferFacIn.ClauseList.
+	akar := models.BarisPolisDatar{ID: "UJI-NB-6"}
+	baris := map[[2]string][]models.BarisPolisDatar{
+		{"T_CLAUSELIST", "T_GENERAL_POLIS"}: {
+			{ID: "31", Induk: "UJI-NB-6", Nilai: map[string]string{"SeqNo": "1", "ClauseCode": "UJI-CL1", "ClauseTitle": "UJI JUDUL", "ArgumentCount": "2"}},
+			{ID: "32", Induk: "UJI-NB-6", Nilai: map[string]string{"SeqNo": "1", "ClauseCode": "UJI-CL1", "ClauseTitle": "UJI JUDUL", "ArgumentCount": "2"}},
+		},
+	}
+	doc, err := models.SusunPolisDatar(akar, bacaUji(baris))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := json.Marshal(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := models.HalamanBaru()
+	if err := models.TerapkanPolis(h, b); err != nil {
+		t.Fatal(err)
+	}
+	if cl := h.AmbilDaftar(models.AwalanPolis + ".ClauseList"); len(cl) != 2 || cl[0]["ClauseCode"] != "UJI-CL1" || cl[1]["SeqNo"] != "1" {
+		t.Fatalf("ClauseList: %+v", cl)
+	}
+	if !models.TabelTampilanNB("T_CLAUSELIST") {
+		t.Error("T_CLAUSELIST harus tabel tampilan NB")
+	}
+}
+
+func TestSusunPolisDatarScoringTampilanNB(t *testing.T) {
+	// Tab Scoring Risk tampilan polis NB (FIRE, nilai tersimpan - keputusan work owner 11-10-2026): lima tabel rancangan
+	// nbfacin 205 -> OfferFacIn.ScoringRisk; kolom penentu faktor (FACTOR_GROUP / FACTOR_NAME, aturan loader V-30) dan opsi
+	// (CHECK_BOX / OPTION_NO) ikut dimuat.
+	akar := models.BarisPolisDatar{ID: "UJI-NB-7"}
+	baris := map[[2]string][]models.BarisPolisDatar{
+		{"T_SCORINGRISK", "T_GENERAL_POLIS"}: {
+			{ID: "41", Induk: "UJI-NB-7", Nilai: map[string]string{"FinalScore": "80.5", "NoteFinalScore": "Above Average"}},
+		},
+		{"T_SCORINGRESULT", "T_SCORINGRISK"}: {
+			{ID: "42", Induk: "41", Nilai: map[string]string{"AboveAverage": "true", "AcceptableNotApproval": "true"}},
+		},
+		{"T_DATASCORINGRISKLIST", "T_SCORINGRISK"}: {
+			{ID: "43", Induk: "41", Nilai: map[string]string{"OccupationNote": "UJI OKUPASI", "Score": "80.5"}},
+			{ID: "44", Induk: "41", Nilai: map[string]string{"IndexLocation": "2"}},
+		},
+		{"T_SCORING_FACTOR", "T_DATASCORINGRISKLIST"}: {
+			{ID: "45", Induk: "43", Nilai: map[string]string{"FactorGroup": "LossRatio", "FactorName": "LossRatio",
+				"PercentLossRatio": "12.5", "ScorePerFactor": "15"}},
+		},
+		{"T_SCORING_OPTION", "T_SCORING_FACTOR"}: {
+			{ID: "46", Induk: "45", Nilai: map[string]string{"CheckBox": "true", "OptionNo": "5", "Score": "15"}},
+		},
+	}
+	doc, err := models.SusunPolisDatar(akar, bacaUji(baris))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := json.Marshal(doc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := models.HalamanBaru()
+	if err := models.TerapkanPolis(h, b); err != nil {
+		t.Fatal(err)
+	}
+	sr := models.AwalanPolis + ".ScoringRisk"
+	if h.Ambil(sr+".NoteFinalScore") != "Above Average" || h.Ambil(sr+".ScoringResult.AcceptableNotApproval") != "true" {
+		t.Errorf("ScoringRisk: %q / %q", h.Ambil(sr+".NoteFinalScore"), h.Ambil(sr+".ScoringResult.AcceptableNotApproval"))
+	}
+	if d := h.AmbilDaftar(sr + ".DataScoringRiskList"); len(d) != 2 || d[1]["IndexLocation"] != "2" {
+		t.Fatalf("DataScoringRiskList: %+v", d)
+	}
+	f := h.AmbilDaftar(sr + ".DataScoringRiskList(1).ScoringFactor")
+	if len(f) != 1 || f[0]["FactorGroup"] != "LossRatio" || f[0]["FactorName"] != "LossRatio" || f[0]["PercentLossRatio"] != "12.5" {
+		t.Fatalf("ScoringFactor: %+v", f)
+	}
+	o := h.AmbilDaftar(sr + ".DataScoringRiskList(1).ScoringFactor(1).ScoringOption")
+	if len(o) != 1 || o[0]["CheckBox"] != "true" || o[0]["OptionNo"] != "5" {
+		t.Fatalf("ScoringOption: %+v", o)
+	}
+	for _, tb := range []string{"T_SCORINGRISK", "T_SCORINGRESULT", "T_DATASCORINGRISKLIST", "T_SCORING_FACTOR", "T_SCORING_OPTION"} {
+		if !models.TabelTampilanNB(tb) {
+			t.Errorf("%s harus tabel tampilan NB", tb)
+		}
+	}
+}

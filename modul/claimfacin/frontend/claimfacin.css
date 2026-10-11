@@ -1450,6 +1450,26 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Polis NB keluarga Aneka (work owner 11-10-2026 "tampilan view polis yang belum tergenerate"): form objek berkartu dan
+   form coverage = satu kisi mengalir tiga kolom seperti nbfacin (`nbf-aneka-form__grid` / `nbf-aneka-cov__grid`); kartu
+   kecil (Sum Insured, Identity, Period) sebaris; detail coverage spreading empat angka. */
+.claimfacin .claimfacin__nb-tiga {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+  gap: 10px 24px;
+  align-items: start;
+}
+
+.claimfacin .claimfacin__nb-aneka-baris {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 12px;
+}
+
+.claimfacin .claimfacin__nb-angka-lima.claimfacin__nb-angka-empat {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .claimfacin .claimfacin__nb-cedant {
   max-width: 640px;
 }
@@ -1476,6 +1496,458 @@
   .claimfacin .claimfacin__nb-medan--kiri,
   .claimfacin .claimfacin__nb-tiga,
   .claimfacin .claimfacin__nb-empat {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Tab Scoring Risk tampilan polis NB (FIRE, hanya-baca) - salinan rupa `nbfacin.css` blok "Tab Scoring Risk" (pola, bukan
+   impor; token NB -> token --cfi-*): kepala dua kolom berlabel kiri, satu tabel faktor menerus (pita faktor + subtotal,
+   judul sub-faktor, pilihan menjorok, centang dan skor di slot tetap), ringkasan total, kartu hasil. */
+.claimfacin .claimfacin__nb-skor {
+  min-width: 0;
+}
+.claimfacin .claimfacin__nb-skor-judul {
+  margin: 0 0 10px;
+}
+.claimfacin [data-nada="baik"] {
+  --cfi-nada: var(--success-text);
+}
+.claimfacin [data-nada="sedang"] {
+  --cfi-nada: var(--warning-text);
+}
+.claimfacin [data-nada="buruk"] {
+  --cfi-nada: var(--danger-text);
+}
+.claimfacin .claimfacin__nb-skor-pil {
+  padding: 1px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+/* General: angka biasa, hanya lencana kelas berwarna (nbfacin, work owner 06-10-2026). */
+.claimfacin .claimfacin__nb-skor-pil--umum {
+  display: inline-block;
+  margin-left: 4px;
+  color: var(--cfi-nada, inherit);
+}
+
+/* Kepala */
+.claimfacin .claimfacin__nb-skor-kepala {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 10px;
+  background: var(--cfi-isi);
+}
+.claimfacin .claimfacin__nb-skor-kepala dl {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 8px 12px;
+  align-items: center;
+  margin: 0;
+}
+.claimfacin .claimfacin__nb-skor-kepala dt {
+  color: var(--cfi-teks-redup);
+}
+.claimfacin .claimfacin__nb-skor-kepala dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.claimfacin .claimfacin__nb-skor-nilai {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--cfi-nada, inherit);
+}
+
+/* Tabel faktor */
+.claimfacin .claimfacin__nb-skor-bungkus {
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 10px;
+  background: var(--cfi-isi);
+  overflow-x: auto;
+}
+.claimfacin .claimfacin__nb-skor-tabel {
+  width: 100%;
+  border-collapse: collapse;
+}
+.claimfacin .claimfacin__nb-skor-tabel thead th {
+  padding: 8px 12px;
+  background: var(--cfi-lembut);
+  border-bottom: 1px solid var(--cfi-tepi);
+  text-align: left;
+}
+.claimfacin .claimfacin__nb-skor-tabel thead th:nth-child(n + 2),
+.claimfacin .claimfacin__nb-skor-tabel td:nth-child(n + 2) {
+  width: 140px;
+}
+.claimfacin .claimfacin__nb-skor-tabel thead th:nth-child(n + 2) {
+  text-align: center;
+}
+.claimfacin .claimfacin__nb-skor-tabel tbody td,
+.claimfacin .claimfacin__nb-skor-tabel tbody th {
+  padding: 4px 12px;
+  border: 0;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+.claimfacin .claimfacin__nb-skor-tabel tbody .claimfacin__nb-skor-faktor > th,
+.claimfacin .claimfacin__nb-skor-tabel tbody .claimfacin__nb-skor-faktor > td {
+  padding: 8px 12px;
+  background: var(--cfi-lembut);
+  border-top: 2px solid var(--cfi-tepi);
+  font-weight: 700;
+}
+.claimfacin .claimfacin__nb-skor-faktor > th {
+  text-align: left;
+}
+.claimfacin .claimfacin__nb-skor-no {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--cfi-aksen-lembut);
+  color: var(--cfi-aksen-teks);
+  font-size: 11px;
+}
+.claimfacin .claimfacin__nb-skor-bobot {
+  margin-left: 8px;
+  padding: 0 8px;
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 999px;
+  color: var(--cfi-teks-redup);
+  font-size: 11px;
+  font-weight: 400;
+}
+.claimfacin .claimfacin__nb-skor-tabel tbody .claimfacin__nb-skor-judul-sub > td {
+  padding: 8px 12px 2px 42px;
+  font-weight: 600;
+}
+.claimfacin .claimfacin__nb-skor-tabel tbody td.claimfacin__nb-skor-opsi {
+  padding-left: 42px;
+}
+.claimfacin .claimfacin__nb-skor-tabel tbody .claimfacin__nb-skor-judul-sub ~ tr > td.claimfacin__nb-skor-opsi {
+  padding-left: 62px;
+}
+.claimfacin
+  .claimfacin__nb-skor-tabel
+  tbody
+  tr:not(.claimfacin__nb-skor-faktor):not(.claimfacin__nb-skor-judul-sub):hover
+  > td {
+  background: var(--cfi-baris-hover);
+}
+.claimfacin .claimfacin__nb-skor-baris--pilih > td {
+  background: var(--cfi-aksen-lembut);
+}
+.claimfacin .claimfacin__nb-skor-baris--pilih > .claimfacin__nb-skor-opsi {
+  font-weight: 600;
+}
+.claimfacin .claimfacin__nb-skor-sel label,
+.claimfacin .claimfacin__nb-skor-faktor > .claimfacin__nb-skor-sel {
+  display: grid;
+  grid-template-columns: 20px 64px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+.claimfacin .claimfacin__nb-skor-sel label {
+  margin: 0;
+}
+.claimfacin .claimfacin__nb-skor-sel input {
+  margin: 0;
+  accent-color: var(--cfi-aksen);
+}
+.claimfacin .claimfacin__nb-skor-faktor > .claimfacin__nb-skor-sel {
+  display: table-cell;
+  text-align: center;
+  white-space: nowrap;
+}
+.claimfacin .claimfacin__nb-skor-slot {
+  display: inline-block;
+  width: 20px;
+}
+.claimfacin .claimfacin__nb-skor-poin {
+  display: inline-block;
+  min-width: 64px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-weight: 700;
+}
+.claimfacin .claimfacin__nb-skor-poin--sub {
+  margin-left: 10px;
+}
+.claimfacin .claimfacin__nb-skor-sistem {
+  margin-left: 8px;
+  color: var(--cfi-teks-redup);
+  font-size: 11px;
+  font-style: italic;
+}
+.claimfacin .claimfacin__nb-skor-persen td {
+  padding-top: 4px;
+  padding-bottom: 6px;
+}
+.claimfacin .claimfacin__nb-skor-persen td.claimfacin__nb-skor-sel {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bawah: ringkasan total + kartu hasil */
+.claimfacin .claimfacin__nb-skor-ringkas {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.claimfacin .claimfacin__nb-skor-ringkas > div {
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 10px;
+  background: var(--cfi-lembut);
+}
+.claimfacin .claimfacin__nb-skor-ringkas dt {
+  color: var(--cfi-teks-redup);
+  font-size: 11px;
+}
+.claimfacin .claimfacin__nb-skor-ringkas dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.claimfacin .claimfacin__nb-skor-ringkas > div[data-nada="baik"],
+.claimfacin .claimfacin__nb-skor-ringkas > div[data-nada="sedang"],
+.claimfacin .claimfacin__nb-skor-ringkas > div[data-nada="buruk"] {
+  border-left: 4px solid var(--cfi-nada);
+}
+.claimfacin .claimfacin__nb-skor-ringkas > div[data-nada] dd {
+  color: var(--cfi-nada, inherit);
+}
+.claimfacin .claimfacin__nb-skor-hasil {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+.claimfacin .claimfacin__nb-skor-kartu {
+  padding: 10px 12px;
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 10px;
+  background: var(--cfi-isi);
+}
+.claimfacin .claimfacin__nb-skor-kartu h5 {
+  margin: 0 0 8px;
+}
+.claimfacin .claimfacin__nb-skor-kartu h6 {
+  margin: 0 0 4px;
+  color: var(--cfi-teks-redup);
+  font-size: 11px;
+  font-weight: 600;
+}
+.claimfacin .claimfacin__nb-skor-kartu ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.claimfacin .claimfacin__nb-skor-kartu li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  color: var(--cfi-teks-redup);
+}
+.claimfacin .claimfacin__nb-skor-kartu li.claimfacin__nb-skor-aktif {
+  background: var(--cfi-aksen-lembut);
+  color: var(--cfi-nada, var(--cfi-aksen-teks));
+  font-weight: 700;
+}
+.claimfacin .claimfacin__nb-skor-rentang {
+  min-width: 64px;
+  font-variant-numeric: tabular-nums;
+}
+.claimfacin .claimfacin__nb-skor-tanda {
+  width: 14px;
+}
+.claimfacin .claimfacin__nb-skor-setuju {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1100px) {
+  .claimfacin .claimfacin__nb-skor-kepala {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+@media (max-width: 900px) {
+  .claimfacin .claimfacin__nb-skor-ringkas,
+  .claimfacin .claimfacin__nb-skor-hasil {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .claimfacin .claimfacin__nb-skor-kepala dl,
+  .claimfacin .claimfacin__nb-skor-ringkas,
+  .claimfacin .claimfacin__nb-skor-hasil,
+  .claimfacin .claimfacin__nb-skor-setuju {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Tab Clauses tampilan polis NB (FIRE, hanya-baca) - kartu klausa `nbfacin.css` `nbf-klausa__*` (pola, bukan impor). */
+.claimfacin .claimfacin__nb-klausa {
+  display: grid;
+  gap: 10px;
+}
+.claimfacin .claimfacin__nb-klausa-kartu {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--cfi-tepi);
+  border-left: 3px solid var(--cfi-aksen);
+  border-radius: 10px;
+  background: var(--cfi-isi);
+}
+.claimfacin .claimfacin__nb-klausa-identitas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.claimfacin .claimfacin__nb-klausa-label {
+  display: block;
+  color: var(--cfi-teks-redup);
+  font-size: 11px;
+}
+.claimfacin .claimfacin__nb-klausa-identitas .claimfacin__nb-klausa-label {
+  display: inline;
+}
+.claimfacin .claimfacin__nb-klausa-jumlah {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--cfi-lembut);
+  color: var(--cfi-teks-redup);
+  font-size: 11px;
+}
+.claimfacin .claimfacin__nb-klausa-deskripsi {
+  margin: 2px 0 0;
+  color: var(--cfi-teks-redup);
+  white-space: pre-wrap;
+}
+
+/* Tab Loss Record / Correspondence tampilan polis NB (akun IT, hanya-baca) - `nbfacin.css` `nbf-lr__*` / `nbf-kor__*`
+   (pola, bukan impor). */
+.claimfacin .claimfacin__nb-lr {
+  display: grid;
+  gap: 14px;
+}
+.claimfacin .claimfacin__nb-lr-premi {
+  display: grid;
+  gap: 8px;
+  max-width: 560px;
+}
+.claimfacin .claimfacin__nb-lr-total {
+  padding: 10px;
+  border: 1px solid var(--success-border);
+  border-radius: 10px;
+  background: var(--success-bg);
+}
+.claimfacin .claimfacin__nb-lr-rasio {
+  padding: 4px 12px;
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 10px;
+  background: var(--cfi-aksen-lembut);
+}
+.claimfacin .claimfacin__nb-lr-rasio-baris {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.claimfacin .claimfacin__nb-lr-rasio-baris + .claimfacin__nb-lr-rasio-baris {
+  border-top: 1px solid var(--cfi-tepi);
+}
+.claimfacin .claimfacin__nb-lr-rasio-judul {
+  font-weight: 700;
+}
+.claimfacin .claimfacin__nb-lr-rasio dl {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+}
+.claimfacin .claimfacin__nb-lr-rasio dt {
+  color: var(--cfi-teks-redup);
+}
+.claimfacin .claimfacin__nb-lr-rasio dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.claimfacin .claimfacin__nb-kor {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--cfi-tepi);
+  border-left: 3px solid var(--cfi-aksen);
+  border-radius: 10px;
+  background: var(--cfi-isi);
+}
+.claimfacin .claimfacin__nb-kor-judul {
+  margin: 0 0 6px;
+  color: var(--cfi-teks-redup);
+  font-size: 12px;
+  font-weight: 600;
+}
+.claimfacin .claimfacin__nb-kor-penerima {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--cfi-tepi);
+}
+.claimfacin .claimfacin__nb-kor-pesan {
+  min-height: 60px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--cfi-lembut);
+  overflow-wrap: anywhere;
+}
+.claimfacin .claimfacin__nb-kor-status {
+  display: inline-block;
+  padding: 1px 10px;
+  border: 1px solid var(--warning-border);
+  border-radius: 999px;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: 11px;
+  font-weight: 600;
+}
+.claimfacin .claimfacin__nb-kor-status--terkirim {
+  border-color: var(--success-border);
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+@media (max-width: 560px) {
+  .claimfacin .claimfacin__nb-lr-rasio-baris,
+  .claimfacin .claimfacin__nb-kor-penerima {
     grid-template-columns: minmax(0, 1fr);
   }
 }

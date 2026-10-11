@@ -168,8 +168,12 @@ func (j *jalan) laksanakan(r *models.Rencana) error {
 		return galatKontrak(err)
 	}
 	kunci := models.KunciInstans(k.KlaimID)
-	if r.JSONKlaim { // S28 (TT 4: KomitePost_Close S10)
-		if err := j.l.g.SalinJSONKlaim(ctx, tx, kunci, kl.Nilai["ClaimData.NoClaim"], noPolis, j.saat); err != nil {
+	noKlaim := kl.Nilai["ClaimData.NoClaim"]
+	// S28 (TT 4: KomitePost_Close S10, TT 3: KomitePost_Reject S11). PEGA_JSON_KLAIM_PNC menelan galatnya sendiri
+	// (EXCEPTION WHEN OTHERS -> StsSimpan 0, langkah berikut tetap jalan) dan JSON_KLAIM.MNK_NO_KLAIM / NOPOLIS NOT NULL
+	// (katalog DEV 11-10-2026): klaim tanpa Claim No - Reject di posisi admin - tidak mendapat baris, Submit jalan terus.
+	if r.JSONKlaim && noKlaim != "" && noPolis != "" {
+		if err := j.l.g.SalinJSONKlaim(ctx, tx, kunci, noKlaim, noPolis, j.saat); err != nil {
 			return err
 		}
 	}

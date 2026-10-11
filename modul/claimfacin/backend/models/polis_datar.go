@@ -72,8 +72,8 @@ func NamaTabelPolisDatar() []string {
 
 // tabelDipakaiKlaim - tabel datar yang halamannya DIBACA port activity Claim Fac In (CopyNB / InsertObjects_dt /
 // estimasi / DLA / spreading) dan tampilan polis NB hanya-baca (sub-tab Object Address / Surrounding Risk / Occupation /
-// FEA / Loss Record, grid Deductible - perintah work owner 10-10-2026 "IKUTI MODUL NB FACIN"): sisi lain (Scoring,
-// Ship / LC, CurrencyList, salinan FacRetro T_FR_*) tidak dibaca. Pengukuran DEV 10-10-2026: setiap sisi menyapu tabel
+// FEA / Loss Record, grid Deductible - perintah work owner 10-10-2026 "IKUTI MODUL NB FACIN"; tab per lini 11-10-2026):
+// sisi lain (mis. salinan FacRetro T_FR_*) tidak dibaca. Pengukuran DEV 10-10-2026: setiap sisi menyapu tabel
 // bersegmen besar (ratusan MB, 2-4 baris) - sisi yang tidak dipakai = waktu terbuang.
 var tabelDipakaiKlaim = map[string]bool{
 	"T_QUOTATIONDATA": true, "T_CEDINGCOLIST": true, "T_CEDINGCEDANTLIST": true, "T_FACRETROLIST": true,
@@ -83,6 +83,16 @@ var tabelDipakaiKlaim = map[string]bool{
 	// tampilan polis NB (`tabelTampilanNB`)
 	"T_BUILDINGCONSTRUCTION": true, "T_SURROUNDINGRISK": true, "T_LISTCAUSEOFLOSS": true, "T_COINSDATA": true,
 	"T_TABLEOFLIMIT": true, "T_FEALIST": true, "T_DEDUCTIBLELIST": true,
+	// form objek Aneka tampilan polis NB (work owner 11-10-2026 "tampilan view polis yang belum tergenerate")
+	"T_MARINEHULL": true, "T_AVIATIONHULL": true, "T_MEMORANDUMACCEPT": true,
+	// tab Object / Coverage Marine Cargo tampilan polis NB
+	"T_SHIP": true, "T_LC": true, "T_SURVEYAGENT": true, "T_ADDITIONALSHIP": true, "T_ADDITIONALCOVERAGE": true,
+	// tab Premium Deduction / Payment (nilai tersimpan, keputusan work owner 11-10-2026)
+	"T_CURRENCYLIST": true, "T_LISTINSTALLMENT": true,
+	"T_CLAUSELIST": true, // tab Clauses FIRE
+	// tab Scoring Risk FIRE (nilai tersimpan)
+	"T_SCORINGRISK": true, "T_SCORINGRESULT": true, "T_DATASCORINGRISKLIST": true, "T_SCORING_FACTOR": true,
+	"T_SCORING_OPTION": true,
 }
 
 // tabelTampilanNB - tabel datar yang HANYA dibaca tampilan polis NB hanya-baca (tidak dibaca activity klaim): dimuat
@@ -92,6 +102,11 @@ var tabelDipakaiKlaim = map[string]bool{
 var tabelTampilanNB = map[string]bool{
 	"T_BUILDINGCONSTRUCTION": true, "T_SURROUNDINGRISK": true, "T_LISTCAUSEOFLOSS": true, "T_COINSDATA": true,
 	"T_TABLEOFLIMIT": true, "T_FEALIST": true, "T_DEDUCTIBLELIST": true,
+	"T_MARINEHULL": true, "T_AVIATIONHULL": true, "T_MEMORANDUMACCEPT": true,
+	"T_SHIP": true, "T_LC": true, "T_SURVEYAGENT": true, "T_ADDITIONALSHIP": true, "T_ADDITIONALCOVERAGE": true,
+	"T_CURRENCYLIST": true, "T_LISTINSTALLMENT": true, "T_CLAUSELIST": true,
+	"T_SCORINGRISK": true, "T_SCORINGRESULT": true, "T_DATASCORINGRISKLIST": true, "T_SCORING_FACTOR": true,
+	"T_SCORING_OPTION": true,
 }
 
 // TabelTampilanNB - `tabelTampilanNB`: tabel ini dimuat hanya bila berindeks induk.

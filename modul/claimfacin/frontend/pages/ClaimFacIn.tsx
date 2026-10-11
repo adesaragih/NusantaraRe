@@ -165,7 +165,6 @@ export default function ClaimFacIn({
           <thead>
             <tr>
               <th>{CFI.kolomID}</th>
-              <th>{CFI.kolomTahap}</th>
               <th>{CFI.kolomNoClaim}</th>
               <th>{CFI.kolomPolis}</th>
               <th>{CFI.kolomTertanggung}</th>
@@ -178,7 +177,6 @@ export default function ClaimFacIn({
             {daftar.map((k) => (
               <tr key={k.id} className="inbox__baris" onClick={() => setBuka(k.id)}>
                 <td>{k.id}</td>
-                <td>{k.statusWork || k.label}</td>
                 <td>{k.noClaim || <span className="muted">—</span>}</td>
                 <td>{k.policyNo || <span className="muted">—</span>}</td>
                 <td>{k.insuredName || <span className="muted">—</span>}</td>

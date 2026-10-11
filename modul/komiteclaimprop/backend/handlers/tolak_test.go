@@ -23,6 +23,7 @@ func siapTolak(t *testing.T) *uji {
 	t.Helper()
 	u := siap(t, 1, true)
 	nilai := u.g.Klaim.Nilai(tiruan.KlaimUji)
+	nilai["ClaimData.NoClaim"] = "" // Reject Claim hanya tampil di posisi admin, sebelum Claim No terbit
 	nilai["ClaimData.Remark_Close"] = "UJI-REMARKS-REJECT"
 	nilai[kontrak.JalurPembuatKlaimTreaty] = tiruan.PembuatUji
 	nilai[kontrak.JalurNamaPembuatKlaimTreaty] = "UJI Admin"
@@ -91,6 +92,9 @@ func TestTolakDisetujuiMenutupKlaim(t *testing.T) {
 	if len(u.g.Riwayat) != 0 {
 		t.Fatalf("HISTORYAKSEPTASIPEGA tidak untuk TT 3: %+v", u.g.Riwayat)
 	}
+	if _, ada := u.g.JSONKlaim[tiruan.KlaimUji]; ada { // tanpa Claim No: PEGA_JSON_KLAIM_PNC gagal dan menelan galatnya
+		t.Fatalf("JSON_KLAIM tanpa Claim No %v", u.g.JSONKlaim[tiruan.KlaimUji])
+	}
 	dokumenTolak(t, u)
 }
 
@@ -102,7 +106,7 @@ func dokumenTolak(t *testing.T, u *uji) {
 		t.Fatalf("PDF reject: unggahan %d", len(u.b.Unggahan))
 	}
 	m := u.b.Unggahan[0]
-	if m.Folder != "Claim" || m.Durasi != 1800 || m.Ext != "pdf" || m.NamaFile != "Reject Claim UJI-K-0001.PDF" ||
+	if m.Folder != "Claim" || m.Durasi != 1800 || m.Ext != "pdf" || m.NamaFile != "Reject Claim .PDF" ||
 		!bytes.HasPrefix(m.Isi, []byte("%PDF-")) {
 		t.Fatalf("InsertGoogleStorage_Act: %s %s %d %s", m.Folder, m.NamaFile, m.Durasi, m.Ext)
 	}

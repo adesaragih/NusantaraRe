@@ -310,6 +310,52 @@ Currency / Estimate) tidak ada di screenshot - rupanya tidak diubah.
     dimuat HANYA bila katalog menemukan indeks induknya (`tabelTampilanNB`): DEV 10-10-2026 `T_LISTCAUSEOFLOSS` ~1 juta
     baris tanpa indeks PARENT_ID = ~10 detik per kueri -> Loss Record polis dari tabel datar kosong sampai indeksnya
     dibuat (OQ-CFI-35); lainnya 1-3 ms. Kode Policy Type Pega tidak diketahui (OQ-CFI-36).
+    **11-10-2026** ("tampilan view polis yang belum tergenerate tolong diperbaiki. cek tampilan nya di nb facin!"):
+    tab dan isinya per lini seperti nbfacin (`InwardFacultative.tsx` `tabTampil` + dispatch): Clauses / Scoring Risk hanya
+    FIRE, Loss Record / Correspondence hanya akun IT (keputusan work owner: ikut NB); COB di luar FIRE / Aneka / Marine
+    Cargo = pesan nbfacin `cobBelum`. **Keluarga Aneka** (Aneka not bonding, HE, Golf, Bonding / Custom Bond; lini dan
+    varian kontainer C1-C9 = When nbfacin `lini.go` + registry, `polisNBAneka.ts` - When klaim tidak dipakai karena
+    berbeda: NB memasukkan CustomBond ke IsAneka, IsElectronicEquipment NB berspasi tidak pernah benar): tab Object
+    (lokasi -> Risk Address + Top Risk, grid Golf, okupasi -> objek K2/K3/K4 -> form objek berkartu Object / Vessel /
+    Vehicle / Aircraft / Sum Insured / Identity / Period / Loan Details / Note / Akseptasi Memorandum), Coverage (okupasi /
+    Golf -> objek -> coverage -> form + Deductible; Grand Total per mata uang `totalaneka.go`) dan Spreading (detail
+    empat angka + baris spreading; ringkasan `spreadinganeka.go` totalAneka + ringkasan FIRE). Data: kolom T_ANEKALIST /
+    T_MARINEHULL / T_VEHICLEHE amandemen nbfacin 214 masuk peta, T_MARINEHULL / T_AVIATIONHULL / T_MEMORANDUMACCEPT
+    dimuat sebagai tabel tampilan (DEV 11-10-2026: semuanya berindeks PARENT_ID, 0-29 baris; kueri dicoba read-only).
+    **Marine Cargo** (`polisNBCargo.ts`): tab Object (grid No. / Top Risk / SailDate / Goods / Ship Name / Conveyance ->
+    form cargo: kepala Trading / Conveyance / Goods / Packing, Survey Agent, LC, Ship Data, data pelayaran, Additional
+    Ship), Coverage (coverage + form selalu terbuka seperti nbfacin, Warranty Extension, Deductible ber-Deskripsi, Grand
+    Total `totalGrossCargo`), Spreading (detail lima angka + baris spreading; ringkasan `totalCargo` + ringkasan FIRE). Data
+    pelayaran dibaca dari dua bentuk: polis Pega `CargoList(n).PolicyData.*` dan polis tabel datar (loader V-24b melipat
+    `.PolicyData` ke baris cargo). Data: kolom T_CARGOLIST / T_LC / T_SHIP / T_ADDITIONALSHIP migrasi nbfacin 256 masuk peta,
+    T_SURVEYAGENT baru di peta, T_SHIP / T_LC / T_SURVEYAGENT / T_ADDITIONALSHIP / T_ADDITIONALCOVERAGE dimuat sebagai tabel
+    tampilan (DEV 11-10-2026: berindeks PARENT_ID, 0-2 baris; kueri dicoba read-only). Penjaga SQL baca-saja repository kini
+    memakai batas kata (kolom FLAG_DELETE bukan pernyataan DELETE).
+    **Premium Deduction / Brokerage Fee, Payment, Inw Fac Cedant Panels** (FIRE, keluarga Aneka, Marine Cargo -
+    `polisNBBayar.ts`; keputusan work owner 11-10-2026 "Nilai tersimpan"): Deduction / Payment = nilai tersimpan tabel NB
+    (T_GENERAL_POLIS PAY_*, T_CURRENCYLIST PAY_* / SUM_TOTAL_PAYMENT, T_LISTINSTALLMENT), bukan rumus NB; kepala PPH / PPN
+    tanpa tarif (tarif master TAX terbaru dapat berbeda dari tarif saat disimpan). Rincian Cedant per mata uang tidak
+    disimpan NB -> dihitung seperti nbfacin `ringkasanRNM` (dasar x ShareCeding / 100). **Clauses** (FIRE): T_CLAUSELIST
+    (satu baris per argumen) dimuat sebagai tabel tampilan, baris ber-SEQ_NO sama dilipat menjadi satu kartu (nbfacin
+    `kumpulkanKlausa`); kartu Clause Code / bahasa / Total Argument / Title / Description tanpa tombol Choose Clause / See
+    Clause and Argument (isi klausa dan argumen tidak dimuat) - menggantikan catatan `BelumTersedia` di atas.
+    **Scoring Risk** (FIRE, `polisNBScoring.ts`; "Nilai tersimpan"): T_SCORINGRISK -> T_SCORINGRESULT /
+    T_DATASCORINGRISKLIST -> T_SCORING_FACTOR -> T_SCORING_OPTION (nbfacin 205) dimuat sebagai tabel tampilan + kolom
+    penentu INDEX_LOCATION / FACTOR_GROUP / FACTOR_NAME / PERCENT_LOSS_RATIO / CHECK_BOX / OPTION_NO; rupa TabScoring
+    nbfacin baca-saja (kepala, tabel 8 faktor / 24 sub-faktor berlabel VERBATIM, centang terkunci + skor tersimpan,
+    subtotal faktor = jumlah eksak skor sub, Total / Scoring Result, kartu Classification / Recomendation / Required
+    approval); opsi tercentang ganda -> nomor terkecil seperti nbfacin. Blok General "Risk Scoring" = FinalScore + lencana
+    NoteFinalScore. Polis Pega (JSON_POLIS) dibaca juga dari bentuk halaman `.<Grup>.<Nama>.ChechBoxN`.
+    **Loss Record / Correspondence** (keputusan work owner "Ikut NB: hanya akun IT"): data TIDAK ikut halaman polis -
+    rute sendiri `GET /api/claim-fac-in/kasus/{id}/polis-nb-it` menegakkan M_LOGIN_GO.JOB_POSITION "IT" di layanan
+    (401 tanpa identitas, 403 selain IT; nbfacin `wajibJabatanIT`); layar memanggilnya dan menampilkan kedua tab hanya bila
+    dijawab 200 (lunak seperti nbfacin `AksesTabIT`). Kasus NB = penunjuk JSON_POLIS, selain itu dicari seperti tabel datar
+    polis. Loss Record (isi hanya FIRE; lini lain pesan `cobBelum` seperti nbfacin): premi, grid kerugian, Total Loss per
+    Class Of Business + Currency (jumlah eksak baris), Loss Ratio 1 / 3 / 5 Year - nilai tersimpan Save NB terakhir (Uw
+    Year, Loss Amount ( IDR ), rasio tidak dihitung ulang). Correspondence (setiap COB): grid Date / Sender / Subject /
+    Recipient / Status, baris dibuka = pengirim, penerima, subjek, pesan; pesan HTML hanya ditampilkan sesudah pembersih
+    nbfacin `bersihkanHtml` (tag polos tanpa atribut, script / style dibuang). Tanpa Add / Remove / Save / Send Email /
+    unggah CSV. Semua kueri baru dicoba read-only di DEV 11-10-2026 (berindeks PARENT_ID; hitungan baris saja).
 
 **`[inferensi]`:**
 
@@ -348,7 +394,9 @@ kulit token `--cfi-*` salinan `.kelola-user`, kelas `claimfacin__*`.
 
 - **Halaman awal** (`pages/ClaimFacIn.tsx`): tab *Process* (worklist pembuat) / *Resolve*, switch **Teknik** (workbasket
   `ReasKlaimTeknik`, nonaktif bagi akun bukan anggota, `GET /hak`), **Add Claim** (`POST /kasus`). Tanpa tabel komite
-  (tahap 2).
+  (tahap 2). **11-10-2026** ("KOLOM INI DI HAPUS AJA DARI TAMPILAN!"): kolom **Assignment** (nama tahap / statusWork)
+  dibuang dari tabel kasus; kolom lain tetap (Case ID, Claim No, Policy No, Insured Name, Date of Loss, Create Operator,
+  Create Date/Time).
   > **RALAT 10-10-2026** (tahap 2). Kalimat lamanya dikutip utuh, tidak dihapus: *"Tanpa tabel komite (tahap 2)."* → tabel
   > **Committee** (`components/TabelKomite.tsx`) di bawah inbox, tanpa switch, tidak ikut tab, tampil bila `GET /hak` →
   > `komite` (pemegang `ReasClaimSPVB` atau akun / workbasket roster FACIN aktif); isinya `GET

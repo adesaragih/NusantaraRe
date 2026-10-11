@@ -23,7 +23,6 @@ export const CFI = {
   gridKosong: 'No items',
   kembali: 'Back to list',
   kolomID: 'Case ID',
-  kolomTahap: 'Assignment',
   kolomNoClaim: 'Claim No',
   kolomPolis: 'Policy No',
   kolomTertanggung: 'Insured Name',

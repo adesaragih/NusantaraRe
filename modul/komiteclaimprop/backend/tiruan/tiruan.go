@@ -312,10 +312,13 @@ func (g *Gudang) SisipOS(_ context.Context, _ *db.Tx, b models.BarisOSAkseptasi,
 	return nil
 }
 
-// SalinJSONKlaim - lihat `repository.Gudang.SalinJSONKlaim`.
+// SalinJSONKlaim - lihat `repository.Gudang.SalinJSONKlaim`. MNK_NO_KLAIM / NOPOLIS NOT NULL seperti katalog DEV.
 func (g *Gudang) SalinJSONKlaim(_ context.Context, _ *db.Tx, idPega, noKlaim, noPolis string, _ time.Time) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
+	if _, ada := g.JSONKlaim[idPega]; !ada && (noKlaim == "" || noPolis == "") {
+		return fmt.Errorf("tiruan: ORA-01400: JSON_KLAIM.MNK_NO_KLAIM / NOPOLIS tidak boleh NULL (%q, %q)", noKlaim, noPolis)
+	}
 	if _, ada := g.JSONKlaim[idPega]; !ada {
 		g.JSONKlaim[idPega] = [2]string{noKlaim, noPolis}
 	}
@@ -491,6 +494,9 @@ func (k *klaimTiruan) salin() *klaimTiruan {
 type KlaimPalsu struct {
 	mu    sync.Mutex
 	klaim map[string]*klaimTiruan
+	// lampiran / isiLampiran - dokumen klaim per kasus klaim dan isi berkasnya per ID dokumen (`lampiran.go`).
+	lampiran    map[string]kontrak.DaftarLampiranKlaim
+	isiLampiran map[string]string
 	// Dikunci - klaim yang pernah dikunci (S4); Ditutup - klaim yang ditutup Komite (KomitePost_Close S17).
 	Dikunci []string
 	Ditutup []string

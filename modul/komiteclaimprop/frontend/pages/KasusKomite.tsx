@@ -6,7 +6,8 @@
 // Tata letak (permintaan work owner 09-10-2026 "layout komite diperbaiki, lebih enak dilihat dan userfriendly"):
 // ringkasan di kepala; bagian server dikelompokkan ke kartu berjudul (`susunKomite.ts`); di BAWAH rincian (work owner
 // "ini biarkan tetep dibawah") langkah tangga ("Committe Accept Status") lalu kartu keputusan - berdampingan di layar
-// lebar, bertumpuk di layar sempit (urutan ShowTransfer: grid tangga sebelum isian keputusan).
+// lebar, bertumpuk di layar sempit (urutan ShowTransfer: grid tangga sebelum isian keputusan). Lampiran klaim induk
+// (`PanelLampiran`, perintah work owner 11-10-2026) PALING BAWAH, sesudah tangga dan keputusan.
 
 import { useCallback, useEffect, useState } from 'react'
 
@@ -16,6 +17,7 @@ import { bukaKasus, putuskan, type Bagian, type Grid, type Keputusan, type Layar
 import { KCP, TATA_KCP } from '../labels'
 import { isianKirim, KEPUTUSAN, periksa, tampil, tampilCatatanSubjectivity, tampilSubjectivity } from '../nilai'
 import { kelompokkanBagian, langkahTangga, ringkasan, type Kelompok, type KeadaanLangkah } from '../susunKomite'
+import PanelLampiran from './PanelLampiran'
 
 /** Nilai kosong ditandai; angka dan tanggal diformat. */
 function Nilai({ m }: { m: Medan }) {
@@ -447,6 +449,8 @@ export default function KasusKomite({
           </section>
         </div>
       </div>
+      {/* lampiran klaim induk, hanya-baca - PALING BAWAH (perintah work owner 11-10-2026) */}
+      <PanelLampiran id={layar.kasus.id} />
     </section>
   )
 }

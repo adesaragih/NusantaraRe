@@ -9,7 +9,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
 import type { Halaman } from './api'
-import PolisNB from './components/PolisNB'
+import PolisNB, { tabTampilNB } from './components/PolisNB'
 import { susunIsi } from './components/susun'
 import {
   angkaNB,
@@ -79,6 +79,10 @@ describe('blok General', () => {
     expect(umumNB(h).ceding).toBe('UJI A;UJI B')
     h.nilai['OfferFacIn.QuotationData.StatusBusiness'] = 'Renewal'
     expect(umumNB(h).statusBisnis).toBe('Renewal')
+    // Risk Scoring = skor tersimpan + catatan kelas (lencana)
+    h.nilai['OfferFacIn.ScoringRisk.FinalScore'] = '80.5'
+    h.nilai['OfferFacIn.ScoringRisk.NoteFinalScore'] = 'Above Average'
+    expect(umumNB(h)).toMatchObject({ riskScoring: '80.5', catatanSkor: 'Above Average' })
   })
 })
 
@@ -217,13 +221,61 @@ describe('rupa PolisNB (salinan Inward Facultative nbfacin)', () => {
     expect(html).not.toContain('claimfacin__nb-pemisah')
     expect(html).toContain('role="tablist"')
     expect(TAB_NB).toHaveLength(10)
-    for (const t of TAB_NB) expect(html).toContain(`>${t.replace('&', '&amp;')}<`)
+    // FIRE tanpa akses IT: Loss Record / Correspondence tidak tampil (nbfacin `tabTampil`)
+    for (const t of tabTampilNB(true, false)) expect(html).toContain(`>${t.replace('&', '&amp;')}<`)
+    expect(html).not.toContain('>Loss Record<')
+    expect(html).not.toContain('>Correspondence<')
   })
 
-  it('isi tab hanya kasus FIRE dan hanya Object / Coverage / Spreading / Cedant; sisanya BelumTersedia', () => {
+  it('tab tampil per lini seperti nbfacin (work owner 11-10-2026 "cek tampilan nya di nb facin")', () => {
+    expect(tabTampilNB(true, true)).toEqual([...TAB_NB])
+    expect(tabTampilNB(true, false)).toEqual(TAB_NB.filter((t) => t !== 'Loss Record' && t !== 'Correspondence'))
+    // Clauses / Scoring Risk hanya FIRE
+    expect(tabTampilNB(false, false)).toEqual([
+      'Object',
+      'Coverage',
+      'Spreading',
+      'Inw Fac Cedant Panels',
+      'Premium Deduction / Brokerage Fee',
+      'Payment',
+    ])
     const sumber = readFileSync(join(__dirname, 'components', 'PolisNB.tsx'), 'utf8')
-    expect(sumber).toContain('fire && TAB_BERISI_NB.includes(tab)')
-    expect(sumber).toContain('<BelumTersedia apa={`${TEKS_NB.isiTab} ${tab}`} />')
+    expect(sumber).not.toContain('TAB_BERISI_NB')
+  })
+
+  it('polis Aneka: tab Object berisi grid lokasi Aneka, bukan BelumTersedia', () => {
+    const aneka = {
+      nilai: {
+        'OfferFacIn.QuotationData.BusinessType': 'Liability',
+        'OfferFacIn.QuotationData.BusinessName': 'UJI LIABILITY',
+      },
+      daftar: {
+        'OfferFacIn.LocationList': [{ 'Property.ObjectNo': '1', 'Property.RiskLocation.ASMAddress': 'UJI JALAN' }],
+      },
+    } as Halaman
+    const out = renderToStaticMarkup(createElement(PolisNB, { h: aneka, fire: false }))
+    expect(out).toContain('>Top Risk<')
+    expect(out).toContain('UJI JALAN')
+    expect(out).not.toContain('Isi tab Object')
+    // Marine Cargo: grid cargo nbfacin
+    const cargo = {
+      nilai: { 'OfferFacIn.QuotationData.BusinessType': 'MarineCargo' },
+      daftar: { 'OfferFacIn.CargoList': [{ TradingNote: 'UJI DAGANG', 'PolicyData.Ship.NM_SHIP': 'UJI KAPAL' }] },
+    } as Halaman
+    const outCargo = renderToStaticMarkup(createElement(PolisNB, { h: cargo, fire: false }))
+    expect(outCargo).toContain('>SailDate<')
+    expect(outCargo).toContain('UJI KAPAL')
+    // COB di luar FIRE / Aneka / Marine Cargo = pesan nbfacin
+    const mbu = {
+      nilai: {
+        'OfferFacIn.QuotationData.BusinessType': 'MBUCar',
+        'OfferFacIn.QuotationData.BusinessName': 'UJI MOTOR',
+      },
+      daftar: {},
+    } as Halaman
+    expect(renderToStaticMarkup(createElement(PolisNB, { h: mbu, fire: false }))).toContain(
+      'Tab Object untuk Class of Business UJI MOTOR belum tersedia di sistem baru (saat ini baru FIRE).',
+    )
   })
 
   it('susunIsi meneruskan unsur polisNB tanpa diratakan', () => {

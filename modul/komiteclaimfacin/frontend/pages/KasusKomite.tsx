@@ -7,7 +7,8 @@
 // Tata letak pola Komite Claim Prop / Non Prop (keputusan work owner 09-10-2026, disalin bukan impor): judul + ubin
 // ringkasan di kepala; satu kartu berjudul per bagian server (`susunKomite.ts`), teks komite kartu terakhir; DI BAWAH
 // semua rincian langkah tangga ("List of Committee") lalu kartu keputusan - berdampingan di layar lebar, bertumpuk di
-// layar sempit.
+// layar sempit. Lampiran klaim induk (`PanelLampiran`, perintah work owner 11-10-2026) PALING BAWAH, sesudah
+// tangga dan keputusan.
 
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 
@@ -36,6 +37,7 @@ import {
   susunBagian,
   type KeadaanLangkah,
 } from '../susunKomite'
+import PanelLampiran from './PanelLampiran'
 
 /** Pembuka pop-up sel `tautan` (kunci `Layar.modal`). */
 type BukaModal = (kunci: string) => void
@@ -575,6 +577,8 @@ export default function KasusKomite({
           </section>
         </div>
       </div>
+      {/* lampiran klaim induk, hanya-baca - PALING BAWAH (perintah work owner 11-10-2026) */}
+      <PanelLampiran id={layar.kasus.id} />
 
       {isiModal && (
         // Local action ShowRetro ("View Retro"): reasuradur Fac Retro + Security Reinsurer per baris (expand pane).

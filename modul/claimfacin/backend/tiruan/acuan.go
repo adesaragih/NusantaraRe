@@ -63,6 +63,9 @@ type Acuan struct {
 	Proteksi   map[string]bool
 	// Tangga - kasus komite -> anggota (tangga tertulis gudang tiruan dibaca lewat Gudang).
 	Tangga func(komiteID string) []models.AnggotaKomite
+	// Jabatan - akun -> JOB_POSITION; PolisIT - KunciPolis -> isi tab IT tampilan polis NB.
+	Jabatan map[string]string
+	PolisIT map[string]models.PolisNBIT
 }
 
 // AcuanBaru membuat acuan tiruan kosong.
@@ -70,7 +73,8 @@ func AcuanBaru() *Acuan {
 	return &Acuan{Dokumen: map[string][]byte{}, DokumenDatar: map[string][]byte{}, Riwayat: map[string][]models.RiwayatKlaimPolis{}, Ditolak: map[string]bool{},
 		Kurs: map[string]string{}, NamaMU: map[string]string{}, JenisReas: map[string]string{},
 		WilayahPos: map[string][]models.BarisWilayah{}, Adjuster: map[string]string{}, Agen: map[string]string{},
-		Alamat: map[string][4]string{}, Tingkat: map[string]string{}, Nama: map[string]string{}, Email: map[string]string{},
+		Alamat: map[string][4]string{}, Tingkat: map[string]string{}, Nama: map[string]string{}, Email: map[string]string{}, Jabatan: map[string]string{},
+		PolisIT: map[string]models.PolisNBIT{},
 		OSKasus: map[string]string{}, OSPolis: map[string]string{}, Batas: map[string]models.BatasTreaty{},
 		QS: map[string][]models.BarisQuotaShare{}, Reasuradur: map[string][]models.ReasuradurTreaty{},
 		MO: map[string][6]string{}, Rekening: map[string][]models.RekeningBank{},
@@ -198,6 +202,20 @@ func (a *Acuan) NamaPelaku(_ context.Context, akun string) (string, error) {
 // EmailPelaku - surel fixture.
 func (a *Acuan) EmailPelaku(_ context.Context, akun string) (string, error) {
 	return a.Email[akun], nil
+}
+
+// JabatanPelaku - JOB_POSITION fixture.
+func (a *Acuan) JabatanPelaku(_ context.Context, akun string) (string, error) {
+	return a.Jabatan[akun], nil
+}
+
+// PolisNBIT - isi tab IT fixture (kosong bila tidak ada).
+func (a *Acuan) PolisNBIT(_ context.Context, nopolis, prodke, _ string) (models.PolisNBIT, error) {
+	if v, ada := a.PolisIT[KunciPolis(nopolis, prodke)]; ada {
+		return v, nil
+	}
+	return models.PolisNBIT{LossRecord: models.LossRecordNB{Baris: []models.BarisLossRecordNB{}},
+		Korespondensi: []models.KorespondensiNB{}}, nil
 }
 
 // EstimasiKasusTerbuka - Σ TRLOSS fixture.

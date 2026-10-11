@@ -46,11 +46,17 @@ func TestSQLPolisDatarBacaSaja(t *testing.T) {
 		k := katalogUji(s.Tabel)
 		semua = append(semua, sqlAnakPolisDatar(s.Tabel, kolomDatar(spec, k), k, 3))
 	}
+	// kata kunci utuh (batas kata): kolom FLAG_DELETE (T_CARGOLIST / T_ANEKALIST) bukan pernyataan DELETE
+	tulis := regexp.MustCompile(`\b(COMMIT|INSERT|UPDATE|DELETE|MERGE)\b`)
 	for _, q := range semua {
 		u := strings.ToUpper(strings.TrimSpace(q))
-		if !strings.HasPrefix(u, "SELECT ") || strings.Contains(u, "COMMIT") || strings.Contains(q, "%[") ||
-			strings.Contains(u, "INSERT ") || strings.Contains(u, "UPDATE ") || strings.Contains(u, "DELETE ") {
+		if !strings.HasPrefix(u, "SELECT ") || strings.Contains(q, "%[") || tulis.MatchString(u) {
 			t.Errorf("SQL bukan baca saja: %s", q)
+		}
+	}
+	for _, q := range []string{"DELETE FROM T", "SELECT 1 FROM DUAL; COMMIT", "SELECT X FROM T WHERE 1 = 1 UNION SELECT 1 FROM T; UPDATE T SET A = 1"} {
+		if !tulis.MatchString(strings.ToUpper(q)) {
+			t.Errorf("penjaga baca-saja meloloskan %q", q)
 		}
 	}
 }
