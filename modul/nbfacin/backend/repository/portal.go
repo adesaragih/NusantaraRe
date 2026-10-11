@@ -16,10 +16,18 @@ import (
 	"nusantarare/modul/nbfacin/backend/models"
 )
 
-// PembacaPortal - satu halaman daftar case NB buatan akun `pembuat` beserta cacah seluruhnya (sesudah saringan).
+// PembacaPortal - satu halaman daftar case NB buatan akun `pembuat` beserta cacah seluruhnya (sesudah saringan). selesai: "" =
+// semua; SelesaiPortalYa = hanya STATUS_WORK 'Resolved-%'; SelesaiPortalTidak = selain itu (termasuk NULL) - switch In Progress /
+// Resolved halaman depan (permintaan work owner 11-10-2026, pola nbtreatyin daftarKasus).
 type PembacaPortal interface {
-	CariPortal(ctx context.Context, pembuat, cari string, offset, ukuran int) ([]models.BarisPortal, int, error)
+	CariPortal(ctx context.Context, pembuat, cari, selesai string, offset, ukuran int) ([]models.BarisPortal, int, error)
 }
+
+// SelesaiPortalYa / SelesaiPortalTidak - nilai kueri `selesai` GET /api/nbfacin/opportunity.
+const (
+	SelesaiPortalYa    = "1"
+	SelesaiPortalTidak = "0"
+)
 
 // PortalOracle - PembacaPortal atas Oracle.
 type PortalOracle struct{ db *db.DB }
@@ -28,27 +36,35 @@ type PortalOracle struct{ db *db.DB }
 func NewPortalOracle(d *db.DB) *PortalOracle { return &PortalOracle{db: d} }
 
 // tabelPortal - nama tabel yang sudah dikualifikasi.
-type tabelPortal struct{ work, opp, akun, quo, mo, general string }
+type tabelPortal struct{ work, opp, akun, quo, mo, general, jp string }
 
-// saringPortal - LINI (:1) dan pembuat (:2) selalu; bila cari, :3/:4 bernilai pola yang sama.
-func saringPortal(cari bool) string {
-	if !cari {
-		return " WHERE w.LINI = :1 AND w.CREATE_OP = :2"
+// saringPortal - LINI (:1) dan pembuat (:2) selalu; bila cari, :3/:4 bernilai pola yang sama; selesai (literal, tanpa bind):
+// SelesaiPortalYa STATUS_WORK 'Resolved-%', SelesaiPortalTidak NULL atau bukan itu.
+func saringPortal(cari bool, selesai string) string {
+	s := " WHERE w.LINI = :1 AND w.CREATE_OP = :2"
+	if cari {
+		s += ` AND (UPPER(w.ID) LIKE :3 ESCAPE '\' OR UPPER(o.BUSINESS_PROSPECT_NAME) LIKE :4 ESCAPE '\')`
 	}
-	return ` WHERE w.LINI = :1 AND w.CREATE_OP = :2 AND (UPPER(w.ID) LIKE :3 ESCAPE '\' OR UPPER(o.BUSINESS_PROSPECT_NAME) LIKE :4 ESCAPE '\')`
+	switch selesai {
+	case SelesaiPortalYa:
+		s += " AND w.STATUS_WORK LIKE '" + polaSelesai + "'"
+	case SelesaiPortalTidak:
+		s += " AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK NOT LIKE '" + polaSelesai + "')"
+	}
+	return s
 }
 
 // sqlCariPortal - urut terbaru dulu: TGL_CREATE DESC, ID DESC (pemutus seri). Nama
 // tertanggung dan marketing lewat subkueri MAX - T_M_ACCOUNT dan MARKETINGOFFICER tanpa PK
 // di DDL-nya (pola A88). NB status = T_GENERAL_POLIS.NB_STATUS (PK = ID kasus; WAJIB migrasi 208 - tanpa kolomnya kueri
 // ini ORA-00904).
-func sqlCariPortal(t tabelPortal, cari bool) string {
+func sqlCariPortal(t tabelPortal, cari bool, selesai string) string {
 	n := 3
 	if cari {
 		n = 5
 	}
 	return fmt.Sprintf(`%s%s
-ORDER BY w.TGL_CREATE DESC, w.ID DESC OFFSET :%d ROWS FETCH NEXT :%d ROWS ONLY`, kepalaBarisCase(t), saringPortal(cari), n, n+1)
+ORDER BY w.TGL_CREATE DESC, w.ID DESC OFFSET :%d ROWS FETCH NEXT :%d ROWS ONLY`, kepalaBarisCase(t), saringPortal(cari, selesai), n, n+1)
 }
 
 // kepalaBarisCase - SELECT + JOIN satu baris case NB (bentuk BarisPortal) untuk portal dan kotak masuk Beranda; dibaca
@@ -57,11 +73,13 @@ func kepalaBarisCase(t tabelPortal) string {
 	return fmt.Sprintf(`SELECT w.ID, o.BUSINESS_PROSPECT_NAME, o.GROUP_BUSINESS,
   (SELECT MAX(a.INSUREDNAME) FROM %s a WHERE a.ID = o.ACCOUNT_ID),
   (SELECT MAX(m.CLIENTNAME) FROM %s m WHERE m.ID = q.MOID),
+  (SELECT MAX(j.NOPOLIS) KEEP (DENSE_RANK LAST ORDER BY j.TGL_INPUT) FROM %s j WHERE j.IDPEGA IN (w.ID, '%s' || w.ID)),
+  (SELECT TO_CHAR(MAX(j.TGL_PROD) KEEP (DENSE_RANK LAST ORDER BY j.TGL_INPUT), 'DD-MM-YYYY') FROM %s j WHERE j.IDPEGA IN (w.ID, '%s' || w.ID)),
   w.STATUS_WORK, g.NB_STATUS
 FROM %s w
 LEFT JOIN %s o ON o.ID = w.ID
 LEFT JOIN %s q ON q.PARENT_ID = w.ID
-LEFT JOIN %s g ON g.ID = w.ID`, t.akun, t.mo, t.work, t.opp, t.quo, t.general)
+LEFT JOIN %s g ON g.ID = w.ID`, t.akun, t.mo, t.jp, AwalanIDPega, t.jp, AwalanIDPega, t.work, t.opp, t.quo, t.general)
 }
 
 // tabelBarisCase - nama tabel kepalaBarisCase berkualifikasi skema.
@@ -71,7 +89,7 @@ func tabelBarisCase(d *db.DB) (tabelPortal, error) {
 		nama string
 		ke   *string
 	}{{TabelWorkPolis, &t.work}, {TabelOpportunity, &t.opp}, {TabelAkun, &t.akun}, {TabelQuotationData, &t.quo},
-		{TabelMarketingOfficer, &t.mo}, {TabelGeneralPolis, &t.general}} {
+		{TabelMarketingOfficer, &t.mo}, {TabelGeneralPolis, &t.general}, {TabelJSONPolis, &t.jp}} {
 		q, err := d.Qualify(x.nama)
 		if err != nil {
 			return t, err
@@ -86,12 +104,13 @@ func bacaBarisCase(baris *sql.Rows) ([]models.BarisPortal, error) {
 	defer baris.Close()
 	hasil := []models.BarisPortal{}
 	for baris.Next() {
-		var caseID, nama, grup, tertanggung, marketing, status, nbStatus sql.NullString
-		if err := baris.Scan(&caseID, &nama, &grup, &tertanggung, &marketing, &status, &nbStatus); err != nil {
+		var caseID, nama, grup, tertanggung, marketing, noPolis, tglProd, status, nbStatus sql.NullString
+		if err := baris.Scan(&caseID, &nama, &grup, &tertanggung, &marketing, &noPolis, &tglProd, &status, &nbStatus); err != nil {
 			return nil, fmt.Errorf("repository: daftar case NB: %w", err)
 		}
 		hasil = append(hasil, models.BarisPortal{CaseID: caseID.String, Name: nama.String, GroupBusiness: grup.String,
-			InsuredName: tertanggung.String, Marketing: marketing.String, Status: status.String, NBStatus: nbStatus.String})
+			InsuredName: tertanggung.String, Marketing: marketing.String, Status: status.String, NBStatus: nbStatus.String,
+			NoPolis: noPolis.String, TglProduksi: tglProd.String})
 	}
 	if err := baris.Err(); err != nil {
 		return nil, fmt.Errorf("repository: daftar case NB: %w", err)
@@ -100,12 +119,12 @@ func bacaBarisCase(baris *sql.Rows) ([]models.BarisPortal, error) {
 }
 
 // sqlCacahPortal - cacah seluruh baris yang cocok (tanpa T_QUOTATIONDATA: satu baris per case).
-func sqlCacahPortal(t tabelPortal, cari bool) string {
-	return "SELECT COUNT(*) FROM " + t.work + " w LEFT JOIN " + t.opp + " o ON o.ID = w.ID" + saringPortal(cari)
+func sqlCacahPortal(t tabelPortal, cari bool, selesai string) string {
+	return "SELECT COUNT(*) FROM " + t.work + " w LEFT JOIN " + t.opp + " o ON o.ID = w.ID" + saringPortal(cari, selesai)
 }
 
 // CariPortal - lihat PembacaPortal.
-func (r *PortalOracle) CariPortal(ctx context.Context, pembuat, cari string, offset, ukuran int) ([]models.BarisPortal, int, error) {
+func (r *PortalOracle) CariPortal(ctx context.Context, pembuat, cari, selesai string, offset, ukuran int) ([]models.BarisPortal, int, error) {
 	t, err := tabelBarisCase(r.db)
 	if err != nil {
 		return nil, 0, err
@@ -116,10 +135,10 @@ func (r *PortalOracle) CariPortal(ctx context.Context, pembuat, cari string, off
 		arg = append(arg, pola, pola)
 	}
 	var total int
-	if err := r.db.QueryRowContext(ctx, sqlCacahPortal(t, pola != ""), arg...).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, sqlCacahPortal(t, pola != "", selesai), arg...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("repository: cacah daftar case NB: %w", err)
 	}
-	baris, err := r.db.QueryContext(ctx, sqlCariPortal(t, pola != ""), append(arg, offset, ukuran)...)
+	baris, err := r.db.QueryContext(ctx, sqlCariPortal(t, pola != "", selesai), append(arg, offset, ukuran)...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("repository: baca daftar case NB: %w", err)
 	}

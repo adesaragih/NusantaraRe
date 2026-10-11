@@ -123,7 +123,7 @@ describe('CSV FIRE hanya untuk case FIRE (bug DEV 11-10-2026: CSV FIRE masuk ke 
   it('bilah CSV FIRE tidak dipasang untuk case non-FIRE (Pega ChooseActivityMappingCSV_Act: InsertUploadFire_act hanya IsFire)', () => {
     const h = readFileSync(join(__dirname, '../pages/InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
     expect(h).toContain("const jenisCsv: JenisCsv | null = kasusFire ? 'fire' : kasusCargo ? 'cargo' : dariServer?.jenisCsv === 'marinehull' ? 'marinehull' : null")
-    expect(h).toMatch(/\{!bacaSaja && jenisCsv === null \? \(\s*<div className="alert alert--info">\{TEKS_CSV_OBJEK\.belumUntukCob\(op\.groupBusiness \?\? ''\)\}<\/div>\s*\) : !bacaSaja && jenisCsv !== null \? \(\s*<BilahCsvObjek/)
+    expect(h).toMatch(/\{!bacaSaja && jenisCsv === null && !tanpaCsvPega \? \(\s*<div className="alert alert--info">\{TEKS_CSV_OBJEK\.belumUntukCob\(op\.groupBusiness \?\? ''\)\}<\/div>\s*\) : !bacaSaja && jenisCsv !== null \? \(\s*<BilahCsvObjek/)
   })
 })
 
@@ -150,6 +150,16 @@ describe('CSV Marine Cargo (tiket 74 P6, K74-14..17)', () => {
     expect(s).toContain('const salahJudul = await CSV_PER_JENIS[jenis].periksa(f)')
     const h = readFileSync(join(__dirname, '../pages/InwardFacultative.tsx'), 'utf8')
     expect(h).toContain('jenis={jenisCsv}')
+  })
+})
+
+describe('COB tanpa CSV di Pega (work owner 11-10-2026: GA (OTHERS) memang tidak ada)', () => {
+  it('jenisCsv server "" -> tanpa bilah CSV dan tanpa pesan "belum tersedia"; Insert Accumulation IT tetap', () => {
+    const h = readFileSync(join(__dirname, '../pages/InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    expect(h).toContain("const tanpaCsvPega = jenisCsv === null && dariServer?.jenisCsv === ''")
+    expect(h).toContain('{!hanyaLihat && (!bacaSaja || akunIT) && (!tanpaCsvPega || akunIT) && (')
+    expect(h).toContain('{!tanpaCsvPega && <strong>{P.judulCsv.label}</strong>}')
+    expect(T.belumUntukCob('ANEKA')).not.toContain('FIRE')
   })
 })
 

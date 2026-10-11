@@ -116,7 +116,8 @@ export default function PopupFollowing({
           value={opsi}
           onChange={(e) => setOpsi(e.target.value as OpsiFollowing | '')}
         >
-          <option value="">{`${F.viewOption}: ${F.pilihKosong}`}</option>
+          {/* Pilihan kosong = "Choose" saja seperti Pega (work owner 11-10-2026); nama "View Option" tetap di aria-label. */}
+          <option value="">{F.pilihKosong}</option>
           {F.opsi.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}

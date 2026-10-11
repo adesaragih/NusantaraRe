@@ -337,6 +337,10 @@ export default function InwardFacultative({
   // Bilah CSV per importer. FIRE / Marine Cargo tetap dari penanda lama; Marine Hull (tiket 73 P6) dari `jenisCsv` server
   // (Pega IsMarineHull). Aneka umum / CPM: template Pega belum dikirim (K73-60) -> tetap pesan "belum tersedia".
   const jenisCsv: JenisCsv | null = kasusFire ? 'fire' : kasusCargo ? 'cargo' : dariServer?.jenisCsv === 'marinehull' ? 'marinehull' : null
+  // COB tanpa upload CSV di Pega (server `jenisCsv` "": SetDownloadMasterCSV / ChooseActivityMappingCSV_Act tanpa cabangnya,
+  // mis. GA (OTHERS)) - empat tombol CSV dan pesan "belum tersedia" tidak tampil (work owner 11-10-2026: "untuk GA(OTHERS)
+  // memang tidak ada"); Insert Accumulation akun IT tetap.
+  const tanpaCsvPega = jenisCsv === null && dariServer?.jenisCsv === ''
   // Submit + blok Email Type: FIRE dan (tiket 73 P4) keluarga Aneka - kabel `…/submit` sama; proteksi per lini di backend.
   // Tiket 74 P5: Marine Cargo juga (proteksi per lini di backend: ship data, Top Risk, coverage, spreading).
   const bolehSubmit = kasusFire || kasusAneka || kasusCargo
@@ -488,12 +492,12 @@ export default function InwardFacultative({
         </div>
         {/* Bilah CSV (work owner 08-10-2026): empat tombol CSV tidak tampil di tahap baca-saja (UW dst.); Insert Accumulation
             hanya akun IT. Bilah hilang bila tidak ada tombol. */}
-        {!hanyaLihat && (!bacaSaja || akunIT) && (
+        {!hanyaLihat && (!bacaSaja || akunIT) && (!tanpaCsvPega || akunIT) && (
           <div className="nbf-inward__csv nbf-inward__bilah">
-            <strong>{P.judulCsv.label}</strong>
+            {!tanpaCsvPega && <strong>{P.judulCsv.label}</strong>}
             {/* Bug DEV 11-10-2026: CSV FIRE terunggah ke case MARINE CARGO. Pega `ChooseActivityMappingCSV_Act` menjalankan
                 InsertUploadFire_act HANYA bila IsFire (L439/L499); Marine / Aneka / Briguna punya impor sendiri (belum diport). */}
-            {!bacaSaja && jenisCsv === null ? (
+            {!bacaSaja && jenisCsv === null && !tanpaCsvPega ? (
               <div className="alert alert--info">{TEKS_CSV_OBJEK.belumUntukCob(op.groupBusiness ?? '')}</div>
             ) : !bacaSaja && jenisCsv !== null ? (
               <BilahCsvObjek

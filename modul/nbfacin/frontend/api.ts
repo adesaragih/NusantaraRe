@@ -298,6 +298,9 @@ export interface BarisCaseNB {
    * "NEW NB" (`Flow\InputInwardFacultativeOffer.xml` awal flow).
    */
   nbStatus: string
+  /** Tab Resolved (pola NB Treaty In, work owner 11-10-2026): nomor polis / tanggal produksi bila server mengirimnya. */
+  noPolis?: string
+  tglProduksi?: string
 }
 
 /** Satu batang kotak masuk Beranda: workbasket yang dipegang akun + banyak case NB FacIn yang menunggu di sana. */
@@ -372,9 +375,13 @@ export interface HalamanCaseNB {
   ukuran: number
 }
 
-/** `cari` "mengandung" atas case id atau nama (placeholder Pega "NB-1234 or Name"); `halaman` mulai 1. */
-export function daftarCaseNB(cari: string, halaman: number): Promise<HalamanCaseNB> {
-  return minta<HalamanCaseNB>('/api/nbfacin/opportunity', { kueri: { cari: cari.trim(), halaman } })
+/**
+ * `cari` "mengandung" atas case id atau nama (placeholder Pega "NB-1234 or Name"); `halaman` mulai 1. `selesai` = switch
+ * In Progress (false) / Resolved (true) portal (work owner 11-10-2026, pola NB Treaty In); tanpa nilai = semua case.
+ */
+export function daftarCaseNB(cari: string, halaman: number, selesai?: boolean): Promise<HalamanCaseNB> {
+  const kueri = selesai === undefined ? { cari: cari.trim(), halaman } : { cari: cari.trim(), halaman, selesai: selesai ? '1' : '0' }
+  return minta<HalamanCaseNB>('/api/nbfacin/opportunity', { kueri })
 }
 
 /** Satu baris tabel AGENT untuk popup Change SOB (tiket 33). Teks apa adanya. */
@@ -2137,6 +2144,88 @@ export function salinSemuaFollowing(caseId: string, b: BarisFollowing): Promise<
 /** Cari polis (bentuk baris = grid `GridOpenPolicyMarine` = `BarisFollowing`). */
 export function cariPolis(opsi: OpsiFollowing, filter: string, halaman: number): Promise<HalamanFollowing> {
   return minta<HalamanFollowing>('/api/nbfacin/polis', { kueri: { opsi, filter: filter.trim(), halaman } })
+}
+
+// View Policy tab Offer Facultative / Treaty / Life (work owner 11-10-2026; `GetListViewPolicy_act` SEARCHON OFFERFAC /
+// TREATYPOL / POLISLIFE / OFFERLIFE, rule `DDL\Browse*.xml`). Tanggal kabel `DD-MM-YYYY`.
+
+/** Grid `GridOpenoffer` (`BrowseDataViewOfferF`, FACINOFFER). */
+export interface BarisOfferFacultative {
+  caseId: string
+  noOffer: string
+  insuredName: string
+  sourceOfBusiness: string
+  /** SQL Pega `'' AS QQ` - selalu kosong. */
+  qqName: string
+  startPeriod: string
+  endPeriod: string
+}
+
+/** Grid `GridOpenPolicyMarineTreaty` (`BrowsePolisTreaty`, TREATYINPRODUCTION). */
+export interface BarisPolisTreaty {
+  caseId: string
+  policyNo: string
+  insuredName: string
+  sourceOfBusiness: string
+  startPeriod: string
+  endPeriod: string
+}
+
+/** Grid `GridOpenPolicyLife` (`BrowsePolisLife`, LIFEINPRODUCTION). */
+export interface BarisPolisLife {
+  caseId: string
+  policyNo: string
+  endorsNo: string
+  typePolicy: string
+  sourceOfBusiness: string
+  cedingCoName: string
+  qq: string
+  riSlipCeding: string
+}
+
+/** Grid `GridOpenOfferLife` (`BrowseOfferLife`, JSON_OFFER_LIFE versi terakhir per case). */
+export interface BarisOfferLife {
+  caseId: string
+  noOffer: string
+  typePolicy: string
+  businessName: string
+  cedingCoName: string
+  qq: string
+  /** STATUS (`Prodke`) - "Last Status". */
+  lastStatus: string
+}
+
+export interface HalamanCariPolis<T> {
+  baris: T[]
+  total: number
+  halaman: number
+  ukuran: number
+}
+
+export function cariOfferFacultative(opsi: string, filter: string, halaman: number): Promise<HalamanCariPolis<BarisOfferFacultative>> {
+  return minta<HalamanCariPolis<BarisOfferFacultative>>('/api/nbfacin/polis/offer', { kueri: { opsi, filter: filter.trim(), halaman } })
+}
+
+export function cariPolisTreaty(opsi: string, filter: string, halaman: number): Promise<HalamanCariPolis<BarisPolisTreaty>> {
+  return minta<HalamanCariPolis<BarisPolisTreaty>>('/api/nbfacin/polis/treaty', { kueri: { opsi, filter: filter.trim(), halaman } })
+}
+
+/**
+ * View Details List Polis Treaty (work owner 11-10-2026 "tombol view treaty nya mana"): berkas NB / EDM Treaty In polis itu
+ * (pola View polis Claim Prop / Claim Non Prop, OQ-CNP-13) - dibuka lewat `PropsRute.onLihatBerkas`. 404 = polis lama Pega
+ * tanpa berkas di sistem baru.
+ */
+export function berkasPolisTreaty(nopolis: string): Promise<{ modul: string; kasus: string }> {
+  return minta<{ modul: string; kasus: string }>('/api/nbfacin/polis/treaty/berkas', { kueri: { nopolis } })
+}
+
+/** Life tanpa View Option: jenis cari dideteksi server dari isi teks (langkah 11.x Pega). */
+export function cariPolisLife(filter: string, halaman: number): Promise<HalamanCariPolis<BarisPolisLife>> {
+  return minta<HalamanCariPolis<BarisPolisLife>>('/api/nbfacin/polis/life', { kueri: { filter: filter.trim(), halaman } })
+}
+
+export function cariOfferLife(filter: string, halaman: number): Promise<HalamanCariPolis<BarisOfferLife>> {
+  return minta<HalamanCariPolis<BarisOfferLife>>('/api/nbfacin/polis/life-offer', { kueri: { filter: filter.trim(), halaman } })
 }
 
 /** Satu versi polis ("View Data": `JSON_POLIS` PRODKE, terbaru dulu). */

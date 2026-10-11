@@ -128,6 +128,7 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	daftarkanRuteLampiran(mux, svc, stubPelaku)  // tiket 67
 	daftarkanRuteFollowing(mux, svc, stubPelaku) // tiket 70
 	daftarkanRutePolis(mux, svc, stubPelaku)     // tiket 71
+	daftarkanRuteViewPolis(mux, svc, stubPelaku) // tiket 71 perluasan (Offer / Treaty / Life)
 	mux.HandleFunc("GET /api/nbfacin/kasus/{caseId}/payment", bacaPayment(svc))
 	mux.HandleFunc("PUT /api/nbfacin/kasus/{caseId}/payment", simpanPayment(svc, stubPelaku))
 	mux.HandleFunc("POST /api/nbfacin/kasus/{caseId}/payment/hitung", hitungPayment(svc))
@@ -383,6 +384,7 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		galat.Tulis(w, http.StatusForbidden, err.Error())
 	case errors.Is(err, services.ErrKasusTidakAda), errors.Is(err, services.ErrKorespondensiTidakAda),
 		errors.Is(err, services.ErrPolisFollowingTidakAda), errors.Is(err, services.ErrCaseSumberTidakAda), // tiket 70
+		errors.Is(err, services.ErrBerkasTreatyTidakAda),
 		errors.Is(err, services.ErrPolisTidakAda),  // tiket 71
 		errors.Is(err, services.ErrUnggahTidakAda): // tiket 75
 		galat.Tulis(w, http.StatusNotFound, err.Error())

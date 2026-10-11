@@ -145,3 +145,22 @@ Report inbox Pega tidak ada di korpus - kolom dari gambar (pola nbtreatyin). Sum
 
 Uji: `TestSQLKotakMasuk` (kolom berurutan = pemindai, bind :1 / :2 awalan pzInsKey lalu saringan), `TestKeBarisInbox` (pemetaan),
 `TestKotakMasukHandler` (kunci JSON persis).
+
+## Switch In Progress / Resolved + nomor polis (permintaan work owner 11-10-2026, lewat sesi 9d; sesi c3)
+
+- **Pemicu:** halaman depan NB FacIn disamakan dengan NB Treaty In (pola `nbtreatyin` daftarKasus(kueri, '', selesai)).
+- **`GET /api/nbfacin/opportunity` kueri opsional `selesai`:**
+  - `1` → hanya case `T_WORK_POLIS.STATUS_WORK LIKE 'Resolved-%'`;
+  - `0` → hanya yang bukan Resolved (termasuk STATUS_WORK NULL);
+  - tanpa kueri → semua (perilaku lama);
+  - nilai lain → 400 `ErrMasukanPortal`.
+  - Saringan pembuat (CREATE_OP), cari, dan paging 15 tetap. Total dihitung sesudah saringan (daftar dan cacah memakai saringan
+    yang sama). Saringan berupa literal tanpa bind, jadi nomor bind paging tidak bergeser.
+- **Kolom baris baru `noPolis` / `tglProduksi`** (kosong bila belum selesai Policy):
+  - JSON_POLIS NOPOLIS / TGL_PROD `DD-MM-YYYY` case, IDPEGA dua bentuk (`IN (w.ID, awalan || w.ID)`), TGL_INPUT terbaru;
+  - subkueri per baris, hanya 15 baris per halaman;
+  - FACINPRODUCTION tidak dibaca (JSON_POLIS selalu ditulis bersama produksi).
+- **Uji:** `TestSQLPortalSelesai`, `TestCariPortalSelesai`, `TestCariPortalSelesaiKabel`; `TestCariPortal` kabel diperbarui
+  (noPolis / tglProduksi, `selesai=2` → 400).
+- **Frontend (0f):** `api.ts` `BarisCaseNB` / pemanggil `cariPortal` belum memuat `selesai` / `noPolis` / `tglProduksi` — sisi
+  0f.

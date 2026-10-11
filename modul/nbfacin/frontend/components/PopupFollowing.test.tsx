@@ -35,7 +35,7 @@ describe('Following Policy - label korpus', () => {
 describe('PopupFollowing', () => {
   it('render awal: View Option "Choose" + 6 opsi, Filter berplaceholder, kepala 8 kolom', () => {
     const html = renderToStaticMarkup(<PopupFollowing caseId="NB-UJI" onTutup={() => {}} onTersalin={() => {}} tampilDetail={() => null} />)
-    expect(html).toContain(`<option value="" selected="">${F.viewOption}: ${F.pilihKosong}</option>`)
+    expect(html).toContain(`<option value="" selected="">${F.pilihKosong}</option>`)
     expect(html.match(/<option value="\d">/g)).toHaveLength(6)
     expect(html).toContain(`placeholder="${F.placeholder}"`)
     for (const k of F.kolom) expect(html).toContain(`<th scope="col">${k}</th>`)

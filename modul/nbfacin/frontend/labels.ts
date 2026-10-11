@@ -123,6 +123,16 @@ export const WORKBASKET_UW_NBFACIN = [
 ] as const
 
 /** Teks sistem baru - BUKAN dari korpus. */
+/** Switch daftar portal (work owner 11-10-2026 "samain kaya nb treaty in"; teks = `STATUS_PORTAL` NB Treaty In), bawaan In Progress. */
+export const STATUS_PORTAL = ['In Progress', 'Resolved'] as const
+export type StatusPortal = (typeof STATUS_PORTAL)[number]
+
+/** Kolom tambahan tab Resolved - teks = `KOLOM_PORTAL_SELESAI` NB Treaty In (keputusan work owner 07-10-2026 di sana). */
+export const KOLOM_PORTAL_SELESAI = {
+  noPolis: 'Policy Number',
+  tglProduksi: 'Production Date',
+} as const
+
 export const TEKS_PORTAL = {
   /** Daftar berhasil dimuat tetapi kosong / tidak ada yang cocok dengan saringan. */
   tanpaCase: 'Tidak ada case yang cocok.',
@@ -332,7 +342,8 @@ export const TEKS_CSV_OBJEK = {
   ulangi: 'Ulangi',
   galatLain: (n: number) => `… dan ${n.toLocaleString('id-ID')} galat lain.`,
   /** Bug DEV 11-10-2026: template CSV FIRE hanya untuk case FIRE (Pega ChooseActivityMappingCSV_Act L439/L499). */
-  belumUntukCob: (cob: string) => `Upload CSV untuk Class of Business ${cob} belum tersedia di sistem baru (template CSV FIRE hanya untuk Class of Business FIRE).`,
+  // Hanya untuk COB yang punya template CSV di Pega tetapi belum diport (Aneka umum / CPM); COB tanpa CSV di Pega tanpa pesan.
+  belumUntukCob: (cob: string) => `Upload CSV untuk Class of Business ${cob} belum tersedia di sistem baru.`,
 } as const
 
 export const PILIHAN_PERIODE = {
@@ -2170,6 +2181,41 @@ export const TEKS_FOLLOWING = {
 export const VIEW_POLICY = {
   judul: 'View Policy',
   daftar: 'List Polis',
+  // Tab section ViewOpenPolicyMarineInbox (pyTitle L1224 / L17980 / L35445) - work owner 11-10-2026.
+  tab: ['Facultative', 'Treaty', 'Life'] as const,
+  daftarOffer: 'List Offer',
+  /** View Option List Offer Facultative = polis Facultative (work owner 11-10-2026), tanpa QQ Name (FACINOFFER tanpa kolom QQ). */
+  opsiOfferFacultative: [
+    { value: '1', label: 'ID Pega' },
+    { value: '2', label: 'Policy Number' },
+    { value: '4', label: 'Reff. Number' },
+    { value: '5', label: 'Insured Name' },
+    { value: '6', label: 'Source Of Business' },
+  ],
+  /** View Option List Polis Treaty = `DDL\FilterForViewPolicy.xml` (DATA-PORTAL!FILTERFORVIEWPOLICY), verbatim. */
+  opsiTreaty: [
+    { value: '1', label: 'ID Pega' },
+    { value: '2', label: 'Policy Number' },
+    { value: '3', label: 'Master ID' },
+    { value: '4', label: 'Insured Name' },
+    { value: '5', label: 'Source Of Business' },
+  ],
+  /** pyPlaceholder section (L12814 "No Offer", L22493 "No Polis"); Life tanpa kotak di section -> teks yang sama [keputusan agent]. */
+  placeholder: { polis: 'No Polis', offer: 'No Offer' },
+  /** Judul kolom grid, VERBATIM (termasuk "Busniss Name" GridOpenOfferLife); View Details = kolom tautan terpisah. */
+  kolom: {
+    offerFacultative: ['ID', 'Offer Number', 'Insured Name', 'Source of Business', 'QQ Name', 'Start Period', 'End Period'],
+    polisTreaty: ['ID', 'Policy Number', 'Insured Name', 'Source of Business', 'Start Period', 'End Period'],
+    polisLife: ['ID', 'NO POLIS', 'TYPE', 'SOB', 'CEDINGCO', 'POLICY HOLDER'],
+    offerLife: ['ID', 'No Offer', 'TYPE', 'Busniss Name', 'CEDINGCO', 'POLICY HOLDER', 'Last Status'],
+  },
+  teks: {
+    /** Daftar tanpa View Option (Life). Teks sistem baru. */
+    isiFilterSaja: 'Isi Filter untuk mencari.',
+    /** View Details Treaty - teks sistem baru (padanan pesan Claim Non Prop). */
+    polisTanpaBerkas: (no: string) => `Polis ${no} belum punya berkas NB / EDM Treaty In di sistem baru (polis lama Pega).`,
+    berkasTakTerpasang: 'Berkas polis ini tidak dapat dibuka: menu modul Treaty In tidak dipegang akun Anda.',
+  },
   viewData: 'View Data',
   kolomRingkasan: [
     'Object No', 'Risk Location', 'Object Item', 'Coverage', 'Accumulation Code', 'Currency', 'TSI 100%', 'TSI RNM', 'Rate',

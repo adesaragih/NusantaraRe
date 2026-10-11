@@ -21,6 +21,15 @@ diport apa adanya.
 
 **Blocked by:** E03
 
+**Pembaruan 11-10-2026 (irisan I2, W-EDM-01):** gerbang kini dijalankan dari layar lewat `POST
+/api/endorsmentfacin/periksa` (`backend/services/{periksa,layanan}.go`, `backend/repository/{gudang,arasapas}.go`,
+`backend/handlers/rute.go`; form `frontend/pages/FormAddendum.tsx`). Query G1/G3–G6 + jenis bisnis diport dari
+RDBList apa adanya; **G2 `GetListEdm` selalu `belum-diperiksa`** (body report tidak ada di korpus), klep
+`OPENPROTEKSI_EDM` dianggap kosong (penolakan penuh, spec 07 §9.3), G4 `ARASAPAS` tak terbaca → `belum-diperiksa`.
+Rincian dan keputusan agent A24–A33: `../LAPORAN-IMPLEMENTASI-EDM-11-10-2026.md`. ⚠️ Sore 11-10-2026 (W-EDM-07):
+klep **tidak lagi dianggap kosong** — dibaca dari `POOLDATA.OPENPROTEKSI_EDM` menurut `DDL\BrowseOpenProteksiEdm_RD.xml`
+(`backend/repository/proteksi.go`; A40–A41).
+
 **Status:** sebagian — 01-10-2026, `backend/services/gerbangtolak.go` (`PeriksaGerbangPenolakan`,
 `JenisBisnisUntukPredikat`) + `predikatkasus.go` (`PredikatDari`: langkah 10–16 dari registry EDM);
 test `gerbangtolak_test.go` (`TestGerbangLiniLewatRegistry`). Hasil query masukan (E17 dilewati).

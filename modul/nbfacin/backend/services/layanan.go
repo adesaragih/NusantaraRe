@@ -81,7 +81,8 @@ func DariDasar(d *inti.Dasar) *Service {
 		DenganKorespondensi(korespondensi, korespondensi).
 		DenganSubmit(repository.NewSubmitOracle(d.DB())).
 		DenganFollowing(repository.NewFollowingOracle(d.DB())).
-		DenganPolis(repository.NewPolisOracle(d.DB()))
+		DenganPolis(repository.NewPolisOracle(d.DB())).
+		DenganViewPolis(repository.NewViewPolisOracle(d.DB()))
 }
 
 // Service - layanan NB Fac In.
@@ -158,6 +159,8 @@ type Service struct {
 	following repository.PenyimpanFollowing
 	// polis - menu View Policy (tiket 71); nil = tanpa basis data (503).
 	polis repository.PembacaPolis
+	// viewPolis - tab View Policy Offer Facultative / Treaty / Life (tiket 71 perluasan); nil = tanpa basis data (503).
+	viewPolis repository.PembacaViewPolis
 	// deduction - tab Premium Deduction / Brokerage Fee (tiket 50); nil = tanpa basis data (503).
 	deduction repository.PenyimpanDeduction
 	// payment - tab Payment (tiket 51); nil = tanpa basis data (503).

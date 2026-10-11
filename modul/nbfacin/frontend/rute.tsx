@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Modal } from '../../../inti/frontend/components/ui/dasar'
 import type { PropsRute, RuteModul } from '../../../inti/frontend/modul'
-import { TEKS_EMAIL_TYPE } from './labels'
+import { STATUS_PORTAL, TEKS_EMAIL_TYPE, type StatusPortal } from './labels'
 import type { HalamanNbFacIn } from './menu'
 import CoverageCargo from './pages/CoverageCargo'
 import FormOpportunity from './pages/FormOpportunity'
@@ -14,12 +14,20 @@ import ViewPolicy from './pages/ViewPolicy'
 import { pasangKlikBaris } from './components/klikBaris'
 import './nbfacin.css'
 
-export function RuteNbFacIn({ halaman, masuk, onPindah, bukaKasus, onBeranda, onBukaMenu }: PropsRute<HalamanNbFacIn>) {
+export function RuteNbFacIn({ halaman, masuk, onPindah, bukaKasus, onBeranda, onBukaMenu, onLihatBerkas, onBukaModul }: PropsRute<HalamanNbFacIn>) {
   // Case yang baru dibuat Create opportunity - dibawa ke layar Inward Facultative (assignment pertama).
   // Komponen rute tetap terpasang selama modul aktif, jadi keadaan ini bertahan saat pindah halaman.
   const [kasus, setKasus] = useState<KasusBaru | null>(null)
   // Pesan konfirmasi sesudah Submit berhasil - tampil di portal (tiket 57).
   const [pesanPortal, setPesanPortal] = useState('')
+  // View Policy tetap terpasang sesudah pertama dibuka: case Treaty yang dibuka di tempat (`onBukaModul`) lalu Back kembali ke
+  // daftar dengan pencarian yang sama (work owner 11-10-2026).
+  const [vpDibuka, setVpDibuka] = useState(false)
+  useEffect(() => {
+    if (halaman === 'nbfacin-view-policy') setVpDibuka(true)
+  }, [halaman])
+  // Posisi switch In Progress / Resolved portal - bertahan sesudah kembali dari layar case (pola NB Treaty In).
+  const [statusPortal, setStatusPortal] = useState<StatusPortal>(STATUS_PORTAL[0])
   // Case dibuka dari kotak masuk Beranda: Cancel / Submit kembali ke Beranda (pola NB Treaty In).
   const [dariBeranda, setDariBeranda] = useState(false)
   // Pesan Submit berhasil untuk case dari Beranda: Beranda inti tidak menerima pesan modul, jadi tampil di jendela dulu
@@ -78,9 +86,15 @@ export function RuteNbFacIn({ halaman, masuk, onPindah, bukaKasus, onBeranda, on
           }}
           pesan={pesanPortal}
           onTutupPesan={() => setPesanPortal('')}
+          status={statusPortal}
+          onStatus={setStatusPortal}
         />
       )}
-      {halaman === 'nbfacin-view-policy' && <ViewPolicy />}
+      {vpDibuka && (
+        <div hidden={halaman !== 'nbfacin-view-policy'}>
+          <ViewPolicy onLihatBerkas={onLihatBerkas} onBukaModul={onBukaModul} />
+        </div>
+      )}
       {halaman === 'nbfacin-opportunity' && (
         <FormOpportunity
           pemilik={masuk.nama ?? masuk.akunID}

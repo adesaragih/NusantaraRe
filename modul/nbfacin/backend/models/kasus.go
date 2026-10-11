@@ -66,6 +66,9 @@ type BarisPortal struct {
 	Marketing     string // MARKETINGOFFICER.CLIENTNAME lewat T_QUOTATIONDATA.MOID; kosong bila belum ada
 	Status        string // T_WORK_POLIS.STATUS_WORK
 	NBStatus      string // T_GENERAL_POLIS.NB_STATUS (migrasi 208, tiket 57); kosong = belum pernah Submit
+	// NoPolis / TglProduksi - JSON_POLIS case (NOPOLIS / TGL_PROD DD-MM-YYYY, IDPEGA dua bentuk, TGL_INPUT terbaru); kosong bila
+	// belum selesai Policy (permintaan work owner 11-10-2026: tab Resolved seperti NB Treaty In).
+	NoPolis, TglProduksi string
 }
 
 // BarisKotakMasuk - satu baris daftar kotak masuk Beranda (inbox "New Business", permintaan work owner 07-10-2026; kolom

@@ -3123,3 +3123,160 @@
 .nbfacin .nbf-aneka-grid.nbf-cargo-covgrid > tbody > tr:not(.nbf-objek__detail) > td:first-child {
   width: 60%;
 }
+
+/* Halaman depan = NB Treaty In (work owner 11-10-2026 "samain kaya nb treaty in"; salinan gaya `nbti__saring` /
+   `nbti__status` / `nbti__kepala-aksi` dengan token tema `--nbt-*`). Kepala: judul kiri, tombol kanan, turun bila sempit. */
+.nbfacin .nbf-tema .nbf-portal__kepala {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.nbfacin .nbf-tema .nbf-portal__aksi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* Saringan: SATU kapsul - ikon cari, isian tanpa bingkai, pengosong (hanya bila ada teks), tombol Filter di kanan. */
+.nbfacin .nbf-tema .nbf-saring {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 560px;
+  margin: 0 0 14px;
+  padding: 4px 4px 4px 14px;
+  border: 1px solid var(--nbt-tepi);
+  border-radius: 999px;
+  background: var(--nbt-isi);
+  box-shadow: var(--nbt-cekung-kecil);
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.nbfacin .nbf-tema .nbf-saring:focus-within {
+  border-color: var(--nbt-aksen-garis);
+  box-shadow: var(--nbt-cekung-kecil), var(--nbt-cincin);
+}
+.nbfacin .nbf-tema .nbf-saring__ikon {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--nbt-teks-redup);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.nbfacin .nbf-tema .nbf-saring .nbf-saring__isian {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 32px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--nbt-teks);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+}
+.nbfacin .nbf-tema .nbf-saring .nbf-saring__isian:focus {
+  box-shadow: none;
+}
+.nbfacin .nbf-tema .nbf-saring__isian::placeholder {
+  color: var(--nbt-teks-redup);
+  opacity: 0.75;
+}
+.nbfacin .nbf-tema .nbf-saring__hapus {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--nbt-lembut);
+  color: var(--nbt-teks-redup);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.nbfacin .nbf-tema .nbf-saring__hapus:hover:not(:disabled) {
+  background: var(--nbt-aksen-lembut);
+  color: var(--nbt-aksen-teks);
+}
+/* kotak kosong: pengosong disembunyikan, tempatnya tetap (isian tidak melompat saat mengetik) */
+.nbfacin .nbf-tema .nbf-saring__hapus:disabled {
+  visibility: hidden;
+}
+.nbfacin .nbf-tema .nbf-saring__tombol {
+  flex: 0 0 auto;
+  height: 32px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--nbt-aksen-teks);
+  color: var(--nbt-isi);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.nbfacin .nbf-tema .nbf-saring__tombol:hover:not(:disabled) {
+  opacity: 0.88;
+}
+.nbfacin .nbf-tema .nbf-saring__tombol:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+/* Nomor case di daftar: tautan aksen tebal yang mudah diketuk. */
+.nbfacin .nbf-tema .nbf-portal__nomor {
+  color: var(--nbt-aksen-teks);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* Status case: chip bertitik seperti status NB Treaty In / Kelola User. */
+.nbfacin .nbf-tema .nbf-portal__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border: 1px solid var(--nbt-tepi);
+  border-radius: 999px;
+  background: var(--nbt-lembut);
+  color: var(--nbt-teks-redup);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.nbfacin .nbf-tema .nbf-portal__status::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+@media (max-width: 600px) {
+  .nbfacin .nbf-tema .nbf-saring {
+    max-width: none;
+  }
+}
+
+/* View Policy tab Facultative / Treaty / Life (work owner 11-10-2026): tiap daftar (List Polis / List Offer) berjudul kecil
+   dan berjarak dari daftar sebelumnya. */
+/* Work owner 11-10-2026 "list polis dan list offer dikasih jarak, jangan terlalu dekat": jarak lebar + garis pemisah tipis. */
+.nbfacin .nbf-tema .nbf-vp__daftar + .nbf-vp__daftar {
+  margin-top: 40px;
+  padding-top: 8px;
+  border-top: 1px solid var(--nbt-garis);
+}
+.nbfacin .nbf-tema .nbf-vp__subjudul {
+  margin: 16px 0 10px;
+  color: var(--nbt-teks);
+  font-size: 16px;
+  font-weight: 600;
+}

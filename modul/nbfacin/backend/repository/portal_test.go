@@ -10,7 +10,7 @@ import (
 // (CREATE_OP = :2, keputusan work owner 07-10-2026), cari tidak peka huruf atas ID dan BUSINESS_PROSPECT_NAME dengan
 // ESCAPE, terbaru dulu, paging bernomor sesudah saringan; cacah memakai saringan yang sama (total ikut tersaring).
 func TestSQLPortal(t *testing.T) {
-	tb := tabelPortal{work: "UJI.W", opp: "UJI.O", akun: "UJI.A", quo: "UJI.Q", mo: "UJI.M", general: "UJI.G"}
+	tb := tabelPortal{work: "UJI.W", opp: "UJI.O", akun: "UJI.A", quo: "UJI.Q", mo: "UJI.M", general: "UJI.G", jp: "UJI.J"}
 	saring := ` WHERE w.LINI = :1 AND w.CREATE_OP = :2 AND (UPPER(w.ID) LIKE :3 ESCAPE '\' OR UPPER(o.BUSINESS_PROSPECT_NAME) LIKE :4 ESCAPE '\')`
 	for _, u := range []struct {
 		cari              bool
@@ -19,7 +19,7 @@ func TestSQLPortal(t *testing.T) {
 		{false, " WHERE w.LINI = :1 AND w.CREATE_OP = :2\nORDER BY w.TGL_CREATE DESC, w.ID DESC OFFSET :3 ROWS FETCH NEXT :4 ROWS ONLY", "LIKE"},
 		{true, saring + "\nORDER BY w.TGL_CREATE DESC, w.ID DESC OFFSET :5 ROWS FETCH NEXT :6 ROWS ONLY", ":7"},
 	} {
-		q := sqlCariPortal(tb, u.cari)
+		q := sqlCariPortal(tb, u.cari, "")
 		if !strings.HasSuffix(q, u.akhir) || strings.Contains(q, u.tidakBoleh) || strings.Contains(q, "SELECT *") {
 			t.Errorf("cari=%v:\n%s", u.cari, q)
 		}
@@ -32,18 +32,47 @@ func TestSQLPortal(t *testing.T) {
 			}
 		}
 	}
-	if got := sqlCacahPortal(tb, true); got != "SELECT COUNT(*) FROM UJI.W w LEFT JOIN UJI.O o ON o.ID = w.ID"+saring {
+	if got := sqlCacahPortal(tb, true, ""); got != "SELECT COUNT(*) FROM UJI.W w LEFT JOIN UJI.O o ON o.ID = w.ID"+saring {
 		t.Errorf("cacah %q", got)
 	}
-	if got := sqlCacahPortal(tb, false); got != "SELECT COUNT(*) FROM UJI.W w LEFT JOIN UJI.O o ON o.ID = w.ID WHERE w.LINI = :1 AND w.CREATE_OP = :2" {
+	if got := sqlCacahPortal(tb, false, ""); got != "SELECT COUNT(*) FROM UJI.W w LEFT JOIN UJI.O o ON o.ID = w.ID WHERE w.LINI = :1 AND w.CREATE_OP = :2" {
 		t.Errorf("cacah %q", got)
+	}
+}
+
+// TestSQLPortalSelesai - switch In Progress / Resolved (permintaan work owner 11-10-2026): saringan literal tanpa bind (nomor bind
+// paging tidak bergeser), sama di daftar dan cacah; "" = tanpa saringan; noPolis / tglProduksi = JSON_POLIS IDPEGA dua bentuk.
+func TestSQLPortalSelesai(t *testing.T) {
+	tb := tabelPortal{work: "W", opp: "O", akun: "A", quo: "Q", mo: "M", general: "G", jp: "J"}
+	for selesai, mau := range map[string]string{SelesaiPortalYa: " AND w.STATUS_WORK LIKE 'Resolved-%'",
+		SelesaiPortalTidak: " AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK NOT LIKE 'Resolved-%')"} {
+		for _, cari := range []bool{false, true} {
+			q, c := sqlCariPortal(tb, cari, selesai), sqlCacahPortal(tb, cari, selesai)
+			n := 4
+			if cari {
+				n = 6
+			}
+			if !strings.Contains(q, mau+"\nORDER BY") || !strings.HasSuffix(c, mau) || bindBerurutan(t, "portal", q) != n {
+				t.Errorf("%q cari=%v:\n%s\n%s", selesai, cari, q, c)
+			}
+		}
+	}
+	if q := sqlCariPortal(tb, false, ""); strings.Contains(q, "Resolved") {
+		t.Errorf("tanpa saringan: %s", q)
+	}
+	q := sqlCariPortal(tb, false, "")
+	for _, harus := range []string{"(SELECT MAX(j.NOPOLIS) KEEP (DENSE_RANK LAST ORDER BY j.TGL_INPUT) FROM J j WHERE j.IDPEGA IN (w.ID, 'ASM-FW-GISFW-WORK ' || w.ID)),",
+		"(SELECT TO_CHAR(MAX(j.TGL_PROD) KEEP (DENSE_RANK LAST ORDER BY j.TGL_INPUT), 'DD-MM-YYYY') FROM J j WHERE j.IDPEGA IN (w.ID, 'ASM-FW-GISFW-WORK ' || w.ID)),\n  w.STATUS_WORK"} {
+		if !strings.Contains(q, harus) {
+			t.Errorf("tanpa %q\n%s", harus, q)
+		}
 	}
 }
 
 // TestSQLKotakMasuk - saringan kotak masuk Beranda: LINI FAC, STATUS_WORK bukan "Resolved-%", marketing / TL = POSITION DAN
 // team case IN team akun (keputusan work owner 08-10-2026), lainnya = POSITION workbasket; bind berurutan menurut kemunculan.
 func TestSQLKotakMasuk(t *testing.T) {
-	tb := tabelPortal{work: "UJI.W", opp: "UJI.O", akun: "UJI.A", quo: "UJI.Q", mo: "UJI.M", general: "UJI.G"}
+	tb := tabelPortal{work: "UJI.W", opp: "UJI.O", akun: "UJI.A", quo: "UJI.Q", mo: "UJI.M", general: "UJI.G", jp: "UJI.J"}
 	// Keputusan work owner 08-10-2026: marketing / TL bersaring team case (MOID -> TEAMGROUP) IN team akun; antrean ber-team
 	// kosong tidak ikut; UW tanpa saringan team.
 	s := SaringanKotakMasuk{Tim: []AntreanTim{{Posisi: []string{"Offer", "ReasFacInMarketing"}, Team: []string{"1"}},

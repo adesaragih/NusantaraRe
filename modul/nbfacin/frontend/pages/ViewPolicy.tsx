@@ -1,183 +1,166 @@
-// Menu View Policy (tiket 71) - port tab Facultative "List Polis" section Pega `DATA-PORTAL!VIEWOPENPOLICYMARINEINBOX`
-// (`D:\migrasi\RNM\DDL\ViewOpenPolicyMarineInbox.xml`): View Option + Filter + Refresh, grid `GridOpenPolicyMarine` (20 per
-// halaman, link View Details), mode detail (Back, Refresh, "View Data" versi bila > 1).
-//
-// Sistem baru (work owner 09-10-2026 K71-1 / K71-2): cari = FACINPRODUCTION (`GetListViewPolicy_act`); versi = kolom relasional
-// JSON_POLIS; detail versi yang case-nya ada di sistem baru = layar case baca-saja penuh (A71-4), polis lama Pega = ringkasan
-// FACINPRODUCTION / CEDING_FACINPRODUCTION (A71-3). Tanpa DATA_JSON. Pencarian berjalan saat mengetik / ganti View Option /
-// Enter (pola PopupFollowing).
+// Menu View Policy (tiket 71) - port section Pega `DATA-PORTAL!VIEWOPENPOLICYMARINEINBOX`
+// (`D:\migrasi\RNM\DDL\ViewOpenPolicyMarineInbox.xml`), tiga tab (work owner 11-10-2026 "buatin untuk life dan treaty juga"):
+// - Facultative: List Polis (SEARCHON POLIFAC, grid `GridOpenPolicyMarine`, View Option FilterForViewRetro, detail versi /
+//   ringkasan / layar case - K71-1 / K71-2) dan List Offer (OFFERFAC, `BrowseDataViewOfferF` atas FACINOFFER, grid
+//   `GridOpenoffer`; View Option = polis Facultative tanpa QQ Name - keputusan work owner, FACINOFFER tanpa kolom QQ);
+// - Treaty: List Polis (TREATYPOL, `BrowsePolisTreaty` atas TREATYINPRODUCTION, grid `GridOpenPolicyMarineTreaty`, View Option
+//   `FilterForViewPolicy`). List Offer Treaty TIDAK dibangun: grid `GridOpenOfferTreaty` tidak dikirim dan
+//   `GetListViewPolicy_act` tidak punya SEARCHON-nya;
+// - Life: List Polis (POLISLIFE, `BrowsePolisLife` atas LIFEINPRODUCTION, grid `GridOpenPolicyLife`) dan List Offer
+//   (OFFERLIFE, `BrowseOfferLife` atas JSON_OFFER_LIFE, grid `GridOpenOfferLife`); tanpa View Option (work owner 11-10-2026).
+// View Details Treaty (work owner 11-10-2026) = berkas NB / EDM Treaty In polis itu (pola View polis Claim Prop / Claim Non
+// Prop OQ-CNP-13), dibuka DI TEMPAT seperti detail NB FacIn - `PropsRute.onBukaModul`; Back berkas itu kembali ke View Policy
+// (work owner: "jangan pop up doang, buatin kaya nb facin"). Tanpa `onBukaModul`: jendela `onLihatBerkas`. Life belum diport.
+// Semua tab tetap terpasang (`hidden`) supaya isian cari tiap tab bertahan saat berpindah tab.
 
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 
-import { Gagal, Halaman, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
-import { cariPolis, type BarisFollowing, type HalamanFollowing, type OpsiFollowing } from '../api'
+import { ApiFailure } from '../../../../inti/frontend/klien'
+
+import { Gagal, StripTab } from '../../../../inti/frontend/components/ui/dasar'
+import {
+  berkasPolisTreaty,
+  cariOfferFacultative,
+  cariOfferLife,
+  cariPolis,
+  cariPolisLife,
+  cariPolisTreaty,
+  type BarisFollowing,
+  type BarisOfferFacultative,
+  type BarisOfferLife,
+  type BarisPolisLife,
+  type BarisPolisTreaty,
+  type OpsiFollowing,
+} from '../api'
+import DaftarCariPolis from '../components/DaftarCariPolis'
 import { DetailPolis } from '../components/DetailPolis'
-import { JEDA_CARI_MS } from '../components/PopupPilihAgent'
 import { tanggalFollowing } from '../components/PopupFollowing'
-import { FOLLOWING as F, TEKS_FOLLOWING, VIEW_POLICY as V } from '../labels'
+import { FOLLOWING as F, VIEW_POLICY as V } from '../labels'
 import InwardFacultative from './InwardFacultative'
 
 // Detail polis (versi, ringkasan polis lama) dipindah ke components/DetailPolis.tsx - dipakai juga popup Following.
 export { labelPolicyType, RingkasanPolisLama } from '../components/DetailPolis'
 
-export default function ViewPolicy() {
-  const [opsi, setOpsi] = useState<OpsiFollowing | ''>('')
-  const [filter, setFilter] = useState('')
-  const [hasil, setHasil] = useState<HalamanFollowing | null>(null)
-  const [galat, setGalat] = useState<unknown>(null)
-  const [memuat, setMemuat] = useState(false)
-  const [detail, setDetail] = useState<BarisFollowing | null>(null)
-  const nomorPermintaan = useRef(0)
+type TabVP = (typeof V.tab)[number]
+type Detail = { jenis: 'polis'; baris: BarisFollowing } | { jenis: 'kasus'; caseId: string } | null
 
-  async function muat(o: OpsiFollowing | '', f: string, halaman: number) {
-    const nomor = ++nomorPermintaan.current
-    // GetListViewPolicy_act langkah 7: filter kosong -> keluar tanpa mencari.
-    if (o === '' || f.trim() === '') {
-      setHasil(null)
-      setMemuat(false)
-      return
-    }
-    setMemuat(true)
-    setGalat(null)
-    try {
-      const h = await cariPolis(o, f, halaman)
-      if (nomor === nomorPermintaan.current) setHasil(h)
-    } catch (err) {
-      if (nomor === nomorPermintaan.current) {
-        setHasil(null)
-        setGalat(err)
-      }
-    } finally {
-      if (nomor === nomorPermintaan.current) setMemuat(false)
-    }
+/** `onBukaModul` / `onLihatBerkas` - `PropsRute` (View Details Treaty: di tempat, cadangan jendela); tanpa keduanya tombolnya tidak ada. */
+export default function ViewPolicy({
+  onLihatBerkas,
+  onBukaModul,
+}: { onLihatBerkas?: (modul: string, id: string) => boolean; onBukaModul?: (modul: string, id: string) => boolean } = {}) {
+  const bukaBerkas = onBukaModul ?? onLihatBerkas
+  const [tab, setTab] = useState<TabVP>(V.tab[0])
+  const [detail, setDetail] = useState<Detail>(null)
+  const [pesanTreaty, setPesanTreaty] = useState('')
+  const [galatTreaty, setGalatTreaty] = useState<unknown>(null)
+
+  const lihatTreaty = (b: BarisPolisTreaty) => {
+    setPesanTreaty('')
+    setGalatTreaty(null)
+    berkasPolisTreaty(b.policyNo).then(
+      (x) => {
+        if (bukaBerkas?.(x.modul, x.kasus) !== true) setPesanTreaty(V.teks.berkasTakTerpasang)
+      },
+      (g: unknown) => {
+        // Hanya 404 JSON dari backend (`DITOLAK_BACKEND`) = polis tanpa berkas. 404 teks biasa = rute belum terpasang (backend
+        // lama belum direstart) -> galat apa adanya, bukan pesan "polis lama" (bug DEV 11-10-2026).
+        if (g instanceof ApiFailure && g.status === 404 && g.detail.code === 'DITOLAK_BACKEND') setPesanTreaty(V.teks.polisTanpaBerkas(b.policyNo))
+        else setGalatTreaty(g)
+      },
+    )
   }
 
-  useEffect(() => {
-    const jadwal = window.setTimeout(() => void muat(opsi, filter, 1), JEDA_CARI_MS)
-    return () => window.clearTimeout(jadwal)
-  }, [opsi, filter])
-
-  // Templat layar = menu Kelola User (work owner 09-10-2026 "template nya disamain dong kaya menu ini, biar ga beda2 sama
-  // semua"; pola portal NB FacIn): kepala `inbox__kepala` + judul besar, bilah `toolbar`, tabel `inbox__tabel` berbaris klik.
+  // Templat layar = menu Kelola User (work owner 09-10-2026; pola portal NB FacIn): kepala `inbox__kepala` + judul besar,
+  // switch tab, lalu daftar-daftar cari tab itu.
   return (
     <div className="nbfacin">
       <section className="inbox nbf-tema">
-        {detail !== null ? (
+        {detail?.jenis === 'polis' && (
           <DetailPolis
-            baris={detail}
-            judul={`${V.judul} · ${detail.policyNo}`}
+            baris={detail.baris}
+            judul={`${V.judul} · ${detail.baris.policyNo}`}
             onKembali={() => setDetail(null)}
             tampilKasus={(caseId) => <InwardFacultative kasus={{ caseId }} onBatal={() => setDetail(null)} hanyaLihat />}
           />
-        ) : (
-          <>
-            <header className="inbox__kepala">
-              <h2 className="inbox__judul nbf-tema__judul">{V.judul}</h2>
-            </header>
-            <form
-              className="toolbar"
-              onSubmit={(e) => {
-                e.preventDefault()
-                void muat(opsi, filter, 1)
-              }}
-            >
-              <select
-                className="field__input nbf-tema__isian nbf-vp__opsi"
-                aria-label={F.viewOption}
-                value={opsi}
-                onChange={(e) => setOpsi(e.target.value as OpsiFollowing | '')}
-              >
-                <option value="">{`${F.viewOption}: ${F.pilihKosong}`}</option>
-                {F.opsi.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              <input
-                className="field__input nbf-tema__isian nbf-saring__kotak"
-                type="search"
-                aria-label={F.filter}
-                placeholder={F.placeholder}
-                value={filter}
-                disabled={opsi === ''}
-                onChange={(e) => setFilter(e.target.value)}
-              />
-              <button type="button" className="btn btn--sm nbf-tema__tombol" onClick={() => setFilter('')}>
-                {F.refresh}
-              </button>
-            </form>
-            {hasil && hasil.baris.length > 0 && (
-              <div className="nbf-tema__pager">
-                <Halaman halaman={hasil.halaman} ukuran={hasil.ukuran} total={hasil.total} onPindah={(h) => void muat(opsi, filter, h)} />
-              </div>
-            )}
-            <table className="inbox__tabel nbf-tema__tabel">
-              <thead>
-                <tr>
-                  {F.kolom.map((k) => (
-                    <th key={k} scope="col">
-                      {k}
-                    </th>
-                  ))}
-                  <th scope="col" />
-                </tr>
-              </thead>
-              {hasil && hasil.baris.length > 0 && (
-                <tbody>
-                  {hasil.baris.map((b) => (
-                    <tr
-                      key={`${b.caseId}-${b.policyNo}`}
-                      className="inbox__baris"
-                      onClick={() => {
-                        if (b.policyNo !== '') setDetail(b)
-                      }}
-                    >
-                      <td>{b.caseId}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="nbf-tautan"
-                          disabled={b.policyNo === ''}
-                          onClick={(e) => {
-                            // Baris sudah membuka detail; cegah panggilan ganda.
-                            e.stopPropagation()
-                            setDetail(b)
-                          }}
-                        >
-                          {b.policyNo}
-                        </button>
-                      </td>
-                      <td>{b.reffNumber}</td>
-                      <td>{b.insuredName}</td>
-                      <td>{b.sourceOfBusiness}</td>
-                      <td>{b.qqName}</td>
-                      <td>{tanggalFollowing(b.startPeriod)}</td>
-                      <td>{tanggalFollowing(b.endPeriod)}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn btn--sm nbf-tema__tombol"
-                          disabled={b.policyNo === ''}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setDetail(b)
-                          }}
-                        >
-                          {F.lihat}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              )}
-            </table>
-            {memuat && <Memuat />}
-            {!memuat && hasil === null && <Kosong pesan={TEKS_FOLLOWING.isiFilter} />}
-            {!memuat && hasil !== null && hasil.baris.length === 0 && <Kosong pesan={TEKS_FOLLOWING.kosong} />}
-            <Gagal galat={galat} />
-          </>
         )}
+        {/* View Details List Offer Facultative: case NB (FACINOFFER.IDPEGA = nomor case) dibuka baca-saja. */}
+        {detail?.jenis === 'kasus' && <InwardFacultative kasus={{ caseId: detail.caseId }} onBatal={() => setDetail(null)} hanyaLihat />}
+        <div hidden={detail !== null}>
+          <header className="inbox__kepala">
+            <h2 className="inbox__judul nbf-tema__judul">{V.judul}</h2>
+          </header>
+          <StripTab tab={V.tab} aktif={tab} onPilih={setTab} />
+
+          <div hidden={tab !== 'Facultative'}>
+            <DaftarCariPolis<BarisFollowing>
+              judul={V.daftar}
+              opsi={F.opsi}
+              placeholder={F.placeholder}
+              kolom={F.kolom}
+              cari={(o, f, h) => cariPolis(o as OpsiFollowing, f, h)}
+              kunci={(b) => `${b.caseId}-${b.policyNo}`}
+              sel={(b) => [
+                b.caseId,
+                b.policyNo,
+                b.reffNumber,
+                b.insuredName,
+                b.sourceOfBusiness,
+                b.qqName,
+                tanggalFollowing(b.startPeriod),
+                tanggalFollowing(b.endPeriod),
+              ]}
+              onLihat={(b) => setDetail({ jenis: 'polis', baris: b })}
+              bisaLihat={(b) => b.policyNo !== ''}
+            />
+            <DaftarCariPolis<BarisOfferFacultative>
+              judul={V.daftarOffer}
+              opsi={V.opsiOfferFacultative}
+              placeholder={V.placeholder.offer}
+              kolom={V.kolom.offerFacultative}
+              cari={cariOfferFacultative}
+              kunci={(b) => `${b.caseId}-${b.noOffer}`}
+              sel={(b) => [b.caseId, b.noOffer, b.insuredName, b.sourceOfBusiness, b.qqName, tanggalFollowing(b.startPeriod), tanggalFollowing(b.endPeriod)]}
+              onLihat={(b) => setDetail({ jenis: 'kasus', caseId: b.caseId })}
+              bisaLihat={(b) => b.caseId !== ''}
+            />
+          </div>
+
+          <div hidden={tab !== 'Treaty'}>
+            {pesanTreaty !== '' && <div className="alert alert--info">{pesanTreaty}</div>}
+            <Gagal galat={galatTreaty} />
+            <DaftarCariPolis<BarisPolisTreaty>
+              judul={V.daftar}
+              opsi={V.opsiTreaty}
+              placeholder={V.placeholder.polis}
+              kolom={V.kolom.polisTreaty}
+              cari={cariPolisTreaty}
+              kunci={(b) => `${b.caseId}-${b.policyNo}`}
+              sel={(b) => [b.caseId, b.policyNo, b.insuredName, b.sourceOfBusiness, tanggalFollowing(b.startPeriod), tanggalFollowing(b.endPeriod)]}
+              onLihat={bukaBerkas ? lihatTreaty : undefined}
+              bisaLihat={(b) => b.policyNo !== ''}
+            />
+          </div>
+
+          <div hidden={tab !== 'Life'}>
+            <DaftarCariPolis<BarisPolisLife>
+              judul={V.daftar}
+              placeholder={V.placeholder.polis}
+              kolom={V.kolom.polisLife}
+              cari={(_o, f, h) => cariPolisLife(f, h)}
+              kunci={(b, i) => `${b.caseId}-${b.policyNo}-${b.endorsNo}-${i}`}
+              sel={(b) => [b.caseId, b.policyNo, b.typePolicy, b.sourceOfBusiness, b.cedingCoName, b.qq]}
+            />
+            <DaftarCariPolis<BarisOfferLife>
+              judul={V.daftarOffer}
+              placeholder={V.placeholder.offer}
+              kolom={V.kolom.offerLife}
+              cari={(_o, f, h) => cariOfferLife(f, h)}
+              kunci={(b, i) => `${b.caseId}-${b.noOffer}-${i}`}
+              sel={(b) => [b.caseId, b.noOffer, b.typePolicy, b.businessName, b.cedingCoName, b.qq, b.lastStatus]}
+            />
+          </div>
+        </div>
       </section>
     </div>
   )
