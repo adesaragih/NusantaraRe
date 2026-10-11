@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiFailure, ambilSesiSaya, gantiSandiLogin, keluarLogin, masukLogin } from '../klien'
-import { LOGIN, PANJANG_MIN_SANDI, PERAN } from '../labels'
+import { LOGIN, PERAN } from '../labels'
 import { PERISTIWA_SESI_BERAKHIR, sesiDariProfil } from '../store/sesi'
 import { periksaSandiBaru, pesanGagalGanti } from './GantiSandi'
 import { pesanGagalLogin } from './Login'
@@ -27,7 +27,8 @@ afterEach(() => {
   vi.unstubAllEnvs()
 })
 
-const PROFIL = `{"akunId":"UJI-ADMIN","nama":"Uji Admin","peran":["ReasLifeAdmin","ReasFacInAdmin"],` +
+const PROFIL =
+  `{"akunId":"UJI-ADMIN","nama":"Uji Admin","peran":["ReasLifeAdmin","ReasFacInAdmin"],` +
   `"organisasi":"RNM","divisi":"TECH","unit":"CLM","wajibGantiSandi":false}`
 
 describe('klien /api/auth/*', () => {
@@ -46,7 +47,10 @@ describe('klien /api/auth/*', () => {
       'POST /api/auth/logout',
     ])
     expect(JSON.parse(String(tertangkap[0]?.init.body))).toEqual({ akun: 'UJI-ADMIN', sandi: 'Sandi-Uji-0001' })
-    expect(JSON.parse(String(tertangkap[2]?.init.body))).toEqual({ sandiLama: 'Sandi-Uji-0001', sandiBaru: 'Sandi-Uji-0002' })
+    expect(JSON.parse(String(tertangkap[2]?.init.body))).toEqual({
+      sandiLama: 'Sandi-Uji-0001',
+      sandiBaru: 'Sandi-Uji-0002',
+    })
   })
 
   it('401 di tengah pemakaian memicu PERISTIWA_SESI_BERAKHIR - kecuali mode stub', async () => {
@@ -68,29 +72,39 @@ describe('klien /api/auth/*', () => {
 
 describe('pesan layar', () => {
   it('pesan gagal login dipilih dari status, bukan teks backend', () => {
-    expect(pesanGagalLogin(new ApiFailure(401, { code: 'DITOLAK_BACKEND', message: 'akun atau sandi salah' }))).toBe(LOGIN.salah)
+    expect(pesanGagalLogin(new ApiFailure(401, { code: 'DITOLAK_BACKEND', message: 'akun atau sandi salah' }))).toBe(
+      LOGIN.salah,
+    )
     expect(pesanGagalLogin(new ApiFailure(423, { code: 'DITOLAK_BACKEND', message: 'terkunci' }))).toBe(LOGIN.terkunci)
-    expect(pesanGagalLogin(new ApiFailure(503, { code: 'DITOLAK_BACKEND', message: 'SESI_RAHASIA' }))).toBe(LOGIN.tidakTersedia)
+    expect(pesanGagalLogin(new ApiFailure(503, { code: 'DITOLAK_BACKEND', message: 'SESI_RAHASIA' }))).toBe(
+      LOGIN.tidakTersedia,
+    )
     expect(pesanGagalLogin(new TypeError('Failed to fetch'))).toBe(LOGIN.gagal)
   })
 
-  it('aturan sandi baru sama dengan backend - dihitung KARAKTER', () => {
-    expect(PANJANG_MIN_SANDI).toBe(10)
-    expect(periksaSandiBaru('123456789', '123456789')).toBe(LOGIN.minimal)
-    expect(periksaSandiBaru('ééééééééé', 'ééééééééé')).toBe(LOGIN.minimal)
-    expect(periksaSandiBaru('1234567890', '1234567899')).toBe(LOGIN.tidakSama)
-    expect(periksaSandiBaru('1234567890', '1234567890')).toBeNull()
+  it('password tanpa batasan (perintah work owner 11-10-2026): hanya kosong dan beda ulangan yang ditolak', () => {
+    expect(periksaSandiBaru('', '')).toBe(LOGIN.minimal)
+    expect(periksaSandiBaru('1', '2')).toBe(LOGIN.tidakSama)
+    expect(periksaSandiBaru('1', '1')).toBeNull()
+    expect(periksaSandiBaru('123456', '123456')).toBeNull()
   })
 
   it('ganti sandi: sandi lama salah dikenali, 401 bukan galat medan', () => {
-    expect(pesanGagalGanti(new ApiFailure(400, { code: 'DITOLAK_BACKEND', message: 'sandi lama salah' }))).toBe(LOGIN.lamaSalah)
+    expect(pesanGagalGanti(new ApiFailure(400, { code: 'DITOLAK_BACKEND', message: 'sandi lama salah' }))).toBe(
+      LOGIN.lamaSalah,
+    )
     // Kalimat backend DIPETAKAN ke label berbahasa Inggris (layar login berbahasa
     // Inggris, permintaan work owner 01-10-2026); yang tak dikenal = pesan umum.
-    expect(pesanGagalGanti(new ApiFailure(400, { code: 'DITOLAK_BACKEND', message: 'sandi minimal 10 karakter' }))).toBe(LOGIN.minimal)
-    expect(pesanGagalGanti(new ApiFailure(400, { code: 'DITOLAK_BACKEND', message: 'sandi maksimal 72 byte' }))).toBe(LOGIN.terlaluPanjang)
-    expect(pesanGagalGanti(new ApiFailure(400, { code: 'DITOLAK_BACKEND', message: 'sandi baru sama dengan sandi lama' }))).toBe(LOGIN.samaDenganLama)
+    expect(pesanGagalGanti(new ApiFailure(400, { code: 'DITOLAK_BACKEND', message: 'sandi wajib diisi' }))).toBe(
+      LOGIN.minimal,
+    )
+    expect(pesanGagalGanti(new ApiFailure(400, { code: 'DITOLAK_BACKEND', message: 'sandi maksimal 72 byte' }))).toBe(
+      LOGIN.terlaluPanjang,
+    )
     expect(pesanGagalGanti(new ApiFailure(400, { code: 'DITOLAK_BACKEND', message: 'kalimat lain' }))).toBe(LOGIN.gagal)
-    expect(pesanGagalGanti(new ApiFailure(401, { code: 'DITOLAK_BACKEND', message: 'sesi sudah berakhir' }))).toBe(LOGIN.gagal)
+    expect(pesanGagalGanti(new ApiFailure(401, { code: 'DITOLAK_BACKEND', message: 'sesi sudah berakhir' }))).toBe(
+      LOGIN.gagal,
+    )
   })
 })
 
@@ -135,7 +149,9 @@ describe('tampilan loginbaru.html', () => {
       .filter((p) => p.startsWith('.halaman-masuk'))
     expect(beranimasi.sort()).toEqual(['.halaman-masuk__melayang', '.halaman-masuk__uap'])
     expect(css).toContain('will-change: transform, opacity;')
-    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.halaman-masuk__melayang,\s*\.halaman-masuk__uap \{\s*animation: none;/)
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: reduce\) \{\s*\.halaman-masuk__melayang,\s*\.halaman-masuk__uap \{\s*animation: none;/,
+    )
   })
 
   it('teks layar login berbahasa Inggris', () => {

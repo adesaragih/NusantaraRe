@@ -94,6 +94,12 @@ func ro(u Unsur) Unsur                { u.HanyaBaca = selalu; return u }
 func roJika(u Unsur, k Kondisi) Unsur { u.HanyaBaca = k; return u }
 func naJika(u Unsur, k Kondisi) Unsur { u.Nonaktif = k; return u }
 func tampil(u Unsur, k Kondisi) Unsur { u.Tampil = k; return u }
+
+// tampilKlien - kondisi tampil `pyIsClientWhen` (dievaluasi layar): tampil bila `j` = `v`, atau bila bukan `v` (`beda`).
+func tampilKlien(u Unsur, j, v string, beda bool) Unsur {
+	u.TampilKlien = &SyaratKlien{Jalur: j, Nilai: v, Beda: beda}
+	return u
+}
 func wajibU(u Unsur) Unsur            { u.Wajib = selalu; return u }
 func wajibJ(u Unsur, k Kondisi) Unsur { u.Wajib = k; return u }
 func aksi(u Unsur, a string) Unsur    { u.Aksi = a; return u }
@@ -116,6 +122,11 @@ const (
 	LetakTab     = "tab"     // layout group Tab: anak = bagian berjudul (satu tab per bagian)
 	LetakJudul   = "judul"   // kepala layar: Inline grid triple dengan label di sel tengah
 	LetakTabel   = "tabel"   // layout bebas berkolom (tanpa format): anak = baris (bagian), baris pertama = judul kolom
+	// LetakSukses - kartu sukses pop-up (bukan format Pega; perintah work owner 10-10-2026 "perbaiki tampilan"):
+	// anak = label judul, label penjelasan, medan nomor.
+	LetakSukses = "sukses"
+	// LetakInfo - kartu informasi pop-up ("already submitted"), susunan sama dengan LetakSukses.
+	LetakInfo = "info"
 )
 
 // Ikon tombol (kelas ikon / gambar tombol di XML); label tetap dikirim sebagai keterangan.
@@ -599,7 +610,13 @@ func LayarOutstanding() []Unsur {
 				tampilIsi(ro(medan(CD+"ClaimNo", "Claim No", KTeks))),
 			), atau(terisi(CD+"NoClaim"), terisi(CD+"ClaimNo"))),
 		),
-		bagian("Claim Treaty", blokTreaty(naJika(tombol("ChooseMaster", "Choose Master", "PilihMaster"), isOutstanding))...),
+		bagian("Claim Treaty", blokTreaty(
+			naJika(tombol("ChooseMaster", "Choose Master", "PilihMaster"), isOutstanding),
+			// perintah work owner 10-10-2026 (pintu masuk tidak diekspor): Reject Claim di posisi admin selama Claim No
+			// belum ada; sesudahnya diganti Close Claim posisi teknik (pop-up PreventRejectClaimProp yang sama)
+			tampil(tombol("RejectClaim", "Reject Claim", "BukaTolakKlaim"), NomorKlaimKosong),
+			tampil(tombol("CloseClaim", "Close Claim", "BukaTutupKlaim"), func(h *Halaman) bool { return !NomorKlaimKosong(h) }),
+		)...),
 		label("Claim Information"),
 		tampil(tombol("SummaryOutstanding", "Summary Outstanding Claim", "RingkasanOS"), isOutstanding),
 		dua(kiri, bagian("", blokPelapor(CD+"ReporterStatus")...), dua(

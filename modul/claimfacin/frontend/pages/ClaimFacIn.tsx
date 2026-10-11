@@ -7,10 +7,11 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { Gagal, Kosong, Memuat, StripTab } from '../../../../inti/frontend/components/ui/dasar'
+import { Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { ambilHak, buatKasus, daftarKasus, type HakPelaku, type RingkasanKasus } from '../api'
 import LayarKasus from '../components/LayarKasus'
 import TabelKomite from '../components/TabelKomite'
+import { TabGeser } from '../components/TabGeser'
 import { tampilTanggal } from '../ketikTanggal'
 import { CFI } from '../labels'
 import { bolehTambahKlaim, jenisDaftar, switchTeknikAktif, TAB_INBOX, tabelKomiteTampil, type TabInbox } from './inbox'
@@ -118,7 +119,7 @@ export default function ClaimFacIn({
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{CFI.judul}</h2>
       </header>
-      <StripTab tab={TAB_INBOX} aktif={tab} onPilih={setTab} label={(t) => LABEL_TAB[t]} />
+      <TabGeser tab={TAB_INBOX} aktif={tab} onPilih={setTab} label={(t) => LABEL_TAB[t]} />
 
       <div className="toolbar">
         {tab === 'proses' && (

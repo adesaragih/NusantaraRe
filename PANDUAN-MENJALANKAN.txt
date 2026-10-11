@@ -431,12 +431,23 @@ LOGIN SUNGGUHAN - M_LOGIN_GO (MIGRASI 902, 01-10-2026)
        SEKALI dan WAJIB diganti saat login pertama.
        Sandi DITETAPKAN sendiri: tambahkan -sandi-dari-stdin lalu ketik
        sandinya di baris pertama masukan (tidak tampil di argumen dan tidak
-       dicetak; aturan minimal 10 karakter tetap berlaku; tidak wajib
-       diganti).
+       dicetak; sandi tidak boleh kosong; tidak wajib diganti).
+
+  Muat banyak akun dari ekspor operator Pega (11-10-2026): simpan sheet
+  LOGIN dan CONTACT sebagai CSV (di LUAR repo - isinya data orang), lalu
+       go run ./cmd/api -muat-pengguna <LOGIN.csv> -muat-kontak <CONTACT.csv>
+  Tanpa -jalankan = uji-kering (hanya membaca, mencetak status per baris);
+  tambahkan -jalankan untuk menulis. Akun yang sudah ada dilewati (aman
+  diulang). Password awal 123456, tidak wajib diganti; CONTACT_ID dari
+  sheet CONTACT bila ada, selain itu sequence; email tidak sah / kembar
+  dikosongkan (akun pertama yang memakai email itu yang memegangnya).
 
   Aturan: kunci 15 menit sesudah 5 kali sandi salah; sesi habis bila 30
-  menit tidak dipakai, paling lama 10 jam sejak login; sandi minimal 10
-  karakter. Logout dan ganti sandi mencabut SEMUA sesi akun itu.
+  menit tidak dipakai, paling lama 10 jam sejak login; sandi tanpa batasan
+  selain tidak kosong dan maks. 72 byte (11-10-2026); username saat login
+  tanpa beda huruf besar / kecil. Logout dan ganti sandi mencabut SEMUA
+  sesi akun itu. Akun baru dari Kelola User yang password-nya dikosongkan
+  memakai password bawaan 123456.
 
   Tanpa Oracle atau tanpa SESI_RAHASIA: POST /api/auth/login menjawab
   503 yang menyebut sebabnya; layar login menampilkan "Login is not

@@ -1,6 +1,7 @@
 // Nilai layar Komite Claim Fac In - fungsi murni (diuji tanpa DOM). Disalin dari Komite Claim Non Prop
-// (`modul/komiteclaimnonprop/frontend/nilai.ts`), tidak diimpor (batas modul): angka paling banyak 4 desimal
-// (`pxNumber DecimalPlaces=4`, nol ekor dibuang) pemisah Indonesia, tanggal `dd-mm-yyyy` (+ ` HH:mm`).
+// (`modul/komiteclaimnonprop/frontend/nilai.ts`), tidak diimpor (batas modul): angka SELALU 4 desimal
+// (`pxNumber DecimalPlaces=4`; work owner 11-10-2026 "TAMPILAN 4 DIGIT BELAKANG KOMA") pemisah Indonesia, tanggal
+// `dd-mm-yyyy` (+ ` HH:mm`).
 
 import { formatNumber } from '../../../inti/frontend/lib/format'
 import { keInputTanggal } from '../../../inti/frontend/lib/tanggalInput'
@@ -8,6 +9,17 @@ import type { IsianLayar, JenisNilai, Keputusan } from './api'
 
 /** Desimal tampilan angka. */
 export const DESIMAL_TAMPIL = 4
+
+/** Hasil `formatNumber` yang berupa angka (titik ribuan, koma desimal opsional). */
+const ANGKA_TAMPIL = /^-?\d{1,3}(\.\d{3})*(,\d+)?$/
+
+/** Angka 4 desimal: `formatNumber` (dibulatkan pada digit) lalu nol ekor dilengkapi; bukan angka = apa adanya. */
+function angka4(s: string): string {
+  const t = formatNumber(s, DESIMAL_TAMPIL)
+  if (!ANGKA_TAMPIL.test(t)) return t
+  const [bulat, pecahan = ''] = t.split(',')
+  return `${bulat},${pecahan.padEnd(DESIMAL_TAMPIL, '0')}`
+}
 
 /** pxCheckbox hanya-baca: "true" / "1" dicentang. */
 export function tercentang(v: string): boolean {
@@ -21,7 +33,7 @@ export function tampil(v: string, jenis: JenisNilai | ''): string {
   if (s === '') return ''
   switch (jenis) {
     case 'angka':
-      return formatNumber(s, DESIMAL_TAMPIL)
+      return angka4(s)
     case 'tanggal':
     case 'tanggalJam': {
       const iso = keInputTanggal(s)

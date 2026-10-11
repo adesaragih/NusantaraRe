@@ -119,8 +119,7 @@ func sqlTeksTutup(gen string) string {
 	return fmt.Sprintf(`SELECT TRANSFER_TYPE, KOMITE_CIRCUM_CAUSE_OF_LOSS FROM %s WHERE ID = :1`, gen)
 }
 
-// bacaTeksTutup mengisi TransferType / Kronologi kasus tanpa adjustment; jenis selain TT 4 ditolak (Claim Prop tanpa
-// penulis TT 3).
+// bacaTeksTutup mengisi TransferType / Kronologi kasus tanpa adjustment; jenis selain TT 3 / TT 4 ditolak.
 func (g *Gudang) bacaTeksTutup(ctx context.Context, tx *db.Tx, gen string, k *models.Kasus) error {
 	q := sqlTeksTutup(gen)
 	if err := db.PeriksaSQL(q); err != nil {
@@ -130,10 +129,11 @@ func (g *Gudang) bacaTeksTutup(ctx context.Context, tx *db.Tx, gen string, k *mo
 	if err := g.barisAtau(ctx, tx, q, k.ID).Scan(&tt, &kron); err != nil {
 		return fmt.Errorf("repository: membaca jenis penyerahan kasus komite: %w", err)
 	}
-	if strings.TrimSpace(tt.String) != models.TransferTutup {
+	jenis := strings.TrimSpace(tt.String)
+	if jenis != models.TransferTutup && jenis != models.TransferTolak {
 		return fmt.Errorf("%w: kasus %q tanpa adjustment ber-TRANSFER_TYPE %q", ErrKasusTidakAda, k.ID, tt.String)
 	}
-	k.TransferType, k.Kronologi = models.TransferTutup, kron.String
+	k.TransferType, k.Kronologi = jenis, kron.String
 	return nil
 }
 

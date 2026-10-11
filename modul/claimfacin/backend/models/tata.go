@@ -16,6 +16,7 @@ package models
 // = "prefiks:daftar(n)" - jalur baris itu sendiri, sehingga sarang berapa pun dalamnya beralamat tanpa protokol khusus.
 
 import (
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -28,7 +29,15 @@ const (
 	JenisLabel  = "label"  // LABEL
 	JenisTombol = "tombol" // TOMBOL / pxIcon
 	JenisGrid   = "grid"   // GRID PageList
+	// JenisPolisNB - tampilan polis HANYA-BACA salinan layar Inward Facultative NB Fac In (perintah work owner
+	// 10-10-2026: "tampilan polis nya mengikuti tampilan polis juga. IKUTI MODUL NB FACIN. TAMPILAN READ ONLY"; pilihan
+	// "salin tampilan di Claim Fac In"): dirender layar dari halaman `OfferFacIn`, tanpa medan / tombol.
+	JenisPolisNB = "polisNB"
 )
+
+// KPolisFire - `Kendali` unsur `JenisPolisNB` bila When `IsFire` benar: layar mengisi tab detail polis (layar NB hanya
+// mengisinya untuk kasus FIRE); tanpa = blok General + tab berpesan "tidak dapat dimuat".
+const KPolisFire = "fire"
 
 // Kendali medan.
 const (
@@ -206,14 +215,24 @@ func kolomTanpaKondisi(k []Unsur) []Unsur {
 
 // MedanTerbuka - jalur yang boleh diubah layar: medan tampil, tidak hanya-baca, tidak nonaktif, berkendali isian;
 // sel grid yang terbuka pada baris itu (`daftar(n).prop`).
-func MedanTerbuka(ts []Tata) map[string]bool {
+func MedanTerbuka(ts []Tata) map[string]bool { return medanTerbuka(ts, nil) }
+
+// MedanAngkaTerbuka - jalur medan / sel grid ANGKA (`KAngka`) yang terbuka: hanya bilangan desimal yang diterima
+// (`DesimalSah`).
+func MedanAngkaTerbuka(ts []Tata) map[string]bool {
+	return medanTerbuka(ts, func(k string) bool { return k == KAngka })
+}
+
+// medanTerbuka - jalur terbuka; `saring` (nil = semua kendali) memilih kendali medan / kolom.
+func medanTerbuka(ts []Tata, saring func(kendali string) bool) map[string]bool {
 	out := map[string]bool{}
+	cocok := func(k string) bool { return k != KTampil && (saring == nil || saring(k)) }
 	var jalan func(ts []Tata)
 	jalan = func(ts []Tata) {
 		for _, t := range ts {
 			switch t.Jenis {
 			case JenisMedan:
-				if !t.HanyaBaca && !t.Nonaktif && t.Kendali != KTampil && t.Jalur != "" {
+				if !t.HanyaBaca && !t.Nonaktif && cocok(t.Kendali) && t.Jalur != "" {
 					out[t.Jalur] = true
 				}
 			case JenisBagian:
@@ -222,7 +241,7 @@ func MedanTerbuka(ts []Tata) map[string]bool {
 				for i, sel := range t.Baris {
 					for j, s := range sel {
 						k := t.Kolom[j]
-						if k.Jenis == JenisMedan && s.Tampil && !s.HanyaBaca && !s.Nonaktif && k.Kendali != KTampil {
+						if k.Jenis == JenisMedan && s.Tampil && !s.HanyaBaca && !s.Nonaktif && cocok(k.Kendali) {
 							out[JalurAnak(t.Jalur, i+1, k.Jalur)] = true
 						}
 					}
@@ -232,6 +251,66 @@ func MedanTerbuka(ts []Tata) map[string]bool {
 		}
 	}
 	jalan(ts)
+	return out
+}
+
+// MedanBeraksi - medan / sel grid TERBUKA yang beraksi ubah (refresh ber-activity Pega).
+type MedanBeraksi struct {
+	Jalur, Aksi, Kendali string
+	// Indeks - baris grid sel (1..n); 0 = bukan sel grid.
+	Indeks int
+}
+
+// DaftarMedanBeraksi - medan / sel grid terbuka yang beraksi ubah, urut kemunculan di tata.
+func DaftarMedanBeraksi(ts []Tata) []MedanBeraksi {
+	var out []MedanBeraksi
+	var jalan func(ts []Tata)
+	jalan = func(ts []Tata) {
+		for _, t := range ts {
+			switch t.Jenis {
+			case JenisMedan:
+				if t.Aksi != "" && !t.HanyaBaca && !t.Nonaktif && t.Kendali != KTampil && t.Jalur != "" {
+					out = append(out, MedanBeraksi{Jalur: t.Jalur, Aksi: t.Aksi, Kendali: t.Kendali})
+				}
+			case JenisBagian:
+				jalan(t.Anak)
+			case JenisGrid:
+				for i, sel := range t.Baris {
+					for j, s := range sel {
+						k := t.Kolom[j]
+						if k.Jenis == JenisMedan && k.Aksi != "" && s.Tampil && !s.HanyaBaca && !s.Nonaktif && k.Kendali != KTampil {
+							out = append(out, MedanBeraksi{Jalur: JalurAnak(t.Jalur, i+1, k.Jalur), Aksi: k.Aksi,
+								Kendali: k.Kendali, Indeks: i + 1})
+						}
+					}
+				}
+				jalan(t.Kaki)
+			}
+		}
+	}
+	jalan(ts)
+	return out
+}
+
+// PesanBukanDesimal - isian angka yang bukan bilangan desimal (work owner 11-10-2026 "UNTUK ANGKA PROTEKSI INPUTAN HANYA
+// DECIMAL"); layar sudah menolak ketikan selain angka, server menegakkan untuk kiriman lain.
+const PesanBukanDesimal = "Value must be a decimal number (max 4 digits after the comma)"
+
+// desimal - bilangan desimal mentah kiriman layar (`InputAngka`: titik desimal, tanpa ribuan, paling banyak 4 desimal).
+var desimal = regexp.MustCompile(`^-?\d+(\.\d{1,4})?$`)
+
+// DesimalSah - nilai isian angka sah: kosong, atau bilangan desimal mentah berdesimal paling banyak 4.
+func DesimalSah(v string) bool { return v == "" || desimal.MatchString(v) }
+
+// AngkaTidakSah - jalur kiriman layar ke medan angka terbuka yang nilainya bukan desimal (urut jalur).
+func AngkaTidakSah(masuk map[string]string, angka map[string]bool) []string {
+	var out []string
+	for j, v := range masuk {
+		if angka[j] && !DesimalSah(v) {
+			out = append(out, j)
+		}
+	}
+	sort.Strings(out)
 	return out
 }
 

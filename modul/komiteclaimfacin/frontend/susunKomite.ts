@@ -13,7 +13,7 @@ export const KUNCI_TANGGA = 'tangga'
 
 /** Bagian berisi: punya medan atau grid. Bagian kosong (mis. "Claim Details" tanpa adjustment) dilewati. */
 export function bagianBerisi(b: Bagian): boolean {
-  return (b.medan?.length ?? 0) > 0 || (b.grid?.length ?? 0) > 0
+  return (b.medan?.length ?? 0) > 0 || (b.grid?.length ?? 0) > 0 || (b.kolom ?? []).some((k) => k.length > 0)
 }
 
 /** Bagian server -> kartu rincian (urutan server, teks komite terakhir) dan tangga (bila ada). */

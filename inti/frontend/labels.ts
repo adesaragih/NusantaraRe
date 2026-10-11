@@ -51,14 +51,7 @@ export const MENU = {
  * menu saja" untuk modul yang belum berbukti menjadi kegagalan uji, bukan
  * keputusan sepi yang tidak ada yang tinjau.
  */
-export const MODUL_LAIN_TERLARANG = [
-  'Treaty',
-  'Endorsement',
-  'Fac',
-  'Prop',
-  'Master',
-  'Premium',
-] as const
+export const MODUL_LAIN_TERLARANG = ['Treaty', 'Endorsement', 'Fac', 'Prop', 'Master', 'Premium'] as const
 
 // Menu DATAR (keputusan work owner 30-09-2026): tombol modul berlabel
 // `M_NAV_MENU.LABEL`; label butir navigasi (`LABEL_MENU_PREMIUMLIST`,
@@ -170,16 +163,14 @@ export const LOGIN = {
   sandiBaru: 'New password',
   ulangiSandi: 'Repeat new password',
   simpanSandi: 'Save password',
-  minimal: 'At least 10 characters.',
+  // password tanpa batasan (perintah work owner 11-10-2026, semula minimal 10 karakter): hanya tidak boleh kosong
+  minimal: 'Please enter a new password.',
+  subGanti: 'Choose a new password.',
   terlaluPanjang: 'Password can be at most 72 bytes.',
-  samaDenganLama: 'The new password must be different from the current one.',
   tidakSama: 'The two new passwords do not match.',
   lamaSalah: 'Current password is incorrect.',
   batal: 'Cancel',
 } as const
-
-/** Panjang sandi minimal — sama dengan `login.PanjangMinSandi` di backend. */
-export const PANJANG_MIN_SANDI = 10
 
 /**
  * Label Kelola User — CRUD akun `M_LOGIN_GO` beserta workbasket dan menunya
@@ -220,11 +211,12 @@ export const KELOLA_USER = {
   tabSecurity: 'Security',
   sandi: 'Password awal',
   ulangiSandi: 'Ulangi password awal',
-  catatanSandi: 'Minimal 10 karakter.',
+  // perintah work owner 11-10-2026: password tanpa batasan; kosong = password bawaan 123456 (`login.SandiBawaan`)
+  catatanSandi: 'Kosongkan untuk memakai password bawaan 123456.',
   sandiBaru: 'Password baru',
   ulangiSandiBaru: 'Ulangi password baru',
   catatanSandiUbah:
-    'Kosongkan bila password tidak diganti. Password baru (minimal 10 karakter) mengakhiri semua sesi user itu dan membuka kuncinya.',
+    'Kosongkan bila password tidak diganti. Password baru mengakhiri semua sesi user itu dan membuka kuncinya.',
   catatanSandiSendiri: 'Ini akun Anda: sesi yang sedang Anda pakai tetap berjalan sesudah password diganti.',
   wajibGantiCentang: 'Change Password Next Login',
   catatanWajibGanti: 'Dicentang: user wajib mengganti password saat login berikutnya. Tidak dicentang: tidak perlu.',
@@ -254,7 +246,7 @@ export const KELOLA_USER = {
   menghapus: 'Menghapus…',
   galatAkun: 'Username hanya huruf, angka, titik, garis bawah, @, atau tanda hubung (maks. 64 karakter).',
   galatNama: 'Nama wajib diisi (maks. 150 karakter).',
-  galatSandi: 'Password minimal 10 karakter.',
+  galatSandi: 'Password wajib diisi.',
   galatUlangi: 'Kedua password tidak sama.',
   // Kontak akun (permintaan work owner 03-10-2026: "tambahkan email, no hp, nik dan jabatan; buat dalam bahasa
   // inggris"). Pesan galat SAMA dengan `login.Err*TidakSah` backend.
@@ -309,7 +301,9 @@ export const TEMPLATE_MANAGER = {
   dipakaiDi: 'Used in',
   syarat: 'Requirement',
   syaratTeks: (ekstensi: string, pemisah: string, kolom: number) =>
-    [ekstensi, pemisah === '' ? '' : `separator ${pemisah}`, kolom > 0 ? `${kolom} columns` : ''].filter((s) => s !== '').join(' · '),
+    [ekstensi, pemisah === '' ? '' : `separator ${pemisah}`, kolom > 0 ? `${kolom} columns` : '']
+      .filter((s) => s !== '')
+      .join(' · '),
   pilihBerkas: 'Choose file',
   memeriksa: 'Checking file…',
   hasilCek: 'Check result',
@@ -328,7 +322,8 @@ export const TEMPLATE_MANAGER = {
   kolomCatatan: 'Note',
   aktif: 'ACTIVE',
   aktifkan: 'Activate',
-  diaktifkan: (versi: number) => (versi === 0 ? 'The built-in file is active again.' : `Version ${versi} is active again.`),
+  diaktifkan: (versi: number) =>
+    versi === 0 ? 'The built-in file is active again.' : `Version ${versi} is active again.`,
   aplikasi: '(application)',
 } as const
 

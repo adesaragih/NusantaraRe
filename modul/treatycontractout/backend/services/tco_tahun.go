@@ -66,7 +66,7 @@ func (GalatTahunTreatyDobel) Is(target error) bool { return target == ErrTahunTr
 
 // GudangTahunTreatyTCO adalah seluruh sentuhan basis data tahun treaty.
 type GudangTahunTreatyTCO interface {
-	Daftar(ctx context.Context, halaman, ukuran int) (repository.HalamanTahunTreaty, error)
+	Daftar(ctx context.Context, halaman, ukuran int, s models.SaringTahunTreaty) (repository.HalamanTahunTreaty, error)
 	Ambil(ctx context.Context, id string) (models.TahunTreaty, error)
 	Sisip(ctx context.Context, tx *db.Tx, t models.TahunTreaty) (string, error)
 	Perbarui(ctx context.Context, tx *db.Tx, t models.TahunTreaty) error
@@ -82,7 +82,7 @@ type PemeriksaTahunTCO interface {
 
 type gudangTahunTreatyBelumDisuntik struct{}
 
-func (gudangTahunTreatyBelumDisuntik) Daftar(context.Context, int, int) (repository.HalamanTahunTreaty, error) {
+func (gudangTahunTreatyBelumDisuntik) Daftar(context.Context, int, int, models.SaringTahunTreaty) (repository.HalamanTahunTreaty, error) {
 	return repository.HalamanTahunTreaty{}, ErrGudangTahunTreatyBelumDisuntik
 }
 func (gudangTahunTreatyBelumDisuntik) Ambil(context.Context, string) (models.TahunTreaty, error) {
@@ -106,8 +106,9 @@ type gudangTahunTreatyOracle struct {
 	baca *repository.MasterTahunTreaty
 }
 
-func (g gudangTahunTreatyOracle) Daftar(ctx context.Context, halaman, ukuran int) (repository.HalamanTahunTreaty, error) {
-	return g.baca.Daftar(ctx, halaman, ukuran)
+func (g gudangTahunTreatyOracle) Daftar(ctx context.Context, halaman, ukuran int,
+	s models.SaringTahunTreaty) (repository.HalamanTahunTreaty, error) {
+	return g.baca.Daftar(ctx, halaman, ukuran, s)
 }
 func (g gudangTahunTreatyOracle) Ambil(ctx context.Context, id string) (models.TahunTreaty, error) {
 	return g.baca.Ambil(ctx, id)
@@ -229,8 +230,25 @@ func (t *TahunTreatyTCO) DenganTransaksi(f func(ctx context.Context, fn func(tx 
 	return &salin
 }
 
-// Daftar membaca satu halaman, terbaru dahulu.
-func (t *TahunTreatyTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, halaman, ukuran int) (HalamanTahunTreatyTampil, error) {
+// panjangSaringTahunMaks - batas panjang satu isian saringan inbox (teks lebih panjang dipotong, bukan ditolak).
+const panjangSaringTahunMaks = 64
+
+// rapikanSaringTahun - isian saringan dipangkas spasinya dan dibatasi panjangnya.
+func rapikanSaringTahun(s models.SaringTahunTreaty) models.SaringTahunTreaty {
+	r := func(v string) string {
+		v = strings.TrimSpace(v)
+		if len([]rune(v)) > panjangSaringTahunMaks {
+			v = string([]rune(v)[:panjangSaringTahunMaks])
+		}
+		return v
+	}
+	return models.SaringTahunTreaty{UnderwritingYear: r(s.UnderwritingYear), TreatyYear: r(s.TreatyYear),
+		StartDate: r(s.StartDate), EndDate: r(s.EndDate), TreatyGroupID: r(s.TreatyGroupID), Proportion: r(s.Proportion)}
+}
+
+// Daftar membaca satu halaman tersaring (saringan per kolom inbox, work owner 11-10-2026), terbaru dahulu.
+func (t *TahunTreatyTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, halaman, ukuran int,
+	saring models.SaringTahunTreaty) (HalamanTahunTreatyTampil, error) {
 	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return HalamanTahunTreatyTampil{}, err
 	}
@@ -243,7 +261,7 @@ func (t *TahunTreatyTCO) Daftar(ctx context.Context, pelaku inti.Pelaku, halaman
 	if ukuran > ukuranHalamanTahunMaks {
 		ukuran = ukuranHalamanTahunMaks
 	}
-	hal, err := t.gudang.Daftar(ctx, halaman, ukuran)
+	hal, err := t.gudang.Daftar(ctx, halaman, ukuran, rapikanSaringTahun(saring))
 	if err != nil {
 		return HalamanTahunTreatyTampil{}, err
 	}

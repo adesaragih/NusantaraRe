@@ -19,6 +19,8 @@ export const CFI = {
   cari: 'Search case ID, claim no, policy no, insured name',
   memuat: 'Loading…',
   kosong: 'No case.',
+  /** Grid tanpa baris - teks bawaan grid Pega ("No items"); dahulu "—" (work owner 11-10-2026 "tolong rapihin"). */
+  gridKosong: 'No items',
   kembali: 'Back to list',
   kolomID: 'Case ID',
   kolomTahap: 'Assignment',

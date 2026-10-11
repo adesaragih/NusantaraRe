@@ -83,6 +83,10 @@ type Acuan interface {
 	CariPolis(ctx context.Context, jenis, teks string) ([]BarisPolisCari, error)
 	// DokumenPolis = GetCopyNBForClaim (`DATA_JSON FROM JSON_POLIS WHERE nopolis AND prodke`).
 	DokumenPolis(ctx context.Context, nopolis, prodke string) ([]byte, bool, error)
+	// DokumenPolisDatar - polis NB Fac In sistem baru (JSON_POLIS tanpa isi polis): dokumen polis berbentuk DATA_JSON
+	// Pega disusun dari tabel datar nbfacin (`SusunPolisDatar`); `kasus` = ID kasus dari dokumen penunjuk (kosong =
+	// dicari dari JSON_POLIS / FACINPRODUCTION); tidak ada kasusnya = false.
+	DokumenPolisDatar(ctx context.Context, nopolis, prodke, kasus string) ([]byte, bool, error)
 	// RiwayatKlaimPolis = BrowseHistoryClaim / CariHistoryClaim_SQL (+ klaim FACIN sistem baru).
 	RiwayatKlaimPolis(ctx context.Context, nopolis string) ([]RiwayatKlaimPolis, error)
 	// KlaimDitolak = RD RejectedClaim_RD (CLAIMREJECTED `.INSKEY`) - kunci kasus ada di daftar klaim ditolak.

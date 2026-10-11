@@ -10,12 +10,12 @@
 import { useState } from 'react'
 
 import { ApiFailure, gantiSandiLogin, type ProfilLogin } from '../klien'
-import { LOGIN, PANJANG_MIN_SANDI } from '../labels'
+import { LOGIN } from '../labels'
 import { IsianSandi, KerangkaMasuk } from './Login'
 
-/** Pemeriksaan awal; `null` = boleh dikirim. Panjang dihitung KARAKTER, seperti backend. */
+/** Pemeriksaan awal; `null` = boleh dikirim. Password tanpa batasan (perintah work owner 11-10-2026): tidak kosong. */
 export function periksaSandiBaru(baru: string, ulang: string): string | null {
-  if ([...baru].length < PANJANG_MIN_SANDI) return LOGIN.minimal
+  if (baru === '') return LOGIN.minimal
   if (baru !== ulang) return LOGIN.tidakSama
   return null
 }
@@ -30,9 +30,8 @@ export function pesanGagalGanti(galat: unknown): string {
   if (galat instanceof ApiFailure && galat.status === 400) {
     const pesan = galat.detail.message ?? ''
     if (pesan.includes('sandi lama salah')) return LOGIN.lamaSalah
-    if (pesan.includes('sandi minimal')) return LOGIN.minimal
+    if (pesan.includes('sandi wajib diisi')) return LOGIN.minimal
     if (pesan.includes('sandi maksimal')) return LOGIN.terlaluPanjang
-    if (pesan.includes('sama dengan sandi lama')) return LOGIN.samaDenganLama
   }
   return LOGIN.gagal
 }
@@ -60,7 +59,7 @@ export default function GantiSandi({
   }
 
   return (
-    <KerangkaMasuk judul={LOGIN.judulGanti} sub={wajib ? LOGIN.wajibGanti : LOGIN.minimal}>
+    <KerangkaMasuk judul={LOGIN.judulGanti} sub={wajib ? LOGIN.wajibGanti : LOGIN.subGanti}>
       <form
         className="halaman-masuk__form"
         onSubmit={(e) => {

@@ -94,6 +94,34 @@ func SusunOSAkseptasi(kl kontrak.KlaimTreaty, acceptedNo, komiteID string, saat 
 // StsOSTutup - `InputData.CARI10 := "4"` (KomitePost_Close S11.1): baris penanda close file.
 const StsOSTutup = "4"
 
+// StsOSTolak - `TempOSAkseptasi.Type := 2` -> `InputData.CARI10` (SaveRejectTreatyIn_Act_KMT 1-2).
+const StsOSTolak = "2"
+
+// SusunOSTolak = SaveRejectTreatyIn_Act_KMT 1-5 untuk satu baris EstimationList `e` (KomitePost_Reject S7.1
+// `Local.IdxEstimasi`): halaman TempOSAkseptasi sesudah langkah 1 (Value / GrossValue dari baris adjustment 1 DITIMPA
+// lagi oleh nilai estimasi; AcceptedNo = AdjustmentList(1).AcceptedNo) sebagai DATA_JSON; parameter CASEID (CARI2),
+// NOPOLIS (CARI3), STS_REJECT (CARI10 = Type 2), NOCLAIM (CARI29); MASTERID tidak diisi (CARI18 tidak ada).
+// `TempOpenPage.ClaimData.osAkseptasi(<APPEND>)` (salinan di halaman klaim) tidak disimpan aplikasi.
+func SusunOSTolak(kl kontrak.KlaimTreaty, e map[string]string, saat time.Time) BarisOSAkseptasi {
+	v := kl.Nilai
+	acceptedNo := ""
+	if adj := kl.Daftar["ClaimData.AdjustmentList"]; len(adj) > 0 {
+		acceptedNo = adj[0]["AcceptedNo"]
+	}
+	tanggal := saat.In(Jakarta).Format("20060102") // @getCurrentDateStamp()
+	return BarisOSAkseptasi{CaseID: KunciInstans(v["pyID"]), NoClaim: v["ClaimData.NoClaim"],
+		NoPolis: v["ClaimData.PolicyData.PolicyNo"], StsReject: StsOSTolak,
+		CauseOfLoss: v["ClaimData.CauseOfLoss"], CauseOfLossID: v["ClaimData.CauseOfLossID"],
+		CurrencyID: e["CurrencyID"], Currency: e["Currency"], GrossValue: e["GrossEstimationPct"],
+		PersenRNM: v["TreatyInMaster.RNMShareP"], Value: e["EstimationValue"], Type: StsOSTolak, AcceptedNo: acceptedNo,
+		EstimationDate: saat,
+		DataJSON: JSONHalamanPega(map[string]string{"CauseOfLoss": v["ClaimData.CauseOfLoss"],
+			"CauseOfLossID": v["ClaimData.CauseOfLossID"], "Type": StsOSTolak, "NoClaim": v["ClaimData.NoClaim"],
+			"EstimationDate": tanggal, "Currency": e["Currency"], "CurrencyID": e["CurrencyID"],
+			"Value": e["EstimationValue"], "GrossValue": e["GrossEstimationPct"], "AcceptedNo": acceptedNo,
+			"PersenRNM": v["TreatyInMaster.RNMShareP"], "pxObjClass": KelasOSAkseptasi})}
+}
+
 // SusunOSTutup = KomitePost_Close S11.1-S11.3 (AcceptStatus 1): halaman InputParamOs (CauseOfLoss, CauseOfLossID,
 // NoClaim, IDMasterTreaty = TreatyInMaster.ID) sebagai DATA_JSON, STS 4, MASTERID (CARI18) TreatyInMaster.ID. Bentuk
 // sama dengan baris close Claim Prop (`CloseClaimProp` langkah 6, `BarisOSTutup`); EstimationDate tidak ada di halaman.

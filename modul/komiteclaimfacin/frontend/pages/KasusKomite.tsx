@@ -62,10 +62,13 @@ function Nilai({ m }: { m: Medan }) {
   return <>{v}</>
 }
 
-/** Pasangan label-nilai satu bagian; teks panjang selebar kartu. */
-function DaftarNilai({ medan }: { medan: Medan[] }) {
+/**
+ * Pasangan label-nilai satu bagian; teks panjang selebar kartu. `kiri` = satu kolom bertumpuk berlabel kiri (layout lama
+ * Pega "Stacked with labels left", work owner 11-10-2026 "INI LAYOUT LAMA IKUTI DAN RAPIHIN!").
+ */
+function DaftarNilai({ medan, kiri }: { medan: Medan[]; kiri?: boolean }) {
   return (
-    <dl className="komiteclaimfacin__dl">
+    <dl className={kiri ? 'komiteclaimfacin__dl komiteclaimfacin__dl--kiri' : 'komiteclaimfacin__dl'}>
       {medan.map((m, i) => (
         <div
           key={i}
@@ -247,6 +250,13 @@ function BagianIsi({
     <div className="komiteclaimfacin__bagian">
       {b.judul && b.judul !== judulKartu && <h4 className="komiteclaimfacin__subjudul">{b.judul}</h4>}
       {b.medan && b.medan.length > 0 && <DaftarNilai medan={b.medan} />}
+      {b.kolom && b.kolom.length > 0 && (
+        <div className="komiteclaimfacin__dua">
+          {b.kolom.map((k, i) => (
+            <DaftarNilai key={i} medan={k} kiri />
+          ))}
+        </div>
+      )}
       {(b.grid ?? []).map((g, i) => (
         <TabelGrid key={i} g={g} modal={modal} onModal={onModal} />
       ))}

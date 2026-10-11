@@ -104,6 +104,17 @@ export interface IsiModal {
 }
 
 /**
+ * Membuang unsur yang `tampilJika`-nya tidak terpenuhi nilai lokal (`pyIsClientWhen` Pega): centang postValue di
+ * pop-up PreventRejectClaimProp menukar baris Yes / No tanpa memanggil server. Dijalankan sebelum `pisahKakiModal`
+ * agar tombol baris tersembunyi tidak ikut ke kaki.
+ */
+export function saringKlien(tata: readonly Tata[], nilai: (jalur: string) => string): Tata[] {
+  return tata
+    .filter((t) => !t.tampilJika || (nilai(t.tampilJika.jalur) === t.tampilJika.nilai) !== !!t.tampilJika.beda)
+    .map((t) => (t.anak ? { ...t, anak: saringKlien(t.anak, nilai) } : t))
+}
+
+/**
  * Tombol di akhir isi modal (Submit / Send Claim to Committee / Yes + Cancel / No) pindah ke kaki `Modal`. Tombol
  * penutup (`TutupModal`) tidak digambar ulang - `Modal` sudah punya tombol batal, labelnya dipakai (work owner
  * 09-10-2026 "cancel kok ada 2?").

@@ -145,11 +145,17 @@ func (g *Gudang) Lahirkan(id, klaimID, adjID, pembuat, namaPembuat string, anggo
 // TRANSFER_TYPE 4, teks Chronology).
 func (g *Gudang) LahirkanTutup(id, klaimID, kronologi, pembuat, namaPembuat string, anggota []models.Anggota,
 	saat time.Time) {
+	g.LahirkanTanpaAdj(id, klaimID, models.TransferTutup, kronologi, pembuat, namaPembuat, anggota, saat)
+}
+
+// LahirkanTanpaAdj - kasus komite tanpa adjustment ber-TRANSFER_TYPE `transfer` (TT 3 Reject Claim / TT 4).
+func (g *Gudang) LahirkanTanpaAdj(id, klaimID, transfer, kronologi, pembuat, namaPembuat string,
+	anggota []models.Anggota, saat time.Time) {
 	g.Lahirkan(id, klaimID, "", pembuat, namaPembuat, anggota, saat)
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	k := g.Kasus[id]
-	k.TransferType, k.Kronologi = models.TransferTutup, kronologi
+	k.TransferType, k.Kronologi = transfer, kronologi
 	g.Kasus[id] = k
 }
 

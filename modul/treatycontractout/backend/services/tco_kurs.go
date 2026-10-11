@@ -85,6 +85,9 @@ type KursTampil struct {
 	// BarisMasterKembar - cacah baris berlaku lain yang TOIDR-nya sama (master
 	// memuat baris kembar) [keputusan work owner 29-09-2026]; dilaporkan.
 	BarisMasterKembar int `json:"barisMasterKembar"`
+	// BarisMasterTertimpa - cacah baris berlaku lain yang berbeda dan kalah oleh input terbaru [keputusan work owner
+	// 11-10-2026]; dilaporkan.
+	BarisMasterTertimpa int `json:"barisMasterTertimpa"`
 }
 
 // KonversiTampil adalah hasil satu konversi Rp <-> Usd.
@@ -161,7 +164,7 @@ func (l *KursTCO) Berlaku(ctx context.Context, tahun models.TahunTreaty) (models
 	switch {
 	case errors.Is(err, models.ErrKursTidakAda):
 		return models.KursTCO{}, models.GalatKursTidakAda{TreatyYear: tahun.TreatyYear, Tanggal: tahun.StartDate}
-	case errors.Is(err, models.ErrKursGanda), errors.Is(err, models.ErrKursTakTerurai):
+	case errors.Is(err, models.ErrKursTakTerurai):
 		return models.KursTCO{}, fmt.Errorf("%w: %v", ErrMasterKursRusak, err)
 	case err != nil:
 		return models.KursTCO{}, err
@@ -179,7 +182,7 @@ func tampilKurs(tahun models.TahunTreaty, k models.KursTCO) KursTampil {
 	return KursTampil{Kurs: utils.FormatDecimal(k.ToIDR), Tanggal: utils.FormatTanggal(tahun.StartDate),
 		Mulai: utils.FormatTanggal(k.Mulai), Akhir: utils.FormatTanggal(k.Akhir), Currency: k.Currency,
 		IDCurrency: k.IDCurrency, Quarter: k.Quarter, TreatyYear: tahun.TreatyYear, BarisMasterDitolak: k.BarisDitolak,
-		BarisMasterKembar: k.BarisKembar}
+		BarisMasterKembar: k.BarisKembar, BarisMasterTertimpa: k.BarisTertimpa}
 }
 
 // KursTahun membaca kurs berlaku satu tahun treaty.

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"nusantarare/modul/claimfacin/backend/models"
+	"nusantarare/modul/claimfacin/backend/tiruan"
 )
 
 // §5 butir 2: Pega `SetIndexObj_Act` 1 menyetel PlaStatus 1 saat pop-up dibuka; di sini hanya sesudah GeneratePLA.
@@ -65,6 +66,65 @@ func TestRakitNomor(t *testing.T) {
 	for got, mau := range kasus {
 		if got != mau {
 			t.Errorf("%q, mau %q", got, mau)
+		}
+	}
+}
+
+func TestInputKodePosLokasiTanpaPemisahMenggantung(t *testing.T) {
+	// InputKodePos1_Act 5 `TempLocaion.CARI1 + ", " + RW + ...`: lokasi sementara kosong (Zip Code dipilih sebelum
+	// Location diketik) menghasilkan ", KEL, ..." - bagian kosong dilewati (work owner 11-10-2026 "RAPIHKAN!").
+	k := konteksUji()
+	a := k.Acuan.(*tiruan.Acuan)
+	a.WilayahPos["11111"] = []models.BarisWilayah{{RW: "UJI KEL", District: "UJI KEC", City: "UJI KOTA", Province: "UJI PROV"}}
+	for _, c := range []struct{ sementara, mau string }{
+		{"", "UJI KEL, UJI KEC, UJI KOTA, UJI PROV"},
+		{"UJI JALAN 1", "UJI JALAN 1, UJI KEL, UJI KEC, UJI KOTA, UJI PROV"},
+	} {
+		h := models.HalamanBaru()
+		h.Setel(models.CD+"PostalCode", "11111")
+		h.Setel(models.JalurLokasiSementara, c.sementara)
+		if err := models.InputKodePos(k, h); err != nil {
+			t.Fatal(err)
+		}
+		if got := h.Ambil(models.CD + "Location"); got != c.mau {
+			t.Errorf("lokasi sementara %q: Location %q, mau %q", c.sementara, got, c.mau)
+		}
+	}
+}
+
+func TestAlamatPelaporTanpaPemisahMenggantung(t *testing.T) {
+	// GetCeding_act 6 / GetReportStatus_Act 13 `CARI10 + ", " + CARI11 + ", " + CARI12 + ", " + CARI13` apa adanya: klien
+	// ceding tanpa alamat (DEV: CLIENT_ADDRESS kosong) membuat Reporter Address ", , , " (work owner 11-10-2026
+	// "PERBAIKI CHOOSENYA INI!"). Bagian kosong dilewati; tanpa alamat sama sekali Reporter Address kosong.
+	k := konteksUji()
+	a := k.Acuan.(*tiruan.Acuan)
+	a.Agen["UJI CEDING TANPA ALAMAT"] = "UJI-AG1"
+	a.Agen["UJI CEDING SEBAGIAN"] = "UJI-AG2"
+	a.Alamat["UJI-AG2"] = [4]string{"UJI JALAN 1", "", "", "UJI KOTA"}
+	for _, c := range []struct{ ceding, mau string }{
+		{"UJI CEDING TANPA ALAMAT", ""},
+		{"UJI CEDING SEBAGIAN", "UJI JALAN 1, UJI KOTA"},
+	} {
+		h := models.HalamanBaru()
+		h.Setel(models.CD+"ReportAddress", "UJI ALAMAT LAMA")
+		if err := models.GetCeding(k, h, c.ceding); err != nil {
+			t.Fatal(err)
+		}
+		if got := h.Ambil(models.CD + "ReportAddress"); got != c.mau {
+			t.Errorf("Choose %q: Reporter Address %q, mau %q", c.ceding, got, c.mau)
+		}
+		if got := h.Ambil(models.CD + "InsuredRelationshipOthers"); got != c.ceding {
+			t.Errorf("Choose %q: Specify %q", c.ceding, got)
+		}
+		// Reporter Status 1 (satu ceding di CedingCoList) memakai rangkaian yang sama
+		h = models.HalamanBaru()
+		h.Setel(models.CD+"InsuredRelationship", "1")
+		h.SetelDaftar(models.DaftarCedingCo, []models.Baris{{"CedingCoName": c.ceding}})
+		if err := models.GetReportStatus(k, h); err != nil {
+			t.Fatal(err)
+		}
+		if got := h.Ambil(models.CD + "ReportAddress"); got != c.mau {
+			t.Errorf("Reporter Status ceding %q: Reporter Address %q, mau %q", c.ceding, got, c.mau)
 		}
 	}
 }

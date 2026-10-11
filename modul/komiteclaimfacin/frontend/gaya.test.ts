@@ -57,6 +57,25 @@ describe('gaya modul Komite Claim Fac In', () => {
 
   // Laporan work owner 09-10-2026 "table nya sejajarin header sama value" (Komite Prop): judul kolom angka rata kanan
   // seperti nilainya - aturan `th` tabel (text-align: left, lebih spesifik) tidak boleh menimpanya.
+  it('pasangan label-nilai: label DI ATAS nilai, sel minimal 200 px, nomor panjang tidak dipatah per huruf (11-10-2026)', () => {
+    expect(CSS).toMatch(/\.komiteclaimfacin \.komiteclaimfacin__dl \{[^}]*minmax\(min\(200px, 100%\), 1fr\)/)
+    expect(CSS).toMatch(
+      /\.komiteclaimfacin \.komiteclaimfacin__dl-baris \{[^}]*grid-template-columns: minmax\(0, 1fr\);/,
+    )
+    expect(CSS).toMatch(/\.komiteclaimfacin \.komiteclaimfacin__nilai \{[^}]*overflow-wrap: break-word;/)
+  })
+
+  it('Policy Detail / Claim Details: dua kolom bertumpuk berlabel kiri (layout lama Pega, 11-10-2026)', () => {
+    expect(CSS).toMatch(
+      /\.komiteclaimfacin \.komiteclaimfacin__dua \{[^}]*grid-template-columns: repeat\(auto-fit, minmax\(min\(380px, 100%\), 1fr\)\);/,
+    )
+    expect(CSS).toMatch(
+      /\.komiteclaimfacin__dl--kiri \.komiteclaimfacin__dl-baris \{\s*grid-template-columns: 140px minmax\(0, 1fr\);/,
+    )
+    const halaman = readFileSync(join(AKAR, 'pages', 'KasusKomite.tsx'), 'utf8')
+    expect(halaman).toContain('<DaftarNilai key={i} medan={k} kiri />')
+  })
+
   it('judul kolom angka rata kanan seperti nilainya', () => {
     expect(ATURAN).toMatch(
       /\.komiteclaimfacin \.komiteclaimfacin__tabel th\.komiteclaimfacin__angka \{[^}]*text-align: right;/,

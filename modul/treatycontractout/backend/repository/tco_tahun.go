@@ -27,6 +27,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"nusantarare/inti/backend/db"
@@ -55,17 +56,61 @@ func NewMasterTahunTreaty(db *db.DB) *MasterTahunTreaty { return &MasterTahunTre
 const daftarPilihTahunTreaty = `ID, TREATYYEAR, UNDERWRITINGYEAR, TREATYGROUPID, TREATYGROUPNAME, PROPORTION,
 	       STARTDATE, ENDDATE, USERID, TGLUPDATE`
 
-// sqlDaftarTahunTreaty - urutan `.ID DESC` (BrowseTreatyYear_RD b672).
-func sqlDaftarTahunTreaty(tabel string) string {
-	return fmt.Sprintf(`SELECT %s
-	  FROM %s
-	 ORDER BY ID DESC
-	 OFFSET :1 ROWS FETCH NEXT :2 ROWS ONLY`, daftarPilihTahunTreaty, tabel)
+// polaCariTCO - pola LIKE Contains huruf besar; `\`, `%`, `_` di-escape (ESCAPE '\'). Kosong = "".
+func polaCariTCO(kata string) string {
+	k := strings.ToUpper(strings.TrimSpace(kata))
+	if k == "" {
+		return ""
+	}
+	return "%" + strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(k) + "%"
 }
 
-// sqlCacahTahunTreaty - query TERSENDIRI (pola sqlCacahInboxPolis).
-func sqlCacahTahunTreaty(tabel string) string {
-	return fmt.Sprintf(`SELECT COUNT(*) FROM %s`, tabel)
+// tampilTanggalTCO - ekspresi `DD-MM-YYYY` kolom tanggal warisan `YYYYMMDD`.
+func tampilTanggalTCO(kolom string) string {
+	return fmt.Sprintf(`SUBSTR(%[1]s, 7, 2) || '-' || SUBSTR(%[1]s, 5, 2) || '-' || SUBSTR(%[1]s, 1, 4)`, kolom)
+}
+
+// sqlSaringTahunTreaty - klausa WHERE saringan beserta bind-nya, bernomor mulai :1 (Oracle mengikat menurut urutan
+// kemunculan); nol saringan = "".
+func sqlSaringTahunTreaty(s models.SaringTahunTreaty) (string, []any) {
+	var syarat []string
+	var arg []any
+	suka := func(ekspresi, kata string) {
+		if pola := polaCariTCO(kata); pola != "" {
+			arg = append(arg, pola)
+			syarat = append(syarat, fmt.Sprintf(`UPPER(%s) LIKE :%d ESCAPE '\'`, ekspresi, len(arg)))
+		}
+	}
+	sama := func(kolom, nilai string) {
+		if v := strings.TrimSpace(nilai); v != "" {
+			arg = append(arg, v)
+			syarat = append(syarat, fmt.Sprintf("%s = :%d", kolom, len(arg)))
+		}
+	}
+	suka("UNDERWRITINGYEAR", s.UnderwritingYear)
+	suka("TREATYYEAR", s.TreatyYear)
+	suka(tampilTanggalTCO("STARTDATE"), s.StartDate)
+	suka(tampilTanggalTCO("ENDDATE"), s.EndDate)
+	sama("TREATYGROUPID", s.TreatyGroupID)
+	sama("PROPORTION", s.Proportion)
+	if len(syarat) == 0 {
+		return "", nil
+	}
+	return "\n\t WHERE " + strings.Join(syarat, "\n\t   AND "), arg
+}
+
+// sqlDaftarTahunTreaty - urutan `.ID DESC` (BrowseTreatyYear_RD b672); `saring` dari sqlSaringTahunTreaty dengan `n`
+// bind, OFFSET / FETCH menyusul bernomor n+1 / n+2.
+func sqlDaftarTahunTreaty(tabel, saring string, n int) string {
+	return fmt.Sprintf(`SELECT %s
+	  FROM %s%s
+	 ORDER BY ID DESC
+	 OFFSET :%d ROWS FETCH NEXT :%d ROWS ONLY`, daftarPilihTahunTreaty, tabel, saring, n+1, n+2)
+}
+
+// sqlCacahTahunTreaty - query TERSENDIRI (pola sqlCacahInboxPolis), saringan yang sama.
+func sqlCacahTahunTreaty(tabel, saring string) string {
+	return fmt.Sprintf(`SELECT COUNT(*) FROM %s%s`, tabel, saring)
 }
 
 func sqlAmbilTahunTreaty(tabel string) string {
@@ -146,8 +191,8 @@ func pindaiTahunTreaty(baca interface{ Scan(...any) error }) (models.TahunTreaty
 	return t, nil
 }
 
-// Daftar membaca satu halaman, terbaru dahulu.
-func (m *MasterTahunTreaty) Daftar(ctx context.Context, halaman, ukuran int) (HalamanTahunTreaty, error) {
+// Daftar membaca satu halaman tersaring, terbaru dahulu.
+func (m *MasterTahunTreaty) Daftar(ctx context.Context, halaman, ukuran int, s models.SaringTahunTreaty) (HalamanTahunTreaty, error) {
 	tabel, err := m.db.Qualify(TabelTahunTCO)
 	if err != nil {
 		return HalamanTahunTreaty{}, err
@@ -159,18 +204,19 @@ func (m *MasterTahunTreaty) Daftar(ctx context.Context, halaman, ukuran int) (Ha
 		ukuran = 20
 	}
 	hasil := HalamanTahunTreaty{Halaman: halaman, Ukuran: ukuran}
-	qCacah := sqlCacahTahunTreaty(tabel)
+	saring, arg := sqlSaringTahunTreaty(s)
+	qCacah := sqlCacahTahunTreaty(tabel, saring)
 	if err := db.PeriksaSQL(qCacah); err != nil {
 		return hasil, err
 	}
-	if err := bacaTCO(ctx, m.db).QueryRowContext(ctx, qCacah).Scan(&hasil.Total); err != nil {
+	if err := bacaTCO(ctx, m.db).QueryRowContext(ctx, qCacah, arg...).Scan(&hasil.Total); err != nil {
 		return hasil, fmt.Errorf("repository: counting treaty years: %w", err)
 	}
-	q := sqlDaftarTahunTreaty(tabel)
+	q := sqlDaftarTahunTreaty(tabel, saring, len(arg))
 	if err := db.PeriksaSQL(q); err != nil {
 		return hasil, err
 	}
-	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, (halaman-1)*ukuran, ukuran)
+	rows, err := bacaTCO(ctx, m.db).QueryContext(ctx, q, append(arg, (halaman-1)*ukuran, ukuran)...)
 	if err != nil {
 		return hasil, fmt.Errorf("repository: reading treaty year list: %w", err)
 	}

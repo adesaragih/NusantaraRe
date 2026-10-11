@@ -148,6 +148,13 @@ export const TAHUN_TCO = {
   tersimpan: 'Treaty year saved.',
   /** `[tidak ada di korpus]` — tombol yang menunggu tiketnya. */
   menungguTiket: 'awaiting ticket',
+
+  // --- `[tidak ada di korpus]` baris saringan per kolom (work owner 11-10-2026 "SEMUA HEADER BUAT FILTERNYA") ---
+  saring: 'Filter',
+  saringTanggal: 'dd-mm-yyyy',
+  saringSemua: 'All',
+  saringHapus: 'Clear',
+  saringKosong: 'No treaty years match the filter.',
 } as const
 
 /**

@@ -48,6 +48,14 @@ type kertasAkseptasi struct {
 
 // PDFAcceptanceNote = S10-S11: PDF dokumen ACCEPTED CLAIM INSURANCE. `saat` = tanggal dokumen PDF (S4 CARI24).
 func PDFAcceptanceNote(d DataAcceptanceNote, saat time.Time) ([]byte, error) {
+	k := kertasPDF(saat)
+	k.isi(d)
+	return k.keluaran("FILEAcceptanceNote")
+}
+
+// kertasPDF - kertas A4 portrait dengan kepala / kaki halaman S9 (pyPDFHeaderHTMLTemplate / pyPDFFooterHTMLTemplate),
+// sama untuk PrintFileAcceptance_TKMT dan KomitePost_Close S12.3; halaman pertama sudah dibuka.
+func kertasPDF(saat time.Time) *kertasAkseptasi {
 	pdf := fpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(marginKiriPDF, marginAtasPDF, marginKananPDF)
 	pdf.SetAutoPageBreak(true, marginBawahPDF)
@@ -70,10 +78,14 @@ func PDFAcceptanceNote(d DataAcceptanceNote, saat time.Time) ([]byte, error) {
 			false, 0, "")
 	})
 	pdf.AddPage()
-	k.isi(d)
+	return k
+}
+
+// keluaran - isi berkas PDF; `stream` = nama stream untuk pesan galat.
+func (k *kertasAkseptasi) keluaran(stream string) ([]byte, error) {
 	var b bytes.Buffer
-	if err := pdf.Output(&b); err != nil {
-		return nil, fmt.Errorf("models: PDF FILEAcceptanceNote: %w", err)
+	if err := k.pdf.Output(&b); err != nil {
+		return nil, fmt.Errorf("models: PDF %s: %w", stream, err)
 	}
 	return b.Bytes(), nil
 }
@@ -131,26 +143,36 @@ func (k *kertasAkseptasi) isi(d DataAcceptanceNote) {
 
 // baris - satu <tr> tabel stream: label 30%, ":", nilai (setiap paragraf boleh membungkus).
 func (k *kertasAkseptasi) baris(label string, nilai ...string) {
+	k.barisDi(marginKiriPDF, k.lebar, label, nilai...)
+}
+
+// barisDi - `baris` di dalam tabel selebar `lebar` mulai `x` (tabel bersarang di sel berbingkai).
+func (k *kertasAkseptasi) barisDi(x, lebar float64, label string, nilai ...string) {
 	p := k.pdf
-	wLabel, wTitik := k.lebar*0.30, k.lebar*0.03
-	wNilai := k.lebar - wLabel - wTitik
+	wLabel, wTitik := lebar*0.30, lebar*0.03
+	baris := k.pecahNilai(lebar, nilai...)
+	k.ruang(tinggiBaris * float64(len(baris)))
+	y := p.GetY()
+	p.SetXY(x, y)
+	p.CellFormat(wLabel, tinggiBaris, k.tr(label), "", 0, "L", false, 0, "")
+	p.CellFormat(wTitik, tinggiBaris, ":", "", 0, "L", false, 0, "")
+	for i, b := range baris {
+		p.SetXY(x+wLabel+wTitik, y+float64(i)*tinggiBaris)
+		p.CellFormat(lebar-wLabel-wTitik, tinggiBaris, b, "", 0, "L", false, 0, "")
+	}
+	p.SetXY(marginKiriPDF, y+float64(len(baris))*tinggiBaris)
+}
+
+// pecahNilai - baris tercetak kolom nilai tabel selebar `lebar` (minimal satu, kosong).
+func (k *kertasAkseptasi) pecahNilai(lebar float64, nilai ...string) []string {
 	var baris []string
 	for _, n := range nilai {
-		baris = append(baris, p.SplitText(k.tr(n), wNilai)...)
+		baris = append(baris, k.pdf.SplitText(k.tr(n), lebar*0.67)...)
 	}
 	if len(baris) == 0 {
 		baris = []string{""}
 	}
-	k.ruang(tinggiBaris * float64(len(baris)))
-	y := p.GetY()
-	p.SetXY(marginKiriPDF, y)
-	p.CellFormat(wLabel, tinggiBaris, k.tr(label), "", 0, "L", false, 0, "")
-	p.CellFormat(wTitik, tinggiBaris, ":", "", 0, "L", false, 0, "")
-	for i, b := range baris {
-		p.SetXY(marginKiriPDF+wLabel+wTitik, y+float64(i)*tinggiBaris)
-		p.CellFormat(wNilai, tinggiBaris, b, "", 0, "L", false, 0, "")
-	}
-	p.SetXY(marginKiriPDF, y+float64(len(baris))*tinggiBaris)
+	return baris
 }
 
 // tabelSpread - tabel "Treaty Name / Share (%) / Claim Spread" (tanpa garis, seperti stream).

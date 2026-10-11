@@ -388,22 +388,46 @@
   font-weight: 600;
 }
 
-/* Pasangan label-nilai (bukan kotak isian): label redup di kiri, nilai di kanan; teks panjang selebar kartu. */
+/* Pasangan label-nilai (bukan kotak isian): label kecil redup DI ATAS nilai, sel minimal 200 px - work owner
+   11-10-2026 "RAPIHKAN!" (Policy Detail, Claim Details, rincian adjustment): label kiri 42% menyisakan kolom nilai
+   sempit sehingga Policy No / Claim No / alamat terpotong per beberapa huruf. Teks panjang selebar kartu. */
 .komiteclaimfacin .komiteclaimfacin__dl {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
-  gap: 0 32px;
+  grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
+  gap: 14px 28px;
   margin: 0;
 }
 
 .komiteclaimfacin .komiteclaimfacin__dl-baris {
   display: grid;
-  grid-template-columns: minmax(110px, 42%) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  padding: 0 0 10px;
+  border-bottom: 1px dashed var(--kcfi-garis);
+}
+
+/* Dua kolom bertumpuk berlabel kiri (Policy Detail LS6 | LS7, Claim Details LS49 | LS19 - layout lama Pega, work owner
+   11-10-2026 "INI LAYOUT LAMA IKUTI DAN RAPIHIN!"): setiap kolom satu daftar, label selebar tetap di kiri; panel sempit
+   menumpuk kedua kolom. */
+.komiteclaimfacin .komiteclaimfacin__dua {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr));
+  gap: 0 40px;
+}
+
+.komiteclaimfacin .komiteclaimfacin__dl.komiteclaimfacin__dl--kiri {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  align-content: start;
+}
+
+.komiteclaimfacin .komiteclaimfacin__dl--kiri .komiteclaimfacin__dl-baris {
+  grid-template-columns: 140px minmax(0, 1fr);
   align-items: baseline;
   gap: 12px;
-  min-width: 0;
-  padding: 8px 0;
-  border-bottom: 1px dashed var(--kcfi-garis);
+  padding: 9px 0;
 }
 
 .komiteclaimfacin .komiteclaimfacin__dl-baris--panjang {
@@ -415,24 +439,23 @@
 
 .komiteclaimfacin .komiteclaimfacin__label {
   color: var(--kcfi-teks-redup);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 
+/* `break-word`, bukan `anywhere`: nomor polis / klaim hanya dipatah bila memang melebihi selnya. */
 .komiteclaimfacin .komiteclaimfacin__nilai {
   margin: 0;
   color: var(--kcfi-teks);
   font-weight: 500;
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
-.komiteclaimfacin .komiteclaimfacin__dl-baris.komiteclaimfacin__angka .komiteclaimfacin__label {
-  text-align: left;
-}
-
+.komiteclaimfacin .komiteclaimfacin__dl-baris.komiteclaimfacin__angka .komiteclaimfacin__label,
 .komiteclaimfacin .komiteclaimfacin__dl-baris.komiteclaimfacin__angka .komiteclaimfacin__nilai {
-  text-align: right;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
 }
 
 .komiteclaimfacin .komiteclaimfacin__dl-baris--panjang .komiteclaimfacin__nilai {

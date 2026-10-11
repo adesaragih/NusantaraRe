@@ -11,6 +11,9 @@ import { describe, expect, it } from 'vitest'
 const AKAR = __dirname
 const CSS = readFileSync(join(AKAR, 'claimfacin.css'), 'utf8')
 const ATURAN = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+// blok @keyframes (pemilih from / to bukan pemilih elemen) - namanya global, diuji berawalan claimfacin- tersendiri
+const KEYFRAMES = /@keyframes\s+([\w-]+)\s*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g
+const ATURAN_ELEMEN = ATURAN.replace(KEYFRAMES, '')
 
 function berkas(dir: string, akhiran: string): string[] {
   return readdirSync(dir).flatMap((n) => {
@@ -30,11 +33,14 @@ describe('gaya modul Claim Fac In', () => {
   })
 
   it('SETIAP pemilih di bawah akar .claimfacin - nol pemilih global', () => {
-    const pemilih = [...ATURAN.matchAll(/([^{}]+)\{/g)]
+    const pemilih = [...ATURAN_ELEMEN.matchAll(/([^{}]+)\{/g)]
       .flatMap((m) => m[1]!.split(',').map((s) => s.trim()))
       .filter((p) => !p.startsWith('@'))
     expect(pemilih.length).toBeGreaterThan(5)
     for (const p of pemilih) expect(p, p).toMatch(/^(:root\[data-theme="dark"\] )?\.claimfacin(\s|$)/)
+    const nama = [...ATURAN.matchAll(KEYFRAMES)].map((m) => m[1]!)
+    for (const n of nama) expect(n, n).toMatch(/^claimfacin-/)
+    expect(ATURAN.match(/@keyframes/g)?.length ?? 0).toBe(nama.length)
   })
 
   it('kelas yang dipakai layar didefinisikan, berawalan claimfacin__', () => {
@@ -83,7 +89,7 @@ describe('gaya modul Claim Fac In', () => {
       'claimfacin__baris',
       'claimfacin__label-medan',
       'claimfacin__dua',
-      'tabs__item',
+      '<TabGeser',
       'field__error',
     ]) {
       expect(tata, k).toContain(k)
@@ -97,6 +103,48 @@ describe('gaya modul Claim Fac In', () => {
     expect(CSS).toMatch(/\.claimfacin \.claimfacin__akar \{\s*font-size: 13px;\s*\}/)
     expect(CSS).toMatch(/\.claimfacin \.claimfacin__akar \.field__input \{[^}]*height: 32px;[^}]*font-size: 13px;/)
     expect(CSS).toMatch(/\.claimfacin \.claimfacin__akar \.btn \{[^}]*height: 32px;[^}]*font-size: 13px;/)
+  })
+
+  it('Input Register berlabel di atas (duaAtas - screenshot Pega work owner 11-10-2026 "UBAH LAYOUTNYA BEGINI")', () => {
+    expect(readFileSync(join(AKAR, 'components', 'TataView.tsx'), 'utf8')).toContain("u.t.letak === 'duaAtas'")
+    expect(CSS).toMatch(
+      /\.claimfacin \.claimfacin__dua\.claimfacin__dua-atas \.claimfacin__baris \{\s*grid-template-columns: minmax\(0, 1fr\);/,
+    )
+    expect(CSS).toMatch(/\.claimfacin__dua-atas \.claimfacin__isi-medan > \.field__error \{\s*flex: 1 0 100%;/)
+  })
+
+  it('panel Adjustment = layout lama Pega: Inline grid triple berlabel atas, sel kolom / kiri (work owner 11-10-2026)', () => {
+    const tata = readFileSync(join(AKAR, 'components', 'TataView.tsx'), 'utf8')
+    expect(tata).toContain(`if (u.t.letak === 'tiga') return <Grup key={i} t={u.t} k={k} kelas="claimfacin__tiga" />`)
+    expect(tata).toContain(`if (u.t.letak === 'kolom') return <Grup key={i} t={u.t} k={k} kelas="claimfacin__kolom" />`)
+    expect(tata).toContain('className="claimfacin__kiri"')
+    // kontainer tersembunyi seluruhnya tidak memakan sel
+    expect(tata).toContain("(t.anak ?? []).filter((c) => c.jenis !== 'bagian' || (c.anak ?? []).length > 0)")
+    // paling banyak tiga sel per baris, turun sendiri di panel sempit (tanpa container query: containment = Modal terkurung)
+    expect(CSS).toMatch(
+      /\.claimfacin \.claimfacin__tiga \{[^}]*grid-template-columns: repeat\(auto-fill, minmax\(max\(280px, calc\(\(100% - 2 \* 28px\) \/ 3\)\), 1fr\)\);/,
+    )
+    expect(ATURAN).not.toMatch(/container-type|container:/)
+    expect(CSS).toMatch(
+      /\.claimfacin \.claimfacin__tiga \.claimfacin__baris,\s*\.claimfacin \.claimfacin__kolom \.claimfacin__baris \{\s*grid-template-columns: minmax\(0, 1fr\);/,
+    )
+    expect(CSS).toMatch(
+      /\.claimfacin \.claimfacin__tiga \.claimfacin__kiri \.claimfacin__baris \{\s*grid-template-columns: 104px minmax\(0, 1fr\);/,
+    )
+    expect(CSS).toMatch(
+      /\.claimfacin__baris:has\(> \.claimfacin__isi-medan > \.claimfacin__centang\)\s*> \.claimfacin__label-medan \{\s*order: 1;/,
+    )
+    // nilai hanya-baca kosong ditandai, bukan label menggantung (Detail Chronology to Comitee, 11-10-2026 "RAPIHKAN!")
+    expect(CSS).toMatch(/\.claimfacin \.claimfacin__tiga \.claimfacin__nilai:empty::after \{\s*content: "—";/)
+  })
+
+  it('panel baris dan kaki grid selebar area terlihat; kaki = bilah ringkasan (work owner 11-10-2026 "tolong rapihin")', () => {
+    const tata = readFileSync(join(AKAR, 'components', 'TataView.tsx'), 'utf8')
+    expect(tata).toContain("'--cfi-lebar-grid'")
+    expect(tata).toContain('{CFI.gridKosong}')
+    expect(CSS).toMatch(/tr\.claimfacin__baris-rinci > td > \.claimfacin__rinci \{[^}]*position: sticky;[^}]*left: 0;/)
+    expect(CSS).toMatch(/\.claimfacin__grid > \.claimfacin__grid-kaki \{[^}]*position: sticky;/)
+    expect(CSS).toMatch(/\.claimfacin__grid-kaki \.claimfacin__nilai:empty::after \{\s*content: "—";/)
   })
 
   it('nol properti yang memerangkap Modal tanpa portal', () => {
@@ -115,9 +163,43 @@ describe('gaya panel bersarang Claim Fac In', () => {
     expect(CSS).toMatch(/\.claimfacin \.claimfacin__rinci \.claimfacin__rinci \{/)
   })
 
-  it('tab layout group layar kasus bergaris bawah selebar teks (label tab Pega panjang), bukan kapsul 110 px', () => {
-    expect(CSS).toMatch(/\.claimfacin \.claimfacin__tab > \.tabs \{[^}]*width: 100%;/)
-    expect(CSS).toMatch(/\.claimfacin \.claimfacin__tab > \.tabs::before \{\s*display: none;/)
+  it('SEMUA tab modul = TabGeser: kapsul penanda meluncur, isi tab dan layar memudar (work owner 11-10-2026 "SEMUA TAB")', () => {
+    const geser = readFileSync(join(AKAR, 'components', 'TabGeser.tsx'), 'utf8')
+    expect(geser).toContain('className="tabs claimfacin__tabs"')
+    expect(geser).toContain('className="claimfacin__tabs-penanda"')
+    // nol strip tab lain: StripTab inti (garis bawah) dan tablist buatan sendiri
+    for (const p of berkas(AKAR, '.tsx')) {
+      const isi = readFileSync(p, 'utf8')
+      expect(isi, p).not.toMatch(/\bStripTab\b/)
+      if (!p.endsWith('TabGeser.tsx')) expect(isi, p).not.toContain('role="tablist"')
+    }
+    for (const b of [
+      ['components', 'TataView.tsx'],
+      ['components', 'PolisNB.tsx'],
+      ['components', 'PolisNBTab.tsx'],
+      ['pages', 'ClaimFacIn.tsx'],
+    ]) {
+      expect(readFileSync(join(AKAR, ...b), 'utf8'), b.join('/')).toContain('<TabGeser')
+    }
+    // isi tab berkunci tab aktif (dipasang ulang -> animasi muncul berjalan lagi); layar kasus berkunci tahap
+    for (const [b, kunci] of [
+      [['components', 'TataView.tsx'], '<div key={i} role="tabpanel" className="claimfacin__tab-isi">'],
+      [['components', 'PolisNB.tsx'], '<div key={tab} role="tabpanel" className="claimfacin__tab-isi">'],
+      [['components', 'PolisNBTab.tsx'], '<div key={aktif} role="tabpanel" className="claimfacin__tab-isi">'],
+      [['components', 'LayarKasus.tsx'], 'className="claimfacin__halaman"'],
+    ] as const) {
+      expect(readFileSync(join(AKAR, ...b), 'utf8'), b.join('/')).toContain(kunci)
+    }
+    expect(CSS).toMatch(
+      /\.claimfacin \.claimfacin__tabs-penanda \{[^}]*position: absolute;[^}]*transition:[^}]*left [^}]*width /,
+    )
+    expect(CSS).toMatch(/\.claimfacin \.claimfacin__tab-isi \{\s*animation: claimfacin-muncul [^;]*backwards;/)
+    expect(CSS).toMatch(/@keyframes claimfacin-muncul \{\s*from \{\s*opacity: 0;/)
+    expect(CSS).toMatch(
+      /@media \(prefers-reduced-motion: reduce\) \{[^@]*\.claimfacin__tabs-penanda[^@]*transition: none;[^@]*animation: none;/,
+    )
+    // tebal huruf tab aktif = tidak aktif (lebar tombol tidak melompat saat kapsul meluncur)
+    expect(CSS).not.toMatch(/\.tabs__item--aktif[^{]*\{[^}]*font-weight/)
   })
 
   it('grid lebar menggulir di kartunya; daftar autocomplete sel yang terbuka diberi ruang, tidak terpotong', () => {

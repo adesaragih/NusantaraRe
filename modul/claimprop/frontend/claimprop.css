@@ -53,6 +53,9 @@
   --cp-unggah: #3bb273;
   --cp-lihat: #12b5c6;
   --cp-ikon-teks: #ffffff;
+  --cp-sukses: #12805c;
+  --cp-sukses-lembut: #e2f4ec;
+  --cp-sukses-garis: #b4dfc9;
   --text-3: var(--cp-teks-redup);
   color: var(--cp-teks);
   padding: 24px;
@@ -95,6 +98,9 @@
   --cp-unggah: #2f8f5c;
   --cp-lihat: #0e8f9c;
   --cp-ikon-teks: #f2fbf6;
+  --cp-sukses: #63d3a1;
+  --cp-sukses-lembut: #16302a;
+  --cp-sukses-garis: #245243;
 }
 
 /* Judul dan teks redup. */
@@ -967,4 +973,84 @@
 /* Tabel komite di bawah inbox (menu Komite Claim Prop dibuang, keputusan work owner 09-10-2026). */
 .claimprop .claimprop__komite {
   margin-top: 24px;
+}
+
+/* Kartu sukses pop-up Close Without Payment / Reject Claim (perintah work owner 10-10-2026 "perbaiki tampilan"). */
+.claimprop .claimprop__sukses {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 18px 20px;
+  border: 1px solid var(--cp-sukses-garis);
+  border-radius: 18px;
+  background: var(--cp-sukses-lembut);
+}
+
+.claimprop .claimprop__sukses-ikon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  color: var(--cp-ikon-teks);
+  background: var(--cp-sukses);
+}
+
+.claimprop .claimprop__sukses-isi {
+  min-width: 0;
+}
+
+.claimprop .claimprop__sukses-judul {
+  margin: 2px 0 6px;
+  font-family: "Poppins", var(--font);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--cp-teks);
+}
+
+.claimprop .claimprop__sukses-teks {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--cp-teks-redup);
+}
+
+.claimprop .claimprop__sukses-nomor {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 14px;
+  border: 1px solid var(--cp-aksen-garis);
+  border-radius: 999px;
+  background: var(--cp-aksen-lembut);
+}
+
+.claimprop .claimprop__sukses-nomor-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cp-teks-redup);
+}
+
+.claimprop .claimprop__sukses-nomor-nilai {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--cp-aksen-teks);
+  user-select: all;
+}
+
+/* Varian info: pengajuan sebelumnya masih menunggu keputusan komite ("already submitted"). */
+.claimprop .claimprop__sukses--info {
+  border-color: var(--cp-aksen-garis);
+  background: var(--cp-aksen-lembut);
+}
+
+.claimprop .claimprop__sukses--info .claimprop__sukses-ikon {
+  background: var(--cp-aksen-teks);
+}
+
+.claimprop .claimprop__sukses--info .claimprop__sukses-nomor {
+  background: var(--cp-isi);
 }

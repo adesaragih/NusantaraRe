@@ -114,9 +114,15 @@ func TestKursGagalTerang(t *testing.T) {
 	if !errors.Is(err, services.ErrKursTidakAda) || err.Error() != "No exchange rate for Treaty Year : 2026" {
 		t.Errorf("tanpa kurs: %v", err)
 	}
-	ganda := append(barisKurs2026(), models.KursTCO{ToIDR: apd.New(1, 0), Mulai: mulaiTahunKurs, Akhir: mulaiTahunKurs})
-	if _, err := layananKurs(&masterKursUji{baris: ganda}).KursTahun(context.Background(), pelakuUjiTCO, "1000001"); !errors.Is(err, services.ErrMasterKursRusak) {
-		t.Errorf("ganda: %v", err)
+	// Dua kurs berbeda berlaku pada tanggal yang sama: input terbaru dipakai, yang kalah dicacah (keputusan work owner
+	// 11-10-2026, menggantikan "master rusak" 29-09-2026).
+	lama := barisKurs2026()[0]
+	lama.TeksToIDR, lama.DiinputPada = "15500.25", time.Date(2026, 10, 8, 7, 36, 0, 0, time.UTC)
+	baru := models.KursTCO{TeksToIDR: "16000", Mulai: mulaiTahunKurs, Akhir: time.Date(2027, 6, 30, 0, 0, 0, 0, time.UTC),
+		IDCurrency: "UJI-USD", Currency: "USD", Quarter: "0", DiinputPada: time.Date(2026, 10, 10, 12, 39, 0, 0, time.UTC)}
+	k, err := layananKurs(&masterKursUji{baris: []models.KursTCO{baru, lama}}).KursTahun(context.Background(), pelakuUjiTCO, "1000001")
+	if err != nil || k.Kurs != "16000" || k.BarisMasterTertimpa != 1 {
+		t.Errorf("dua kurs berbeda -> input terbaru: %+v %v", k, err)
 	}
 	// Galat Oracle diteruskan apa adanya - bukan disamarkan jadi "tidak ada kurs".
 	gagalBaca := errors.New("ORA-00942: table or view does not exist")

@@ -38,6 +38,8 @@ export interface Bagian {
   kunci: string
   judul?: string
   medan?: Medan[]
+  /** Dua kolom bertumpuk berlabel kiri (layout lama Pega: Policy Detail LS6 | LS7, Claim Details LS49 | LS19). */
+  kolom?: Medan[][]
   grid?: Grid[]
 }
 

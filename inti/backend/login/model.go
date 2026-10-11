@@ -31,6 +31,9 @@ type AkunBaru struct {
 	MenuLihat []string
 	// Kontak - email, nomor HP, NIK, jabatan (migrasi 904); opsional.
 	Kontak
+	// IDKontak - CONTACT_ID tetap `CON-n` (pemuat akun `-muat-pengguna`: kode contact SFAGIS lama dari sheet
+	// CONTACT, perintah work owner 11-10-2026); kosong = diberi sequence. Tidak pernah diisi rute Kelola User.
+	IDKontak string
 }
 
 // Profil adalah identitas yang dikirim ke layar (`GET /api/auth/saya`).
@@ -105,4 +108,6 @@ type Gudang interface {
 	// PemakaiEmail - LOGIN_ID akun yang EMAIL-nya sama dengan `email`, tanpa beda huruf (migrasi 905); urut,
 	// kosong = belum dipakai.
 	PemakaiEmail(ctx context.Context, email string) ([]string, error)
+	// PemakaiKontak - LOGIN_ID akun ber-CONTACT_ID `id` (unik, migrasi 905); kosong = belum dipakai.
+	PemakaiKontak(ctx context.Context, id string) ([]string, error)
 }

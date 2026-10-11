@@ -25,9 +25,11 @@ type gudangTahunUji struct {
 	diperbaru   []models.TahunTreaty
 	perbaruiErr error
 	anak        int64
+	saring      models.SaringTahunTreaty
 }
 
-func (g *gudangTahunUji) Daftar(context.Context, int, int) (repository.HalamanTahunTreaty, error) {
+func (g *gudangTahunUji) Daftar(_ context.Context, _, _ int, s models.SaringTahunTreaty) (repository.HalamanTahunTreaty, error) {
+	g.saring = s
 	return repository.HalamanTahunTreaty{Baris: []models.TahunTreaty{{ID: "1000001", TreatyYear: "2026"}},
 		Total: 1, Halaman: 1, Ukuran: 20}, nil
 }
@@ -71,7 +73,7 @@ func masukWajar() services.TahunTreatyMasuk {
 
 func TestTahunTreatyTanpaIdentitasDitolak(t *testing.T) {
 	l := layananTahun(&gudangTahunUji{})
-	if _, err := l.Daftar(context.Background(), inti.Pelaku{}, 1, 20); !errors.Is(err, inti.ErrTanpaIdentitas) {
+	if _, err := l.Daftar(context.Background(), inti.Pelaku{}, 1, 20, models.SaringTahunTreaty{}); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("daftar: %v", err)
 	}
 	if _, err := l.Simpan(context.Background(), inti.Pelaku{}, masukWajar()); !errors.Is(err, inti.ErrTanpaIdentitas) {
@@ -81,7 +83,7 @@ func TestTahunTreatyTanpaIdentitasDitolak(t *testing.T) {
 
 func TestTahunTreatyBawaanGagalTerang(t *testing.T) {
 	_, err := services.New(nil).TahunTreatyTCO().DenganTransaksi(transaksiUji).
-		Daftar(context.Background(), pelakuUjiTCO, 1, 20)
+		Daftar(context.Background(), pelakuUjiTCO, 1, 20, models.SaringTahunTreaty{})
 	if !errors.Is(err, services.ErrGudangTahunTreatyBelumDisuntik) {
 		t.Errorf("bawaan harus gagal terang: %v", err)
 	}
@@ -169,12 +171,30 @@ func TestTahunTreatyValidasiSebelumTransaksi(t *testing.T) {
 
 func TestTahunTreatyDaftarDanAmbil(t *testing.T) {
 	l := layananTahun(&gudangTahunUji{})
-	hal, err := l.Daftar(context.Background(), pelakuUjiTCO, 0, 0)
+	hal, err := l.Daftar(context.Background(), pelakuUjiTCO, 0, 0, models.SaringTahunTreaty{})
 	if err != nil || hal.Total != 1 || len(hal.Baris) != 1 || hal.Baris[0].ID != "1000001" {
 		t.Errorf("daftar: %+v %v", hal, err)
 	}
 	if _, err := l.Ambil(context.Background(), pelakuUjiTCO, "9"); !errors.Is(err, services.ErrTahunTreatyTidakAda) {
 		t.Errorf("ambil tidak ada: %v", err)
+	}
+}
+
+// Work owner 11-10-2026 "SEMUA HEADER BUAT FILTERNYA": saringan per kolom inbox diteruskan ke gudang, dipangkas
+// spasinya dan dibatasi 64 huruf.
+func TestTahunTreatyDaftarMeneruskanSaringan(t *testing.T) {
+	g := &gudangTahunUji{}
+	panjang := strings.Repeat("9", 80)
+	_, err := layananTahun(g).Daftar(context.Background(), pelakuUjiTCO, 1, 20, models.SaringTahunTreaty{
+		UnderwritingYear: " 2024 ", TreatyYear: panjang, StartDate: "07-2024", EndDate: " 31-12 ",
+		TreatyGroupID: "10011", Proportion: "Proportional"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mau := models.SaringTahunTreaty{UnderwritingYear: "2024", TreatyYear: strings.Repeat("9", 64), StartDate: "07-2024",
+		EndDate: "31-12", TreatyGroupID: "10011", Proportion: "Proportional"}
+	if g.saring != mau {
+		t.Errorf("saringan ke gudang\n dapat %+v\n mau   %+v", g.saring, mau)
 	}
 }
 

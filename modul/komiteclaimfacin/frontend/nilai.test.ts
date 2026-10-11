@@ -8,12 +8,13 @@ import { isianKirim, periksa, PESAN_KOSONG, tampil, tercentang, usulTerbuka } fr
 
 const kosong: Keputusan = { acceptStatus: '', comment: '', usulTutup: false, usulCadang: false }
 
-describe('tampil - angka paling banyak 4 desimal pemisah Indonesia, tanggal dd-mm-yyyy', () => {
-  it('angka: pemisah ribuan, 4 desimal maksimum, nol ekor dibuang', () => {
-    expect(tampil('1234567.5', 'angka')).toBe('1.234.567,5')
+describe('tampil - angka 4 desimal pemisah Indonesia, tanggal dd-mm-yyyy', () => {
+  // work owner 11-10-2026 "UNTUK CLAIM FACIN DAN KOMITE FACIN ... TAMPILAN 4 DIGIT BELAKANG KOMA"
+  it('angka: pemisah ribuan, SELALU 4 desimal (nol ekor tampil)', () => {
+    expect(tampil('1234567.5', 'angka')).toBe('1.234.567,5000')
     expect(tampil('0.123456', 'angka')).toBe('0,1235')
-    expect(tampil('57750000.0000', 'angka')).toBe('57.750.000')
-    expect(tampil('-1500.25', 'angka')).toBe('-1.500,25')
+    expect(tampil('57750000.0000', 'angka')).toBe('57.750.000,0000')
+    expect(tampil('-1500.25', 'angka')).toBe('-1.500,2500')
     expect(tampil('', 'angka')).toBe('')
   })
   it('tanggal dan tanggal-jam', () => {

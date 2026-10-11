@@ -225,3 +225,21 @@ kembar persis; empat bentuk tidak identik); uji lama yang menuntut galat atas `{
 *Tinjauan (/code-review):* versi pertama aturan ini menerima pula `TOIDR` yang sama menurut angka dengan periode
 berbeda dan memilih baris bermulai paling akhir — melampaui jawaban work owner; dipersempit ke "identik" sebelum
 dipakai. Data master TIDAK disentuh; menghapus baris kembar tetap urusan DBA.
+
+### RALAT 11-10-2026 — input terbaru menang (OQ-TCO-18 dibuka ulang)
+
+*Pemicu.* Menu Treaty Exchange Yearly membolehkan periode kurs yang tumpang tindih; sejak 08-10-2026 tester
+menambah baris uji USD Quarter 0 berulang kali (mis. 01-07-2024: `16500.00` asli + dua `15000` SUPERADMIN 09-10;
+01-07-2026: enam baris `16000` / `16.000,00` / `16000.00` / `18000`), sehingga setiap input baru membuat TCO
+menjawab "more than one exchange rate in effect" (503). Pembersihan data 10-10-2026 (lewat SQL work owner) segera
+terulang.
+
+*Keputusan (jawaban work owner: "Input terbaru menang").* Menggantikan "tolak, jangan menebak" 29-09-2026: dari baris
+yang berlaku pada `StartDate` tahun, dipakai yang `DATEIU`-nya paling baru (diurai Oracle dengan topeng yang sama,
+`SYS_EXTRACT_UTC(TO_TIMESTAMP_TZ(DATEIU DEFAULT NULL ON CONVERSION ERROR, ...))`; `DATEIU` ditolak / kosong = paling
+lama); waktu sama -> `ID` terbesar. Baris kembar identik dicacah `barisMasterKembar`, baris berbeda yang kalah
+`barisMasterTertimpa` (JSON `GET …/kurs`). `ErrKursGanda` dibuang. `TOIDR` berformat Indonesia (`16.000,00`,
+`1.234.567`, termasuk spasi / tab di depan) kini diurai; satu titik tanpa koma tetap titik desimal, koma-lalu-titik
+tetap ditolak. Bukti DEV 11-10-2026 (uji sementara bertag, dihapus): 01-07-2024 -> ID 10140 `15000` (1 tertimpa,
+1 kembar); 01-07-2026 -> ID 10163 `18000` (4 tertimpa). ⚠️ Akibatnya baris uji yang lebih baru MENGALAHKAN kurs asli
+(01-07-2024: `15000` uji, bukan `16500.00` asli) - kebersihan master kurs kini menentukan angka Rp/Usd TCO.

@@ -62,7 +62,11 @@ export const CP = {
   popKatastrofe: 'Catastrophe',
   popRingkasan: 'Summary Outstanding Claim',
   popKomite: 'Komite klaim Treaty',
-  popTutup: 'PreventRejectClaimProp',
+  // judul pop-up Close / Reject Claim (perintah work owner 10-10-2026 "kata katanya juga bagusin. pake bahasa inggris";
+  // semula nama section PreventRejectClaimProp / ClaimRejectTreaty / SureRejectClaimTreaty)
+  popTutup: 'Close Claim',
+  popTolak: 'Reject Claim',
+  popYakinTolak: 'Reject Claim',
   popPLA: 'Generate File PLA',
   popDLA: 'GenerateDLATreaty',
   // CatastrofeList_Sec

@@ -216,7 +216,7 @@ func (r *Rute) gantiSandi(w http.ResponseWriter, req *http.Request) {
 	switch {
 	case errors.Is(err, ErrKredensial):
 		galat.Tulis(w, http.StatusBadRequest, "sandi lama salah")
-	case errors.Is(err, ErrSandiTerlaluPendek), errors.Is(err, ErrSandiTerlaluPanjang), errors.Is(err, ErrSandiSama):
+	case errors.Is(err, ErrSandiTerlaluPendek), errors.Is(err, ErrSandiTerlaluPanjang):
 		galat.Tulis(w, http.StatusBadRequest, strings.TrimPrefix(err.Error(), "login: "))
 	case errors.Is(err, ErrSesiTidakSah):
 		r.hapusCookie(w)

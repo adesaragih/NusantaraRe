@@ -51,17 +51,22 @@ func NewMasterKursTCO(db *db.DB) *MasterKursTCO { return &MasterKursTCO{db: db} 
 //     yang Oracle tolak menjadi NULL dan barisnya disaring, bukan menggagalkan
 //     seluruh kueri seperti di Pega;
 //   - `BETWEEN` dihitung sebagai kolom `BERLAKU`, bukan saringan `WHERE`,
-//     supaya baris yang ditolak dapat dicacah.
+//     supaya baris yang ditolak dapat dicacah;
+//   - `ID` dan `DATEIU` (waktu input, diurai Oracle dengan topeng yang sama) ikut dibaca: kurs yang dipakai =
+//     input terbaru [keputusan work owner 11-10-2026, `models.PilihKursBerlakuTCO`]. `DATEIU` yang Oracle tolak = NULL
+//     (dianggap paling lama), tidak menolak barisnya.
 //
 // ⛔ Bind urut kemunculan (go-ora mengikat menurut posisi): :1 tanggal, :2
 // QUARTER, :3 IDCURRENCY.
 func sqlBerlakuKursTCO(tabel string) string {
-	return fmt.Sprintf(`SELECT TOIDR, STARTDATE, ENDDATE, IDCURRENCY, CURRENCY, QUARTER, MULAI, AKHIR,
+	return fmt.Sprintf(`SELECT TOIDR, STARTDATE, ENDDATE, IDCURRENCY, CURRENCY, QUARTER, ID, MULAI, AKHIR, DIINPUT,
 	 CASE WHEN TO_DATE(:1, 'YYYYMMDD') BETWEEN MULAI AND AKHIR THEN 1 ELSE 0 END BERLAKU
-	 FROM (SELECT TOIDR, STARTDATE, ENDDATE, IDCURRENCY, CURRENCY, QUARTER,
+	 FROM (SELECT TOIDR, STARTDATE, ENDDATE, IDCURRENCY, CURRENCY, QUARTER, ID,
 	  TRUNC(TO_TIMESTAMP_TZ(STARTDATE DEFAULT NULL ON CONVERSION ERROR, '%s')) MULAI,
-	  TRUNC(TO_TIMESTAMP_TZ(ENDDATE DEFAULT NULL ON CONVERSION ERROR, '%s')) AKHIR
-	  FROM %s WHERE QUARTER = :2 AND IDCURRENCY = :3)`, models.FormatTanggalKursTCO, models.FormatTanggalKursTCO, tabel)
+	  TRUNC(TO_TIMESTAMP_TZ(ENDDATE DEFAULT NULL ON CONVERSION ERROR, '%s')) AKHIR,
+	  SYS_EXTRACT_UTC(TO_TIMESTAMP_TZ(DATEIU DEFAULT NULL ON CONVERSION ERROR, '%s')) DIINPUT
+	  FROM %s WHERE QUARTER = :2 AND IDCURRENCY = :3)`, models.FormatTanggalKursTCO, models.FormatTanggalKursTCO,
+		models.FormatTanggalKursTCO, tabel)
 }
 
 // BacaBerlaku membaca baris kurs satu mata uang dan satu `QUARTER` yang
@@ -83,13 +88,13 @@ func (m *MasterKursTCO) BacaBerlaku(ctx context.Context, idCurrency, quarter str
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
-		var n [6]sql.NullString
-		var mulai, akhir sql.NullTime
+		var n [7]sql.NullString
+		var mulai, akhir, diinput sql.NullTime
 		var berlaku int64
-		if err := rows.Scan(&n[0], &n[1], &n[2], &n[3], &n[4], &n[5], &mulai, &akhir, &berlaku); err != nil {
+		if err := rows.Scan(&n[0], &n[1], &n[2], &n[3], &n[4], &n[5], &n[6], &mulai, &akhir, &diinput, &berlaku); err != nil {
 			return models.HasilMasterKursTCO{}, err
 		}
-		tambahBarisKursTCO(&h, n, mulai, akhir, berlaku)
+		tambahBarisKursTCO(&h, n, mulai, akhir, diinput, berlaku)
 	}
 	return h, rows.Err()
 }
@@ -100,15 +105,19 @@ func (m *MasterKursTCO) BacaBerlaku(ctx context.Context, idCurrency, quarter str
 //
 // ⛔ Hari diambil dari medan DATE apa adanya: go-ora memberi jam dinding
 // Oracle di lokasi zona server, dan `.UTC()` dapat menggeser harinya.
-func tambahBarisKursTCO(h *models.HasilMasterKursTCO, n [6]sql.NullString, mulai, akhir sql.NullTime, berlaku int64) {
+func tambahBarisKursTCO(h *models.HasilMasterKursTCO, n [7]sql.NullString, mulai, akhir, diinput sql.NullTime, berlaku int64) {
 	switch {
 	case !mulai.Valid:
 		h.Ditolak = append(h.Ditolak, models.BarisKursDitolakTCO{Kolom: "STARTDATE", Teks: n[1].String})
 	case !akhir.Valid:
 		h.Ditolak = append(h.Ditolak, models.BarisKursDitolakTCO{Kolom: "ENDDATE", Teks: n[2].String})
 	case berlaku == 1:
-		h.Berlaku = append(h.Berlaku, models.KursTCO{TeksToIDR: n[0].String, Mulai: hariKursTCO(mulai.Time),
-			Akhir: hariKursTCO(akhir.Time), IDCurrency: n[3].String, Currency: n[4].String, Quarter: n[5].String})
+		k := models.KursTCO{TeksToIDR: n[0].String, Mulai: hariKursTCO(mulai.Time), Akhir: hariKursTCO(akhir.Time),
+			IDCurrency: n[3].String, Currency: n[4].String, Quarter: n[5].String, ID: n[6].String}
+		if diinput.Valid {
+			k.DiinputPada = diinput.Time.UTC()
+		}
+		h.Berlaku = append(h.Berlaku, k)
 	}
 }
 

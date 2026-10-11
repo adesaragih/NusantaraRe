@@ -119,6 +119,18 @@ const (
 	LetakTab     = "tab"     // layout group Tab: anak = bagian berjudul (satu tab per bagian)
 	LetakJudul   = "judul"   // kepala layar: Inline grid triple dengan label di sel tengah
 	LetakTabel   = "tabel"   // layout bebas berkolom (tanpa format): anak = baris (bagian), baris pertama = judul kolom
+	// LetakDuaAtas - Inline grid double berlabel DI ATAS isian, sel diisi per baris (kiri, kanan, kiri, ...): rupa Input
+	// Register Pega (screenshot work owner 11-10-2026 "UBAH LAYOUTNYA BEGINI"; kontainer 650 / 674 / 713 Section
+	// InputRegisterDetail).
+	LetakDuaAtas = "duaAtas"
+	// LetakTiga - Inline grid triple berlabel DI ATAS isian: tiga sel per baris, sel diisi per baris; anak tersembunyi
+	// tidak memakan sel (rupa layout lama InputAdjustment LS12 / LS15, screenshot work owner 11-10-2026).
+	LetakTiga = "tiga"
+	// LetakKolom - kontainer di dalam sel: medan sejajar, setiap medan satu kolom berlabel di atas (LS16 Payment Type |
+	// Payment Type Detail).
+	LetakKolom = "kolom"
+	// LetakKiri - kontainer Stacked with labels left di dalam sel berlabel atas (LS29 / LS30 Payable, LS37 bank).
+	LetakKiri = "kiri"
 )
 
 // Ikon tombol (kelas ikon / gambar tombol di XML); label tetap dikirim sebagai keterangan.
@@ -140,6 +152,18 @@ func sebaris(lbl string, anak ...Unsur) Unsur {
 
 // dua - layout Inline grid double; bagian tanpa judul di dalamnya = satu kolom Stacked with labels left.
 func dua(sel ...Unsur) Unsur { return letak(LetakDua, sel...) }
+
+// duaAtas - `LetakDuaAtas`: setiap anak satu sel (bagian tanpa judul = isi satu sel), label di atas isian.
+func duaAtas(sel ...Unsur) Unsur { return letak(LetakDuaAtas, sel...) }
+
+// tiga - `LetakTiga`: setiap anak satu sel (bagian tanpa judul = isi satu sel), label di atas isian.
+func tiga(sel ...Unsur) Unsur { return letak(LetakTiga, sel...) }
+
+// kolom - `LetakKolom`: medan sejajar berlabel di atas di dalam satu sel.
+func kolom(anak ...Unsur) Unsur { return letak(LetakKolom, anak...) }
+
+// kiri - `LetakKiri`: medan bertumpuk berlabel kiri di dalam satu sel.
+func kiri(anak ...Unsur) Unsur { return letak(LetakKiri, anak...) }
 
 func ikon(u Unsur, i string) Unsur { u.Ikon = i; return u }
 

@@ -63,6 +63,23 @@ func aksiSetPayable(j *jalanAksi) error {
 	return models.TerapkanRekening(j.h, j.o, j.i, j.e, rek) // 7
 }
 
+// aksiPilihPayableCeding - tombol Choose grid Ceding Co Name (`models.PilihPayableCeding`, Indeks = baris
+// CedingCoList): rekening pertama ceding terpilih menurut mata uang adjustment (SetPayableTo_act 2-3).
+func aksiPilihPayableCeding(j *jalanAksi) error {
+	r, err := models.PilihPayableCeding(j.h, j.o, j.i, j.e, j.r.Indeks)
+	if err != nil {
+		return err
+	}
+	if r.Klien == "" {
+		return nil
+	}
+	rek, err := j.l.a.RekeningBank(j.ctx, r.Klien, r.MataUang)
+	if err != nil {
+		return err
+	}
+	return models.TerapkanRekening(j.h, j.o, j.i, j.e, rek)
+}
+
 // aksiPilihRekening - autocomplete Name of Bank (Param = models.KunciRekening): baris dibaca ulang dari daftar yang
 // sama dengan pilihan layar; SetPayableTo_act sesudahnya tanpa akibat tersimpan (1-4 ber-remark, 6 ReceiverClaim).
 func aksiPilihRekening(j *jalanAksi) error {
@@ -343,7 +360,7 @@ func penanganAdjustment() map[string]penanganAksi {
 		"HapusSpreadAdj":           diBaris(aksiHapusSpreadAdj),
 		"SetDLACedingSOB":          murniAdj(models.SetDLACedingSOB),
 		"SetPayable":               diBaris(aksiSetPayable),
-		"SetPayableTo":             diBaris(func(*jalanAksi) error { return nil }), // 1-4 ber-remark; 6 ReceiverClaim
+		"SetPayableTo":             diBaris(aksiPilihPayableCeding), // Choose ceding (1-3 dihidupkan, work owner 11-10-2026)
 		"PilihRekening":            diBaris(aksiPilihRekening),
 		"BukaCedant": diBaris(func(j *jalanAksi) error {
 			j.bukaModal = models.KunciPanel(models.ModalCedant, models.DaftarAdj(j.o, j.i), j.e)
