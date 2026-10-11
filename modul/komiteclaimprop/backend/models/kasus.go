@@ -30,11 +30,14 @@ const (
 	KelasKlaim = "ASM-FW-GCNMFW-Work-ClaimTreaty"
 	// KelasKomite - kelas kasus komite (kunci instans HISTORYAKSEPTASIPEGA.ID_KOMITE).
 	KelasKomite = "ASM-FW-GCNMFW-Work-KomiteTreaty"
-	// TransferAdjustment - `.TransferType` jalur penyesuaian (TT 2). TT 3 (reject claim) tanpa penulis di Claim Prop.
+	// TransferAdjustment - `.TransferType` jalur penyesuaian (TT 2).
 	TransferAdjustment = "2"
 	// TransferTutup - `.TransferType` Close Without Payment (TT 4, `SendCloseClaimToKomite` -> `KomitePost_Close`;
 	// perintah work owner 10-10-2026). Kasusnya tanpa baris adjustment (`T_GENERAL_KOMITE.ADJUSTMENT_ID` NULL).
 	TransferTutup = "4"
+	// TransferTolak - `.TransferType` Reject Claim (TT 3, Claim Prop `CheckRejectClaimTreaty2` -> `KomitePost_Reject`;
+	// perintah work owner 10-10-2026). Tanpa baris adjustment seperti TT 4.
+	TransferTolak = "3"
 )
 
 // Keputusan anggota tangga (`KomiteList(n)` / kolom `KOMITE_APPROVAL`) dan `.AcceptStatus`.
@@ -91,6 +94,12 @@ func (k Kasus) Tertutup() bool { return k.StatusWork == StatusSelesai }
 
 // Tutup - kasus komite Close Without Payment (TT 4).
 func (k Kasus) Tutup() bool { return k.TransferType == TransferTutup }
+
+// Tolak - kasus komite Reject Claim (TT 3).
+func (k Kasus) Tolak() bool { return k.TransferType == TransferTolak }
+
+// TanpaAdjustment - TT 3 / TT 4: tanpa baris adjustment, satu tingkat, container `.TransferType = 2` tidak tampil.
+func (k Kasus) TanpaAdjustment() bool { return k.Tutup() || k.Tolak() }
 
 // Anggota - satu baris tangga (penyetuju).
 type Anggota struct {

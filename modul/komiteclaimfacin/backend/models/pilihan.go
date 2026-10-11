@@ -7,8 +7,8 @@ package models
 //	AcceptStatus      .AcceptStatus (Work-Komite)         1 Approve, 2 Reject - SetDataForInformation_Act S3 / S5
 //	KomiteAproval     .KomiteAproval (Data-Comitee)       1 Approved, 2 Reject, 0 Waiting - ekspor Komite Claim Prop
 //	AcceptanceStatus  .AcceptanceStatus (Data-Adjustment) 0 Transfer to committee, 1 Approve, 2 Reject - idem
-//	PaymentType       .PaymentType 1 Final, 2 Interim, 3 Salvage, 4 Adjuster Fee, 5 Adjustment - SetDataForInformation_Act
-//	                  S13-S17 (6 / 7 tanpa label: kode apa adanya, OQ-CFI-18)
+//	PaymentType       .PaymentType 1 Final, 2 Claim, 3 Salvage, 4 Adjuster Fee, 5 Adjustment, 6 Consultant Fee,
+//	                  7 Cancellation - prompt values property (work owner 11-10-2026)
 //	Payable           .Payable 1 Ceding Co Name, 2 Broker Name, 3 Others - Claim Fac In tahap 1
 
 // Pilihan - satu opsi dropdown.
@@ -26,9 +26,11 @@ var LabelKeputusanAnggota = map[string]string{"0": "Waiting", "1": "Approved", "
 // LabelStatusAdjustment - `.AcceptanceStatus` baris adjustment (kolom "Status" History Adjustment).
 var LabelStatusAdjustment = map[string]string{"0": "Transfer to committee", "1": "Approve", "2": "Reject"}
 
-// LabelJenisBayar - `.PaymentType` (kolom "Payment Type" History Adjustment).
-var LabelJenisBayar = map[string]string{"1": "Final", "2": "Interim", "3": "Salvage", "4": "Adjuster Fee",
-	"5": "Adjustment"}
+// LabelJenisBayar - `.PaymentType` (kolom "Payment Type" History Adjustment): prompt values property rule
+// ASM-FW-GCNMFW-Data-Adjustment.PaymentType (screenshot work owner 11-10-2026; dahulu teks SetDataForInformation_Act
+// "2 Interim" tanpa 6 / 7) - sama dengan Claim Fac In.
+var LabelJenisBayar = map[string]string{"1": "Final", "2": "Claim", "3": "Salvage", "4": "Adjuster Fee",
+	"5": "Adjustment", "6": "Consultant Fee", "7": "Cancellation"}
 
 // LabelPayable - `.Payable` "Payable To" (DetailAdjustmentFac LS18).
 var LabelPayable = map[string]string{"1": "Ceding Co Name", "2": "Broker Name", "3": "Others"}

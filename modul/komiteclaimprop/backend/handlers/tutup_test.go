@@ -2,16 +2,19 @@ package handlers_test
 
 // Kasus komite Close Without Payment (TT 4, `KomitePost_Close`; perintah work owner 10-10-2026): kasus tanpa baris
 // adjustment, satu tingkat. Disetujui -> OS close STS 4, CLAIMREJECTED, konversi "4", klaim induk Resolved-Completed;
-// ditolak -> klaim induk tetap terbuka.
+// ditolak -> klaim induk tetap terbuka. Keduanya: PDF CommitteCloseClaim (S12, stream diekspor work owner 10-10-2026).
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"testing"
 
 	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/komiteclaimprop/backend/models"
+	"nusantarare/modul/komiteclaimprop/backend/services"
 	"nusantarare/modul/komiteclaimprop/backend/tiruan"
 )
 
@@ -40,11 +43,35 @@ func siapTutup(t *testing.T, produksi bool) *uji {
 	return u
 }
 
-func (u *uji) putusTutup(pelaku string, kep models.Keputusan, mau int) {
+func (u *uji) putusTutup(pelaku string, kep models.Keputusan, mau int) services.HasilKeputusan {
 	u.t.Helper()
 	w := u.minta("POST", "/kasus/"+komiteTutupUji+"/putuskan", pelaku, kep)
 	if w.Code != mau {
 		u.t.Fatalf("putuskan close %s: %d (mau %d) %s", pelaku, w.Code, mau, w.Body.String())
+	}
+	var h services.HasilKeputusan
+	_ = json.Unmarshal(w.Body.Bytes(), &h)
+	return h
+}
+
+// dokumenTutup - S12.3-S12.7: satu PDF "Close Claim "+NoClaim+".PDF" (folder Claim, Durasi 1800, MIME pdf) diunggah
+// lalu T_STORAGE_IMAGE + DOCUMENT_CLAIM kategori CloseClaim dicatat.
+func dokumenTutup(t *testing.T, u *uji, h services.HasilKeputusan) {
+	t.Helper()
+	if h.GalatDokumen != "" || len(u.b.Unggahan) != 1 {
+		t.Fatalf("PDF close claim: galat %q, unggahan %d", h.GalatDokumen, len(u.b.Unggahan))
+	}
+	m := u.b.Unggahan[0]
+	if m.Folder != "Claim" || m.Durasi != 1800 || m.Ext != "pdf" || m.Pengguna != pemutusTutup ||
+		m.NamaFile != "Close Claim UJI-K-0001.PDF" || !bytes.HasPrefix(m.Isi, []byte("%PDF-")) {
+		t.Fatalf("InsertGoogleStorage_Act: %s %s %d %s %s", m.Folder, m.NamaFile, m.Durasi, m.Ext, m.Pengguna)
+	}
+	if len(u.g.Storage) != 1 || len(u.g.Dokumen) != 1 {
+		t.Fatalf("T_STORAGE_IMAGE %d, DOCUMENT_CLAIM %d", len(u.g.Storage), len(u.g.Dokumen))
+	}
+	if d := u.g.Dokumen[0]; d.IDPega != tiruan.KlaimUji || d.Kategori1 != models.KategoriDokumenTutup || d.MIME != "pdf" ||
+		d.StorageID != u.g.Storage[0].ImageID || d.Operator != pemutusTutup || d.NamaFile != m.NamaFile {
+		t.Fatalf("DOCUMENT_CLAIM: %+v", d)
 	}
 }
 
@@ -63,7 +90,7 @@ func TestTutupDisetujuiMenutupKlaim(t *testing.T) {
 	// Subjectivity / Propose tidak tampil untuk TT 4: dikirim pun diabaikan
 	kep := setuju("UJI-SETUJU-CWP")
 	kep.IsSubjectivity, kep.SubjectivityNote, kep.UsulTutup = true, "1", true
-	u.putusTutup(pemutusTutup, kep, http.StatusOK)
+	dokumenTutup(t, u, u.putusTutup(pemutusTutup, kep, http.StatusOK))
 
 	k := u.g.Kasus[komiteTutupUji]
 	if !k.Tertutup() || k.Count != 2 || k.Subjectivity != models.UsulTidak || k.UsulTutup != models.UsulTidak {
@@ -117,8 +144,8 @@ func TestTutupDisetujuiMenutupKlaim(t *testing.T) {
 func TestTutupDitolakKlaimTetapTerbuka(t *testing.T) {
 	u := siapTutup(t, true)
 	osAwal, efekAwal := len(u.g.OS), len(u.g.Efek)
-	u.putusTutup(pemutusTutup, models.Keputusan{AcceptStatus: models.KeputusanTolak, Comment: "UJI-TOLAK"},
-		http.StatusOK)
+	dokumenTutup(t, u, u.putusTutup(pemutusTutup, models.Keputusan{AcceptStatus: models.KeputusanTolak,
+		Comment: "UJI-TOLAK"}, http.StatusOK)) // S12 tanpa gerbang AcceptStatus
 	if !u.g.Kasus[komiteTutupUji].Tertutup() {
 		t.Fatal("kasus komite close belum selesai sesudah ditolak")
 	}
@@ -132,6 +159,20 @@ func TestTutupDitolakKlaimTetapTerbuka(t *testing.T) {
 	}
 	if !strings.Contains(riwayatKlaim(u), models.TeksTutupDitolak+"Claim Dept. Head") {
 		t.Fatalf("riwayat klaim %q", riwayatKlaim(u))
+	}
+}
+
+// Unggah PDF close claim gagal: keputusan TETAP tersimpan (pola PDF akseptasi), penyetuju menerima galatDokumen.
+func TestDokumenTutupGagalKeputusanTetap(t *testing.T) {
+	u := siapTutup(t, false)
+	u.b.Gagal = errors.New("UJI storage mati")
+	h := u.putusTutup(pemutusTutup, setuju("UJI"), http.StatusOK)
+	if h.GalatDokumen != services.PesanDokumenTutupGagal || !u.g.Kasus[komiteTutupUji].Tertutup() ||
+		len(u.g.Klaim.Ditutup) != 1 {
+		t.Fatalf("keputusan tersimpan + galat dokumen: %+v, ditutup %v", h, u.g.Klaim.Ditutup)
+	}
+	if len(u.g.Storage) != 0 || len(u.g.Dokumen) != 0 {
+		t.Fatal("tanpa unggahan: nol T_STORAGE_IMAGE / DOCUMENT_CLAIM")
 	}
 }
 

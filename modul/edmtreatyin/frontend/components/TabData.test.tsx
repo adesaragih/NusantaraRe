@@ -71,10 +71,11 @@ describe('PropNewData2 (admin)', () => {
 })
 
 describe('PropNewData (atasan)', () => {
-  it('hanya-baca, label "% Deduction", Net Premium, total berlabel 2 desimal, tanpa Installment', () => {
+  it('hanya-baca, label "(%) Deduction" sama dengan isian, Net Premium, total berlabel 2 desimal, tanpa Installment', () => {
     const html = render('baru', h({ 'PolicyTreatyIn.TotalPremium': '1234.5', 'PolicyTreatyIn.Installment': '3' }))
     expect(html).not.toMatch(/<input/)
-    expect(html).toContain('% Deduction In A (OGP)')
+    expect(html).toContain('(%) Deduction In A (OGP)')
+    expect(html).not.toContain('>% Deduction')
     expect(html).toContain('>Net Premium<')
     expect(html).toContain('data-jalur="PolicyTreatyIn.TotalPremium">1.234,50<')
     expect(html).not.toContain('>Installment<')

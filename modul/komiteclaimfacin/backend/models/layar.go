@@ -60,7 +60,10 @@ type Bagian struct {
 	Kunci string  `json:"kunci"`
 	Judul string  `json:"judul,omitempty"`
 	Medan []Medan `json:"medan,omitempty"`
-	Grid  []Grid  `json:"grid,omitempty"`
+	// Kolom - pasangan label-nilai DUA kolom bertumpuk berlabel kiri (layout lama Pega: dua Dynamic Layout "Stacked
+	// with labels left" berdampingan - Policy Detail LS6 | LS7, Claim Details LS49 | LS19).
+	Kolom [][]Medan `json:"kolom,omitempty"`
+	Grid  []Grid    `json:"grid,omitempty"`
 }
 
 // Tombol - satu tombol layar.
@@ -145,22 +148,25 @@ func SusunLayar(k Kasus, kl kontrak.KlaimFacIn, pr PraProses, perluasan []Anggot
 	tt2 := k.TransferType == TransferAdjustment
 	if tt2 {
 		// LS3-LS9: grid item objek kasus komite (TempObjectList = ObjectList(IndexObject)); TT3 / TT4 tanpa pra-proses.
-		polis := []Medan{}
+		// Policy Detail = LS6 (kiri) | LS7 (kanan), keduanya Stacked with labels left (layout lama work owner 11-10-2026
+		// "INI LAYOUT LAMA IKUTI DAN RAPIHIN!"; label LS8 "Period Policy" dari layout lama).
+		kiri, kanan := []Medan{}, []Medan{}
 		treaty := v("IsTreatyIn") == "1"
 		if !treaty { // LS6 `VIS pyWorkCover.IsTreatyIn == 0`
-			polis = append(polis, Medan{Label: "Name of Insured", Nilai: v(OQ + "InsuredName"), Jenis: JenisTeks})
+			kiri = append(kiri, Medan{Label: "Name of Insured", Nilai: v(OQ + "InsuredName"), Jenis: JenisTeks})
 		}
-		polis = append(polis,
+		kiri = append(kiri,
 			Medan{Label: "QQ Name", Nilai: v(OQ + "QQName"), Jenis: JenisTeks},
 			Medan{Label: "Line of Business", Nilai: v(OQ + "BusinessName"), Jenis: JenisTeks},
-			Medan{Label: "Policy No.", Nilai: v("OfferFacIn.PolicyData.PolicyNo"), Jenis: JenisTeks},
+			Medan{Label: "Policy No.", Nilai: v("OfferFacIn.PolicyData.PolicyNo"), Jenis: JenisTeks})
+		kanan = append(kanan,
 			Medan{Label: "Ceding Co Name", Nilai: v(OQ + "CedingCoName"), Jenis: JenisTeks},
 			Medan{Label: "SOB Name", Nilai: v(OQ + "SobName"), Jenis: JenisTeks})
 		if !treaty { // LS8 `pyWorkCover.Policy.StartDateTime` "-" EndDateTime (Policy = OfferFacIn.PolicyData, [inferensi])
-			polis = append(polis, Medan{Label: "Period", Nilai: periode(v("OfferFacIn.PolicyData.StartDateTime"),
+			kanan = append(kanan, Medan{Label: "Period Policy", Nilai: periode(v("OfferFacIn.PolicyData.StartDateTime"),
 				v("OfferFacIn.PolicyData.EndDateTime")), Jenis: JenisTeks})
 		}
-		ly.Bagian = append(ly.Bagian, Bagian{Kunci: "polis", Judul: "Policy Detail", Medan: polis})
+		ly.Bagian = append(ly.Bagian, Bagian{Kunci: "polis", Judul: "Policy Detail", Kolom: [][]Medan{kiri, kanan}})
 		ly.Bagian = append(ly.Bagian, bagianObjek(kl, namaJenisReas)) // LS9 VIS TransferType = 2
 		ly.Bagian = append(ly.Bagian, bagianKlaim(k, kl, pr))
 		ly.Bagian = append(ly.Bagian, bagianAdjKomite(kl, pr, namaJenisReas, ly.Modal)) // LS24
@@ -263,23 +269,30 @@ func bagianKlaim(k Kasus, kl kontrak.KlaimFacIn, pr PraProses) Bagian {
 	if len(pr.AdjKomite) == 0 {
 		return Bagian{Kunci: "klaim", Judul: "Claim Details"}
 	}
-	m := []Medan{
-		{Label: "Input Date", Nilai: FormatWaktu(k.TglCreate), Jenis: JenisTanggal},                           // S12 Komite.DateOfComitee
-		{Label: "PIC Name", Nilai: pr.Inisial, Jenis: JenisTeks},                                              // S8.2 / S12 Komite.Initial
-		{Label: "Claim No", Nilai: v("ClaimData.NoClaim") + " / " + v("ClaimData.ClaimNo"), Jenis: JenisTeks}, // LS50
+	// LS49 (kiri) | LS19 (kanan), keduanya Stacked with labels left (layout lama work owner 11-10-2026 "INI LAYOUT LAMA
+	// IKUTI DAN RAPIHIN!"): label LS50 "Claim No / Claim ID" dan Coverage (LS19, item kasus komite) dari layout lama -
+	// keduanya tidak ada di ekspor XML. LS51 / LS52 / LS22 / LS23 (Adjustment Gross, Claim Amount) ber-VIS `&& 1=2`:
+	// tidak pernah tampil, tidak dibangun.
+	kiri := []Medan{
+		{Label: "Input Date", Nilai: FormatWaktu(k.TglCreate), Jenis: JenisTanggal}, // S12 Komite.DateOfComitee
+		{Label: "PIC Name", Nilai: pr.Inisial, Jenis: JenisTeks},                    // S8.2 / S12 Komite.Initial
+		{Label: "Claim No / Claim ID", Nilai: v("ClaimData.NoClaim") + " / " + v("ClaimData.ClaimNo"), Jenis: JenisTeks},
 		{Label: "Occupation", Nilai: pr.Okupasi, Jenis: JenisTeks},
+	}
+	kanan := []Medan{
 		{Label: "Date of Loss", Nilai: v("ClaimData.DateOfLoss"), Jenis: JenisTanggal},
 		{Label: "Cause of Loss", Nilai: v("ClaimData.CauseOfLoss"), Jenis: JenisTeks},
-		{Label: "Location of Loss", Nilai: v("ClaimData.Location"), Jenis: JenisTeks},
+		{Label: "Coverage", Nilai: Item(kl)["CoverageNote"], Jenis: JenisTeks},
+		{Label: "Location of Loss", Nilai: rapikanLokasi(v("ClaimData.Location")), Jenis: JenisTeks},
 		{Label: "Catastrophe", Nilai: v("ClaimData.StsKatastrofe"), Jenis: JenisTeks},
 	}
 	if v("ClaimData.StsKatastrofe") == "Non-Catastrophe" { // LS20
-		m = append(m, Medan{Label: "Non Catastrophe Type", Nilai: v("ClaimData.NonKatastrofeType"), Jenis: JenisTeks})
+		kanan = append(kanan, Medan{Label: "Non Catastrophe Type", Nilai: v("ClaimData.NonKatastrofeType"), Jenis: JenisTeks})
 	}
 	if v("ClaimData.StsKatastrofe") == "Catastrophe" || v("ClaimData.NonKatastrofeType") == "Big Claim" { // LS21
-		m = append(m, Medan{Label: "Catastrophe Note", Nilai: v("ClaimData.KatastrofeNote"), Jenis: JenisTeks})
+		kanan = append(kanan, Medan{Label: "Catastrophe Note", Nilai: v("ClaimData.KatastrofeNote"), Jenis: JenisTeks})
 	}
-	return Bagian{Kunci: "klaim", Judul: "Claim Details", Medan: m}
+	return Bagian{Kunci: "klaim", Judul: "Claim Details", Kolom: [][]Medan{kiri, kanan}}
 }
 
 // bagianAdjKomite - LS24 grid DataTempAdj (`.pyNote`) + rincian `DetailAdjustmentFac`.
@@ -357,10 +370,9 @@ func rincianAdjustment(kl kontrak.KlaimFacIn, b map[string]string, i, a int, mas
 			kol("Share %", "SharePercentage", JenisAngka), kol("Claim Spreaded", "ClaimSpreaded", JenisAngka),
 			kol("", "ViewRetro", JenisTautan)}, Baris: spread, Kaki: []Medan{ // body3 CountSpread.CARI27 / CARI26
 			{Label: "Total Share(%)", Nilai: TeksAngka(totPersen), Jenis: JenisAngka},
-			{Label: "Total Claim Spread", Nilai: TeksAngka(totKlaim), Jenis: JenisAngka}}}}},
-			Bagian{Kunci: "spreadingTotal", Medan: []Medan{ // LS11
-				{Label: "Total Share Percentage(%)", Nilai: b["TotalSharePersen"], Jenis: JenisAngka},
-				{Label: "Total Claim Spread", Nilai: b["TotalSpreadAdjustment"], Jenis: JenisAngka}}})
+			{Label: "Total Claim Spread", Nilai: TeksAngka(totKlaim), Jenis: JenisAngka}}}}})
+		// LS11 (Total Share Percentage / Total Claim Spread adjustment) mengulang total kaki di atas sebagai baris
+		// terpisah - dibuang (work owner 11-10-2026 "RAPIHKAN LAGI!"); kaki = jumlah baris yang tampil.
 	}
 	qs := nomori(salinDaftar(kl.Daftar[DaftarDiAdj(kl.Objek, i, a, AnakQS)]))
 	if len(qs) > 0 && qs[0]["TreatyName"] != "" { // LS12 / LS16 `.SpreadingQuotaShare(1).TreatyName != ''`
@@ -374,10 +386,8 @@ func rincianAdjustment(kl kontrak.KlaimFacIn, b map[string]string, i, a int, mas
 			Kolom: []KolomGrid{kol("No", "No", JenisTeks), kol("Treaty Type", "TreatyLabel", JenisTeks),
 				kol("Share %", "SharePercentage", JenisAngka), kol("Claim Spreaded", "ClaimSpreaded", JenisAngka)},
 			Baris: qs, Kaki: []Medan{{Label: "Total Share (%)", Nilai: TeksAngka(qp), Jenis: JenisAngka},
-				{Label: "Total Claim Spread", Nilai: TeksAngka(qk), Jenis: JenisAngka}}}}},
-			Bagian{Kunci: "qsTotal", Medan: []Medan{
-				{Label: "Total Share Percentage(%)", Nilai: b["TotalSharePersen"], Jenis: JenisAngka},
-				{Label: "Total Claim Spread", Nilai: b["TotalSpreadBreakQs"], Jenis: JenisAngka}}})
+				{Label: "Total Claim Spread", Nilai: TeksAngka(qk), Jenis: JenisAngka}}}}})
+		// LS16 total QS terpisah - dibuang, sama dengan LS11.
 	}
 	bayar := []Medan{{Label: "Payable To", Nilai: labelKode(LabelPayable, b["Payable"]), Jenis: JenisTeks}, // LS18
 		{Label: "Specify", Nilai: b["PayableTo"], Jenis: JenisTeks},
@@ -489,4 +499,17 @@ func nilaiAwal(k Kasus) Keputusan {
 		n.Comment = k.Tangga[i-1].Komentar
 	}
 	return n
+}
+
+// rapikanLokasi - Location of Loss klaim dirangkai `InputKodePos1_Act` 5 ("lokasi, RW, District, City, Province"):
+// bagian kosong (lokasi belum diketik saat Zip Code dipilih) meninggalkan pemisah menggantung ", KEL, ..." - dibuang di
+// tampilan (data lama; rangkaian baru sudah melewatinya, claimfacin `InputKodePos`).
+func rapikanLokasi(s string) string {
+	var out []string
+	for _, b := range strings.Split(s, ",") {
+		if b = strings.TrimSpace(b); b != "" {
+			out = append(out, b)
+		}
+	}
+	return strings.Join(out, ", ")
 }

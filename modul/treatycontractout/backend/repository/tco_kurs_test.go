@@ -21,6 +21,9 @@ func TestSQLKursTCO(t *testing.T) {
 		`TRUNC(TO_TIMESTAMP_TZ(ENDDATE DEFAULT NULL ON CONVERSION ERROR, 'YYYYMMDD"T"HH24MISS.FF3 TZR'))`,
 		`TO_DATE(:1, 'YYYYMMDD') BETWEEN MULAI AND AKHIR`,
 		`FROM S.K WHERE QUARTER = :2 AND IDCURRENCY = :3`,
+		// waktu input diurai Oracle dengan topeng yang sama - input terbaru menang (keputusan work owner 11-10-2026)
+		`SYS_EXTRACT_UTC(TO_TIMESTAMP_TZ(DATEIU DEFAULT NULL ON CONVERSION ERROR, 'YYYYMMDD"T"HH24MISS.FF3 TZR')) DIINPUT`,
+		`QUARTER, ID, MULAI, AKHIR, DIINPUT,`,
 	} {
 		if !strings.Contains(q, wajib) {
 			t.Errorf("tanpa %s:\n%s", wajib, q)
@@ -55,8 +58,8 @@ func TestSQLKursTCO(t *testing.T) {
 	}
 }
 
-func nsKurs(v ...string) [6]sql.NullString {
-	var n [6]sql.NullString
+func nsKurs(v ...string) [7]sql.NullString {
+	var n [7]sql.NullString
 	for i, s := range v {
 		n[i] = sql.NullString{String: s, Valid: s != ""}
 	}
@@ -71,13 +74,15 @@ func TestTambahBarisKursTCO(t *testing.T) {
 	wib := time.FixedZone("WIB", 7*3600)
 	mulai, akhir := tglOracle(time.Date(2026, 1, 1, 0, 0, 0, 0, wib)), tglOracle(time.Date(2026, 12, 31, 0, 0, 0, 0, wib))
 	var h models.HasilMasterKursTCO
-	tambahBarisKursTCO(&h, nsKurs("15500,25", "20260101T00000.000 GMT", "20261231T000000.000 GMT", "UJI-USD", "USD", "0"), mulai, akhir, 1)
+	diinput := tglOracle(time.Date(2026, 10, 9, 8, 27, 29, 887e6, time.UTC))
+	tambahBarisKursTCO(&h, nsKurs("15500,25", "20260101T00000.000 GMT", "20261231T000000.000 GMT", "UJI-USD", "USD", "0", "UJI-10140"),
+		mulai, akhir, diinput, 1)
 	// Baris yang tidak berlaku pada tanggal itu tidak dibawa - TOIDR-nya
 	// (kosong) tidak pernah diurai.
 	tambahBarisKursTCO(&h, nsKurs("", "20120101T000000.000 GMT", "20121231T000000.000 GMT"),
-		tglOracle(time.Date(2012, 1, 1, 0, 0, 0, 0, wib)), tglOracle(time.Date(2012, 12, 31, 0, 0, 0, 0, wib)), 0)
-	tambahBarisKursTCO(&h, nsKurs("15500", "2019A801T000000.000 GMT", "20191231T000000.000 GMT"), sql.NullTime{}, akhir, 0)
-	tambahBarisKursTCO(&h, nsKurs("15500", "20190101T000000.000 GMT", ""), mulai, sql.NullTime{}, 0)
+		tglOracle(time.Date(2012, 1, 1, 0, 0, 0, 0, wib)), tglOracle(time.Date(2012, 12, 31, 0, 0, 0, 0, wib)), sql.NullTime{}, 0)
+	tambahBarisKursTCO(&h, nsKurs("15500", "2019A801T000000.000 GMT", "20191231T000000.000 GMT"), sql.NullTime{}, akhir, sql.NullTime{}, 0)
+	tambahBarisKursTCO(&h, nsKurs("15500", "20190101T000000.000 GMT", ""), mulai, sql.NullTime{}, sql.NullTime{}, 0)
 
 	if len(h.Berlaku) != 1 {
 		t.Fatalf("berlaku: %+v", h.Berlaku)
@@ -86,7 +91,8 @@ func TestTambahBarisKursTCO(t *testing.T) {
 	// ⛔ Hari dari medan DATE apa adanya: `.UTC()` menggeser 2026-01-01 00:00
 	// WIB ke 2025-12-31.
 	if k.ToIDR != nil || k.TeksToIDR != "15500,25" || k.Mulai.Format("2006-01-02") != "2026-01-01" ||
-		k.Akhir.Format("2006-01-02") != "2026-12-31" || k.IDCurrency != "UJI-USD" || k.Currency != "USD" || k.Quarter != "0" {
+		k.Akhir.Format("2006-01-02") != "2026-12-31" || k.IDCurrency != "UJI-USD" || k.Currency != "USD" || k.Quarter != "0" ||
+		k.ID != "UJI-10140" || !k.DiinputPada.Equal(diinput.Time) {
 		t.Errorf("baris berlaku: %+v", k)
 	}
 	mau := []models.BarisKursDitolakTCO{{Kolom: "STARTDATE", Teks: "2019A801T000000.000 GMT"}, {Kolom: "ENDDATE", Teks: ""}}

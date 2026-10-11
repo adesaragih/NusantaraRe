@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	// ErrSandiTerlaluPendek - kurang dari PanjangMinSandi karakter.
-	ErrSandiTerlaluPendek = errors.New("login: sandi minimal 10 karakter")
+	// ErrSandiTerlaluPendek - kurang dari PanjangMinSandi karakter (= sandi kosong).
+	ErrSandiTerlaluPendek = errors.New("login: sandi wajib diisi")
 	// ErrSandiTerlaluPanjang - lebih dari 72 byte (batas bcrypt).
 	ErrSandiTerlaluPanjang = errors.New("login: sandi maksimal 72 byte")
 )
@@ -32,7 +32,12 @@ var polaAkun = regexp.MustCompile(`^[A-Za-z0-9._@-]{1,64}$`)
 // tidak dapat dibuka di Kelola User.
 func AkunSah(akun string) bool { return polaAkun.MatchString(akun) && strings.Trim(akun, ".") != "" }
 
-// PeriksaSandiBaru menegakkan aturan sandi.
+// SandiBawaan - password awal akun baru (perintah work owner 11-10-2026 "set default password 123456 untuk akun
+// baru"): pemuat akun `-muat-pengguna`, dan Kelola User bila kolom password dikosongkan.
+const SandiBawaan = "123456"
+
+// PeriksaSandiBaru menegakkan aturan sandi: tidak kosong, paling banyak 72 byte (batas bcrypt). Tanpa aturan lain
+// (perintah work owner 11-10-2026 "tidak ada batasan").
 func PeriksaSandiBaru(sandi string) error {
 	if utf8.RuneCountInString(sandi) < PanjangMinSandi {
 		return ErrSandiTerlaluPendek

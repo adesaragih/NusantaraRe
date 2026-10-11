@@ -54,6 +54,9 @@ describe('susunBagian', () => {
     ])
     expect(s.kartu.map((b) => b.kunci)).toEqual(['polis'])
     expect(bagianBerisi({ kunci: 'x', medan: [], grid: [] })).toBe(false)
+    // dua kolom berlabel kiri (layout lama, 11-10-2026): berisi bila salah satu kolom berisi
+    expect(bagianBerisi({ kunci: 'x', kolom: [[], []] })).toBe(false)
+    expect(bagianBerisi({ kunci: 'x', kolom: [medan, []] })).toBe(true)
   })
 
   it('TT3 / TT4: tanpa tangga (LS41 hanya TransferType 2), teks komite tetap tampil', () => {

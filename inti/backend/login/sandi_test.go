@@ -8,10 +8,11 @@ import (
 
 func TestAturanSandiBaru(t *testing.T) {
 	for sandi, mau := range map[string]error{
+		// tanpa batasan (perintah work owner 11-10-2026, semula minimal 10): hanya kosong yang ditolak
 		"":                        ErrSandiTerlaluPendek,
-		"123456789":               ErrSandiTerlaluPendek, // 9
-		"1234567890":              nil,                   // 10 - batas yang disetujui work owner
-		"ééééééééé":               ErrSandiTerlaluPendek, // 9 karakter, 18 byte: dihitung KARAKTER
+		"1":                       nil,
+		SandiBawaan:               nil, // 123456 - password awal akun baru
+		"ééééééééé":               nil,
 		strings.Repeat("a", 72):   nil,
 		strings.Repeat("a", 73):   ErrSandiTerlaluPanjang, // bcrypt hanya membaca 72 byte
 		strings.Repeat("é", 37):   ErrSandiTerlaluPanjang, // 74 byte

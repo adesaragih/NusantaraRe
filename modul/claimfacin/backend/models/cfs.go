@@ -239,6 +239,12 @@ func BarisOSEstimasi(k *Konteks, h *Halaman, o, i, e int, kasusID string) BarisO
 	}
 	if IsMarineCargo(h) { // 12
 		umum()
+		// medan objek Marine (kunci VERBATIM XML, termasuk "Goodsname"); dilengkapi 11-10-2026 atas perintah work owner
+		// ("cek apakah insert ke os akseptasi klaim sudah sesuai dengan SaveCFS_ACT.xml" -> "PERBAIKI")
+		p["TradingName"] = ob["ObjectName"]
+		p["PackingName"] = ob["ObjectLocation"]
+		p["Goodsname"] = ob["ObjectJob"]
+		p["ConveyanceName"] = ob["ObjectSurveyLocation"]
 		p["CoverageName"] = ""
 		if c := h.AmbilDaftar(DaftarDiItem(o, i, "CoverageList")); len(c) > 0 {
 			p["CoverageName"] = c[0]["CoverageNote"]
@@ -247,6 +253,14 @@ func BarisOSEstimasi(k *Konteks, h *Halaman, o, i, e int, kasusID string) BarisO
 	if IsMBU(h) { // 13
 		umum()
 		jaminan()
+		// medan kendaraan objek (dilengkapi 11-10-2026, sama dengan Marine di atas)
+		p["BrandName"] = ob["BrandName"]
+		p["BrandID"] = ob["Brand"]
+		p["ModelName"] = ob["ModelName"]
+		p["Model"] = ob["Model"]
+		p["TypeName"] = ob["TypeName"]
+		p["LicensePlate"] = ob["LicensePlate"]
+		p["TypeID"] = ob["Type"]
 		p["GrossValue"] = est["GrossEstimationPctMBU"]
 		p["NoClaim"] = h.Ambil(CD + "NoClaim")
 	}

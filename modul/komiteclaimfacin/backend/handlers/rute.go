@@ -8,6 +8,7 @@
 //	GET  /api/komite-claim-fac-in/kasus                  daftar kerja penyetuju (worklist KomiteRouter)
 //	GET  /api/komite-claim-fac-in/kasus/{id}             buka kasus (flow action ViewTransferDtl)
 //	POST /api/komite-claim-fac-in/kasus/{id}/putuskan    Submit (finishAssignment -> KomitePostAct)
+//	GET  /api/komite-claim-fac-in/kasus/{id}/lampiran... lampiran klaim induk, hanya-baca (lampiran.go)
 package handlers
 
 import (
@@ -20,6 +21,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/penyimpanan"
 	"nusantarare/modul/komiteclaimfacin/backend/models"
 	"nusantarare/modul/komiteclaimfacin/backend/services"
 )
@@ -36,6 +38,9 @@ func DaftarkanRute(mux *http.ServeMux, l *services.Layanan, stubPelaku bool) {
 	mux.HandleFunc("GET "+Prefix+"/kasus", h.daftar)
 	mux.HandleFunc("GET "+Prefix+"/kasus/{id}", h.buka)
 	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/putuskan", h.putuskan)
+	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/lampiran", h.lampiran)
+	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/lampiran/{lid}/isi", h.unduhLampiran)
+	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/lampiran/{lid}/office", h.officeLampiran)
 }
 
 // Router menyusun mux tersendiri - untuk uji.
@@ -71,6 +76,12 @@ func tulisGalat(w http.ResponseWriter, err error) {
 		}{"validasi layar gagal: " + strings.Join(v.Pesan, "; "), v.Pesan})
 	case errors.Is(err, services.ErrTanpaOracle):
 		galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+	case errors.Is(err, penyimpanan.ErrObjekTidakAda):
+		galat.Tulis(w, http.StatusConflict, err.Error())
+	case errors.Is(err, penyimpanan.ErrStorageBelumSiap):
+		galat.Tulis(w, http.StatusServiceUnavailable, err.Error())
+	case errors.Is(err, penyimpanan.ErrStorageGagal):
+		galat.Tulis(w, http.StatusBadGateway, err.Error())
 	case errors.Is(err, inti.ErrTanpaIdentitas):
 		galat.Tulis(w, http.StatusUnauthorized, err.Error())
 	case errors.Is(err, inti.ErrTanpaWewenang):

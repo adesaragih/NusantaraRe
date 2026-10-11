@@ -19,6 +19,10 @@ package models
 // merender section grid item itu SENDIRI pada baris item - estimasi MBU tidak dapat diisi dari layar Pega. Di sini baris
 // item MBU membuka section `Estimasi` (seperti Fire).
 
+// AksiPostValue - aksi `change:postValue` / `change:refresh` tanpa activity (services: isian digabung, layar dievaluasi
+// ulang) untuk medan yang menentukan tampil / nonaktif medan lain.
+const AksiPostValue = "PostValue"
+
 // Prefiks panel masterDetail layar Input Estimasi.
 const (
 	PanelObjekEst = "est"
@@ -45,7 +49,7 @@ func LayarEstimasi() []Unsur {
 		letak(LetakTab,
 			bagian("Estimation", tampil(gridObjekEstimasi(), bukanTreatyIn)),
 			bagian("Policy Detail & Claims History", tabRiwayat()...),
-			bagian("Progress Claim", tabProgres()...),
+			tampil(bagian("Progress Claim", tabProgres()...), TabProgresTampil),
 			tampil(bagian("View Registration", detailRegister()...), beda(JalurIsTreatyIn, "1")),
 		),
 		tampil(tombol("Back", "Back", "BackToRegister"), beda(JalurIsCFS, "1")),
@@ -54,8 +58,12 @@ func LayarEstimasi() []Unsur {
 
 // tombolObjekEstimasi - tombol baris grid objek InputEstimasiDetail (semua lini).
 func tombolObjekEstimasi() []Unsur {
+	// + nonaktif selama objek baris ini punya item kembar (perintah work owner 11-10-2026 "JIKA ADA KEMBAR JANGAN BISA
+	// KLIK PRINT CLAIM FACE SHEET JADI GA MASUK KE TABEL OS AKSEPTASI KLAIM").
 	cfs := kTombol("CLaimFaceSheet", "Download Claim Face Sheet", "CLaimFaceSheet",
-		func(h *Halaman, b Baris) bool { return b["CFS"] != "1" || b["PrintFaceClaim"] == "1" || errorLebih1(h) })
+		func(h *Halaman, b Baris) bool {
+			return b["CFS"] != "1" || b["PrintFaceClaim"] == "1" || errorLebih1(h) || ObjekBerItemKembar(h, b)
+		})
 	pla := kTampil(kTombol("PrintPLA", "Print PLA", "BukaPLA",
 		func(h *Halaman, b Baris) bool {
 			return b["IsFacretro"] != "1" || b["PlaStatus"] == "1" || errorLebih1(h)
@@ -104,8 +112,17 @@ func LayarObjekEstimasi(o int) []Unsur {
 	okupasi := kNA(kROJ(kAksi(kSumber(kol("OccupationName", "Occupation", KOtomatis), SumberOkupasi), "PilihOkupasi"),
 		bPFC), hAdj)
 	aneka := kROJ(kAksi(kSumber(kol("IndexAneka", "Object Id", KOtomatis), SumberAneka), "PilihAneka"), bPFC)
-	covAneka := kROJ(kAksi(kSumber(kol("CoverageNote", "Coverage Name", KOtomatis), SumberCovAneka),
-		"PilihCoverageAneka"), bPFC)
+	// Coverage Name item: RO `.PrintFaceClaim = 1`, NA menurut XML (work owner 11-10-2026 "KENAPA MASIH BISA EDIT SETELAH
+	// KLIK PRINT CLAIM FACESHEET?!" - port Fire dahulu tanpa RO / NA). Aneka / Golf NA `InputParam.CARI39 = true ||
+	// IsError > 1` (CARI39 ditulis SetDisable_ACT = Send to PIC Claim, sesudahnya IsAdjustment 1 - layar hanya-baca).
+	bErrorLebih1 := func(h *Halaman, _ Baris) bool { return errorLebih1(h) }
+	covAneka := kNA(kROJ(kAksi(kSumber(kol("CoverageNote", "Coverage Name", KOtomatis), SumberCovAneka),
+		"PilihCoverageAneka"), bPFC), bErrorLebih1)
+	// Fire NA `pyWorkPage.IsAdjustment = 1 || .IsFacretro = 1 || pyWorkPage.IsError > 1`.
+	covFire := kNA(kROJ(kAksi(kSumber(kol("CoverageOLDID", "Coverage Name", KOtomatis), SumberCovFire), "PilihCoverageFire"),
+		bPFC), func(h *Halaman, b Baris) bool {
+		return h.Ambil(JalurIsAdjustment) == "1" || b["IsFacretro"] == "1" || errorLebih1(h)
+	})
 	g := func(k Kondisi, tb *Unsur, kolom ...Unsur) Unsur {
 		return tampil(Unsur{Jenis: JenisGrid, Jalur: daftar, Rincian: PanelItemEst, Tambah: tb, Kolom: kolom}, k)
 	}
@@ -121,11 +138,13 @@ func LayarObjekEstimasi(o int) []Unsur {
 			kNA(kROJ(kAksi(kSumber(kol("ObjectItemName", "Object Name", KOtomatis), SumberItemProp), "SetObjectItem"),
 				bPFC), hAdj),
 			okupasi,
-			kAksi(kSumber(kol("CoverageOLDID", "Coverage Name", KOtomatis), SumberCovFire), "PilihCoverageFire"),
+			covFire,
 			kRO(kol("Currency", "Currency", KTampil)),
-			kol("KursObjectItem", "Currency Value(IDR)", KAngka),
+			// Currency Value(IDR) / TSI RNM in IDR XML Text Input -> hanya-baca seperti lini lain (`nilaiTSI`; work owner
+			// 11-10-2026 "INI READ ONLY. BUAT FIRE ANEKA DAN BISNIS LAIN NYA!"): kurs = kurs standar, TSI IDR = hitungan.
+			angka("KursObjectItem", "Currency Value(IDR)"),
 			angka("TSIPerObject", "TSI Object"), angka("TSINusare", "TSI RNM"),
-			kTampil(kol("ValueTSINusareIDR", "TSI RNM in IDR", KAngka), bTerisi("ValueTSINusareIDR")),
+			kTampil(angka("ValueTSINusareIDR", "TSI RNM in IDR"), bTerisi("ValueTSINusareIDR")),
 			angka("LimitofLiability", "Limit Of Liability"),
 			hapusFire),
 		g(IsMBU, tambah(nil), append([]Unsur{kRO(kol(PropNomorBaris, "Coverage No", KTampil)), covObjek,
@@ -171,46 +190,54 @@ func LayarItemEstimasi(o, i int) []Unsur {
 		}
 		return ptr(u)
 	}
-	totalEst := tampil(bagian("",
-		ro(medan(m("TotalGrossEstimasi"), "Total Estimation Gross", KAngka)),
-		ro(medan(m("TotalGrossEstimasiIDR"), "Total Estimation Gross in IDR", KAngka)),
-		ro(medan(m("TotalClaimSpreaded"), "Total Estimation RNM", KAngka)),
-		ro(medan(m("TotalEstimationValueinIDR"), "Total Estimation RNM in IDR", KAngka)),
-	), func(h *Halaman) bool { return !IsTravel(h) })
+	// Rapi (perintah work owner 11-10-2026 "tolong rapihin. buat lebih user frendly dan enak dilihat!"): total estimasi
+	// dan total spreading menjadi KAKI grid-nya (bilah ringkasan di bawah grid), Deductible Info satu baris berlabel.
+	// Medan, label, dan kondisinya tetap section Estimasi. Share % / Total Share Percentage (XML Text Input) bertampilan
+	// angka 4 desimal seperti angka lain (work owner 11-10-2026 "UNTUK ANGKA ... TAMPILAN 4 DIGIT BELAKANG KOMA").
+	bukanTravel := func(h *Halaman) bool { return !IsTravel(h) }
+	totalEstKaki := []Unsur{
+		tampil(ro(medan(m("TotalGrossEstimasi"), "Total Estimation Gross", KAngka)), bukanTravel),
+		tampil(ro(medan(m("TotalGrossEstimasiIDR"), "Total Estimation Gross in IDR", KAngka)), bukanTravel),
+		tampil(ro(medan(m("TotalClaimSpreaded"), "Total Estimation RNM", KAngka)), bukanTravel),
+		tampil(ro(medan(m("TotalEstimationValueinIDR"), "Total Estimation RNM in IDR", KAngka)), bukanTravel),
+	}
 	spreadPolis := func(premi bool) Unsur {
 		kolom := []Unsur{kRO(kol(PropNomorBaris, "Spreading No", KTampil)),
 			kRO(kSumber(kol("TreatyType", "Treaty Type", KPilih), SumberJenisReas)),
-			kRO(kol("SharePercentage", "Share %", KTampil)), kRO(kol("TSISpreaded", "TSI Spreaded", KAngka))}
+			kRO(kol("SharePercentage", "Share %", KAngka)), kRO(kol("TSISpreaded", "TSI Spreaded", KAngka))}
 		if premi {
 			kolom = append(kolom, kRO(kol("PremiumSpreaded", "Premium Spreaded", KAngka)))
 		}
 		return tampil(bagian("Spreading Policy",
-			Unsur{Jenis: JenisGrid, Jalur: DaftarDiItem(o, i, AnakSpreadPolis), Kolom: kolom},
-			ro(medan(m("TotalSharePercentage"), "Total Share Percentage", KTampil)),
-			ro(medan(m("TotalTSISpreaded"), "Total TSI Spreaded", KAngka)),
+			Unsur{Jenis: JenisGrid, Jalur: DaftarDiItem(o, i, AnakSpreadPolis), Kolom: kolom, Kaki: []Unsur{
+				ro(medan(m("TotalSharePercentage"), "Total Share Percentage", KAngka)),
+				ro(medan(m("TotalTSISpreaded"), "Total TSI Spreaded", KAngka)),
+			}},
 		), dan(func(h *Halaman) bool { return !IsTravel(h) }, sama(CD+"ExGratia", "0")))
 	}
 	spreadKlaim := func(retro bool) Unsur {
 		kolom := []Unsur{kRO(kol(PropNomorBaris, "Spreading No", KTampil)), kRO(kol("Currency", "Currency", KTampil)),
 			kRO(kSumber(kol("TreatyType", "Treaty Type", KPilih), SumberJenisReas)),
-			kRO(kol("SharePercentage", "Share %", KTampil)), kRO(kol("ClaimSpreaded", "Claim Spreaded", KAngka))}
+			kRO(kol("SharePercentage", "Share %", KAngka)), kRO(kol("ClaimSpreaded", "Claim Spreaded", KAngka))}
 		if retro {
 			kolom = append(kolom, kTampil(kTombol("ShowRetro", "View Retro", "BukaRetro", nil),
 				bSama("TreatyType", TreatyFacRetro)))
 		}
 		return tampil(bagian("Spreading Claim",
-			Unsur{Jenis: JenisGrid, Jalur: DaftarDiItem(o, i, AnakSpreadKlaim), Kolom: kolom},
-			ro(medan(m("TotalSharePercentage"), "Total Share Percentage", KTampil)),
-			tampil(ro(medan(m("TotalClaimSpreaded"), "Total Claim Spreaded", KAngka)),
-				func(h *Halaman) bool {
-					return AmbilJalur(h, m("TotalClaimSpreaded")) == AmbilJalur(h, m("TotalEstimasi"))
-				}),
+			Unsur{Jenis: JenisGrid, Jalur: DaftarDiItem(o, i, AnakSpreadKlaim), Kolom: kolom, Kaki: []Unsur{
+				ro(medan(m("TotalSharePercentage"), "Total Share Percentage", KAngka)),
+				tampil(ro(medan(m("TotalClaimSpreaded"), "Total Claim Spreaded", KAngka)),
+					func(h *Halaman) bool {
+						return AmbilJalur(h, m("TotalClaimSpreaded")) == AmbilJalur(h, m("TotalEstimasi"))
+					}),
+			}},
 		), dan(func(h *Halaman) bool { return !IsTravel(h) }, sama(CD+"ExGratia", "0")))
 	}
-	deductible := bagian("Deductible Info",
-		sebaris("",
-			naJika(medan(m("DeductibleType"), "", KCentang), adj),
-			tampil(naJika(sumber(medan(m("FormType"), "Format", KPilih), kode("FormType")), adj),
+	deductible := bagian("",
+		// DeductibleType / FormType `change:postValue` + VIS bergantung padanya -> aksi PostValue (layar dievaluasi ulang).
+		sebaris("Deductible Info",
+			naJika(aksi(medan(m("DeductibleType"), "", KCentang), AksiPostValue), adj),
+			tampil(naJika(aksi(sumber(medan(m("FormType"), "Format", KPilih), kode("FormType")), AksiPostValue), adj),
 				itemSama("DeductibleType", "true")),
 		),
 		tampil(sebaris("",
@@ -236,8 +263,8 @@ func LayarItemEstimasi(o, i int) []Unsur {
 		kRO(kol("Deductible", "Deductible", KAngka)), kRO(kol("NetEstimationValue", "Net Estimation Gross (100%)", KAngka)),
 		kRO(kol("EstimationValue", "Net Estimation RNM", KAngka)), kRO(kol("ConvertValue", "Net Estimation Value in IDR", KAngka)),
 		hapusEst,
-	}}, func(h *Halaman) bool { return !IsTravel(h) })
-	estimasiPA := Unsur{Jenis: JenisGrid, Jalur: est, Tambah: tambahEst(nil), Kolom: []Unsur{
+	}, Kaki: totalEstKaki}, bukanTravel)
+	estimasiPA := Unsur{Jenis: JenisGrid, Jalur: est, Tambah: tambahEst(nil), Kaki: totalEstKaki, Kolom: []Unsur{
 		kRO(kol(PropNomorBaris, "Estimation No", KTampil)),
 		kROJ(kAksi(kol("EstimationDate", "Estimation Date", KTanggal), "ProtectionDate"), bPFC),
 		mu(func(h *Halaman, _ Baris) bool { return h.Ambil(JalurIsAdjustment) == "1" }),
@@ -254,18 +281,19 @@ func LayarItemEstimasi(o, i int) []Unsur {
 		kROJ(kAksi(kol("GrossEstimationPct", "Gross Estimation (%)", KAngka), "CheckEstimateValue"), bPFC),
 		kRO(kol("EstimationValue", "Estimation Value", KAngka)), kRO(kol("ConvertValue", "Estimation Value in IDR", KAngka)),
 		hapusEst,
-	}, Kaki: []Unsur{sebaris("Total", ro(medan(m("TotalClaimSpreaded"), "", KAngka)),
-		ro(medan(m("TotalEstimationValueinIDR"), "", KAngka)))}}, func(h *Halaman) bool { return !IsTravel(h) })
+		// Kaki = total estimasi seperti lini lain (work owner 11-10-2026 "PERBAIKI JUGA UNTUK BISNIS LAIN!"): footer XML
+		// "Total" tanpa label (TotalClaimSpreaded, TotalEstimationValueinIDR) mengulang dua total yang sama - dilebur.
+	}, Kaki: totalEstKaki}, func(h *Halaman) bool { return !IsTravel(h) })
 	coverageMarine := Unsur{Jenis: JenisGrid, Jalur: DaftarDiItem(o, i, "CoverageList"), Kolom: []Unsur{
 		kRO(kol("CoverageNote", "Coverage Name", KTampil)), kRO(kol("Currency.Name", "Currency", KTampil)),
 		kRO(kol("Currency.KURS", "Currency Value (IDR)", KAngka)), kRO(kol("TSILiability", "TSI Object", KAngka)),
 		kRO(kol("TSINusantaraRe", "TSI RNM", KAngka)), kRO(kol("TSIinIDR", "TSI RNM in IDR", KAngka)),
 	}}
 	return []Unsur{
-		tampil(bagian("", deductible, estimasi, totalEst, spreadPolis(false), spreadKlaim(true)),
+		tampil(bagian("", deductible, estimasi, spreadPolis(false), spreadKlaim(true)),
 			atau(IsFire, IsAneka, IsGolfInsurance, IsMBU)),
-		tampil(bagian("", estimasiPA, totalEst, spreadKlaim(false), spreadPolis(false)), atau(IsPA, IsTravel)),
-		tampil(bagian("", coverageMarine, estimasiMarine, totalEst, spreadPolis(true), spreadKlaim(false)), IsMarineCargo),
+		tampil(bagian("", estimasiPA, spreadKlaim(false), spreadPolis(false)), atau(IsPA, IsTravel)),
+		tampil(bagian("", coverageMarine, estimasiMarine, spreadPolis(true), spreadKlaim(false)), IsMarineCargo),
 	}
 }
 
@@ -278,10 +306,11 @@ func LayarPLA(o int) []Unsur {
 	p := JalurObjek(o) + "."
 	pesanKosong := sama(JalurPesanSurel, "")
 	kirim := sama(JalurKirimSurel, "true")
+	// Send Email / Message `change:refresh` (Message tampil, Submit NA bergantung padanya) -> aksi PostValue.
 	return []Unsur{
-		medan(JalurKirimSurel, "Send Email", KCentang),
-		tampil(roJika(medan(JalurPesanSurel, "Message", KArea),
-			func(h *Halaman) bool { return AmbilJalur(h, p+"IsEditable") != "1" }), kirim),
+		aksi(medan(JalurKirimSurel, "Send Email", KCentang), AksiPostValue),
+		tampil(aksi(roJika(medan(JalurPesanSurel, "Message", KArea),
+			func(h *Halaman) bool { return AmbilJalur(h, p+"IsEditable") != "1" }), AksiPostValue), kirim),
 		sumber(medan(p+"ShareRetro", "Share Retro", KRadio), kode("ShareRetro")),
 		wajibU(medan(p+"RemarksPLA", "Remarks", KArea)),
 		naJika(tombol("GeneratePLA", "Submit", "GeneratePLA"), dan(kirim, pesanKosong)),

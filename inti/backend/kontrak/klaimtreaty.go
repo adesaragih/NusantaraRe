@@ -48,6 +48,15 @@ type KlaimTreatyKomite interface {
 	// KECUALI `komiteID` (kasus komite yang sedang memutus - ditutup modul Komite sendiri di transaksi yang sama).
 	// Kasus klaim yang sudah ditutup -> `ErrKlaimTreatyTertutup`.
 	TutupKlaimTreaty(ctx context.Context, tx *db.Tx, klaimID, komiteID string, saat time.Time) error
+	// LampiranKlaimTreaty - kategori master PROP dan dokumen kasus klaim induk (tab lampiran Claim Prop), hanya-baca
+	// (perintah work owner 11-10-2026, `lampiranklaim.go`).
+	LampiranKlaimTreaty(ctx context.Context, klaimID string) (DaftarLampiranKlaim, error)
+	// BukaLampiranKlaimTreaty - isi satu dokumen klaim (`GetBase64Attachment` -> `GetUrlGoogleStorage_Act`) atas nama
+	// `pengguna`. Dokumen di luar kasus itu -> `ErrLampiranKlaimTidakAda`.
+	BukaLampiranKlaimTreaty(ctx context.Context, klaimID, lampiranID, pengguna string) (IsiLampiranKlaim, error)
+	// TautanOfficeLampiranKlaimTreaty - URL bertanda tangan View Office Online (xls / xlsx / doc / docx / ppt / pptx
+	// yang objeknya tercatat).
+	TautanOfficeLampiranKlaimTreaty(ctx context.Context, klaimID, lampiranID, pengguna string) (string, error)
 }
 
 // Jalur `KlaimTreaty.Nilai` yang bukan properti halaman klaim (kepala work object, hanya-baca): pembuat kasus klaim

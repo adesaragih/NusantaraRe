@@ -9,6 +9,7 @@ import (
 	"errors"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 
 	"nusantarare/inti/backend/menu"
@@ -179,7 +180,8 @@ func TestKelolaBuatDitolak(t *testing.T) {
 		sandi string
 		mau   error
 	}{
-		{"sandi pendek", func(*AkunBaru) {}, "pendek", ErrSandiTerlaluPendek},
+		// tanpa batasan (perintah work owner 11-10-2026): yang tersisa hanya batas 72 byte bcrypt
+		{"sandi terlalu panjang", func(*AkunBaru) {}, strings.Repeat("a", 73), ErrSandiTerlaluPanjang},
 		{"menu tak dikenal", func(a *AkunBaru) { a.Menu = []string{"tidakada"} }, "Sandi-Admin-01", ErrMenuTidakDikenal},
 		{"akun ganda", func(a *AkunBaru) { a.ID = "UJI-ADMIN" }, "Sandi-Admin-01", ErrAkunSudahAda},
 		{"jenjang", func(a *AkunBaru) { a.Divisi, a.Unit = "TECH", "TAX" }, "Sandi-Admin-01", ErrJenjangTidakCocok},
@@ -395,7 +397,7 @@ func TestKelolaAturSandi(t *testing.T) {
 		id, sandi string
 		mau       error
 	}{
-		{"UJI-KUNCI", "pendek", ErrSandiTerlaluPendek},
+		{"UJI-KUNCI", strings.Repeat("a", 73), ErrSandiTerlaluPanjang},
 		{"UJI-TIDAK-ADA", "Sandi-Baru-Admin-1", ErrAkunTidakAda},
 	} {
 		if _, err := k.AturSandi(ctxUji, "UJI-ADMIN", kasus.id, kasus.sandi, false); !errors.Is(err, kasus.mau) {

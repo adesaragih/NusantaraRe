@@ -4,9 +4,18 @@
 // salah yang jelas; backend tetap menegakkan semuanya (jenjang organisasi,
 // master aktif, KODE menu, penjaga diri sendiri dan admin terakhir).
 
-import { KELOLA_USER, PANJANG_MIN_SANDI } from '../labels'
+import { KELOLA_USER } from '../labels'
 import { KODE_MENU_KELOLA_USER } from '../lib/daftarMenu'
-import type { BadanBaru, BadanSandi, BadanUbah, OpsiMaster, OpsiMenu, PilihanKelola, RingkasAkun, RinciAkun } from './api'
+import type {
+  BadanBaru,
+  BadanSandi,
+  BadanUbah,
+  OpsiMaster,
+  OpsiMenu,
+  PilihanKelola,
+  RingkasAkun,
+  RinciAkun,
+} from './api'
 
 /** Bentuk username — sama dengan `login.polaAkun` di backend. */
 export const POLA_AKUN = /^[A-Za-z0-9._@-]{1,64}$/
@@ -138,9 +147,9 @@ export function alihkan(daftar: readonly string[], kode: string, nyala: boolean)
 }
 
 /**
- * Pemeriksaan awal; `null` = boleh dikirim. Panjang sandi dihitung KARAKTER,
- * seperti backend. `akunSaya` = akun yang sedang login. Password WAJIB saat
- * membuat user; saat mengubah, kosong = tidak diganti.
+ * Pemeriksaan awal; `null` = boleh dikirim. `akunSaya` = akun yang sedang login. Password tanpa batasan (perintah
+ * work owner 11-10-2026): saat membuat user kosong = password bawaan 123456; saat mengubah kosong = tidak diganti;
+ * bila diisi, harus sama dengan ulangannya.
  */
 export function periksaIsian(isi: IsianForm, baru: boolean, akunSaya: string): string | null {
   if (baru && !akunSah(isi.akunId.trim())) return KELOLA_USER.galatAkun
@@ -148,8 +157,8 @@ export function periksaIsian(isi: IsianForm, baru: boolean, akunSaya: string): s
   if (nama === '' || [...nama].length > 150) return KELOLA_USER.galatNama
   const kontak = periksaKontak(isi)
   if (kontak !== null) return kontak
-  if (baru || isi.sandi !== '' || isi.ulangiSandi !== '') {
-    if ([...isi.sandi].length < PANJANG_MIN_SANDI) return KELOLA_USER.galatSandi
+  if (isi.sandi !== '' || isi.ulangiSandi !== '') {
+    if (isi.sandi === '') return KELOLA_USER.galatSandi
     if (isi.sandi !== isi.ulangiSandi) return KELOLA_USER.galatUlangi
   }
   if (!baru && isi.akunId === akunSaya && !isi.menu.includes(KODE_MENU_KELOLA_USER)) return KELOLA_USER.menuDiriSendiri

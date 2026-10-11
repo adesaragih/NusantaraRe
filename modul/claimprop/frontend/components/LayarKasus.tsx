@@ -24,7 +24,7 @@ import { ambil, masukan, semuaTata, setel } from '../nilai'
 import PanelLampiran from './PanelLampiran'
 import Popup, { type JenisPopup } from './Popup'
 import { barisModal, DAFTAR_RINCI } from './rincian'
-import { pisahKakiModal } from './susun'
+import { pisahKakiModal, saringKlien } from './susun'
 import TambahAdjuster from './TambahAdjuster'
 import TataView, { BarisAdjustment, LayarTata, Tombol, type KonteksTata } from './TataView'
 
@@ -51,6 +51,8 @@ const PARAM_DARI_NILAI = new Set(['PilihRekening', 'PilihAllocation', 'DisableEd
 const JUDUL_MODAL = (m: string): string => {
   if (m === 'pla') return CP.popPLA
   if (m === 'tutupKlaim') return CP.popTutup
+  if (m === 'tolakKlaim') return CP.popTolak
+  if (m === 'yakinTolak') return CP.popYakinTolak
   if (m.startsWith('dla:')) return CP.popDLA
   if (m.startsWith('komite:')) return CP.popKomite
   return m
@@ -155,6 +157,8 @@ export default function LayarKasus({
           terima(l)
           if (l.info) setInfo(l.info)
           if (SUBMIT_MODAL.has(aksi)) setModal(null)
+          // Submit ClaimRejectTreaty lolos isian wajib -> local action SureRejectClaimT (pop-up konfirmasi)
+          if (aksi === 'SureRejectClaimT') setModal('yakinTolak')
           if (aksi === 'BukaKomite') {
             const ok = l.halaman.nilai['Protect.CARI1'] === '1' && l.halaman.nilai['Protect.CARI2'] === '1'
             setModal(ok ? `komite:${indeks}` : null)
@@ -210,6 +214,14 @@ export default function LayarKasus({
     )
   }, [noPolis, onLihatBerkas])
 
+  // Pop-up ditutup: penanda sukses `Komite.CARI1` dilepas, sehingga Reject / Close Claim yang diklik lagi menampilkan
+  // kartu "already submitted" (penanda pengajuan menunggu dari server), bukan kartu sukses (perintah work owner
+  // 10-10-2026).
+  const tutupModal = useCallback(() => {
+    setModal(null)
+    setH((x) => (x && ambil(x, 'Komite.CARI1') !== '' ? setel(x, 'Komite.CARI1', '') : x))
+  }, [])
+
   const aksi = useCallback(
     (nama: string, indeks = 0, ubahan: Record<string, string> = {}) => {
       if (POPUP[nama]) {
@@ -218,14 +230,15 @@ export default function LayarKasus({
       }
       if (nama === 'BukaPLA') return setModal('pla')
       if (nama === 'BukaTutupKlaim') return setModal('tutupKlaim')
+      if (nama === 'BukaTolakKlaim') return setModal('tolakKlaim')
       if (nama === 'BukaDLA') return setModal(`dla:${indeks}`)
-      if (nama === 'TutupModal') return setModal(null)
+      if (nama === 'TutupModal') return tutupModal()
       if (nama === 'LihatPolis') return lihatPolis()
       if (nama === 'TambahKonsultan') return setTambahAdj({ jalur: 'ClaimData.ConsultantID', aksi: 'SetConsultant' })
       if (nama === 'TambahAdjuster') return setTambahAdj({ jalur: 'ClaimData.AppointedADJID', aksi: 'SetAdjsuter' })
       kirim(nama, indeks, ubahan)
     },
-    [kirim, lihatPolis],
+    [kirim, lihatPolis, tutupModal],
   )
 
   const saran = useCallback(
@@ -317,8 +330,9 @@ export default function LayarKasus({
   }
 
   const pesanGalat = galat instanceof ApiFailure ? galat.detail.message : null
-  // Tombol di akhir isi modal ke kaki `Modal`; tombol penutup section = tombol batal `Modal` (bukan dua Cancel).
-  const isiModal = modal ? pisahKakiModal(layar.modal?.[modal] ?? []) : null
+  // Tombol di akhir isi modal ke kaki `Modal`; tombol penutup section = tombol batal `Modal` (bukan dua Cancel). Kondisi
+  // `pyIsClientWhen` dievaluasi dulu dengan nilai lokal (centang Close Without Payment menukar baris Yes / No).
+  const isiModal = modal ? pisahKakiModal(saringKlien(layar.modal?.[modal] ?? [], (j) => ambil(h, j))) : null
   const kModal = { ...k, rincian: undefined }
   return (
     <section className="inbox claimprop__akar">
@@ -363,7 +377,7 @@ export default function LayarKasus({
         <BarisAdjustment.Provider value={barisModal(modal)}>
           <Modal
             judul={JUDUL_MODAL(modal)}
-            onTutup={() => setModal(null)}
+            onTutup={tutupModal}
             lebar
             labelBatal={isiModal.batal}
             aksi={isiModal.kaki.map((t, i) => (

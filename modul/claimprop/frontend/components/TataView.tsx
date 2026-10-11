@@ -18,7 +18,7 @@ import { ambil, hanyaAngka, jalurBaris, tampilAngka } from '../nilai'
 import InputAngka from './InputAngka'
 import InputTanggal from './InputTanggal'
 import { barisTerbuka, bukaAwal, rincianUntuk, type RincianGrid } from './rincian'
-import { jumlahHalaman, potongHalaman, ratakan, susunIsi, susunLayar, type Butir } from './susun'
+import { jumlahHalaman, potongHalaman, ratakan, saringKlien, susunIsi, susunLayar, type Butir } from './susun'
 import { butirSaring, teksTerpilih } from './tampilanNama'
 
 export interface KonteksTata {
@@ -664,11 +664,51 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
   )
 }
 
+/**
+ * Kartu status pop-up Close Without Payment / Reject Claim (perintah work owner 10-10-2026 "perbaiki tampilan"): ikon,
+ * judul, penjelasan, nomor kasus komite sebagai lencana. `sukses` = pengajuan baru terkirim (centang hijau); `info` =
+ * pengajuan sebelumnya masih menunggu komite (ikon jam, biru). Anak dari server: label judul, label penjelasan, medan
+ * nomor.
+ */
+function Sukses({ t, k }: { t: Tata; k: KonteksTata }) {
+  const anak = t.anak ?? []
+  const label = anak.filter((a) => a.jenis === 'label')
+  const nomor = anak.find((a) => a.jenis === 'medan')
+  const nilai = nomor?.jalur ? ambil(k.h, nomor.jalur) : ''
+  const info = t.letak === 'info'
+  return (
+    <div className={'claimprop__sukses' + (info ? ' claimprop__sukses--info' : '')} role="status">
+      <span className="claimprop__sukses-ikon" aria-hidden="true">
+        {info ? (
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M12 7.5V12l3 2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.6">
+            <path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </span>
+      <div className="claimprop__sukses-isi">
+        {label[0] && <h4 className="claimprop__sukses-judul">{label[0].label}</h4>}
+        {label[1] && <p className="claimprop__sukses-teks">{label[1].label}</p>}
+        {nomor && nilai !== '' && (
+          <div className="claimprop__sukses-nomor">
+            <span className="claimprop__sukses-nomor-label">{nomor.label}</span>
+            <strong className="claimprop__sukses-nomor-nilai">{nilai}</strong>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 /** Isi satu kartu / kolom / tab / modal: "Stacked with labels left". */
 export default function TataView({ tata, k }: { tata: readonly Tata[]; k: KonteksTata }) {
   return (
     <div className="claimprop__tumpuk">
-      {susunIsi(tata).map((u, i) => {
+      {susunIsi(saringKlien(tata, (j) => ambil(k.h, j))).map((u, i) => {
         switch (u.jenis) {
           case 'medan':
             return <BarisMedan key={i} t={u.t} tombol={u.tombol} k={k} />
@@ -693,6 +733,7 @@ export default function TataView({ tata, k }: { tata: readonly Tata[]; k: Kontek
             if (u.t.letak === 'tab') return <Tab key={i} t={u.t} k={k} />
             if (u.t.letak === 'judul') return <Kepala key={i} t={u.t} k={k} />
             if (u.t.letak === 'tabel') return <TabelTetap key={i} t={u.t} k={k} />
+            if (u.t.letak === 'sukses' || u.t.letak === 'info') return <Sukses key={i} t={u.t} k={k} />
             return <Sebaris key={i} t={u.t} k={k} />
           default:
             return (
@@ -711,7 +752,7 @@ export default function TataView({ tata, k }: { tata: readonly Tata[]; k: Kontek
 export function LayarTata({ tata, k }: { tata: readonly Tata[]; k: KonteksTata }) {
   return (
     <>
-      {susunLayar(tata).map((b, i) => {
+      {susunLayar(saringKlien(tata, (j) => ambil(k.h, j))).map((b, i) => {
         if (b.jenis === 'kepala') return <Kepala key={i} t={b.t} k={k} />
         if (b.jenis === 'aksi') {
           return (

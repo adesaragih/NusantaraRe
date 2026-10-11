@@ -116,11 +116,31 @@ const (
 	// BatasRosterSemua - batas roster yang memuat setiap baris aktif (LIMIT_BOTTOM <= batas): penyetuju close dicari
 	// menurut JABATAN, bukan menurut nilai (langkah 5.2-5.3 tanpa batas nilai).
 	BatasRosterSemua = "999999999999999"
+	// PropKomiteBaru - `Komite.CARI1` (SendCloseClaimToKomite 5.5 = ID kasus komite yang baru lahir): pop-up
+	// PreventRejectClaimProp berganti ke pesan sukses bila terisi. Tidak disimpan; dibawa ke layar sesudah aksi.
+	PropKomiteBaru = "Komite.CARI1"
+	// Teks pop-up Close Claim / Reject Claim - perintah work owner 10-10-2026 "perbaiki tampilan ... kata katanya juga
+	// bagusin. pake bahasa inggris" (menggantikan teks XML: "Success Create Request to Committee", "Are you sure want
+	// close this claim?", "Are you sure want to reject this claim ?", "Date Reject", "Tipe Analisis").
+	JudulSuksesTutup     = "Close request submitted"
+	TeksSuksesTutup      = "Your request to close this claim without payment has been sent to the committee (Claim Dept. Head) for approval. The claim stays open until the committee makes a decision."
+	JudulSuksesTolak     = "Reject request submitted"
+	TeksSuksesTolak      = "Your request to reject this claim has been sent to the committee (Claim Dept. Head) for approval. The claim stays open until the committee makes a decision."
+	LabelNomorKomite     = "Committee No."
+	TanyaTutupTanpaBayar = "Are you sure you want to close this claim without payment?"
+	TanyaTutup           = "Are you sure you want to close this claim?"
+	TanyaTolak           = "Are you sure you want to reject this claim?"
+	// Pengajuan Reject / Close Without Payment yang masih menunggu komite (perintah work owner 10-10-2026: "jika sudah
+	// ada pengajuan reject / close dan belum di aksep komite, ketika di klik lagi ... munculin sudah pernah di ajukan
+	// tkmt-xxx"). PropKomiteMenunggu / PropJenisKomiteMenunggu - tidak disimpan; diisi layanan untuk pemegang.
+	PropKomiteMenunggu      = "KomiteTerbuka.ID"
+	PropJenisKomiteMenunggu = "KomiteTerbuka.TransferType"
+	JudulMenungguTolak      = "Reject request already submitted"
+	TeksMenungguTolak       = "A request to reject this claim has already been submitted and is still waiting for the committee's decision. A new request can be made once the committee has decided."
+	JudulMenungguTutup      = "Close request already submitted"
+	TeksMenungguTutup       = "A request to close this claim without payment has already been submitted and is still waiting for the committee's decision. A new request can be made once the committee has decided."
 	// TeksMintaTutupTanpaBayar - riwayat SendCloseClaimToKomite 5.6 (VERBATIM): + ID kasus komite.
 	TeksMintaTutupTanpaBayar = "Request close claim without payment "
-	// PesanTutupTanpaBayarBerjalan - `[tidak ada di XML]` penjaga kiriman ganda: Pega membiarkan Close Without Payment
-	// dikirim lagi selama kasus komite close sebelumnya masih menunggu (penyimpangan sadar, PARITAS).
-	PesanTutupTanpaBayarBerjalan = "Close without payment for this claim is already waiting for committee decision"
 )
 
 // PeriksaTutupTanpaBayar = SendCloseClaimToKomite langkah 3-4: setiap baris adjustment ber-AcceptanceStatus kosong
@@ -159,4 +179,16 @@ func NilaiRosterKomite(b Baris) string {
 		return "0"
 	}
 	return b["ValueAdjustment"]
+}
+
+// PesanSudahDiajukan - `[tidak ada di XML]` penjaga kiriman ganda (Pega membiarkan pengajuan dikirim lagi;
+// penyimpangan sadar, PARITAS): Reject / Close / Close Without Payment ditolak selama kasus komite tanpa adjustment
+// `komite` (TRANSFER_TYPE `transfer`) klaim ini masih menunggu.
+func PesanSudahDiajukan(transfer, komite string) string {
+	jenis := "close"
+	if transfer == TransferTolak {
+		jenis = "reject"
+	}
+	return "A " + jenis + " request for this claim has already been submitted (" + komite +
+		") and is still waiting for the committee's decision."
 }

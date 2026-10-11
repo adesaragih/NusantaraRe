@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { Tata } from '../api'
 import { CFI } from '../labels'
-import { judulModal, lanjutanAksi, MODAL_POLIS, modalSesudah } from './sesudahAksi'
+import { bagiIsiPolis, judulModal, lanjutanAksi, MODAL_POLIS, modalSesudah } from './sesudahAksi'
 
 const ada: Tata[] = []
 
@@ -57,5 +57,16 @@ describe('judulModal', () => {
     expect(judulModal('komite:ClaimData.ObjectList(1).ObjectItemList(1).Adjustment(1)')).toBe(CFI.popKomite)
     expect(judulModal('tutup')).toBe(CFI.popTutup)
     expect(judulModal('tolak')).toBe(CFI.popTolak)
+  })
+})
+
+describe('bagiIsiPolis', () => {
+  it('ViewPolis: baris pencarian di atas grid hasil, detail polis dan sisanya di bawah', () => {
+    const cari = { jenis: 'bagian', letak: 'sebaris', anak: [] } as unknown as Tata
+    const detail = { jenis: 'polisNB' } as unknown as Tata
+    const { atas, bawah } = bagiIsiPolis([cari, detail])
+    expect(atas).toEqual([cari])
+    expect(bawah).toEqual([detail])
+    expect(bagiIsiPolis([])).toEqual({ atas: [], bawah: [] })
   })
 })

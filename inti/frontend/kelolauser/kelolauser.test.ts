@@ -37,7 +37,10 @@ import {
 } from './aturan'
 
 const PILIHAN: PilihanKelola = {
-  organisasi: [{ kode: 'RNM', nama: 'Nusantara Re' }, { kode: 'LAIN', nama: 'Lain' }],
+  organisasi: [
+    { kode: 'RNM', nama: 'Nusantara Re' },
+    { kode: 'LAIN', nama: 'Lain' },
+  ],
   divisi: [
     { kode: 'TECH', nama: 'Teknik', induk: 'RNM' },
     { kode: 'FIN', nama: 'Keuangan', induk: 'RNM' },
@@ -72,7 +75,13 @@ describe('jenjang Organisasi → Divisi → Unit', () => {
 })
 
 describe('periksa isian', () => {
-  const sah = { ...isianKosong(), akunId: 'UJI.USER-1', nama: 'Uji', sandi: 'Sandi-Uji-01', ulangiSandi: 'Sandi-Uji-01' }
+  const sah = {
+    ...isianKosong(),
+    akunId: 'UJI.USER-1',
+    nama: 'Uji',
+    sandi: 'Sandi-Uji-01',
+    ulangiSandi: 'Sandi-Uji-01',
+  }
 
   it('akun baru: username, nama, sandi awal minimal 10 karakter dan sama', () => {
     expect(periksaIsian(sah, true, 'ADMIN')).toBeNull()
@@ -81,15 +90,20 @@ describe('periksa isian', () => {
     expect(periksaIsian({ ...sah, akunId: '..' }, true, 'ADMIN')).toBe(KELOLA_USER.galatAkun)
     expect(periksaIsian({ ...sah, akunId: 'a..b' }, true, 'ADMIN')).toBeNull()
     expect(periksaIsian({ ...sah, nama: '  ' }, true, 'ADMIN')).toBe(KELOLA_USER.galatNama)
-    expect(periksaIsian({ ...sah, sandi: '123456789', ulangiSandi: '123456789' }, true, 'ADMIN')).toBe(KELOLA_USER.galatSandi)
+    // password tanpa batasan (perintah work owner 11-10-2026); kosong = password bawaan 123456
+    expect(periksaIsian({ ...sah, sandi: '123', ulangiSandi: '123' }, true, 'ADMIN')).toBeNull()
+    expect(periksaIsian({ ...sah, sandi: '', ulangiSandi: '' }, true, 'ADMIN')).toBeNull()
+    expect(periksaIsian({ ...sah, sandi: '', ulangiSandi: 'x' }, true, 'ADMIN')).toBe(KELOLA_USER.galatSandi)
     expect(periksaIsian({ ...sah, ulangiSandi: 'lain-lain-01' }, true, 'ADMIN')).toBe(KELOLA_USER.galatUlangi)
   })
 
   it('ubah: password kosong = tidak diganti; terisi = diperiksa seperti saat buat (tab Security)', () => {
     const ubah = { ...sah, sandi: '', ulangiSandi: '', akunId: 'LAIN' }
     expect(periksaIsian(ubah, false, 'ADMIN')).toBeNull()
-    expect(periksaIsian({ ...ubah, sandi: 'pendek', ulangiSandi: 'pendek' }, false, 'ADMIN')).toBe(KELOLA_USER.galatSandi)
-    expect(periksaIsian({ ...ubah, sandi: 'Sandi-Uji-02', ulangiSandi: 'Sandi-Uji-03' }, false, 'ADMIN')).toBe(KELOLA_USER.galatUlangi)
+    expect(periksaIsian({ ...ubah, sandi: 'pendek', ulangiSandi: 'pendek' }, false, 'ADMIN')).toBeNull()
+    expect(periksaIsian({ ...ubah, sandi: 'Sandi-Uji-02', ulangiSandi: 'Sandi-Uji-03' }, false, 'ADMIN')).toBe(
+      KELOLA_USER.galatUlangi,
+    )
     expect(periksaIsian({ ...ubah, ulangiSandi: 'Sandi-Uji-02' }, false, 'ADMIN')).toBe(KELOLA_USER.galatSandi)
     expect(periksaIsian({ ...ubah, sandi: 'Sandi-Uji-02', ulangiSandi: 'Sandi-Uji-02' }, false, 'ADMIN')).toBeNull()
     // Galat password membuka tab Security; galat lain tab Profil.
@@ -109,27 +123,72 @@ describe('periksa isian', () => {
 describe('badan permintaan', () => {
   it('sandi hanya di badan buat dan Security; ubah tanpa username dan sandi', () => {
     const isi = {
-      ...isianKosong(), akunId: ' UJI ', nama: ' Uji ', sandi: 'Sandi-Uji-01', ulangiSandi: 'Sandi-Uji-01', menu: ['claimlife'],
-      email: ' uji@nusantara.example ', telepon: ' 0812 3456 7890 ', nik: ' UJI-001 ', jabatan: ' Analyst ',
+      ...isianKosong(),
+      akunId: ' UJI ',
+      nama: ' Uji ',
+      sandi: 'Sandi-Uji-01',
+      ulangiSandi: 'Sandi-Uji-01',
+      menu: ['claimlife'],
+      email: ' uji@nusantara.example ',
+      telepon: ' 0812 3456 7890 ',
+      nik: ' UJI-001 ',
+      jabatan: ' Analyst ',
     }
     // User baru bawaannya wajib ganti password ("Change Password Next Login" tercentang).
     expect(isianKosong().wajibGanti).toBe(true)
     expect(badanBaru(isi)).toEqual({
-      akunId: 'UJI', nama: 'Uji', sandi: 'Sandi-Uji-01', wajibGanti: true, organisasi: '', divisi: '', unit: '', workbasket: [], menu: ['claimlife'],
+      akunId: 'UJI',
+      nama: 'Uji',
+      sandi: 'Sandi-Uji-01',
+      wajibGanti: true,
+      organisasi: '',
+      divisi: '',
+      unit: '',
+      workbasket: [],
+      menu: ['claimlife'],
       menuLihat: [],
       // Kontak (Kelola User 03-10-2026): spasi tepi dibuang.
-      email: 'uji@nusantara.example', telepon: '0812 3456 7890', nik: 'UJI-001', jabatan: 'Analyst',
+      email: 'uji@nusantara.example',
+      telepon: '0812 3456 7890',
+      nik: 'UJI-001',
+      jabatan: 'Analyst',
     })
     expect(badanBaru({ ...isi, wajibGanti: false }).wajibGanti).toBe(false)
     const ubah = badanUbah(isi)
-    expect(Object.keys(ubah).sort()).toEqual(['divisi', 'email', 'jabatan', 'menu', 'menuLihat', 'nama', 'nik', 'organisasi', 'telepon', 'unit', 'workbasket'])
+    expect(Object.keys(ubah).sort()).toEqual([
+      'divisi',
+      'email',
+      'jabatan',
+      'menu',
+      'menuLihat',
+      'nama',
+      'nik',
+      'organisasi',
+      'telepon',
+      'unit',
+      'workbasket',
+    ])
   })
 
   it('hak View only (migrasi 914): terbaca dari akun, dan menu yang dicabut tidak ikut terkirim', () => {
     const r = {
-      akunId: 'UJI-K', nama: 'Uji', organisasi: '', divisi: '', unit: '', aktif: true, terkunci: false, wajibGantiSandi: false,
-      loginTerakhir: '', email: '', telepon: '', nik: '', jabatan: '', contactId: 'CON-1009',
-      workbasket: [], menu: ['accounts', 'aggregate'], menuLihat: ['accounts', 'aggregate'],
+      akunId: 'UJI-K',
+      nama: 'Uji',
+      organisasi: '',
+      divisi: '',
+      unit: '',
+      aktif: true,
+      terkunci: false,
+      wajibGantiSandi: false,
+      loginTerakhir: '',
+      email: '',
+      telepon: '',
+      nik: '',
+      jabatan: '',
+      contactId: 'CON-1009',
+      workbasket: [],
+      menu: ['accounts', 'aggregate'],
+      menuLihat: ['accounts', 'aggregate'],
     }
     const isi = isianDari(r)
     expect(isi.menuLihat).toEqual(['accounts', 'aggregate'])
@@ -163,8 +222,20 @@ describe('daftar dan menu', () => {
 
   it('saringan daftar mencari username dan nama, setiap kata', () => {
     const a = (akunId: string, nama: string): RingkasAkun => ({
-      akunId, nama, organisasi: '', divisi: '', unit: '', aktif: true, terkunci: false, wajibGantiSandi: false, loginTerakhir: '',
-      email: '', telepon: '', nik: '', jabatan: '', contactId: '',
+      akunId,
+      nama,
+      organisasi: '',
+      divisi: '',
+      unit: '',
+      aktif: true,
+      terkunci: false,
+      wajibGantiSandi: false,
+      loginTerakhir: '',
+      email: '',
+      telepon: '',
+      nik: '',
+      jabatan: '',
+      contactId: '',
     })
     const daftar = [a('SUPERADMIN', 'Super Admin'), a('UJI-1', 'Budi Klaim')]
     expect(saringDaftar(daftar, 'klaim').map((x) => x.akunId)).toEqual(['UJI-1'])
@@ -175,7 +246,9 @@ describe('daftar dan menu', () => {
   })
 
   it('modul untuk akun: modul aktif yang menunya dipegang; null = tanpa saringan', () => {
-    expect(modulUntukAkun(['claimlife', 'premiumlistlife'], ['premiumlistlife', 'kelolauser'], [])).toEqual(['premiumlistlife'])
+    expect(modulUntukAkun(['claimlife', 'premiumlistlife'], ['premiumlistlife', 'kelolauser'], [])).toEqual([
+      'premiumlistlife',
+    ])
     expect(modulUntukAkun(null, ['claimlife'], ['claimlife', 'premiumlistlife'])).toEqual(['claimlife'])
     expect(modulUntukAkun(['claimlife'], null, [])).toEqual(['claimlife'])
     expect(modulUntukAkun(null, null, ['claimlife'])).toBeNull()
@@ -193,14 +266,37 @@ describe('klien /api/admin', () => {
       'fetch',
       vi.fn((url: string, init: RequestInit) => {
         tertangkap.push({ url, init })
-        return Promise.resolve(init.method === 'DELETE' ? new Response(null, { status: 204 }) : new Response('[]', { status: 200 }))
+        return Promise.resolve(
+          init.method === 'DELETE' ? new Response(null, { status: 204 }) : new Response('[]', { status: 200 }),
+        )
       }),
     )
     await ambilDaftarPengguna()
     await ambilPilihanPengguna()
     const kontak = { email: '', telepon: '', nik: '', jabatan: '' }
-    await buatPengguna({ akunId: 'U/1', nama: 'U', sandi: 'Sandi-Uji-01', wajibGanti: true, organisasi: '', divisi: '', unit: '', workbasket: [], menu: [], menuLihat: [], ...kontak })
-    await ubahPengguna('U/1', { nama: 'U', organisasi: '', divisi: '', unit: '', workbasket: [], menu: [], menuLihat: [], ...kontak })
+    await buatPengguna({
+      akunId: 'U/1',
+      nama: 'U',
+      sandi: 'Sandi-Uji-01',
+      wajibGanti: true,
+      organisasi: '',
+      divisi: '',
+      unit: '',
+      workbasket: [],
+      menu: [],
+      menuLihat: [],
+      ...kontak,
+    })
+    await ubahPengguna('U/1', {
+      nama: 'U',
+      organisasi: '',
+      divisi: '',
+      unit: '',
+      workbasket: [],
+      menu: [],
+      menuLihat: [],
+      ...kontak,
+    })
     await setelAktifPengguna('U/1', false)
     await bukaKunciPengguna('U/1')
     await aturSandiPengguna('U/1', { sandi: '', wajibGanti: true })
@@ -227,7 +323,17 @@ describe('kontak akun - Email, Phone Number, Employee ID (NIK), Position (Kelola
   it('opsional: semua kosong sah; terisi sah diterima', () => {
     expect(periksaIsian(sah, true, 'ADMIN')).toBeNull()
     expect(
-      periksaIsian({ ...sah, email: 'uji.user@nusantara.example', telepon: '+62 812-3456-7890', nik: 'UJI/2026.001-A', jabatan: 'Underwriter' }, true, 'ADMIN'),
+      periksaIsian(
+        {
+          ...sah,
+          email: 'uji.user@nusantara.example',
+          telepon: '+62 812-3456-7890',
+          nik: 'UJI/2026.001-A',
+          jabatan: 'Underwriter',
+        },
+        true,
+        'ADMIN',
+      ),
     ).toBeNull()
     expect(periksaKontak({ email: '', telepon: '02112345', nik: '', jabatan: '' })).toBeNull()
   })
@@ -241,22 +347,43 @@ describe('kontak akun - Email, Phone Number, Employee ID (NIK), Position (Kelola
     expect(periksaIsian({ ...sah, nik: 'UJI#001' }, true, 'ADMIN')).toBe(KELOLA_USER.galatNIK)
     expect(periksaIsian({ ...sah, nik: '1'.repeat(31) }, true, 'ADMIN')).toBe(KELOLA_USER.galatNIK)
     expect(periksaIsian({ ...sah, jabatan: 'J'.repeat(151) }, true, 'ADMIN')).toBe(KELOLA_USER.galatJabatan)
-    for (const p of [KELOLA_USER.galatEmail, KELOLA_USER.galatTelepon, KELOLA_USER.galatNIK, KELOLA_USER.galatJabatan]) {
+    for (const p of [
+      KELOLA_USER.galatEmail,
+      KELOLA_USER.galatTelepon,
+      KELOLA_USER.galatNIK,
+      KELOLA_USER.galatJabatan,
+    ]) {
       expect(p).toMatch(/^(Email|Phone Number|Employee ID|Position) /)
     }
   })
 
   it('label berbahasa Inggris', () => {
     expect([KELOLA_USER.email, KELOLA_USER.telepon, KELOLA_USER.nik, KELOLA_USER.jabatan]).toEqual([
-      'Email', 'Phone Number', 'Employee ID (NIK)', 'Position',
+      'Email',
+      'Phone Number',
+      'Employee ID (NIK)',
+      'Position',
     ])
   })
 
   it('form ubah terisi dari akun tersimpan', () => {
     const r = {
-      akunId: 'UJI-K', nama: 'Uji', organisasi: '', divisi: '', unit: '', aktif: true, terkunci: false, wajibGantiSandi: false,
-      loginTerakhir: '', email: 'k@x.example', telepon: '08123456789', nik: 'UJI-9', jabatan: 'Staff', contactId: 'CON-1009',
-      workbasket: [], menu: [],
+      akunId: 'UJI-K',
+      nama: 'Uji',
+      organisasi: '',
+      divisi: '',
+      unit: '',
+      aktif: true,
+      terkunci: false,
+      wajibGantiSandi: false,
+      loginTerakhir: '',
+      email: 'k@x.example',
+      telepon: '08123456789',
+      nik: 'UJI-9',
+      jabatan: 'Staff',
+      contactId: 'CON-1009',
+      workbasket: [],
+      menu: [],
     }
     const isi = isianDari(r)
     expect([isi.email, isi.telepon, isi.nik, isi.jabatan]).toEqual(['k@x.example', '08123456789', 'UJI-9', 'Staff'])
@@ -265,10 +392,25 @@ describe('kontak akun - Email, Phone Number, Employee ID (NIK), Position (Kelola
 
 describe('identitas akun - Contact ID, username dan email sudah terdaftar (migrasi 905, 03-10-2026)', () => {
   const akun = (akunId: string, email: string, contactId: string): RingkasAkun => ({
-    akunId, nama: `Nama ${akunId}`, organisasi: '', divisi: '', unit: '', aktif: true, terkunci: false, wajibGantiSandi: false,
-    loginTerakhir: '', email, telepon: '', nik: '', jabatan: '', contactId,
+    akunId,
+    nama: `Nama ${akunId}`,
+    organisasi: '',
+    divisi: '',
+    unit: '',
+    aktif: true,
+    terkunci: false,
+    wajibGantiSandi: false,
+    loginTerakhir: '',
+    email,
+    telepon: '',
+    nik: '',
+    jabatan: '',
+    contactId,
   })
-  const daftar = [akun('UJI-ADMIN', 'uji.admin@nusantara.example', 'CON-1001'), akun('UJI-DUA', 'uji.dua@nusantara.example', 'CON-1002')]
+  const daftar = [
+    akun('UJI-ADMIN', 'uji.admin@nusantara.example', 'CON-1001'),
+    akun('UJI-DUA', 'uji.dua@nusantara.example', 'CON-1002'),
+  ]
   const isi = (akunId: string, email: string) => ({ ...isianKosong(), akunId, email })
 
   it('username sudah terdaftar: sama persis atau beda huruf saja', () => {
@@ -279,9 +421,13 @@ describe('identitas akun - Contact ID, username dan email sudah terdaftar (migra
   })
 
   it('email sudah terdaftar: email akun lain, tanpa beda huruf; milik sendiri boleh', () => {
-    expect(periksaGanda(isi('UJI-BARU', ' UJI.ADMIN@nusantara.example '), null, daftar)).toBe(KELOLA_USER.galatEmailTerdaftar)
+    expect(periksaGanda(isi('UJI-BARU', ' UJI.ADMIN@nusantara.example '), null, daftar)).toBe(
+      KELOLA_USER.galatEmailTerdaftar,
+    )
     expect(periksaGanda(isi('UJI-ADMIN', 'Uji.Admin@nusantara.example'), 'UJI-ADMIN', daftar)).toBeNull()
-    expect(periksaGanda(isi('UJI-ADMIN', 'UJI.Dua@nusantara.example'), 'UJI-ADMIN', daftar)).toBe(KELOLA_USER.galatEmailTerdaftar)
+    expect(periksaGanda(isi('UJI-ADMIN', 'UJI.Dua@nusantara.example'), 'UJI-ADMIN', daftar)).toBe(
+      KELOLA_USER.galatEmailTerdaftar,
+    )
     expect(periksaGanda(isi('UJI-BARU', ''), null, daftar)).toBeNull()
   })
 

@@ -358,17 +358,13 @@ export default function Popup({
         <table className="claimprop__tabel">
           <thead>
             <tr>
-              {[
-                'Claim No',
-                'Policy No',
-                'Accepted No',
-                'Currency',
-                'Treaty Gross  100%',
-                'RNM Share Value',
-                'Kurs Value',
-                'Convert Value',
-              ].map((k) => (
+              {['Claim No', 'Policy No', 'Accepted No', 'Currency'].map((k) => (
                 <th key={k}>{k}</th>
+              ))}
+              {['Treaty Gross  100%', 'RNM Share Value', 'Kurs Value', 'Convert Value'].map((k) => (
+                <th key={k}>
+                  <span className="claimprop__angka">{k}</span>
+                </th>
               ))}
             </tr>
           </thead>
@@ -379,10 +375,12 @@ export default function Popup({
                 <td>{b.policyNo}</td>
                 <td>{b.acceptedNo}</td>
                 <td>{b.currency}</td>
-                <td className="claimprop__angka">{tampilAngka(b.treatyGross)}</td>
-                <td className="claimprop__angka">{tampilAngka(b.rnmShare)}</td>
-                <td className="claimprop__angka">{tampilAngka(b.kursValue)}</td>
-                <td className="claimprop__angka">{tampilAngka(b.convertValue)}</td>
+                {/* angka dibungkus span: `.claimprop__angka` ber-display block - dipasang di <td> sel keluar dari baris */}
+                {[b.treatyGross, b.rnmShare, b.kursValue, b.convertValue].map((n, j) => (
+                  <td key={j}>
+                    <span className="claimprop__angka">{tampilAngka(n)}</span>
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>

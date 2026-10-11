@@ -22,6 +22,10 @@ import (
 // Acuan - bacaan acuan Oracle (memenuhi `models.Acuan`).
 type Acuan struct {
 	g *Gudang
+	// katalog - kolom tabel datar polis NB Fac In yang ada di basis data; tembolok - dokumen polis datar hasil susun
+	// (`polis_datar.go`).
+	katalog  katalogDatar
+	tembolok tembolokDatar
 	// Produksi - padanan `When/IsPEGAPROD`: bacaan skema luar yang di korpus hanya berjalan di produksi.
 	Produksi bool
 }
@@ -280,7 +284,7 @@ func (a *Acuan) DaftarJenisReas(ctx context.Context) ([]models.Pilihan, error) {
 
 // ---------------------------------------------------------------- lokasi, pelapor, adjuster
 
-// Wilayah = BrowseRW_SQL (RW + CITY menurut ZIPCODE; alias diluruskan, pola Claim Prop).
+// Wilayah = BrowseRW_SQL (RW menurut ZIPCODE; alias diluruskan, pola Claim Prop; loop Pega menimpa - baris terakhir menang).
 func (a *Acuan) Wilayah(ctx context.Context, kodePos string) ([]models.BarisWilayah, error) {
 	rw, err := a.q("RW")
 	if err != nil {
@@ -290,8 +294,11 @@ func (a *Acuan) Wilayah(ctx context.Context, kodePos string) ([]models.BarisWila
 	if err != nil {
 		return nil, err
 	}
-	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT b.ID, b.NOTE, b.DISTRICTID, b.DISTRICTNAME, c.ID, c.NOTE, c.PROVINCEID,
-		c.PROVINCENAME FROM %s b LEFT JOIN %s c ON c.ID = b.CITYID WHERE b.ZIPCODE = :1`, rw, city), 8, kodePos)
+	// Nama kota / provinsi dari RW sendiri (BrowseRW_SQL: NOTE, DISTRICTNAME, CITYNAME, PROVINCENAME); CITY hanya
+	// cadangan ID - RW.CITYID kosong di DEV (11-10-2026), gabungan lama ke CITY membuat City / Province kosong.
+	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT b.ID, b.NOTE, b.DISTRICTID, b.DISTRICTNAME, NVL(b.CITYID, c.ID), b.CITYNAME,
+		NVL(b.PROVINCEID, c.PROVINCEID), b.PROVINCENAME FROM %s b LEFT JOIN %s c ON c.ID = b.CITYID WHERE b.ZIPCODE = :1
+		ORDER BY b.ROWID`, rw, city), 8, kodePos)
 	if err != nil {
 		return nil, err
 	}
@@ -309,12 +316,14 @@ func (a *Acuan) DaftarNegara(ctx context.Context, cari string) ([]models.Pilihan
 	if err != nil {
 		return nil, err
 	}
-	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT COUNTRY, COUNTRY, ID FROM %s WHERE UPPER(COUNTRY) LIKE :1
+	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT COUNTRY, COUNTRY AS LABEL, ID FROM %s WHERE UPPER(COUNTRY) LIKE :1
 		ORDER BY COUNTRY FETCH FIRST 500 ROWS ONLY`, t), 3, pola(cari))
 	return pilihanID(rows, err, "CountryID")
 }
 
-// pilihanID - pilihan bernilai nama dengan ID di kolom ketiga (isi autocomplete `.ID -> <jalur ID>`).
+// pilihanID - pilihan bernilai nama dengan ID di kolom ketiga (isi autocomplete `.ID -> <jalur ID>`). Kolom nama dipilih
+// dua kali: salinan kedua wajib beralias (`AS LABEL`) - nama kolom kembar + `FETCH FIRST` = ORA-00960 (terukur DEV
+// 11-10-2026: Country / Province gagal).
 func pilihanID(rows [][]string, err error, prop string) ([]models.Pilihan, error) {
 	if err != nil {
 		return nil, err
@@ -336,7 +345,7 @@ func (a *Acuan) DaftarProvinsi(ctx context.Context, negara, cari string) ([]mode
 	if err != nil {
 		return nil, err
 	}
-	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT PROVINCENAME, PROVINCENAME, MAX(PROVINCEID) FROM %s
+	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT PROVINCENAME, PROVINCENAME AS LABEL, MAX(PROVINCEID) FROM %s
 		WHERE UPPER(NATION) = UPPER(:1) AND UPPER(PROVINCENAME) LIKE :2 GROUP BY PROVINCENAME ORDER BY PROVINCENAME
 		FETCH FIRST 500 ROWS ONLY`, t), 3, negara, pola(cari))
 	return pilihanID(rows, err, "ProvinceID")
@@ -348,31 +357,38 @@ func (a *Acuan) DaftarKota(ctx context.Context, provinsi, cari string) ([]models
 	if err != nil {
 		return nil, err
 	}
-	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT CITYNAME, CITYNAME, MAX(CITYID) FROM %s
+	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT CITYNAME, CITYNAME AS LABEL, MAX(CITYID) FROM %s
 		WHERE PROVINCENAME = :1 AND UPPER(CITYNAME) LIKE :2 GROUP BY CITYNAME ORDER BY CITYNAME
 		FETCH FIRST 500 ROWS ONLY`, t), 3, provinsi, pola(cari))
 	return pilihanID(rows, err, "CityID")
 }
 
-// DaftarDistrik = BrowseDistrictInputC_RD (DISTRICT menurut CityID).
-func (a *Acuan) DaftarDistrik(ctx context.Context, kotaID, cari string) ([]models.Pilihan, error) {
-	t, err := a.q("DISTRICT")
-	if err != nil {
-		return nil, err
-	}
-	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT DISTRICTNAME, DISTRICTNAME, ID FROM %s WHERE CITYID = :1
-		AND UPPER(DISTRICTNAME) LIKE :2 ORDER BY DISTRICTNAME FETCH FIRST 500 ROWS ONLY`, t), 3, kotaID, pola(cari))
-	return pilihanID(rows, err, "DistrictID")
-}
-
-// DaftarRW = BrowseRWInput_RD (RW menurut DistrictID; isi ID -> RWID, ZipCode -> PostalCode).
-func (a *Acuan) DaftarRW(ctx context.Context, distrikID, cari string) ([]models.Pilihan, error) {
+// DaftarDistrik = BrowseDistrictInputC_RD - DIPERBAIKI 11-10-2026 (perintah work owner "PERBAIKI DEPAN DAN BELAKANG.
+// PERBAIKI LOGIC NYA"): XML menyaring DISTRICT menurut `CityID`, tetapi City dipilih dari RW yang kolom ID-nya kosong (DEV:
+// PROVINCEID / CITYID / DISTRICTID RW nol dari 86.283 baris) dan master DISTRICT / CITY bernama ganda (48 baris "JAKARTA
+// BARAT") - daftar kosong. Hierarki yang utuh adalah NAMA di RW (pola BrowseRW_SQL Zip Code): distinct DISTRICTNAME
+// menurut provinsi + kota terpilih; ID kecamatan RW ikut bila terisi.
+func (a *Acuan) DaftarDistrik(ctx context.Context, provinsi, kota, cari string) ([]models.Pilihan, error) {
 	t, err := a.q("RW")
 	if err != nil {
 		return nil, err
 	}
-	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT NOTE, NOTE, ID, ZIPCODE FROM %s WHERE DISTRICTID = :1
-		AND UPPER(NOTE) LIKE :2 ORDER BY NOTE FETCH FIRST 500 ROWS ONLY`, t), 4, distrikID, pola(cari))
+	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT DISTRICTNAME, DISTRICTNAME AS LABEL, MAX(DISTRICTID) FROM %s
+		WHERE PROVINCENAME = :1 AND CITYNAME = :2 AND UPPER(DISTRICTNAME) LIKE :3 GROUP BY DISTRICTNAME
+		ORDER BY DISTRICTNAME FETCH FIRST 500 ROWS ONLY`, t), 3, provinsi, kota, pola(cari))
+	return pilihanID(rows, err, "DistrictID")
+}
+
+// DaftarRW = BrowseRWInput_RD (Region; isi ID -> RWID, ZipCode -> PostalCode) - DIPERBAIKI 11-10-2026 seperti
+// `DaftarDistrik`: XML menyaring `DistrictID` (kosong di RW DEV), di sini nama provinsi + kota + kecamatan terpilih.
+func (a *Acuan) DaftarRW(ctx context.Context, provinsi, kota, distrik, cari string) ([]models.Pilihan, error) {
+	t, err := a.q("RW")
+	if err != nil {
+		return nil, err
+	}
+	rows, err := a.banyak(ctx, fmt.Sprintf(`SELECT NOTE, NOTE AS LABEL, ID, ZIPCODE FROM %s WHERE PROVINCENAME = :1
+		AND CITYNAME = :2 AND DISTRICTNAME = :3 AND UPPER(NOTE) LIKE :4 ORDER BY NOTE, ZIPCODE, ID
+		FETCH FIRST 500 ROWS ONLY`, t), 4, provinsi, kota, distrik, pola(cari))
 	if err != nil {
 		return nil, err
 	}
@@ -384,15 +400,30 @@ func (a *Acuan) DaftarRW(ctx context.Context, distrikID, cari string) ([]models.
 	return out, nil
 }
 
-// AgenKlien = GetLeaderReport (`id FROM agent WHERE clientname = :nama`) - loop Pega menimpa: baris terakhir.
+// AgenKlien = GetLeaderReport (`id FROM agent WHERE clientname = :nama`) - loop Pega menimpa: baris terakhir. Satu nama
+// klien dapat dimiliki beberapa agen; alamatnya dibaca dari CLIENT_ADDRESS (`AlamatAgen`, bukan JSON M_CLIENT seperti XML),
+// maka agen yang kliennya BERALAMAT didahulukan, baru baris terakhir. Temuan work owner 11-10-2026 ("TOMBOL INI GA
+// FUNGSI", Choose grid Ceding Co Name): DEV dua agen bernama klien sama, agen baris terakhir tanpa CLIENT_ADDRESS ->
+// Reporter Address tetap kosong dan Choose tampak tidak berbuat apa-apa.
 func (a *Acuan) AgenKlien(ctx context.Context, namaKlien string) (string, error) {
 	t, err := a.q("AGENT")
 	if err != nil {
 		return "", err
 	}
-	v, _, err := a.satu(ctx, fmt.Sprintf(`SELECT ID FROM %s WHERE CLIENTNAME = :1 ORDER BY ROWID DESC
-		FETCH FIRST 1 ROWS ONLY`, t), namaKlien)
+	ca, err := a.q("CLIENT_ADDRESS")
+	if err != nil {
+		return "", err
+	}
+	v, _, err := a.satu(ctx, sqlAgenKlien(t, ca), namaKlien)
 	return v, err
+}
+
+// sqlAgenKlien - agen bernama klien `:1`: yang kliennya punya alamat (selain tipe 7 Email, `sqlAlamatKlien`) dulu.
+func sqlAgenKlien(agent, clientAddress string) string {
+	return fmt.Sprintf(`SELECT g.ID FROM %s g WHERE g.CLIENTNAME = :1
+		ORDER BY CASE WHEN EXISTS (SELECT 1 FROM %s c WHERE c.CLIENTID = g.CLIENTID AND NVL(c.ASMADDRESSTYPE, '-') <> '7')
+			THEN 0 ELSE 1 END, g.ROWID DESC
+		FETCH FIRST 1 ROWS ONLY`, agent, clientAddress)
 }
 
 // AlamatAgen = GetAddressCeding (empat bagian alamat klien milik agen). XML membaca `M_CLIENT.JSONDATA.AddressList`;

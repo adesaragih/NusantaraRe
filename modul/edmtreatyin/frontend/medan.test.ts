@@ -155,15 +155,15 @@ describe('kerangka tab (lima section Prop)', () => {
     expect(tataTab('selisih').gross[0]?.jalur).toBe('PolicyTreatyIn.TreatyDifference.GrossPremium')
   })
 
-  it('PropOldData / PropValueDifference: label "% Deduction", Net Premium, empat Balance, PPH / PPN; hanya-baca', () => {
+  it('PropOldData / PropValueDifference: label "(%) Deduction" sama dengan isian, Net Premium, empat Balance, PPH / PPN; hanya-baca', () => {
     for (const v of ['lama', 'lama2', 'selisih'] as const) {
       const t = tataTab(v)
       expect(t.kiri.map((k) => k.judul)).toEqual(['OGP'])
       expect(label(t.kiri[0]!.medan, h)).toEqual([
         'Premi Ogp',
-        '% Deduction In A (OGP)',
+        '(%) Deduction In A (OGP)',
         'Deduction In A (OGP)',
-        '% Deduction In B (OGP)',
+        '(%) Deduction In B (OGP)',
         'Deduction In B (OGP)',
         'Claim',
         'Salvage',
@@ -176,9 +176,9 @@ describe('kerangka tab (lima section Prop)', () => {
       ])
       expect(t.kanan.flatMap((k) => label(k.medan, h))).toEqual([
         'Premi Onp',
-        '% Deduction In A (ONP)',
+        '(%) Deduction In A (ONP)',
         'Deduction In A (ONP)',
-        '% Deduction In B (ONP)',
+        '(%) Deduction In B (ONP)',
         'Deduction In B (ONP)',
         'Deduction1',
         'Deduction2',

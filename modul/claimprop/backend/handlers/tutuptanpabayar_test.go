@@ -4,10 +4,14 @@ package handlers_test
 // PreventRejectClaimProp bercentang melahirkan kasus komite TKMT- satu tingkat tanpa adjustment.
 
 import (
+	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
+	"nusantarare/modul/claimprop/backend/handlers"
 	"nusantarare/modul/claimprop/backend/models"
 	"nusantarare/modul/claimprop/backend/tiruan"
 )
@@ -72,6 +76,16 @@ func TestTutupTanpaBayarMelahirkanKomiteSatuTingkat(t *testing.T) {
 		t.Fatalf("kasus komite close %v, mau satu", kt)
 	}
 	komite := kt[0]
+	// 5.5 Komite.CARI1: layar sesudah aksi membawa ID komite (pop-up berganti pesan sukses) dan centangnya
+	nilai, _ := out["halaman"].(map[string]any)["nilai"].(map[string]any)
+	if nilai[models.PropKomiteBaru] != komite || nilai[models.PropCentangTutupTanpaBayar] != "true" {
+		t.Fatalf("Komite.CARI1 %v / centang %v di layar sesudah CWP", nilai[models.PropKomiteBaru],
+			nilai[models.PropCentangTutupTanpaBayar])
+	}
+	if b, _ := json.Marshal(out["modal"].(map[string]any)["tutupKlaim"]); !strings.Contains(string(b),
+		models.JudulSuksesTutup) {
+		t.Fatalf("pop-up tanpa pesan sukses: %s", b)
+	}
 	if a := u.g.Komite[komite]; len(a) != 1 || a[0].OperatorID != wbDeptHeadUji || a[0].Jabatan != models.JabatanTutupTanpaBayar {
 		t.Fatalf("tangga komite close %+v", a)
 	}
@@ -89,22 +103,41 @@ func TestTutupTanpaBayarMelahirkanKomiteSatuTingkat(t *testing.T) {
 		t.Fatal("riwayat Request close claim without payment tidak tercatat")
 	}
 
-	// penyimpangan sadar: kiriman kedua selama kasus komite close menunggu ditolak
+	// penyimpangan sadar (perintah work owner 10-10-2026): selama kasus komite close menunggu, CWP / Close Claim
+	// ditolak dengan nomornya, dan pop-up menampilkan kartu "already submitted"
+	sudah := models.PesanSudahDiajukan(models.TransferTutup, komite)
+	kode, out = u.minta(http.MethodGet, handlers.Prefix+"/kasus/"+id, teknik, models.WorkbasketAcceptation, nil)
+	u.wajib(kode, http.StatusOK, out, "buka kasus ber-CWP menunggu")
+	if n := nilaiLayar(out); n[models.PropKomiteMenunggu] != komite || n[models.PropJenisKomiteMenunggu] != models.TransferTutup {
+		t.Fatalf("penanda pengajuan menunggu: %v / %v", n[models.PropKomiteMenunggu], n[models.PropJenisKomiteMenunggu])
+	}
+	if b, _ := json.Marshal(out["modal"].(map[string]any)["tutupKlaim"]); !strings.Contains(string(b), models.JudulMenungguTutup) {
+		t.Fatalf("pop-up Close Claim tanpa kartu already submitted: %s", b)
+	}
 	kode, out = kerja("SendCloseClaimToKomite", cwp)
 	u.wajib(kode, http.StatusUnprocessableEntity, out, "CWP kedua")
-	if !strings.Contains(strings.Join(teks(out["pesan"]), ";"), models.PesanTutupTanpaBayarBerjalan) {
+	if strings.Join(teks(out["pesan"]), ";") != sudah {
 		t.Fatalf("pesan CWP kedua: %v", out["pesan"])
 	}
 	if n := len(komiteTutup(u, id)); n != 1 {
 		t.Fatalf("kasus komite close %d sesudah kiriman kedua", n)
 	}
 
-	// Close Claim langsung: klaim Resolved-Completed, kasus komite terbuka ikut ditutup (CloseAllSubCases true)
-	kode, out = kerja("CloseClaimProp", map[string]string{models.PropCentangTutupTanpaBayar: "false",
-		"TempCommiteClaim.Remarks": "UJI-TUTUP"})
+	tutup := map[string]string{models.PropCentangTutupTanpaBayar: "false", "TempCommiteClaim.Remarks": "UJI-TUTUP"}
+	kode, out = kerja("CloseClaimProp", tutup)
+	u.wajib(kode, http.StatusUnprocessableEntity, out, "Close Claim selama CWP menunggu")
+	if strings.Join(teks(out["pesan"]), ";") != sudah || u.g.Kasus[id].Tertutup() {
+		t.Fatalf("Close Claim selama CWP menunggu: %v", out["pesan"])
+	}
+
+	// komite sudah memutus (kasus komite selesai): Close Claim terbuka lagi
+	if err := u.g.TutupKomiteTerbuka(context.Background(), nil, id, "", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	kode, out = kerja("CloseClaimProp", tutup)
 	u.wajib(kode, http.StatusOK, out, "tutup klaim")
-	if !u.g.Kasus[id].Tertutup() || !u.g.Kasus[komite].Tertutup() {
-		t.Fatalf("klaim %v / komite %v belum tertutup", u.g.Kasus[id].StatusWork, u.g.Kasus[komite].StatusWork)
+	if !u.g.Kasus[id].Tertutup() {
+		t.Fatalf("klaim %v belum tertutup", u.g.Kasus[id].StatusWork)
 	}
 }
 

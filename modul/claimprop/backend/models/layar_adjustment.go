@@ -230,24 +230,42 @@ func LayarKomite(n int, lolos bool) []Unsur {
 	}
 }
 
-// LayarTutupKlaim - Section `PreventRejectClaimProp`. Layout S22 (Remark, visible never) dan S28-29 (pesan sukses
-// komite) tidak dibangun; "Yes" tutup tanpa pembayaran = `SendCloseClaimToKomite` (perintah work owner 10-10-2026).
+// LayarTutupKlaim - Section `PreventRejectClaimProp`. Layout S22 (Remark, visible never) tidak dibangun; "Yes" tutup
+// tanpa pembayaran = `SendCloseClaimToKomite` (perintah work owner 10-10-2026). Keempat kondisi layout ber-
+// `pyIsClientWhen = true` (SyaratKlien): centang Close Without Payment hanya postValue, dua baris Yes / No bertukar di
+// layar tanpa memanggil server. Baris Yes biasa XML `=='false'`; di sini "bukan true" agar tampil sebelum centang
+// pernah disentuh (nilai kosong). Sesudah "Yes" tanpa bayar (tanpa closeContainer) `Komite.CARI1` terisi dan pop-up
+// berganti kartu sukses + Close; selama pengajuan Reject / Close Without Payment klaim ini masih menunggu komite
+// hanya kartu "already submitted" yang tampil. Perintah work owner 10-10-2026 (menyimpang dari XML, yang menampilkan centang terus
+// dan pesan tanpa nomor): sesudah sukses centang disembunyikan dan nomor kasus komite ditampilkan. Teks dan rupa
+// kartu sukses diperbaiki (perintah work owner 10-10-2026, bahasa Inggris) - lihat konstanta di `komite.go`.
 func LayarTutupKlaim() []Unsur {
 	cwp := PropCentangTutupTanpaBayar
 	return []Unsur{
-		medan(cwp, "Close Without Payment", KCentang),
-		medan(PropKronologiTutup, "Chronology", KArea),
-		wajibU(medan("TempCommiteClaim.Remarks", "Remarks", KArea)),
-		tampil(bagian("",
-			label("Are you sure want close this claim without payment?"),
-			tombol("CloseWithoutPayment", "Yes", "SendCloseClaimToKomite"),
-			tombol("CloseNo", "No", "TutupModal"),
-		), sama(cwp, "true")),
-		tampil(bagian("",
-			label("Are you sure want close this claim?"),
-			tombol("CloseYes", "Yes", "CloseClaimProp"),
-			tombol("CloseNo2", "No", "TutupModal"),
-		), beda(cwp, "true")),
+		// sesudah Yes tanpa bayar: kartu sukses + Close
+		tampilKlien(bagian("",
+			kartuSukses(JudulSuksesTutup, TeksSuksesTutup),
+			tombol("CloseSukses", "Close", "TutupModal"),
+		), PropKomiteBaru, "", true),
+		tampilKlien(bagian("",
+			// pengajuan Reject / Close Without Payment klaim ini masih menunggu komite (perintah work owner 10-10-2026)
+			tampilKlien(kartuMenunggu("MenungguTutup"), PropKomiteMenunggu, "", true),
+			tampilKlien(bagian("",
+				medan(cwp, "Close Without Payment", KCentang),
+				medan(PropKronologiTutup, "Chronology", KArea),
+				wajibU(medan("TempCommiteClaim.Remarks", "Remarks", KArea)),
+				tampilKlien(bagian("",
+					label(TanyaTutupTanpaBayar),
+					tombol("CloseWithoutPayment", "Yes", "SendCloseClaimToKomite"),
+					tombol("CloseNo", "No", "TutupModal"),
+				), cwp, "true", false),
+				tampilKlien(bagian("",
+					label(TanyaTutup),
+					tombol("CloseYes", "Yes", "CloseClaimProp"),
+					tombol("CloseNo2", "No", "TutupModal"),
+				), cwp, "true", true),
+			), PropKomiteMenunggu, "", false),
+		), PropKomiteBaru, "", false),
 	}
 }
 

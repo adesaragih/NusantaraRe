@@ -126,9 +126,15 @@ describe('medan layar NB Treaty In - dapat diisi', () => {
     expect(cari(MEDAN_ATASAN_UMUM, 'FlagPPH').kunci).toBe(true)
   })
 
-  it('layar atasan: label VERBATIM (tanpa "(%)")', () => {
-    expect(label(MEDAN_ATASAN_UANG)).toContain('Deduction In A (OGP)')
-    expect(label(MEDAN_ATASAN_UANG)).not.toContain('(%) Deduction In A (OGP)')
+  // Work owner 11-10-2026: label Result di layar atasan "samain dengan saat inputtan".
+  it('layar atasan: label Deduction In A / B sama dengan layar input admin, tanpa nama properti Result*', () => {
+    const deduksi = (ms: Medan[]) =>
+      ms.filter((m) => /(RiComm|OveriddingComm|Result)O[gn]p\d?$/.test(m.jalur)).map((m) => [m.jalur, m.label])
+    expect(deduksi(MEDAN_ATASAN_UANG)).toEqual(deduksi(MEDAN_ADMIN_UANG))
+    expect(label(MEDAN_ATASAN_UANG)).toEqual(
+      expect.arrayContaining(['(%) Deduction In A (OGP)', 'Deduction In A (OGP)', 'Deduction In B (ONP)']),
+    )
+    expect(label(MEDAN_ATASAN_UANG).filter((l) => l.startsWith('Result'))).toEqual([])
   })
 })
 

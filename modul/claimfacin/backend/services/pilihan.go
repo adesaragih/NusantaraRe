@@ -66,9 +66,10 @@ func (l *Layanan) Pilihan(ctx context.Context, p inti.Pelaku, id string, r Permi
 	case models.SumberKota:
 		return l.a.DaftarKota(ctx, h.Ambil(models.CD+"Province"), r.Cari)
 	case models.SumberDistrik:
-		return l.a.DaftarDistrik(ctx, h.Ambil(models.CD+"CityID"), r.Cari)
+		return l.a.DaftarDistrik(ctx, h.Ambil(models.CD+"Province"), h.Ambil(models.CD+"City"), r.Cari)
 	case models.SumberRW:
-		return l.a.DaftarRW(ctx, h.Ambil(models.CD+"DistrictID"), r.Cari)
+		return l.a.DaftarRW(ctx, h.Ambil(models.CD+"Province"), h.Ambil(models.CD+"City"), h.Ambil(models.CD+"District"),
+			r.Cari)
 	case PilihanOutstanding:
 		if r.N < 1 || r.N > len(h.AmbilDaftar(models.DaftarObjek)) {
 			return nil, fmt.Errorf("%w: objek %d", ErrPermintaanTidakSah, r.N)
@@ -166,10 +167,10 @@ func (l *Layanan) pilihanAdj(ctx context.Context, h *models.Halaman, r Permintaa
 	return out, nil
 }
 
-// rekeningAdj - SetPayable_Act 6 / 8.2: rekening klien payable + mata uang adjustment (Payable 3: mata uang saja).
-// Halaman dipakai salinan - RencanaPayable menulis payable baris.
+// rekeningAdj - SetPayable_Act 6 / 8.2: rekening klien payable + mata uang adjustment (Payable 3: mata uang saja);
+// klien = ceding pilihan Choose bila ada (`RencanaPayableTerpilih`, halaman tidak diubah).
 func (l *Layanan) rekeningAdj(ctx context.Context, h *models.Halaman, o, i, a int) ([]models.RekeningBank, error) {
-	r, err := models.RencanaPayable(h.Salin(), o, i, a)
+	r, err := models.RencanaPayableTerpilih(h, o, i, a)
 	if err != nil {
 		return nil, err
 	}

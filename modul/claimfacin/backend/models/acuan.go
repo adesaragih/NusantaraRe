@@ -83,6 +83,10 @@ type Acuan interface {
 	CariPolis(ctx context.Context, jenis, teks string) ([]BarisPolisCari, error)
 	// DokumenPolis = GetCopyNBForClaim (`DATA_JSON FROM JSON_POLIS WHERE nopolis AND prodke`).
 	DokumenPolis(ctx context.Context, nopolis, prodke string) ([]byte, bool, error)
+	// DokumenPolisDatar - polis NB Fac In sistem baru (JSON_POLIS tanpa isi polis): dokumen polis berbentuk DATA_JSON
+	// Pega disusun dari tabel datar nbfacin (`SusunPolisDatar`); `kasus` = ID kasus dari dokumen penunjuk (kosong =
+	// dicari dari JSON_POLIS / FACINPRODUCTION); tidak ada kasusnya = false.
+	DokumenPolisDatar(ctx context.Context, nopolis, prodke, kasus string) ([]byte, bool, error)
 	// RiwayatKlaimPolis = BrowseHistoryClaim / CariHistoryClaim_SQL (+ klaim FACIN sistem baru).
 	RiwayatKlaimPolis(ctx context.Context, nopolis string) ([]RiwayatKlaimPolis, error)
 	// KlaimDitolak = RD RejectedClaim_RD (CLAIMREJECTED `.INSKEY`) - kunci kasus ada di daftar klaim ditolak.
@@ -109,6 +113,11 @@ type Acuan interface {
 	NamaPelaku(ctx context.Context, akun string) (string, error)
 	// EmailPelaku = `OperatorID.pyAddress` (M_LOGIN_GO.EMAIL).
 	EmailPelaku(ctx context.Context, akun string) (string, error)
+	// JabatanPelaku - M_LOGIN_GO.JOB_POSITION akun ("" bila tidak ada) - penanda tab IT tampilan polis NB.
+	JabatanPelaku(ctx context.Context, akun string) (string, error)
+	// PolisNBIT - isi tab Loss Record / Correspondence kasus NB polis (`kasus` kosong = dicari seperti DokumenPolisDatar;
+	// tanpa kasus = kedua tab kosong).
+	PolisNBIT(ctx context.Context, nopolis, prodke, kasus string) (PolisNBIT, error)
 	// EstimasiKasusTerbuka = GetDataEstimation (`SUM(CLAIM_VALUE) REINSURANCE.TRLOSS_DETAIL_T WHERE NO_SPK = pyID AND
 	// NO_AKSEP IS NULL`) - HANYA dipanggil di produksi (skema luar tidak terbaca dari akun DEV, pola OQ-CP-11).
 	EstimasiKasusTerbuka(ctx context.Context, kasusID string) (string, error)

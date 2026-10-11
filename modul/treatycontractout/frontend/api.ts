@@ -109,9 +109,36 @@ export interface TahunTreatyMasuk {
   endDate: string
 }
 
-/** `GET /api/treaty-contract-out/tahun?halaman=&ukuran=`. */
-export async function ambilTahunTreaty(halaman = 1, ukuran = 20): Promise<HalamanTahunTreaty> {
-  return minta<HalamanTahunTreaty>('/api/treaty-contract-out/tahun', { kueri: { halaman, ukuran } })
+/**
+ * Saringan per kolom inbox tahun treaty (work owner 11-10-2026 "SEMUA HEADER BUAT FILTERNYA"), disaring SERVER atas
+ * seluruh baris (daftar berhalaman): tahun dan tanggal Contains (tanggal atas bentuk tampil `DD-MM-YYYY`), grup dan
+ * jenis reasuransi sama persis. Kosong = tanpa saringan.
+ */
+export interface SaringTahunTreaty {
+  underwritingYear: string
+  treatyYear: string
+  startDate: string
+  endDate: string
+  treatyGroupId: string
+  proportion: string
+}
+
+/** Parameter kueri saringan: isian kosong tidak dikirim. */
+export function kueriSaringTahun(s: Partial<SaringTahunTreaty>): Record<string, string | undefined> {
+  const out: Record<string, string | undefined> = {}
+  for (const [k, v] of Object.entries(s)) out[k] = v !== undefined && v.trim() !== '' ? v.trim() : undefined
+  return out
+}
+
+/** `GET /api/treaty-contract-out/tahun?halaman=&ukuran=` + saringan per kolom. */
+export async function ambilTahunTreaty(
+  halaman = 1,
+  ukuran = 20,
+  saring: Partial<SaringTahunTreaty> = {},
+): Promise<HalamanTahunTreaty> {
+  return minta<HalamanTahunTreaty>('/api/treaty-contract-out/tahun', {
+    kueri: { halaman, ukuran, ...kueriSaringTahun(saring) },
+  })
 }
 
 /** `GET /api/treaty-contract-out/tahun/{id}`; 404 bila tidak ada. */

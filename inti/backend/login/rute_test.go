@@ -162,7 +162,7 @@ func TestGantiSandiSalahBukan401(t *testing.T) {
 	c := cookieSesi(t, kirim(h, "POST", "/api/auth/login", `{"akun":"UJI-BARU","sandi":"Sandi-Benar-01"}`, nil))
 	for _, badan := range []string{
 		`{"sandiLama":"Sandi-Salah-01","sandiBaru":"Sandi-Baru-0001"}`,
-		`{"sandiLama":"Sandi-Benar-01","sandiBaru":"pendek"}`,
+		`{"sandiLama":"Sandi-Benar-01","sandiBaru":""}`,
 	} {
 		// 400, bukan 401: 401 dibaca layar sebagai "sesi berakhir".
 		if rec := kirim(h, "POST", "/api/auth/ganti-sandi", badan, c); rec.Code != http.StatusBadRequest {

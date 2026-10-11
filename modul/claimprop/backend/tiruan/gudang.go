@@ -32,11 +32,13 @@ type Gudang struct {
 	Log        []repository.LogLayanan
 	Katastrofe []models.KatastrofeBaru
 	// Komite - ID kasus komite -> tangga; KomiteAdj - ID kasus komite -> ID baris adjustment (kosong = Close Without
-	// Payment); KomiteKlaim - ID kasus komite -> klaim induk (COVER_KEY); KomiteKronologi - teks Chronology kasus close.
+	// Payment / Reject Claim); KomiteKlaim - ID kasus komite -> klaim induk (COVER_KEY); KomiteKronologi - teks
+	// Chronology kasus tanpa adjustment; KomiteTransfer - TRANSFER_TYPE kasus tanpa adjustment ("3" / "4").
 	Komite          map[string][]repository.AnggotaTangga
 	KomiteAdj       map[string]string
 	KomiteKlaim     map[string]string
 	KomiteKronologi map[string]string
+	KomiteTransfer  map[string]string
 	Efek            []string
 	// NomorTerbit - jenis -> urut terakhir (penghitung bersama).
 	NomorTerbit map[string]int
@@ -55,7 +57,7 @@ func Baru() *Gudang {
 	return &Gudang{seq: map[string]int{}, Kasus: map[string]models.Kasus{}, halaman: map[string]*models.Halaman{},
 		JSONKlaim: map[string][2]string{}, Komite: map[string][]repository.AnggotaTangga{}, KomiteAdj: map[string]string{},
 		KomiteKlaim: map[string]string{}, KomiteKronologi: map[string]string{}, NomorTerbit: map[string]int{},
-		KategoriDok: map[string]string{}}
+		KategoriDok: map[string]string{}, KomiteTransfer: map[string]string{}}
 }
 
 // Transaksi - tiruan: salinan keadaan dipulihkan bila fn gagal (rollback).
@@ -85,6 +87,7 @@ type cadangan struct {
 	komiteAdj   map[string]string
 	komiteKlaim map[string]string
 	komiteKron  map[string]string
+	komiteTrf   map[string]string
 	efek        []string
 	nomorTerbit map[string]int
 	dokumen     []models.BarisDokumenKlaim
@@ -95,7 +98,7 @@ func (g *Gudang) salin() cadangan {
 	c := cadangan{urut: g.urut, seq: map[string]int{}, kasus: map[string]models.Kasus{}, halaman: map[string]*models.Halaman{},
 		os: append([]models.BarisOS{}, g.OS...), json: map[string][2]string{}, log: append([]repository.LogLayanan{}, g.Log...),
 		kat: append([]models.KatastrofeBaru{}, g.Katastrofe...), komite: map[string][]repository.AnggotaTangga{},
-		komiteAdj: map[string]string{}, komiteKlaim: map[string]string{}, komiteKron: map[string]string{},
+		komiteAdj: map[string]string{}, komiteKlaim: map[string]string{}, komiteKron: map[string]string{}, komiteTrf: map[string]string{},
 		efek:        append([]string{}, g.Efek...),
 		nomorTerbit: map[string]int{}, dokumen: append([]models.BarisDokumenKlaim{}, g.Dokumen...),
 		storage: append([]penyimpanan.Objek{}, g.Storage...)}
@@ -123,6 +126,9 @@ func (g *Gudang) salin() cadangan {
 	for k, v := range g.KomiteKronologi {
 		c.komiteKron[k] = v
 	}
+	for k, v := range g.KomiteTransfer {
+		c.komiteTrf[k] = v
+	}
 	for k, v := range g.NomorTerbit {
 		c.nomorTerbit[k] = v
 	}
@@ -134,7 +140,7 @@ func (g *Gudang) pulihkan(c cadangan) {
 	g.Log, g.Katastrofe, g.Komite, g.KomiteAdj, g.Efek, g.NomorTerbit = c.log, c.kat, c.komite, c.komiteAdj, c.efek,
 		c.nomorTerbit
 	g.Dokumen, g.Storage = c.dokumen, c.storage
-	g.KomiteKlaim, g.KomiteKronologi = c.komiteKlaim, c.komiteKron
+	g.KomiteKlaim, g.KomiteKronologi, g.KomiteTransfer = c.komiteKlaim, c.komiteKron, c.komiteTrf
 }
 
 func (g *Gudang) nomor(seq string) int {
@@ -446,8 +452,8 @@ func (g *Gudang) BuatKasusKomite(_ context.Context, _ *db.Tx, klaimID, adjID, pe
 	return id, nil
 }
 
-// BuatKasusKomiteTutup melahirkan kasus komite Close Without Payment (tanpa adjustment).
-func (g *Gudang) BuatKasusKomiteTutup(ctx context.Context, tx *db.Tx, klaimID, kronologi, pembuat, nama string,
+// BuatKasusKomiteTutup melahirkan kasus komite tanpa adjustment (TT 3 Reject Claim / TT 4 Close Without Payment).
+func (g *Gudang) BuatKasusKomiteTutup(ctx context.Context, tx *db.Tx, klaimID, transfer, kronologi, pembuat, nama string,
 	anggota []repository.AnggotaTangga, saat time.Time) (string, error) {
 	id, err := g.BuatKasusKomite(ctx, tx, klaimID, "", pembuat, nama, anggota, saat)
 	if err != nil {
@@ -456,20 +462,24 @@ func (g *Gudang) BuatKasusKomiteTutup(ctx context.Context, tx *db.Tx, klaimID, k
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.KomiteKronologi[id] = kronologi
+	g.KomiteTransfer[id] = transfer
 	return id, nil
 }
 
-// KomiteTutupTerbuka - cacah kasus komite close klaim yang belum selesai.
-func (g *Gudang) KomiteTutupTerbuka(_ context.Context, _ *db.Tx, klaimID string) (int, error) {
+// KomiteTanpaAdjTerbuka - kasus komite tanpa adjustment klaim yang belum selesai (ID terkecil).
+func (g *Gudang) KomiteTanpaAdjTerbuka(_ context.Context, _ *db.Tx, klaimID string) (string, string, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	n := 0
+	pilih := ""
 	for id, k := range g.KomiteKlaim {
-		if k == klaimID && g.KomiteAdj[id] == "" && !g.Kasus[id].Tertutup() {
-			n++
+		if k == klaimID && g.KomiteAdj[id] == "" && !g.Kasus[id].Tertutup() && (pilih == "" || id < pilih) {
+			pilih = id
 		}
 	}
-	return n, nil
+	if pilih == "" {
+		return "", "", nil
+	}
+	return pilih, g.KomiteTransfer[pilih], nil
 }
 
 // TutupKomiteTerbuka menutup kasus komite klaim yang masih terbuka, kecuali `kecuali`.

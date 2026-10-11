@@ -42,7 +42,7 @@ func sqlAmbilAkun(t string) string {
 	return fmt.Sprintf(`SELECT LOGIN_ID, NAME, PASSWORD_HASH, ORGANIZATION_CODE, DIVISION_CODE, UNIT_CODE,
 	        IS_ACTIVE, MUST_CHANGE_PASSWORD, SESSION_VERSION,
 	        CASE WHEN LOCKED_UNTIL > SYSDATE THEN 1 ELSE 0 END
-	   FROM %s WHERE LOGIN_ID = :1`, t)
+	   FROM %s WHERE LOWER(LOGIN_ID) = LOWER(:1)`, t)
 }
 
 func sqlWorkbasket(login, wb string) string {
@@ -123,11 +123,16 @@ const (
 )
 
 // sqlSisipAkun - `seq` = nama lengkap sequence CONTACT_ID. Awalannya bind :13 (nol literal di SQL), TERAKHIR
-// karena go-ora mengikat menurut urutan placeholder; nilainya disusun `nilaiSisipAkun`.
-func sqlSisipAkun(t, seq string) string {
+// karena go-ora mengikat menurut urutan placeholder; nilainya disusun `nilaiSisipAkun`. `tetap` = CONTACT_ID
+// diberikan pemanggil (`AkunBaru.IDKontak`, pemuat akun): :13 = CONTACT_ID utuh, tanpa sequence.
+func sqlSisipAkun(t, seq string, tetap bool) string {
+	kontak := ":13 || " + seq + ".NEXTVAL"
+	if tetap {
+		kontak = ":13"
+	}
 	return fmt.Sprintf(`INSERT INTO %s (LOGIN_ID, NAME, PASSWORD_HASH, ORGANIZATION_CODE, DIVISION_CODE,
 	    UNIT_CODE, IS_ACTIVE, MUST_CHANGE_PASSWORD, EMAIL, PHONE_NUMBER, EMPLOYEE_ID, JOB_POSITION, CONTACT_ID)
-	  VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, :13 || %s.NEXTVAL)`, t, seq)
+	  VALUES (:1, :2, :3, :4, :5, :6, :7, :8, :9, :10, :11, :12, %s)`, t, kontak)
 }
 
 // nilaiSisipAkun - tiga belas nilai bind `sqlSisipAkun`, berurutan.
@@ -138,6 +143,9 @@ func nilaiSisipAkun(a AkunBaru, hash string, wajibGanti bool) []any {
 	}
 	nilai := append([]any{a.ID, a.Nama, hash, db.KosongJadiNil(a.Organisasi), db.KosongJadiNil(a.Divisi),
 		db.KosongJadiNil(a.Unit), benderaYa, wajib}, nilaiKontak(a.Kontak)...)
+	if a.IDKontak != "" {
+		return append(nilai, a.IDKontak)
+	}
 	return append(nilai, AwalanIDKontak)
 }
 
@@ -151,6 +159,11 @@ func sqlPemakaiEmail(t string) string {
 	return fmt.Sprintf(`SELECT LOGIN_ID FROM %s WHERE LOWER(EMAIL) = :1 ORDER BY LOGIN_ID`, t)
 }
 
+// sqlPemakaiKontak - :1 = CONTACT_ID utuh; memakai index unik UX_M_LOGIN_GO_CONTACT_ID migrasi 905.
+func sqlPemakaiKontak(t string) string {
+	return fmt.Sprintf(`SELECT LOGIN_ID FROM %s WHERE CONTACT_ID = :1 ORDER BY LOGIN_ID`, t)
+}
+
 // galatGanda menerjemahkan ORA-00001 M_LOGIN_GO - pengaman terakhir bila dua simpan serentak lolos pemeriksaan
 // aplikasi: index email = ErrEmailSudahTerdaftar, PK atau index username = ErrAkunSudahAda. Bukan ORA-00001 = nil.
 func galatGanda(err error) error {
@@ -159,6 +172,9 @@ func galatGanda(err error) error {
 	}
 	if strings.Contains(err.Error(), "UX_M_LOGIN_GO_EMAIL") {
 		return fmt.Errorf("%w: %v", ErrEmailSudahTerdaftar, err)
+	}
+	if strings.Contains(err.Error(), "UX_M_LOGIN_GO_CONTACT_ID") {
+		return fmt.Errorf("%w: %v", ErrKontakSudahDipakai, err)
 	}
 	return fmt.Errorf("%w: %v", ErrAkunSudahAda, err)
 }
@@ -234,6 +250,15 @@ func (g *GudangOracle) PemakaiUsername(ctx context.Context, id string) ([]string
 // PemakaiEmail membaca akun yang email-nya sama dengan `email`, tanpa beda huruf.
 func (g *GudangOracle) PemakaiEmail(ctx context.Context, email string) ([]string, error) {
 	return g.pemakai(ctx, "pemakai email", sqlPemakaiEmail, email)
+}
+
+// PemakaiKontak - lihat `Gudang.PemakaiKontak`.
+func (g *GudangOracle) PemakaiKontak(ctx context.Context, id string) ([]string, error) {
+	t, err := g.nama(tabelLogin)
+	if err != nil {
+		return nil, err
+	}
+	return g.daftarTeks(ctx, "pemakai contact id", sqlPemakaiKontak(t), strings.TrimSpace(id))
 }
 
 func (g *GudangOracle) pemakai(ctx context.Context, apa string, q func(string) string, nilai string) ([]string, error) {
@@ -464,7 +489,7 @@ func (g *GudangOracle) BuatAkun(ctx context.Context, a AkunBaru, hash string, wa
 	langkah := []struct {
 		q    string
 		args []any
-	}{{sqlSisipAkun(t, seq), nilaiSisipAkun(a, hash, wajibGanti)}}
+	}{{sqlSisipAkun(t, seq, a.IDKontak != ""), nilaiSisipAkun(a, hash, wajibGanti)}}
 	for _, w := range a.Workbasket {
 		langkah = append(langkah, struct {
 			q    string

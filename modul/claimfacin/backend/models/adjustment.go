@@ -143,7 +143,9 @@ func TambahAdjustment(k *Konteks, h *Halaman, o, i int) error {
 	if err != nil {
 		return err
 	}
-	baru := Baris{"pxCreateOperator": k.Pelaku, "pxCreateOpName": nama, "pxCreateDateTime": k.Waktu()}
+	// ExGratia: radio Section InputAdjustment LS41 `pyDefaultValue` 0 - Pega mengirim nilai bawaan itu pada kiriman
+	// pertama panel; layout lama menampilkan "NO" (screenshot work owner 11-10-2026).
+	baru := Baris{"pxCreateOperator": k.Pelaku, "pxCreateOpName": nama, "pxCreateDateTime": k.Waktu(), "ExGratia": "0"}
 	a := h.TambahBaris(DaftarAdj(o, i), baru)
 	mataUangAkhir := ""
 	if len(est) > 0 {
@@ -861,6 +863,50 @@ func RencanaPayable(h *Halaman, o, i, a int) (RencanaRekening, error) {
 	if pay == "3" { // 8.1
 		b["Payable"], b["PayableTo"] = pay, h.Ambil(CD+"PayableTo")
 		r.SemuaKlien = true
+	}
+	return r, nil
+}
+
+// PilihPayableCeding = tombol Choose grid Ceding Co Name (Payable To = Ceding Co Name): `SetPayableTo_act` 1-3
+// (Param.PayAble = .CedingCoName, Param.PayAbleID = .CedingCo) yang ber-remark di Pega sejak pembaruan 08-01-2025 -
+// dihidupkan atas perintah work owner 11-10-2026 ("CHOOSENYA INI GA BERFUNGSI!") `[penyimpangan sadar]`: Specify
+// adjustment + klaim = ceding baris n, rekening dikosongkan lalu diisi rekening pertama ceding itu (`TerapkanRekening`).
+func PilihPayableCeding(h *Halaman, o, i, a, n int) (RencanaRekening, error) {
+	b, err := Adj(h, o, i, a)
+	if err != nil {
+		return RencanaRekening{}, err
+	}
+	c, err := barisDi(h, DaftarCedingCo, n)
+	if err != nil {
+		return RencanaRekening{}, err
+	}
+	b["PayableTo"] = c["CedingCoName"] // 1
+	h.Setel(CD+"PayableTo", c["CedingCoName"])
+	b["NameOfBank"], b["NoAccount"], b["BranchOfBank"], b["SwiftCode"], b["IDOfBank"] = "", "", "", "", ""
+	return RencanaRekening{Klien: c["CedingCo"], MataUang: b["CurrencyID"]}, nil // 2 ParamID.CARI1 / CARI2
+}
+
+// RencanaPayableTerpilih - klien rekening payable SAAT INI (sumber pilihan Name of Bank = Result.pxResults pembacaan
+// terakhir): Payable 1 yang Specify-nya dipilih lewat Choose (berbeda dari bawaan SetPayable_Act) = ceding baris
+// bernama itu; selainnya `RencanaPayable` atas salinan halaman.
+func RencanaPayableTerpilih(h *Halaman, o, i, a int) (RencanaRekening, error) {
+	b, err := Adj(h, o, i, a)
+	if err != nil {
+		return RencanaRekening{}, err
+	}
+	salin := h.Salin()
+	r, err := RencanaPayable(salin, o, i, a)
+	if err != nil || salin.Ambil(CD+"Payable") != "1" {
+		return r, err
+	}
+	if bawaan, _ := Adj(salin, o, i, a); b["PayableTo"] == bawaan["PayableTo"] {
+		return r, nil
+	}
+	for _, c := range h.AmbilDaftar(DaftarCedingCo) {
+		if c["CedingCoName"] == b["PayableTo"] {
+			r.Klien = c["CedingCo"]
+			break
+		}
 	}
 	return r, nil
 }

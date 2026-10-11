@@ -47,6 +47,15 @@ type KlaimFacInKomite interface {
 	// `CloseAllSubCases=true`: kasus komite KMT- lain klaim itu yang masih terbuka ikut ditutup berstatus sama;
 	// `komiteID` = kasus komite yang sedang memutus (dikecualikan - ditutup modul komite di akhir flow-nya).
 	TutupKlaimFacIn(ctx context.Context, tx *db.Tx, klaimID, komiteID, status string, saat time.Time) error
+	// LampiranKlaimFacIn - kategori master FAC dan dokumen kasus klaim induk (tab lampiran Claim Fac In), hanya-baca
+	// (perintah work owner 11-10-2026, `lampiranklaim.go`).
+	LampiranKlaimFacIn(ctx context.Context, klaimID string) (DaftarLampiranKlaim, error)
+	// BukaLampiranKlaimFacIn - isi satu dokumen klaim (`GetBase64Attachment` -> `GetUrlGoogleStorage_Act`) atas nama
+	// `pengguna`. Dokumen di luar kasus itu -> `ErrLampiranKlaimTidakAda`.
+	BukaLampiranKlaimFacIn(ctx context.Context, klaimID, lampiranID, pengguna string) (IsiLampiranKlaim, error)
+	// TautanOfficeLampiranKlaimFacIn - URL bertanda tangan View Office Online (xls / xlsx / doc / docx / ppt / pptx
+	// yang objeknya tercatat).
+	TautanOfficeLampiranKlaimFacIn(ctx context.Context, klaimID, lampiranID, pengguna string) (string, error)
 }
 
 // Status penutupan kasus klaim induk oleh komite (`pxForceCaseClose` WorkStatus).

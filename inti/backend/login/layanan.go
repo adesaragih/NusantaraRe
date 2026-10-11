@@ -18,8 +18,6 @@ var (
 	ErrTerkunci = errors.New("login: akun terkunci sementara")
 	// ErrTanpaRahasia - SESI_RAHASIA kosong; sesi tidak dapat diterbitkan.
 	ErrTanpaRahasia = errors.New("login: SESI_RAHASIA belum disetel")
-	// ErrSandiSama - sandi baru sama dengan sandi lama.
-	ErrSandiSama = errors.New("login: sandi baru sama dengan sandi lama")
 	// ErrAkunTidakSah - bentuk LOGIN_ID atau NAME tidak dapat dipakai.
 	ErrAkunTidakSah = errors.New("login: akun atau nama tidak sah")
 	// ErrAkunSudahAda - LOGIN_ID sudah dipakai.
@@ -170,9 +168,6 @@ func (l *Layanan) GantiSandi(ctx context.Context, tok Token, lama, baru string) 
 	if err := PeriksaSandiBaru(baru); err != nil {
 		return Profil{}, Token{}, err
 	}
-	if baru == lama {
-		return Profil{}, Token{}, ErrSandiSama
-	}
 	hash, err := HashSandi(baru)
 	if err != nil {
 		return Profil{}, Token{}, err
@@ -284,6 +279,20 @@ func (l *Layanan) BuatPenggunaDenganSandi(ctx context.Context, a AkunBaru, sandi
 }
 
 func (l *Layanan) buat(ctx context.Context, a AkunBaru, sandi string, wajibGanti bool) error {
+	if err := l.periksaBaru(ctx, &a); err != nil {
+		return err
+	}
+	hash, err := HashSandi(sandi)
+	if err != nil {
+		return err
+	}
+	return l.gudang.BuatAkun(ctx, a, hash, wajibGanti)
+}
+
+// periksaBaru - pemeriksaan akun baru sebelum ditulis (ID dan nama dirapikan di `a`): bentuk ID dan nama, username
+// dan email belum dipakai, CONTACT_ID tetap (pemuat akun) belum dipakai, jenjang organisasi / divisi / unit /
+// workbasket. Dipakai `buat` dan uji-kering pemuat akun.
+func (l *Layanan) periksaBaru(ctx context.Context, a *AkunBaru) error {
 	a.ID, a.Nama = strings.TrimSpace(a.ID), strings.TrimSpace(a.Nama)
 	if !AkunSah(a.ID) || a.Nama == "" || len(a.Nama) > 150 {
 		return ErrAkunTidakSah
@@ -297,14 +306,17 @@ func (l *Layanan) buat(ctx context.Context, a AkunBaru, sandi string, wajibGanti
 	if err := l.periksaEmailBebas(ctx, a.ID, a.Email); err != nil {
 		return err
 	}
-	if err := l.periksaJenjang(ctx, a); err != nil {
-		return err
+	if a.IDKontak != "" {
+		if !polaIDKontak.MatchString(a.IDKontak) {
+			return fmt.Errorf("%w: %q", ErrIDKontakTidakSah, a.IDKontak)
+		}
+		if pemakai, err := l.gudang.PemakaiKontak(ctx, a.IDKontak); err != nil {
+			return err
+		} else if len(pemakai) > 0 {
+			return fmt.Errorf("%w: %s dipakai %s", ErrKontakSudahDipakai, a.IDKontak, strings.Join(pemakai, ", "))
+		}
 	}
-	hash, err := HashSandi(sandi)
-	if err != nil {
-		return err
-	}
-	return l.gudang.BuatAkun(ctx, a, hash, wajibGanti)
+	return l.periksaJenjang(ctx, *a)
 }
 
 // irisan - isi `a` yang juga ada di `b`, urutan `a`; selalu terisi (bukan nil).

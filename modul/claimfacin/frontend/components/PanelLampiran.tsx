@@ -1,7 +1,8 @@
 // Disalin dari `modul/claimnonprop/frontend/components/PanelLampiran.tsx` (pola, bukan impor; asal Claim Prop, perintah
 // work owner 09-10-2026 "untuk attachment juga mengikuti dari klaim prop"): keputusan work owner = keputusan layar Claim Prop.
 // Tab "Lampiran" - susunan layar Pega (screenshot work owner 09-10-2026): judul (tanpa jumlah - work owner 09-10-2026),
-// tombol Add attachment / Refresh / Save, grid Category - Count Attach - Upload File - View File (5 baris, "Show All"). Isinya
+// tombol Add attachment / Refresh (Save pindah ke samping Submit dan strip tab "Lampiran" dibuang - work owner
+// 11-10-2026), grid Category - Count Attach - Upload File - View File (5 baris, "Show All"). Isinya
 // `AttachCategory.pxResults` = master T_KATEGORI_DOC_KLAIM FAC (TYPE_KLAIM) x cacah dokumen klaim. Upload File / Add attachment =
 // `GCNMSaveAttachments` (kategori baris = TempInputParam.pyCategory; Add attachment = kategori PER BERKAS `.pyCategory`,
 // tabel File / Category + hapus, screenshot work owner 09-10-2026), berkas dipilih atau diseret-lepas
@@ -10,7 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { Gagal, Memuat, Modal, StripTab } from '../../../../inti/frontend/components/ui/dasar'
+import { Gagal, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import { ApiFailure } from '../../../../inti/frontend/klien'
 import {
   ambilIsiLampiran,
@@ -45,8 +46,6 @@ interface BerkasPilihan {
   file: File
   kategori: string
 }
-
-const TAB_LAMPIRAN = ['lampiran'] as const
 
 function IkonUnggah() {
   return (
@@ -97,16 +96,11 @@ function IkonLihat() {
 
 export default function PanelLampiran({
   id,
-  bolehSimpan,
-  onSimpan,
   hanyaLihat = false,
 }: {
   id: string
   /** Tampilan saja: tanpa Upload / Delete walau server mengizinkan (`?lihat=1`). */
   hanyaLihat?: boolean
-  /** Tombol Save = simpan kasus (pemegang assignment). */
-  bolehSimpan: boolean
-  onSimpan: () => void
 }) {
   const [data, setData] = useState<LampiranKasus | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
@@ -185,7 +179,6 @@ export default function PanelLampiran({
   const pesanGalat = galat instanceof ApiFailure ? galat.detail.message : null
   return (
     <div>
-      <StripTab tab={TAB_LAMPIRAN} aktif="lampiran" onPilih={() => undefined} label={() => CFI.lampiran} />
       <section className="panel">
         <h3 className="panel__title">{CFI.lampiran}</h3>
         {galat !== null &&
@@ -201,9 +194,6 @@ export default function PanelLampiran({
           </button>
           <button type="button" className="btn btn--ghost btn--sm" onClick={muat}>
             {CFI.lampiranMuatUlang}
-          </button>
-          <button type="button" className="btn btn--ghost btn--sm" disabled={!bolehSimpan} onClick={onSimpan}>
-            {CFI.save}
           </button>
         </div>
         <div className="claimfacin__grid">

@@ -26,6 +26,7 @@ export type Unsur =
   | { jenis: 'sub'; t: Tata }
   | { jenis: 'grid'; t: Tata }
   | { jenis: 'letak'; t: Tata }
+  | { jenis: 'polisNB'; t: Tata }
 
 export type Blok =
   { jenis: 'kepala'; t: Tata } | { jenis: 'panel'; judul: string; isi: Butir[] } | { jenis: 'aksi'; tombol: Tata[] }
@@ -84,6 +85,9 @@ export function susunIsi(tata: readonly Tata[]): Unsur[] {
         return
       case 'grid':
         out.push({ jenis: 'grid', t })
+        return
+      case 'polisNB':
+        out.push({ jenis: 'polisNB', t })
         return
       default:
         out.push(t.letak ? { jenis: 'letak', t } : { jenis: 'sub', t })

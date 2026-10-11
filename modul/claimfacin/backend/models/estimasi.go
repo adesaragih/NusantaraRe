@@ -242,6 +242,55 @@ func ProteksiItemKembar(h *Halaman, o, i int, nama string) error {
 	return nil
 }
 
+// ItemKembar (kriteria `ProtectionObjectItem_Act` - Object Name sama - lini Fire / Aneka / Golf yang memanggilnya;
+// `ProtectCoverage_Act` / DeleteTest - Coverage ID sama - lini MBU / PA / Travel, work owner 11-10-2026 "PERBAIKI JUGA
+// UNTUK BISNIS LAIN!"): perintah work owner 11-10-2026 ("INI DI INPUT DOUBLE. TADI ADA WARNING! TAPI SAYA LANJUT INPUT
+// TETEP BISA"). Pega menahan Submit lewat pesan yang menempel di halaman; pesan layar ini hilang di aksi berikutnya, maka
+// kembar diperiksa ulang di tombol Download Claim Face Sheet (nonaktif) dan Print PLA (ditolak). Send to PIC Claim TIDAK
+// ditahan (work owner 11-10-2026 "SAAT DI KLIK SEND PIC DI BUANG AJA DEH"). Marine Cargo tanpa Add item (item dari polis).
+
+// ObjekBerItemKembar - baris objek `b` (nomor baris `PropNomorBaris`) punya item kembar.
+func ObjekBerItemKembar(h *Halaman, b Baris) bool {
+	o, err := strconv.Atoi(b[PropNomorBaris])
+	return err == nil && o > 0 && itemKembarDi(h, o) > 0
+}
+
+// itemKembarDi - item kembar pertama di objek o (`ItemKembar`), 0 bila tidak ada.
+func itemKembarDi(h *Halaman, o int) int {
+	kunci := ""
+	switch {
+	case IsFire(h) || IsAneka(h) || IsGolfInsurance(h):
+		kunci = "ObjectItemName"
+	case IsMBU(h) || IsPA(h) || IsTravel(h): // sama dengan DeleteTest 2.2 (HapusItem)
+		kunci = "CoverageOLDID"
+	default:
+		return 0
+	}
+	lihat := map[string]bool{}
+	for b, it := range h.AmbilDaftar(DaftarItem(o)) {
+		nama := it[kunci]
+		if nama == "" {
+			continue
+		}
+		if lihat[nama] {
+			return b + 1
+		}
+		lihat[nama] = true
+	}
+	return 0
+}
+
+// TandaiItemKembarObjek - pesan `PesanItemKembar` pada item kembar pertama objek o (Download Claim Face Sheet / Print
+// PLA baris objek itu - perintah work owner 11-10-2026 "TAMBAHKAN"); false bila tidak ada.
+func TandaiItemKembarObjek(h *Halaman, o int) bool {
+	i := itemKembarDi(h, o)
+	if i == 0 {
+		return false
+	}
+	h.TambahPesan(JalurAnak(DaftarItem(o), i, "Test"), PesanItemKembar)
+	return true
+}
+
 // PilihCoverageFire = autocomplete Coverage Name grid item Fire (D_FilteredCoverageList nilai .OLDID; isi CoverageNote,
 // IndexCoverage, CoverageID (.Coverage), TSINusare (.TSINusantaraRe), PremiNusare, LimitofLiability), lalu
 // `CopySpreading_Act` dan `ConvertTSINusare_Act`.

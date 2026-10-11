@@ -386,7 +386,8 @@ polis, BELUM DIPUTUSKAN.** ⭐ **Butir `[terbuka]` BARU — butir 11.**
 > ⛔ **RALAT 10-10-2026.** Kalimat lamanya dikutip utuh, tidak dihapus: *"⚠️ **Apakah kesembilan-belas-dan-sepuluh medan
 > itu menjadi kolom, atau dibaca lewat rujukan ke polis, BELUM DIPUTUSKAN.**"* → yang dibangun: **dibaca lewat rujukan
 > ke polis**. Medan salinan polis **tidak disimpan**; `T_CLAIM_OBJECT.KUNCI_POLIS` menyimpan letak objek di halaman
-> polis (`LocationList(n)` / `VehicleList(n)` / `PersonList(n)`), dan halaman polis dibaca ulang dari `JSON_POLIS` setiap
+> polis (`LocationList(n)` / `VehicleList(n)` / `PersonList(n)`), dan halaman polis dibaca ulang dari `JSON_POLIS` (polis
+> NB Fac In sistem baru tanpa isi DATA_JSON: dari tabel datar nbfacin, baca saja - PARITAS §8 butir 25) setiap
 > kasus dimuat (migrasi `561`, `LengkapiObjek`). Kolom `T_CLAIM_OBJECT` yang berlaku = lampiran pengikat (19 kolom);
 > kolom tabel di atas yang tidak ada di sana (mis. `TYPE_NAME`, `OBJECT_STATUS`, `SURVEY_ID`) **tidak dibuat**.
 

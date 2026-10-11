@@ -144,11 +144,17 @@ type Rencana struct {
 	Email string
 	// Posisi - T_WORK_CLAIM.POSITION sesudah Submit: KomiteID baris menunggu pertama yang tersisa; kosong = selesai.
 	Posisi string
-	// StsKonversi - `STS_REJECT` Konversi (S29): kosong = `StsOSAkseptasi` (TT 2); TT 4 = "4" (KomitePost_Close S14).
+	// StsKonversi - `STS_REJECT` Konversi (S29): kosong = `StsOSAkseptasi` (TT 2); TT 4 = "4" (KomitePost_Close S14);
+	// TT 3 = "2" (KomitePost_Reject S14 STSREJECT).
 	StsKonversi string
 	// OSTutup - KomitePost_Close S11 (baris OS close STS 4); KlaimDitolak - S13 (CLAIMREJECTED); TutupKlaim - S17
 	// (`pxForceCaseClose` klaim induk Resolved-Completed). Ketiganya hanya TT 4 disetujui.
 	OSTutup, KlaimDitolak, TutupKlaim bool
+	// OSTolak - KomitePost_Reject S7 (TT 3 disetujui): `SaveRejectTreatyIn_Act_KMT` per baris EstimationList (OS Type 2).
+	OSTolak bool
+	// DokumenTutup - KomitePost_Close S12 (PDF CommitteCloseClaim + InsertDocument_Act), disetujui maupun ditolak;
+	// dibuat sesudah Submit tersimpan seperti PDF akseptasi.
+	DokumenTutup bool
 }
 
 // Teks riwayat klaim KomitePost_Close S2 / S3 (VERBATIM, termasuk dua spasi "Claim  by" pada penolakan) + jabatan
@@ -156,15 +162,21 @@ type Rencana struct {
 const (
 	TeksTutupDisetujui = "Accepted - Close Claim by "
 	TeksTutupDitolak   = "Rejected - Close Claim  by "
+	// KomitePost_Reject S2 / S3 (VERBATIM, termasuk "-Reject" tanpa spasi dan dua spasi "Claim  by" pada penolakan).
+	TeksTolakDisetujui = "Accepted - Reject Claim by "
+	TeksTolakDitolak   = "Rejected -Reject Claim  by "
 )
 
-// RencanakanTutup = `KomitePost` S3 -> `KomitePost_Close` (TT 4, Close Without Payment). Tanpa baris adjustment: tanpa
+// RencanakanTutup = `KomitePost` S3 -> `KomitePost_Close` (TT 4, Close Without Payment) dan `KomitePost_Reject` (TT 3,
+// Reject Claim; perintah work owner 10-10-2026 - beda: teks riwayat, OS per baris estimasi menggantikan OS close,
+// konversi STS "2", PDF `CommitteReject_CC` dengan tabel estimasi). Tanpa baris adjustment: tanpa
 // nomor akseptasi, OS Type 1, retro, Kasir, HISTORYAKSEPTASIPEGA, maupun log layanan (langkah itu tidak ada di rule ini).
-// PDF `CommitteCloseClaim` dan email S12 tidak dibangun: stream HTML-nya tidak diekspor (OQ, PARITAS).
+// PDF `CommitteCloseClaim` (S12.2-S12.7) dibuat sesudah Submit tersimpan (`DokumenTutup`, stream diekspor work owner
+// 10-10-2026); email S12.8 (IsPEGAPROD) belum disambung (OQ-KCP-08, PARITAS).
 func RencanakanTutup(k Kasus, kep Keputusan, akun string, saat time.Time) Rencana {
 	r := Rencana{Count: k.Count, AcceptStatus: kep.AcceptStatus, UsulTutup: UsulTidak, UsulCadang: UsulTidak,
 		SubjectivitySimpan: UsulTidak}
-	setuju := kep.AcceptStatus == KeputusanSetuju
+	setuju, tolak := kep.AcceptStatus == KeputusanSetuju, k.Tolak()
 	berjalan := k.barisBerjalan()
 	jabatan := ""
 	if berjalan >= 0 {
@@ -177,14 +189,27 @@ func RencanakanTutup(k Kasus, kep Keputusan, akun string, saat time.Time) Rencan
 	if setuju {
 		teks = TeksTutupDisetujui
 	}
+	if tolak {
+		teks = TeksTolakDitolak
+		if setuju {
+			teks = TeksTolakDisetujui
+		}
+	}
 	if setuju || kep.AcceptStatus == KeputusanTolak { // S2 / S3 (gerbang AcceptStatus 1 / 2), S4 DataTransform
 		r.Klaim.Riwayat = append(r.Klaim.Riwayat, kontrak.RiwayatKlaimTreaty{Teks: teks + jabatan, Pelaku: akun,
 			Tingkat: jabatan, Saat: saat})
 	}
-	r.JSONKlaim = true // S10 InsertJsonClaimTreaty_act (tanpa gerbang)
+	r.JSONKlaim = true    // Close S10 / Reject S11 InsertJsonClaimTreaty_act (tanpa gerbang)
+	r.DokumenTutup = true // Close S12 / Reject S12 tanpa gerbang AcceptStatus
 	if setuju {
-		r.OSTutup, r.KlaimDitolak, r.Konversi, r.TutupKlaim = true, true, true, true // S11, S13, S15, S17
-		r.StsKonversi = StsOSTutup                                                   // S14 TempOpenPage.stsReject := 4
+		r.KlaimDitolak, r.Konversi, r.TutupKlaim = true, true, true // Close S13, S15, S17 / Reject S13, S14, S16
+		if tolak {
+			r.OSTolak = true           // Reject S7
+			r.StsKonversi = StsOSTolak // Reject S14 STSREJECT "2"
+		} else {
+			r.OSTutup = true           // Close S11
+			r.StsKonversi = StsOSTutup // Close S14 TempOpenPage.stsReject := 4
+		}
 		r.TingkatAkhirSetuju = k.Count == k.Loop
 	}
 	r.Count = k.Count + 1 // S16

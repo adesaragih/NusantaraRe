@@ -32,19 +32,37 @@ const JUDUL: Record<JenisPopup, string> = {
 /** Baris per halaman grid hasil ViewPolis (pyGridPaginator); server membatasi 500 baris (`models.BatasCariPolis`). */
 const PER_HALAMAN_POLIS = 10
 
-/** Sel angka rata kanan. */
-function Angka({ v }: { v: string | undefined }) {
-  return <td className="claimfacin__angka">{tampilAngka(v ?? '')}</td>
+/**
+ * Sel angka rata kanan. Kelas angka pada <span> di dalam <td>, seperti grid lain: `claimfacin__angka` ber-display block
+ * (nilai medan) menjadikan <td> sebuah blok sehingga sel angka sebaris bertumpuk di satu kolom (work owner 11-10-2026
+ * "PERBAIKI TAMPILAN INI" - Outstanding Claim).
+ */
+export function Angka({ v }: { v: string | undefined }) {
+  return (
+    <td>
+      <span className="claimfacin__angka">{tampilAngka(v ?? '')}</span>
+    </td>
+  )
 }
 
-/** Tabel hanya-baca: judul kolom VERBATIM + baris. */
-function Tabel({ kolom, baris, kaki }: { kolom: readonly string[]; baris: ReactNode[]; kaki?: ReactNode }) {
+/** Tabel hanya-baca: judul kolom VERBATIM + baris; `angka` = indeks kolom angka (judul rata kanan seperti nilainya). */
+export function Tabel({
+  kolom,
+  baris,
+  kaki,
+  angka = [],
+}: {
+  kolom: readonly string[]
+  baris: ReactNode[]
+  kaki?: ReactNode
+  angka?: readonly number[]
+}) {
   return (
     <table className="claimfacin__tabel">
       <thead>
         <tr>
           {kolom.map((k, i) => (
-            <th key={i}>{k}</th>
+            <th key={i}>{angka.includes(i) ? <span className="claimfacin__angka">{k}</span> : k}</th>
           ))}
         </tr>
       </thead>
@@ -81,7 +99,7 @@ export function HasilPolis({
   const nHal = jumlahHalaman(baris.length, PER_HALAMAN_POLIS)
   const halIni = Math.min(hal, nHal)
   return (
-    <div className="claimfacin__grid">
+    <div className="claimfacin__grid claimfacin__grid--polis">
       {baris.length > PER_HALAMAN_POLIS && (
         <div className="claimfacin__pager">
           <button
@@ -199,6 +217,7 @@ export default function Popup({
     isi = (
       <Tabel
         kolom={CFI.retroKolom}
+        angka={[1, 2]}
         baris={retro.map((b, i) => (
           <tr key={i}>
             <td>{b.ReinsurerName}</td>
@@ -312,48 +331,52 @@ export default function Popup({
       </>
     )
   } else {
-    // Outstanding_SC: kolom nama per lini (`labelNama`), nilai akseptasi negatif, kurs standar, total dalam IDR.
+    // Outstanding_SC: kolom nama per lini (`labelNama`), nilai akseptasi negatif, kurs standar, total dalam IDR. No Claim /
+    // Policy No / Accepted No tidak dilipat (`claimfacin__grid--os`); tabel menggulir mendatar bila tidak muat.
     const r = data as RingkasanOutstanding
     isi = (
-      <Tabel
-        kolom={[
-          CFI.osNoClaim,
-          CFI.osPolis,
-          CFI.osAksep,
-          r.labelNama,
-          CFI.osCoverage,
-          CFI.osCurrency,
-          CFI.osTSI,
-          CFI.osNilai,
-          CFI.osKurs,
-          CFI.osKonversi,
-        ]}
-        baris={(r.baris ?? []).map((b, i) => (
-          <tr key={i}>
-            <td>{b.noClaim}</td>
-            <td>{b.noPolis}</td>
-            <td>{b.acceptedNo}</td>
-            <td>{b.nama}</td>
-            <td>{b.coverage}</td>
-            <td>{b.currency}</td>
-            <Angka v={b.tsiRnm} />
-            <Angka v={b.nilai} />
-            <Angka v={b.kurs} />
-            <Angka v={b.konversi} />
-          </tr>
-        ))}
-        kaki={
-          <tfoot>
-            <tr>
-              <td colSpan={8} className="claimfacin__label">
-                {CFI.osTotal}
-              </td>
-              <td>{r.mataUang}</td>
-              <Angka v={r.total} />
+      <div className="claimfacin__grid claimfacin__grid--os">
+        <Tabel
+          kolom={[
+            CFI.osNoClaim,
+            CFI.osPolis,
+            CFI.osAksep,
+            r.labelNama,
+            CFI.osCoverage,
+            CFI.osCurrency,
+            CFI.osTSI,
+            CFI.osNilai,
+            CFI.osKurs,
+            CFI.osKonversi,
+          ]}
+          angka={[6, 7, 8, 9]}
+          baris={(r.baris ?? []).map((b, i) => (
+            <tr key={i}>
+              <td>{b.noClaim}</td>
+              <td>{b.noPolis}</td>
+              <td>{b.acceptedNo}</td>
+              <td>{b.nama}</td>
+              <td>{b.coverage}</td>
+              <td>{b.currency}</td>
+              <Angka v={b.tsiRnm} />
+              <Angka v={b.nilai} />
+              <Angka v={b.kurs} />
+              <Angka v={b.konversi} />
             </tr>
-          </tfoot>
-        }
-      />
+          ))}
+          kaki={
+            <tfoot>
+              <tr>
+                <td colSpan={8} className="claimfacin__label">
+                  {CFI.osTotal}
+                </td>
+                <td>{r.mataUang}</td>
+                <Angka v={r.total} />
+              </tr>
+            </tfoot>
+          }
+        />
+      </div>
     )
   }
 

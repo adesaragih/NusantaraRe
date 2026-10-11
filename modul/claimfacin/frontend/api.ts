@@ -35,7 +35,8 @@ export interface SelTata {
 
 /** Satu unsur tata - `models.Tata`. */
 export interface Tata {
-  jenis: 'bagian' | 'medan' | 'label' | 'tombol' | 'grid'
+  /** `polisNB` = tampilan polis NB Fac In hanya-baca (`components/PolisNB.tsx`); `kendali` "fire" = When IsFire. */
+  jenis: 'bagian' | 'medan' | 'label' | 'tombol' | 'grid' | 'polisNB'
   id?: string
   label?: string
   jalur?: string
@@ -56,7 +57,8 @@ export interface Tata {
   tambah?: Tata
   bernomor?: boolean
   /** Format layout Pega: dua = Inline grid double, sebaris = Inline, tab = layout group Tab, judul = kepala layar. */
-  letak?: 'dua' | 'sebaris' | 'tab' | 'judul' | 'tabel'
+  /** `duaAtas` = Inline grid double berlabel di atas (Input Register, screenshot Pega work owner 11-10-2026). */
+  letak?: 'dua' | 'duaAtas' | 'tiga' | 'kolom' | 'kiri' | 'sebaris' | 'tab' | 'judul' | 'tabel'
   /** Ikon tombol dari XML (pi-plus, pi-trash, pi-pencil, pi-check). */
   ikon?: 'tambah' | 'hapus' | 'ubah' | 'simpan'
   /** Paging grid (pyGridPaginator). */

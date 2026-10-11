@@ -4,7 +4,7 @@
 // isian keputusan. Pola `modul/komiteclaimnonprop/frontend/api.ts` (disalin, bukan impor). Daftar kerja penyetuju
 // (`GET /kasus`) dibaca tabel komite inbox Claim Fac In (`modul/claimfacin/frontend/api.ts`), bukan modul ini.
 
-import { BATAS_WAKTU_MS, kegagalanDari, minta, rakitURL } from '../../../inti/frontend/klien'
+import { BATAS_WAKTU_MS, kegagalanDari, minta, rakitURL, unduhBerkasBeridentitas } from '../../../inti/frontend/klien'
 import { headerIdentitas } from '../../../inti/frontend/store/sesi'
 
 export const PREFIX_KCFI = '/api/komite-claim-fac-in'
@@ -38,6 +38,8 @@ export interface Bagian {
   kunci: string
   judul?: string
   medan?: Medan[]
+  /** Dua kolom bertumpuk berlabel kiri (layout lama Pega: Policy Detail LS6 | LS7, Claim Details LS49 | LS19). */
+  kolom?: Medan[][]
   grid?: Grid[]
 }
 
@@ -177,4 +179,68 @@ export async function putuskan(id: string, kep: Keputusan): Promise<HasilKeputus
   } catch {
     throw kegagalanDari(jawab.status, teks)
   }
+}
+
+/** Grid kategori lampiran klaim induk - HANYA kategori yang berisi (`models.SusunLampiranKomite`). */
+export interface KategoriLampiran {
+  id: string
+  label: string
+  countAttach: number
+}
+
+/** Satu dokumen klaim induk. */
+export interface Lampiran {
+  id: string
+  namaFile: string
+  kategori: string
+  mime: string
+  /** Create Date `DD/MM/YYYY HH:mm`. */
+  tanggal: string
+  /** PXCREATEOPERATOR - username pengunggah. */
+  operator: string
+  /** Objek penyimpanan tercatat (syarat View / View Office Online). */
+  adaObjek: boolean
+}
+
+export interface LampiranKomite {
+  kategori: KategoriLampiran[]
+  lampiran: Lampiran[]
+}
+
+/** Lampiran klaim induk kasus komite (perintah work owner 11-10-2026), hanya-baca. */
+export function ambilLampiran(id: string): Promise<LampiranKomite> {
+  return minta<LampiranKomite>(`${PREFIX_KCFI}/kasus/${encodeURIComponent(id)}/lampiran`)
+}
+
+function jalurLampiran(id: string, a: Lampiran): string {
+  return `${PREFIX_KCFI}/kasus/${encodeURIComponent(id)}/lampiran/${encodeURIComponent(a.id)}`
+}
+
+/** File: unduh satu dokumen klaim induk - fetch beridentitas. */
+export function unduhLampiran(id: string, a: Lampiran): Promise<void> {
+  return unduhBerkasBeridentitas(`${jalurLampiran(id, a)}/isi`, a.namaFile)
+}
+
+/** Isi satu dokumen klaim induk sebagai Blob - `View` pdf / gambar di popup penampil. */
+export async function ambilIsiLampiran(id: string, a: Lampiran): Promise<Blob> {
+  const kendali = new AbortController()
+  const jam = setTimeout(() => {
+    kendali.abort()
+  }, BATAS_WAKTU_MS)
+  try {
+    const jawab = await fetch(rakitURL(`${jalurLampiran(id, a)}/isi`), {
+      method: 'GET',
+      headers: { ...headerIdentitas() },
+      signal: kendali.signal,
+    })
+    if (!jawab.ok) throw kegagalanDari(jawab.status, await jawab.text())
+    return await jawab.blob()
+  } finally {
+    clearTimeout(jam)
+  }
+}
+
+/** View Office Online - URL bertanda tangan untuk penampil kantor. */
+export function tautanOfficeLampiran(id: string, a: Lampiran): Promise<{ url: string }> {
+  return minta<{ url: string }>(`${jalurLampiran(id, a)}/office`)
 }
