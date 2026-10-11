@@ -290,8 +290,9 @@ const OGPONP: Aksi = { aksi: 'CountOGPONP' }
 export function tataTab(varian: VarianTab): TataTab {
   const a = AWALAN_TAB[varian]
   const admin = varian === 'baruAdmin'
-  /** `% Deduction ...` di empat section hanya-baca; `(%) Deduction ...` di PropNewData2. */
-  const persen = (s: string) => (admin ? `(%) ${s}` : `% ${s}`)
+  /** `(%) Deduction ...` seperti isian PropNewData2 - juga di empat section hanya-baca yang di XML berlabel
+   *  `% Deduction ...` (work owner 11-10-2026: label "samain dengan saat inputtan"). */
+  const persen = (s: string) => `(%) ${s}`
   const m = (prop: string, label: string, aksi?: Aksi[]): Medan => ({
     jalur: a + prop,
     label,

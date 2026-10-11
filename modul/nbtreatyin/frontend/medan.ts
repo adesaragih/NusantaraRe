@@ -355,9 +355,9 @@ export const MEDAN_ATASAN_UMUM: Medan[] = [
   { jalur: POLIS + 'Remark', label: 'Remark', jenis: 'tampil' },
 ]
 
-/** Bagian uang layar atasan - label VERBATIM `DetailDeptHeadTreatyIn_UW`
- *  (berbeda dari layar admin: tanpa "(%)", tanpa Claim 100%). Wadah
- *  `.IsNewPolicyNonProp != 1`. */
+/** Bagian uang layar atasan - `DetailDeptHeadTreatyIn_UW` (tanpa Claim 100%). Wadah `.IsNewPolicyNonProp != 1`.
+ *  Label Deduction In A / B (persen dan hasilnya) SAMA dengan layar input admin, bukan nama properti XML
+ *  `ResultOgp1` dst. (work owner 11-10-2026: "samain dengan saat inputtan"). */
 export const MEDAN_ATASAN_UANG: Medan[] = dalamWadah(wadahUangAtasan, medanAtasanUang())
 
 function medanAtasanUang(): Medan[] {
@@ -371,10 +371,10 @@ function medanAtasanUang(): Medan[] {
   return [
     t('GrossPremium', 'Gross Premium 100%', UANG4),
     t('PremiOgp', 'Premi Ogp'),
-    t('RiCommOgp', 'Deduction In A (OGP)', UANG4, false),
-    t('ResultOgp1', 'ResultOgp1'),
-    t('OveriddingCommOgp', 'Deduction In B (OGP)', UANG4, false),
-    t('ResultOgp2', 'ResultOgp2'),
+    t('RiCommOgp', '(%) Deduction In A (OGP)', UANG4, false),
+    t('ResultOgp1', 'Deduction In A (OGP)'),
+    t('OveriddingCommOgp', '(%) Deduction In B (OGP)', UANG4, false),
+    t('ResultOgp2', 'Deduction In B (OGP)'),
     t('Claim', 'Claim'),
     t('OutstandingClaim', 'Outstanding Claim'),
     t('SalvageValue', 'Salvage'),
@@ -385,10 +385,10 @@ function medanAtasanUang(): Medan[] {
     { ...t('BalanceBeforePPH', 'Balance Before Withholding Tax (PPH 2.2)'), tampil: (h) => !saldoNegatif(h) },
     { ...t('BalanceDueTo', 'Balance Due To Us'), tampil: (h) => !saldoNegatif(h) },
     t('PremiOnp', 'Premi Onp'),
-    t('RiCommOnp', 'Deduction In A (ONP)', UANG4, false),
-    t('ResultOnp1', 'ResultOnp1'),
-    t('OveriddingCommOnp', 'Deduction In B (ONP)', UANG4, false),
-    t('ResultOnp2', 'ResultOnp2'),
+    t('RiCommOnp', '(%) Deduction In A (ONP)', UANG4, false),
+    t('ResultOnp1', 'Deduction In A (ONP)'),
+    t('OveriddingCommOnp', '(%) Deduction In B (ONP)', UANG4, false),
+    t('ResultOnp2', 'Deduction In B (ONP)'),
     // K3: pxCurrency, jumlah uang
     t('Deduction1', 'Deduction1'),
     t('Deduction2', 'Deduction2'),

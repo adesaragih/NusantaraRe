@@ -115,7 +115,7 @@ describe('tab Old Data / New Data / Value Difference (IsNewPolicyNonProp 0)', ()
     expect(html).toContain('data-jalur="PolicyTreatyIn.OldData.PremiOgp">1.500,0000<')
     expect(html).toContain('<h4>OGP</h4>')
     expect(html).toContain('<h4>ONP</h4>')
-    expect(html).toContain('% Deduction In A (OGP)')
+    expect(html).toContain('(%) Deduction In A (OGP)')
     expect(html).toContain('Installment Data Information')
     // tab hanya-baca: tanpa isian angka, tanpa Add / Calculate
     expect(html).not.toMatch(/<input[^>]*edmt__angka/)
