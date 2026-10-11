@@ -44,6 +44,9 @@ var (
 	// ErrEmailSudahTerdaftar - email sudah dipakai akun lain, tanpa beda huruf (migrasi 905, permintaan work owner
 	// 03-10-2026 "proteksi email sudah terdaftar").
 	ErrEmailSudahTerdaftar = errors.New("login: Email is already registered to another account")
+	// ErrKontakSudahDipakai / ErrIDKontakTidakSah - CONTACT_ID tetap pemuat akun (`AkunBaru.IDKontak`).
+	ErrKontakSudahDipakai = errors.New("login: CONTACT_ID sudah dipakai akun lain")
+	ErrIDKontakTidakSah   = errors.New("login: CONTACT_ID harus berbentuk CON-angka")
 )
 
 var (

@@ -75,8 +75,22 @@ adjustment ke Komite. `ID`-nya **sama persis** dengan baris komite di `T_WORK_CL
 | `KOMITE_LOOP` | bilangan bulat | ya | | keputusan tiket 00 Komite — jumlah tingkat tangga |
 | `KOMITE_COUNT` | bilangan bulat | ya | | keputusan tiket 00 Komite — tingkat yang sedang berjalan |
 | `ACCEPT_STATUS` | teks | ya | | keputusan tiket 00 Komite — hasil final: `1` aksep / `2` tolak |
+| `KOMITE_USUL_TUTUP` | teks | tidak | | migrasi `komiteclaimprop/680` (RALAT 08-10-2026) — usul tutup klaim, `'1'`/`'0'` bawaan `'0'`; kasus Life tidak menulisnya |
+| `KOMITE_USUL_CADANG` | teks | tidak | | migrasi `komiteclaimprop/680` (RALAT 08-10-2026) — usul cadangkan klaim, `'1'`/`'0'` bawaan `'0'`; kasus Life tidak menulisnya |
+| `KOMITE_SUBJECTIVITY` | teks | tidak | | migrasi `komiteclaimprop/682` (RALAT 08-10-2026) — isian Subjectivity tingkat 1 Komite Claim Prop, `'1'`/`'0'` bawaan `'0'`; kasus Life tidak menulisnya |
+| `KOMITE_SUBJECTIVITY_NOTE` | teks | ya | | migrasi `komiteclaimprop/682` (RALAT 08-10-2026) — catatan Subjectivity tingkat 1 Komite Claim Prop |
+| `TRANSFER_TYPE` | teks | tidak | | migrasi `komiteclaimfacin/642` (RALAT 10-10-2026) — jenis penyerahan `'2'` adjustment / `'3'` Reject Claim / `'4'` Close Without Payment, bawaan `'2'`; kasus Life tidak menulisnya |
+| `KOMITE_CIRCUM_CAUSE_OF_LOSS` | teks | ya | | migrasi `komiteclaimfacin/643` (RALAT 10-10-2026) — teks pop-up Chronology kasus komite Fac In TT3 / TT4; kasus Life tidak menulisnya |
+| `KOMITE_EXTENT_OF_LOSS` | teks | ya | | migrasi `komiteclaimfacin/643` (RALAT 10-10-2026) — teks pop-up Extent Of Loss kasus komite Fac In TT3 / TT4; kasus Life tidak menulisnya |
+| `KOMITE_LEGAL_LIABILITY` | teks | ya | | migrasi `komiteclaimfacin/643` (RALAT 10-10-2026) — teks pop-up Policy Liability kasus komite Fac In TT3 / TT4; kasus Life tidak menulisnya |
 
-**Index:** `ADJUSTMENT_ID` **(UNIK)**.
+> **RALAT 10-10-2026** (izin work owner 10-10-2026, Komite Claim Fac In tahap 2, keputusan KCF-03). `ADJUSTMENT_ID` kini **boleh kosong** (migrasi `komiteclaimfacin/641`, `MODIFY ... NULL`): kasus komite Fac In TT3 Reject Claim dan TT4 Close Without Payment (`T_WORK_CLAIM.LINI = 'FACIN'`, awalan `KMT-`) lahir tanpa baris adjustment; kasus Life / Prop / Non Prop tetap mengisinya. Kolom `TRANSFER_TYPE` ditambahkan migrasi `komiteclaimfacin/642` (`CHAR(1) DEFAULT '2' NOT NULL`, CHECK `'2'`/`'3'`/`'4'` = jenis penyerahan `pyWorkPage.TransferType`); baris lini lain bernilai bawaan `'2'` (penyerahan adjustment). Mundur 641 = `NOT NULL NOVALIDATE` (baris kosong yang ada dibiarkan).
+
+> **RALAT 10-10-2026 (migrasi 643)** (jawaban work owner 10-10-2026, Komite Claim Fac In, OQ-KCFI-03). Kolom `KOMITE_CIRCUM_CAUSE_OF_LOSS` / `KOMITE_EXTENT_OF_LOSS` / `KOMITE_LEGAL_LIABILITY` (`VARCHAR2(4000)`, boleh kosong, ADD saja) ditambahkan migrasi `komiteclaimfacin/643`: teks pop-up Chronology / Extent Of Loss / Policy Liability kasus komite Fac In TT3 Reject Claim / TT4 Close Without Payment (`SendRejectClaimToKomite2` / `SendCloseClaimToKomite` 7.2 -> `childPageKomite.Komite.*`, Section `ShowTransfer` LS39). Kasus lini lain dan TT2 tidak menulisnya (TT2 menyimpan teks yang sama di baris adjustment).
+
+**Index:** `ADJUSTMENT_ID` **(biasa — `IX_GENERAL_KOMITE_ADJ`, migrasi `komiteclaimprop/681`)**.
+
+> **RALAT 08-10-2026** (izin work owner 08-10-2026, Komite Claim Prop). Kalimat lama: *"**Index:** `ADJUSTMENT_ID` **(UNIK)**."* — ID adjustment Prop (`SEQ_T_CLAIM`) dan Life (`SEQ_CLAIMLF_ADJ`) sama-sama angka polos, sehingga indeks unik lintas lini suatu saat menolak penyerahan sah (ORA-00001). Keunikan satu adjustment ↔ satu kasus komite kini dijaga `KOMITE_ID` UNIK di `T_CLAIMLF_ADJUSTMENT` dan `T_CLAIM_ADJUSTMENT`. Dua kolom usul di atas ditambahkan migrasi `komiteclaimprop/680`.
 
 **Relasi:**
 

@@ -171,6 +171,23 @@ type kelasBisnisTiruan struct {
 	err   error
 }
 
+// NoteKelasBisnis - tiket 55: "UJI KEBAKARAN" / "UJI LAIN" ada (ejaan tabel "Uji Kebakaran" / "Uji Lain").
+func (kelasBisnisTiruan) NoteKelasBisnis(_ context.Context, kunci []string) (map[string]string, error) {
+	tabel := map[string]string{"UJI KEBAKARAN": "Uji Kebakaran", "UJI LAIN": "Uji Lain", "UJI COB": "Uji COB"}
+	hasil := map[string]string{}
+	for _, k := range kunci {
+		if n, ada := tabel[k]; ada {
+			hasil[k] = n
+		}
+	}
+	return hasil, nil
+}
+
+// SaranKelasBisnis - tiket 55: satu saran ber-label kata.
+func (kelasBisnisTiruan) SaranKelasBisnis(_ context.Context, kata string) ([]models.SaranAkumulasi, error) {
+	return []models.SaranAkumulasi{{ID: "UJI-B1", Label: "UJI " + kata}}, nil
+}
+
 func (k kelasBisnisTiruan) KelasBisnis(context.Context, string) ([]models.KelasBisnis, error) {
 	return k.baris, k.err
 }

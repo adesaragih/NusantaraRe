@@ -126,9 +126,15 @@ describe('medan layar NB Treaty In - dapat diisi', () => {
     expect(cari(MEDAN_ATASAN_UMUM, 'FlagPPH').kunci).toBe(true)
   })
 
-  it('layar atasan: label VERBATIM (tanpa "(%)")', () => {
-    expect(label(MEDAN_ATASAN_UANG)).toContain('Deduction In A (OGP)')
-    expect(label(MEDAN_ATASAN_UANG)).not.toContain('(%) Deduction In A (OGP)')
+  // Work owner 11-10-2026: label Result di layar atasan "samain dengan saat inputtan".
+  it('layar atasan: label Deduction In A / B sama dengan layar input admin, tanpa nama properti Result*', () => {
+    const deduksi = (ms: Medan[]) =>
+      ms.filter((m) => /(RiComm|OveriddingComm|Result)O[gn]p\d?$/.test(m.jalur)).map((m) => [m.jalur, m.label])
+    expect(deduksi(MEDAN_ATASAN_UANG)).toEqual(deduksi(MEDAN_ADMIN_UANG))
+    expect(label(MEDAN_ATASAN_UANG)).toEqual(
+      expect.arrayContaining(['(%) Deduction In A (OGP)', 'Deduction In A (OGP)', 'Deduction In B (ONP)']),
+    )
+    expect(label(MEDAN_ATASAN_UANG).filter((l) => l.startsWith('Result'))).toEqual([])
   })
 })
 
@@ -152,7 +158,17 @@ describe('medan layar NB Treaty In - aksi sel (action set XML, berurutan)', () =
   it('Gross* -> CalculatePremi_Act(Action); Premi/Claim/Salvage/Excess/Deduction -> CountOGPONP_Act; Outstanding tanpa aksi', () => {
     expect(cari(MEDAN_ADMIN_UANG, 'GrossPremium').aksi).toEqual([{ aksi: 'CalculatePremi', param: 'PREMIUM' }])
     expect(cari(MEDAN_ADMIN_UANG, 'GrossClaim').aksi).toEqual([{ aksi: 'CalculatePremi', param: 'CLAIM' }])
-    for (const m of ['PremiOgp', 'PremiOnp', 'Claim', 'SalvageValue', 'ExcessLoss', 'Deduction1', 'Deduction2']) {
+    // premi: Deduction In A/B dari persennya (Count*(Pct)) LALU CountOGPONP (work owner 10-10-2026); Deduction1/2 manual
+    for (const m of ['PremiOgp', 'PremiOnp']) {
+      expect(cari(MEDAN_ADMIN_UANG, m).aksi).toEqual([
+        { aksi: 'CountResult1', param: 'Pct' },
+        { aksi: 'CountResult2Ogp', param: 'Pct' },
+        { aksi: 'CountResult1Onp', param: 'Pct' },
+        { aksi: 'CountResult2Onp', param: 'Pct' },
+        { aksi: 'CountOGPONP' },
+      ])
+    }
+    for (const m of ['Claim', 'SalvageValue', 'ExcessLoss', 'Deduction1', 'Deduction2']) {
       expect(cari(MEDAN_ADMIN_UANG, m).aksi).toEqual([{ aksi: 'CountOGPONP' }])
     }
     expect(cari(MEDAN_ADMIN_UANG, 'OutstandingClaim').aksi).toBeUndefined()

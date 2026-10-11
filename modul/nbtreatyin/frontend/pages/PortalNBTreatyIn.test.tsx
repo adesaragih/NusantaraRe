@@ -3,7 +3,7 @@
 //
 //   grid `GetListOpportunity` 6 kolom: LABEL "Offer No" (`.TextNoQuotation`), "Name"
 //   (`.Name` pxLink openWorkByHandle - `.Name` ditulis NOL rule, RALAT tiket 11:
-//   tautan dipindah ke Offer No, kolom tidak dirender), "Group Business", "Insured Name",
+//   tautan dipindah ke Offer No, kolom tidak dirender), "Treaty Business" (perintah work owner 10-10-2026, dulu "Group Business"), "Insured Name",
 //   "Marketing", "Status". Tidak ada kolom "Position" / "No Polis".
 //   baris saringan: `.FilterTermForOpportunity` + ikon pengosong C[1.2] (pxIcon
 //   `pyImage webwb/pyiconclearfield.png`, click -> setValue "" -> postValue, TANPA refresh)
@@ -18,7 +18,7 @@ import PortalNBTreatyIn, { TabelPortal } from './PortalNBTreatyIn'
 
 const baris: RingkasanKasus = {
   id: 'UJI-NB-1',
-  businessName: 'UJI BISNIS',
+  treatyGroupName: 'UJI BISNIS',
   insuredName: 'UJI TERTANGGUNG',
   marketingName: 'UJI MO',
   nbStatus: 'UJI STATUS',
@@ -43,7 +43,7 @@ describe('portal NB Treaty In = SFAPortal_OpportunitiesList', () => {
     expect(judul).toEqual([
       'Offer No',
       'Type',
-      'Group Business',
+      'Treaty Business',
       'Insured Name',
       'Marketing',
       'Status',
@@ -65,7 +65,7 @@ describe('portal NB Treaty In = SFAPortal_OpportunitiesList', () => {
       'Offer No',
       'Policy Number',
       'Type',
-      'Group Business',
+      'Treaty Business',
       'Insured Name',
       'Marketing',
       'Status',
@@ -132,5 +132,17 @@ describe('portal NB Treaty In = SFAPortal_OpportunitiesList', () => {
     expect(status({ ...baris, statusWork: 'Resolved-Rejected', nbStatus: 'UJI DECLINED' })).toEqual([
       'Resolved-Rejected',
     ])
+  })
+})
+
+// WO 07-10-2026 "TAMPILAN NYA HANYA NB-XXX AJA, BERLAKU NB DAN EDM TREATY": ID kasus salinan Copy Old = IDPEGA Pega
+// utuh (`<kelas> <pyID>`); layar hanya menampilkan pyID, kunci buka / kirim tetap ID utuh.
+describe('portal NB Treaty In - berkas salinan Copy Old', () => {
+  it('Offer No tampil pyID saja', () => {
+    const html = renderToStaticMarkup(
+      <TabelPortal baris={[{ ...baris, id: 'ASM-FW-GISFW-WORK UJI-NB-9' }]} onBuka={() => {}} selesai />,
+    )
+    expect(html).toContain('<button type="button" class="nbti__tautan">UJI-NB-9</button>')
+    expect(html).not.toContain('ASM-FW-GISFW-WORK')
   })
 })

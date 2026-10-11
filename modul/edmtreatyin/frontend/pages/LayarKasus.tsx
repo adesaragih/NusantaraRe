@@ -17,10 +17,12 @@
 import { Fragment, useCallback, useRef, useState } from 'react'
 
 import { Gagal, Memuat, Modal, StripTab, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
+import PanelLampiranReas from '../../../../inti/frontend/lampiran/PanelLampiranReas'
 import { useAmbilBatal } from '../ambil'
 import {
   POLIS,
   POSISI_ADMIN,
+  PREFIX_EDMTREATYIN,
   ambilAcuan,
   bukaKasus,
   daftar,
@@ -69,6 +71,7 @@ import {
   type Medan,
   type SumberAcuan,
 } from '../medan'
+import { idTampil } from '../sajian'
 
 function opsi(p: { nilai: string; label: string }[] | null | undefined): Opsi[] {
   return (p ?? []).map((x) => ({ value: x.nilai, label: x.label }))
@@ -258,7 +261,7 @@ export default function LayarKasus({
     <div className="inbox edmt__layar edmt__akar">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">
-          {JUDUL_POSISI[posisi] ?? JUDUL.portal} — {layar.kasus.id}
+          {JUDUL_POSISI[posisi] ?? JUDUL.portal} — {idTampil(layar.kasus.id)}
         </h2>
         <button type="button" className="btn btn--ghost" onClick={() => onKembali()}>
           {TOMBOL.kembali}
@@ -311,7 +314,6 @@ export default function LayarKasus({
             halaman={h}
             wajib={wajib}
             boleh={boleh}
-            sibuk={sibuk}
             opsi={daftarAcuan}
             opsiJenisReas={acuan?.jenisReas ?? []}
             onUbah={ubah}
@@ -344,6 +346,10 @@ export default function LayarKasus({
           {tombolKirim()}
         </div>
       )}
+
+      {/* Lampiran "Reas" (`AttachmentGridReas`) di bawah layar kasus - keputusan work owner 08-10-2026; Upload / Delete
+          selama kasus belum Resolve (diputuskan backend). */}
+      <PanelLampiranReas dasar={`${PREFIX_EDMTREATYIN}/kasus/${encodeURIComponent(id)}/lampiran`} />
 
       {popupBisnis && (
         <PilihBisnis
@@ -403,7 +409,7 @@ export default function LayarKasus({
         >
           {/* Section ShowPolicyNoTreaty_SC: pyWorkPage.pyID, LABEL "telah diaksep menjadi", PolicyTreatyIn.PolicyNo */}
           <div className="edmt__nomor">
-            <p className="edmt__nomor-kasus">{layar.kasus.id}</p>
+            <p className="edmt__nomor-kasus">{idTampil(layar.kasus.id)}</p>
             <p className="edmt__nomor-teks">{NOMOR_DIAKSEP}</p>
             <p className="edmt__nomor-polis">{nilai(h, POLIS + 'PolicyNo')}</p>
           </div>

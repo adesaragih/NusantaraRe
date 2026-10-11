@@ -717,7 +717,7 @@ export interface RincianProduk {
   riRiskId?: string
 }
 
-/** Satu baris rate - tabel `M_RATE_LIFE` (dialog View Rate Master Product Name Life). */
+/** Satu baris rate - `M_RATE_LIFE` (dulu view `RATE_LIFE`) (dialog View Rate Master Product Name Life). */
 export interface BarisRateProduk {
   id: string
   usedBy: string
@@ -733,7 +733,7 @@ export interface RateProduk {
   terpotong: boolean
 }
 
-/** Satu baris R/I Risk - view `RIRISK_LIFE`. */
+/** Satu baris R/I Risk - tabel `RIRISK_LIFE` (dulu view; tabel sejak migrasi inti 938-940, modul ririsklife). */
 export interface BarisRiskProduk {
   id: string
   usedBy: string

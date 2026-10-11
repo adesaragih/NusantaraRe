@@ -12,6 +12,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/dokumenpolis"
 	"nusantarare/inti/backend/galat"
 	"nusantarare/modul/nbtreatyin/backend/models"
 	"nusantarare/modul/nbtreatyin/backend/repository"
@@ -25,6 +26,7 @@ var (
 	ErrTahapBerubah        = repository.ErrTahapBerubah
 	ErrGenerasiTertutup    = repository.ErrGenerasiTertutup
 	ErrNomorPolisSudahAda  = repository.ErrNomorPolisSudahAda
+	ErrNomorPolisDipakai   = repository.ErrNomorPolisDipakai
 	ErrDataKontrakTidakAda = repository.ErrDataKontrakTidakAda
 	ErrTipeNomorKosong     = repository.ErrTipeNomorKosong
 	ErrOJKKosong           = repository.ErrOJKKosong
@@ -55,14 +57,21 @@ type Layanan struct {
 	// konversi dan produksi - efek keluar sesudah selesai (konversi.go).
 	konversi PengirimKonversi
 	produksi bool
+	// pemuat - Copy Old (copyold.go); nil bila gudang tidak membaca JSON_POLIS (tombol tidak tampil).
+	pemuat *Pemuat
 }
 
-// Baru menyusun layanan; `g` nil = tanpa Oracle (setiap tindakan 503).
+// Baru menyusun layanan; `g` nil = tanpa Oracle (setiap tindakan 503). Gudang yang juga `GudangPemuat` (Oracle)
+// menyalakan Copy Old.
 func Baru(g Gudang, jam func() time.Time) *Layanan {
 	if jam == nil {
 		jam = time.Now
 	}
-	return &Layanan{g: g, jam: jam}
+	l := &Layanan{g: g, jam: jam}
+	if gp, ok := g.(GudangPemuat); ok {
+		l.pemuat = PemuatBaru(gp)
+	}
+	return l
 }
 
 // AdaGudang - layanan tersambung ke penyimpanan.
@@ -126,12 +135,10 @@ func (l *Layanan) DaftarKasus(ctx context.Context, p inti.Pelaku, s models.Sarin
 	// (`A.pxCreateOperator = Param.UserIdentifier`) - berkas BUATAN akun ini di posisi mana pun, untuk siapa pun.
 	// Antrean atasan tidak lagi tampil di portal (berkas yang menunggu atasan dibuka dari kotak masuk Beranda);
 	// berkas tanpa CREATE_OP tidak cocok dengan akun mana pun. Saringan LINI non-life tetap (WO: "filter nonlife-nya
-	// tetap"). `s.Selesai` = switch Proses / Resolved: Resolved menampilkan SEMUA berkas selesai, siapa pun
-	// pembuatnya (WO 06-10-2026: "yang resolve nampilin semua yang resolve"); berkas selesai hanya-baca.
+	// tetap"). `s.Selesai` = switch Proses / Resolved; berkas selesai hanya-baca. RALAT 07-10-2026 (WO "TAMBAHKAN KAN
+	// UNTUK PEMBUAT. MENU ITU HANYA UNTUK SI PEMBUAT, NB DAN EDM TREATY"; dulu 06-10-2026 "yang resolve nampilin semua
+	// yang resolve"): Resolved pun HANYA berkas buatan akun ini.
 	s.Antrean, s.PembuatPosisi, s.Pembuat = nil, "", p.AkunID
-	if s.Selesai {
-		s.Pembuat = ""
-	}
 	return l.g.DaftarKasus(ctx, s)
 }
 
@@ -370,9 +377,26 @@ func (l *Layanan) tampilan(ctx context.Context, h *models.Halaman) error {
 }
 
 // muatMaster mengisi halaman TreatyIn dari baris view kontrak terpilih.
+//
+// Berkas salinan dokumen Pega lama (Copy Old / pemuat): DATA_JSON hanya halaman PolicyTreatyIn sehingga `TreatyIn.ID`
+// (TREATY_IN_ID) kosong - master dibaca lewat `PolicyTreatyIn.NoOffer` = TREATYID view, baris pertama (laporan work
+// owner 07-10-2026 "Commencement,Termination tdak muncul"). Kontrak lama yang tidak ada di view = tanpa master, berkas
+// tetap terbuka (nol tulisan).
 func (l *Layanan) muatMaster(ctx context.Context, h *models.Halaman) error {
 	id := h.Ambil(models.HalamanMaster + ".ID")
 	if id == "" {
+		noOffer := h.Ambil(models.HalamanPolis + ".NoOffer")
+		if noOffer == "" {
+			return nil
+		}
+		b, err := l.g.DetailKontrakTreaty(ctx, noOffer)
+		if errors.Is(err, repository.ErrDataKontrakTidakAda) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		models.TerapkanMasterKontrak(h, b)
 		return nil
 	}
 	b, err := l.g.DetailKontrak(ctx, id)
@@ -459,4 +483,19 @@ func bolehPilihBisnis(k models.Kasus, h *models.Halaman) error {
 			ErrTindakanTakAdaDiPosisi, models.KlaimXOLRetro)
 	}
 	return nil
+}
+
+// KasusLampiran - kasus pemilik lampiran "Reas" (`inti/backend/dokumenpolis`, grid `AttachmentGridReas` NB FacIn yang
+// dipinjam NB Treaty In lewat `SetCategoryAttach`): lampiran baru berkunci `KunciInstans`, lampiran Pega lama berkunci
+// pzInsKey `ASM-FW-GISFW-WORK <pyID>`. Upload / Delete selama kasus belum Resolve - keputusan work owner 08-10-2026:
+// "semua bisa asal belum resolve".
+func (l *Layanan) KasusLampiran(ctx context.Context, p inti.Pelaku, id string) (dokumenpolis.Kasus, error) {
+	if err := l.periksaPelaku(p); err != nil {
+		return dokumenpolis.Kasus{}, err
+	}
+	k, err := l.g.Keadaan(ctx, nil, id)
+	if err != nil {
+		return dokumenpolis.Kasus{}, err
+	}
+	return dokumenpolis.KasusDari(models.KunciInstans(k.ID), models.PyIDKasus(k.ID), !k.Tertutup()), nil
 }

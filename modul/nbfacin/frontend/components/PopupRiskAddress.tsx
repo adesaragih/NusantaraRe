@@ -18,7 +18,8 @@
 
 import { useRef, useState } from 'react'
 
-import { Field, Gagal, Halaman, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
+import { Field, Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
+import HalamanPopup from './HalamanPopup'
 import { cariRiskAddress, type AlamatBaru, type BarisRisk, type HalamanRisk, type SaringRisk } from '../api'
 import { POPUP_RISK as R, TEKS_RISK } from '../labels'
 import PopupTambahRisk from './PopupTambahRisk'
@@ -88,10 +89,10 @@ export default function PopupRiskAddress({
       penuh
       aksi={
         <>
-          <button type="submit" className="btn btn--primary" disabled={memuat}>
+          <button type="submit" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" disabled={memuat}>
             {R.cari.label}
           </button>
-          <button type="button" className="btn btn--ghost" onClick={() => setMenambah(true)}>
+          <button type="button" className="btn nbf-tema__tombol btn--ghost" onClick={() => setMenambah(true)}>
             {R.tambah.label}
           </button>
         </>
@@ -133,7 +134,7 @@ export default function PopupRiskAddress({
                       <td>{b.territoryName}</td>
                       <td>{b.postalCode}</td>
                       <td className="table__actions">
-                        <button type="button" className="btn btn--ghost btn--sm" onClick={() => onPilih(b)}>
+                        <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={() => onPilih(b)}>
                           {R.pilih}
                         </button>
                       </td>
@@ -144,7 +145,7 @@ export default function PopupRiskAddress({
             </table>
           </div>
           {hasil && hasil.baris.length > 0 && (
-            <Halaman halaman={hasil.halaman} ukuran={hasil.ukuran} total={hasil.total} onPindah={(h) => void muat(saringCari.current, h)} />
+            <HalamanPopup halaman={hasil.halaman} ukuran={hasil.ukuran} total={hasil.total} onPindah={(h) => void muat(saringCari.current, h)} />
           )}
           {kurang && <div className="alert alert--warn">{TEKS_RISK.isiSaring}</div>}
           {memuat && !hasil && <Memuat />}

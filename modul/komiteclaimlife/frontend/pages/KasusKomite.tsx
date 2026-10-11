@@ -29,7 +29,7 @@ import {
   type KeputusanAsliKomite,
   type RiwayatKomite,
 } from '../api'
-import { selKomite, tingkatKomite } from './InboxKomite'
+import { selKomite, tingkatKomite } from '../nilai'
 
 /** Enum tertutup `{1 Setuju, 2 Tolak}` — urut dropdown. */
 export const PILIHAN_KEPUTUSAN = [

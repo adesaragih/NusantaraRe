@@ -69,10 +69,11 @@ func TestGerbangTulisHakLihat(t *testing.T) {
 
 // Tahap 1 (keputusan work owner 04-10-2026): enam modul selesai yang mendaftar, ditambah Adjuster Consultant,
 // Business Group, Treaty Group, Treaty Group OJK, Treaty Exchange Yearly, Treaty Description, Reinsurance Type,
-// R/I Rate Life (05-10-2026), dan R/I Comm Life (06-10-2026).
+// R/I Rate Life (05-10-2026), R/I Comm Life (06-10-2026), R/I Risk (08-10-2026), Benefit, Plan, Cause Of Loss Life,
+// Disease Life, Cover Life (08-10-2026).
 func TestModulHakLihat(t *testing.T) {
-	mau := []string{"accounts", "adjusterconsultant", "aggregate", "bordereaux", "businessgroup", "companydetail",
-		"marketingofficer", "masterproductnamelife", "reinsurancetype", "ricommlife", "riratelife", "treatydescription", "treatyexchangeyearly",
+	mau := []string{"accounts", "adjusterconsultant", "aggregate", "benefitlife", "bordereaux", "businessgroup", "causeoflosslife", "companydetail",
+		"coverlife", "diseaselife", "marketingofficer", "masterproductnamelife", "planlife", "reinsurancetype", "ricommlife", "riratelife", "ririsklife", "treatydescription", "treatyexchangeyearly",
 		"treatygroup", "treatygroupojk"}
 	if got := kodeHakLihat(daftar.HakLihat()); strings.Join(got, ",") != strings.Join(mau, ",") {
 		t.Errorf("modul HakLihat %v, mau %v", got, mau)

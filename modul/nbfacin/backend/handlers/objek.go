@@ -323,21 +323,88 @@ func bacaObjek(svc *services.Service) http.HandlerFunc {
 	}
 }
 
-// simpanObjek - PUT /api/nbfacin/kasus/{caseId}/objek (tombol Save): ganti utuh, jawab baca ulang.
-func simpanObjek(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+// uraiBadanObjek - badan `{baris: ObjekFire[]}` PUT …/objek dan PUT …/akumulasi; galat 400 sudah ditulis bila ok=false.
+func uraiBadanObjek(w http.ResponseWriter, r *http.Request) ([]models.ObjekFire, bool) {
+	var b daftarObjek
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, batasBadanObjek)).Decode(&b); err != nil {
+		galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON daftar objek yang sah")
+		return nil, false
+	}
+	baris := make([]models.ObjekFire, len(b.Baris))
+	var masalah []string
+	for i, o := range b.Baris {
+		baris[i] = keModel(i, o, &masalah)
+	}
+	if err := services.GalatIsianObjek(masalah); err != nil {
+		tulisGalat(w, err)
+		return nil, false
+	}
+	return baris, true
+}
+
+// simpanAkumulasi - PUT /api/nbfacin/kasus/{caseId}/akumulasi (tiket 60, tahap uw): hanya akumulasi coverage yang ditulis;
+// jawab baca ulang (bentuk PUT …/objek).
+func simpanAkumulasi(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var b daftarObjek
-		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, batasBadanObjek)).Decode(&b); err != nil {
-			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON daftar objek yang sah")
+		pelaku := inti.PelakuDari(r, stubPelaku)
+		if err := inti.WajibIdentitas(pelaku); err != nil {
+			tulisGalat(w, err)
 			return
 		}
-		baris := make([]models.ObjekFire, len(b.Baris))
-		var masalah []string
-		for i, o := range b.Baris {
-			baris[i] = keModel(i, o, &masalah)
+		baris, ok := uraiBadanObjek(w, r)
+		if !ok {
+			return
 		}
-		if err := services.GalatIsianObjek(masalah); err != nil {
+		d, err := svc.SimpanAkumulasi(r.Context(), pelaku, r.PathValue("caseId"), baris)
+		if err != nil {
 			tulisGalat(w, err)
+			return
+		}
+		galat.TulisJSON(w, keObjekKabel(d))
+	}
+}
+
+// simpanObjek - PUT /api/nbfacin/kasus/{caseId}/objek (tombol Save): ganti utuh, jawab baca ulang.
+// batasBadanCsvObjek - badan POST …/objek/csv (tiket 66, RALAT D7: 3000 baris × 61 kolom bernama). Dasar: overhead kunci JSON
+// 1146 byte per baris (Σ panjang nama kolom + tanda kutip / titik dua / koma); 3000 baris rata-rata 60 byte per sel = 13,75 MiB
+// (dihitung dua cara: rumus dan JSON rakitan). 16 MiB menampung rata-rata <= 72 byte per sel.
+const batasBadanCsvObjek = 16 << 20
+
+// hasilCsvObjek - jawaban POST …/objek/csv (api.ts HasilCsvObjekServer).
+type hasilCsvObjek struct {
+	Baris []objekKabel `json:"baris"`
+	Pesan []string     `json:"pesan"`
+}
+
+// simpanCsvObjek - POST /api/nbfacin/kasus/{caseId}/objek/csv (tiket 66, Save Data bilah CSV): badan `{baris: {kolom: teks}[]}`
+// (55 kolom template); MENGGANTI semua objek case; jawab objek sesudah diganti (bentuk GET …/objek) + pesan Pega.
+func simpanCsvObjek(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		pelaku := inti.PelakuDari(r, stubPelaku)
+		if err := inti.WajibIdentitas(pelaku); err != nil {
+			tulisGalat(w, err)
+			return
+		}
+		var b struct {
+			Baris []map[string]string `json:"baris"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, batasBadanCsvObjek)).Decode(&b); err != nil {
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON baris CSV yang sah")
+			return
+		}
+		h, err := svc.SimpanCsvObjek(r.Context(), pelaku, r.PathValue("caseId"), b.Baris)
+		if err != nil {
+			tulisGalat(w, err)
+			return
+		}
+		galat.TulisJSON(w, hasilCsvObjek{Baris: keObjekKabel(h.Baris).Baris, Pesan: h.Pesan})
+	}
+}
+
+func simpanObjek(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		baris, ok := uraiBadanObjek(w, r)
+		if !ok {
 			return
 		}
 		d, err := svc.GantiObjek(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("caseId"), baris)

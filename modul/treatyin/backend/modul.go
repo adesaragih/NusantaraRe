@@ -52,7 +52,11 @@ func Pendaftaran() inti.Pendaftaran {
 		Nama:    Nama,
 		Migrasi: berkasMigrasi,
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
-			return Baru(services.DariDasar(p.Dasar()), p.Config().AuthStub), nil
+			// ⭐ Unggah panel Attachment (8 Oktober 2026) — `ServiceGoogle`
+			// seperti XML; garam hanya untuk token penyimpanan BARU.
+			// ⛔ Garam tidak pernah dicetak.
+			svc := services.DariDasar(p.Dasar()).DenganGaramToken(p.Config().StorageTokenSalt)
+			return Baru(svc, p.Config().AuthStub), nil
 		},
 	}
 }

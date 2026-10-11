@@ -45,6 +45,8 @@ lokasi, ringkasan, Save.
 ## Keputusan agent (menunggu konfirmasi)
 
 - **S-1** Copy Spreading tampil untuk semua pengguna (Pega: IsGroup / user tertentu) — "bisa juga dibuat manual".
+  ⚠️ **RALAT 08-10-2026 (work owner):** "spreading hanya bisa di copy atau add yg masuk ke when IsUW, di marketing tidak
+  bisa add spreading" — Copy Spreading hanya tahap Underwriting (When IsUWSpread). Lihat tiket 59.
 - **S-2** Baris spreading per coverage baca-saja (grid editable Pega hanya untuk user ID tertentu).
 - **S-3** Total Accumulation = tahap berikut.
 - **S-4** % Share RNM menghitung ulang sesudah jeda 500 ms; jawaban lama dibuang.
@@ -174,3 +176,39 @@ Backend (sesi c3, 05-10-2026) — `services/spreading.go` `proteksiTemplate`, di
 
 - [x] Layar sesuai gambar Pega: % Share RNM, Copy Spreading, lokasi → item → coverage → spreading, total, ringkasan.
 - [x] Backend: hitung share + spreading otomatis, Copy To All, simpan (sesi c3, 05-10-2026; migrasi 198 ditulis, belum dijalankan).
+
+## Keputusan work owner 05-10-2026 — proteksi treaty per bisnis dilewati
+
+"jenis treaty ini tidak terdapat untuk bisnis ini " (`CalcultePersentageSpeading_Act` langkah "set error", butuh
+`M_TREATYBUSINESS` berkolom JSON yang keberadaannya di DEV belum terverifikasi): work owner "proteksi itu dilewatin saja
+dulu". Tetap sisa, tidak di-port.
+
+## Laporan work owner 11-10-2026 — "Spreading UW tanpa proteksi limit" (sesi c3, lewat sesi 9d)
+
+**Klaim yang diperiksa:** pesan `"TSI in Location " + Local.idxloc + " exceeds treaty capacity"` (GetKapasitasTreaty) belum
+diport. **Hasil `[terverifikasi]`: SUDAH diport di kedua cabang yang hidup.** Kode tidak diubah; uji ditambah.
+
+- **Peta cabang** `NB FacIn\Activity\GetKapasitasTreaty.xml` (varian NB):
+  - L10118 = cabang **IsFire** 7.2.5.3.20.5;
+  - L20406 = cabang IsEngineering 10.2.1.1.3.18.5 — blok 10.2.1.1.3 ber-`//`, jadi **MATI**;
+  - L26916 = cabang **IsEngineering** 10.2.1.1.4.20.5 (hidup).
+  - Varian `DDL\GetKapasitasTreaty.xml` (dasar port): 6.2.4.3.19.5 (IsFire) dan 9.2.1.1.3.19.5 (IsEngineering).
+  - Cabang lain: isGolfInsurance dan IsMBU, tanpa pesan ini.
+  - Tidak ada cabang Aneka umum / Bonding (K73-17) maupun cargo.
+- **Port:**
+  - `services/spreading.go` L330-332 (IsFire, sejak tiket 48);
+  - `services/spreadinganeka.go` L359-361 (IsEngineering, sejak 73 P3);
+  - keduanya `!top && TSIRNM > maxtsi(QS + SPL)` → pesan bernomor lokasi 1-based, lalu berhenti (langkah .20.6 / .19.6
+    `flaglimitmax==1` → END).
+- **Koreksi atas uraian prakondisi:** `CekLimit.CARI1==1` (diisi .20.3 bila QS dipotong) adalah prakondisi langkah **.20.4**
+  (menambah baris SPL), BUKAN langkah pesan .20.5. Langkah .20.5 hanya `Local.TSIRNM > Local.maxtsi`. Port FIRE mengikutinya
+  (`tambahSPL := dipotong && TSIRNM > maxTSI`; Engineering beda 5 tanpa TSIRNM > maxtsi).
+- **Uji baru:**
+  - `TestKapasitasLokasiBatas` (FIRE): tepat 700 tidak memicu; lokasi 2 → "TSI in Location 2 …"; top risk → pesan lama.
+  - `TestKapasitasLokasiEngineering`: sebelumnya pesan ini tanpa uji; tepat / lokasi 1 / lokasi 2 / top risk.
+  - Mutasi 5/5 tertangkap (batas `>=`, nomor 0-based, tanpa cek).
+- **Kemungkinan sumber laporan (`[pertanyaan terbuka]`, butuh skenario persis dari work owner):**
+  - (1) pesan kapasitas hanya muncul saat spreading otomatis (`POST …/hitung-share`, tahap uw);
+  - (2) case Aneka bukan Engineering / Golf memang tanpa GetKapasitasTreaty di Pega;
+  - (3) proteksi limit lain yang belum diport / dilewati: `SumTreatyCapacity_Act` / `CountTreatyCapacity_Act` (dokumen celah K3)
+    dan "jenis treaty ini tidak terdapat untuk bisnis ini" (dilewati, keputusan 05-10-2026).

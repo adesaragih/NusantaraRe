@@ -139,6 +139,21 @@ func pindaiKontrak(rows *sql.Rows, ada []string) (models.BarisKontrak, error) {
 // ⛔ Nol baris = galat yang menghentikan proses (AC 36-38, spec §5.9) - Pega
 // menelannya dan mengisi halaman dengan nilai kosong.
 func (g *Gudang) DetailKontrak(ctx context.Context, id string) (models.BarisKontrak, error) {
+	return g.detailKontrak(ctx, "ID = :1", id)
+}
+
+// DetailKontrakTreaty - baris view PERTAMA (ORDER BY ID, padanan pxResults(1)) ber-`TREATYID = treatyID`. Dipakai
+// muat ulang master berkas salinan dokumen Pega lama (Copy Old / pemuat; laporan work owner 07-10-2026 "Commencement,
+// Termination tdak muncul"): DATA_JSON hanya halaman PolicyTreatyIn sehingga TREATY_IN_ID kosong, tetapi
+// `PolicyTreatyIn.NoOffer` = TREATYID view (`TerapkanDetailKontrak`). DEV 07-10-2026: ID view tidak pernah sama dengan
+// TREATYID (0 / 36.334 baris); Commencement / Termination tunggal per TREATYID (2.088 kontrak).
+func (g *Gudang) DetailKontrakTreaty(ctx context.Context, treatyID string) (models.BarisKontrak, error) {
+	return g.detailKontrak(ctx, "TREATYID = :1 ORDER BY ID", treatyID)
+}
+
+// detailKontrak - satu baris view `syarat` (berpenampung :1) beserta kolom RD detail + master.
+func (g *Gudang) detailKontrak(ctx context.Context, syarat, nilai string) (models.BarisKontrak, error) {
+	id := nilai
 	tipe, err := g.tipeKolomObjek(ctx, viewDetailGabung)
 	if err != nil {
 		return nil, err
@@ -148,7 +163,7 @@ func (g *Gudang) DetailKontrak(ctx context.Context, id string) (models.BarisKont
 	if err != nil {
 		return nil, err
 	}
-	q := fmt.Sprintf(`SELECT %s FROM %s WHERE ID = :1 FETCH FIRST 1 ROWS ONLY`, strings.Join(eks, ", "), nama)
+	q := fmt.Sprintf(`SELECT %s FROM %s WHERE %s FETCH FIRST 1 ROWS ONLY`, strings.Join(eks, ", "), nama, syarat)
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
@@ -348,23 +363,6 @@ func (g *Gudang) OJKGrupTreaty(ctx context.Context, grupID string) (string, erro
 	}
 	return g.satuTeks(ctx, "membaca OJK grup treaty",
 		fmt.Sprintf(`SELECT TO_CHAR(OJKBUSINESSID) FROM %s WHERE TO_CHAR(ID) = :1 FETCH FIRST 1 ROWS ONLY`, t), grupID)
-}
-
-// GrupBisnisDariGrupTreaty - [keputusan work owner 06-10-2026] nama grup bisnis kontrak tanpa Class of
-// Business: dari tabel BUSINESS lewat ID grup - TREATYGROUP.COAID = BUSINESS.BUSINESSGROUPID - lalu
-// BUSINESSGROUPNAME (satu nama per grup, dicek di DEV 06-10-2026). Nol baris = "".
-func (g *Gudang) GrupBisnisDariGrupTreaty(ctx context.Context, grupID string) (string, error) {
-	b, err := g.nama(tabelBisnis)
-	if err != nil {
-		return "", err
-	}
-	tg, err := g.nama(tabelGrupTreaty)
-	if err != nil {
-		return "", err
-	}
-	return g.satuTeks(ctx, "membaca grup bisnis", fmt.Sprintf(`SELECT b.BUSINESSGROUPNAME FROM %s b
-	  JOIN %s t ON b.BUSINESSGROUPID = TO_CHAR(t.COAID)
-	 WHERE TO_CHAR(t.ID) = :1 AND b.BUSINESSGROUPNAME IS NOT NULL ORDER BY b.ID FETCH FIRST 1 ROWS ONLY`, b, tg), grupID)
 }
 
 // OldIDGrupTreaty = RDB `FetchTreatyGroupOLDID` (`FetchTreatyGroupOldID`).

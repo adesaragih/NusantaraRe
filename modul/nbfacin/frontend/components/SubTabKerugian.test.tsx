@@ -17,7 +17,7 @@ describe('SubTabKerugian', () => {
     for (const l of LOSS_RATIO) expect(html).toContain(`>${l.label}</span>`)
   })
 
-  it('baris: tanggal dd/mm/yyyy, uang 4 desimal gaya Indonesia; loss ratio sesuai desimal Pega', () => {
+  it('baris: tanggal dd/mm/yyyy, uang 4 desimal gaya Indonesia; loss ratio 4 desimal (tampilan seragam, work owner 06-10-2026)', () => {
     const html = renderToStaticMarkup(
       <SubTabKerugian
         rows={[{ ...kerugianBaru('UJI TERTANGGUNG'), dateOfLoss: '05-02-2026', currency: 'USD', amount: '1500000.12345', claim: '250.5' }]}
@@ -27,9 +27,9 @@ describe('SubTabKerugian', () => {
       />,
     )
     expect(html).toContain('<td>05/02/2026</td><td>UJI TERTANGGUNG</td>')
-    expect(html).toContain('<td class="nbf-angka">1.500.000,1235</td><td class="nbf-angka">250,5</td>')
-    expect(html).toContain('>1.234,568</div>')
-    expect(html).toContain('>12,35</div>')
+    expect(html).toContain('<td class="nbf-angka">1.500.000,1235</td><td class="nbf-angka">250,5000</td>')
+    expect(html).toContain('>1.234,5678</div>')
+    expect(html).toContain('>12,3450</div>')
   })
 
   it('catatan baru: Insured Name = tertanggung case, Total Claim "0"; uang tak sah menahan Save', () => {
@@ -38,8 +38,8 @@ describe('SubTabKerugian', () => {
     expect(['', '0', '12.5'].every(uangSah)).toBe(true)
     expect(uangSah('1,5')).toBe(false)
     expect(adaGalatKerugian([{ ...r, currency: 'USD', preventionOfLoss: 'abc' }])).toBe(true)
-    // N-9: Currency wajib per catatan.
-    expect(adaGalatKerugian([r])).toBe(true)
+    // N-9 diralat 07-10-2026: Currency TIDAK wajib (Pega pyRequired=false).
+    expect(adaGalatKerugian([r])).toBe(false)
     expect(adaGalatKerugian([{ ...r, currency: 'USD' }])).toBe(false)
   })
 })
@@ -58,7 +58,7 @@ describe('SubTabKlaimInternal', () => {
         rows={[{ dateOfLoss: '05-02-2026', locationNo: '1', location: 'UJI', currency: 'USD', premium: '100', osClaim: '0', acceptedClaim: '0', incurredClaim: '0', lossRatio: '0', remark: '' }]}
       />,
     )
-    expect(html).toContain('<td>2026</td><td>05/02/2026</td><td>1</td><td>UJI</td><td>USD</td><td class="nbf-angka">100</td>')
+    expect(html).toContain('<td>2026</td><td>05/02/2026</td><td>1</td><td>UJI</td><td>USD</td><td class="nbf-angka">100,0000</td>')
   })
 })
 

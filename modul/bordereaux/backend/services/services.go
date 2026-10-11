@@ -10,22 +10,33 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/penyimpanan"
 	"nusantarare/modul/bordereaux/backend/models"
 	"nusantarare/modul/bordereaux/backend/repository"
 )
 
-// Service membawa akar bersama.
-type Service struct{ *inti.Dasar }
+// Service membawa akar bersama dan garam token penyimpanan (`config.StorageTokenSalt`).
+type Service struct {
+	*inti.Dasar
+	garam string
+}
 
 // DariDasar membungkus akar bersama.
 func DariDasar(d *inti.Dasar) *Service { return &Service{Dasar: d} }
 
+// DenganGaram menyetel garam token penyimpanan lampiran (`STORAGE_TOKEN_SALT`).
+func (s *Service) DenganGaram(garam string) *Service {
+	salin := *s
+	salin.garam = garam
+	return &salin
+}
+
 // PunyaDatabase - Oracle terpasang?
 func (s *Service) PunyaDatabase() bool { return s != nil && s.Dasar.PunyaDatabase() }
 
-// LayananOracle merakit layanan di atas Oracle.
+// LayananOracle merakit layanan di atas Oracle; lampiran disimpan lewat penyimpanan bersama `inti/backend/penyimpanan`.
 func LayananOracle(s *Service) *Layanan {
-	return BaruLayanan(repository.Baru(s.DB()), s.DalamTransaksi)
+	return BaruLayanan(repository.Baru(s.DB()), s.DalamTransaksi).DenganPenyimpanan(penyimpanan.Oracle(s.Dasar, s.garam))
 }
 
 var _ Gudang = (*repository.Gudang)(nil)
@@ -79,6 +90,13 @@ type Gudang interface {
 	CacahDetail(ctx context.Context, k models.KombinasiBdx) (map[string]int, error)
 	CacahRiwayat(ctx context.Context) (map[string]int, error)
 	SisipRiwayatLama(ctx context.Context, tx *dbTx, id, tanggal, pic string, setuju bool, komentar string) error
+	// Lampiran.
+	KategoriLampiran(ctx context.Context, bdxID string) ([]models.KategoriLampiran, error)
+	NamaKategoriLampiran(ctx context.Context, id string) (string, bool, error)
+	DaftarLampiran(ctx context.Context, bdxID, kategoriID string) ([]models.Lampiran, error)
+	AmbilLampiran(ctx context.Context, bdxID, kategoriID, id string) (models.Lampiran, bool, error)
+	SisipLampiran(ctx context.Context, tx *dbTx, a models.Lampiran) error
+	HapusLampiran(ctx context.Context, tx *dbTx, bdxID, id string) error
 }
 
 // Layanan adalah aturan modul di atas Gudang.
@@ -86,6 +104,8 @@ type Layanan struct {
 	gudang   Gudang
 	tx       Transaksi
 	sekarang func() time.Time
+	// berkas - penyimpanan lampiran (`lampiran.go`); nil = gagal terang.
+	berkas PenyimpananBerkas
 }
 
 // BaruLayanan membuat layanan.
@@ -131,6 +151,8 @@ type Hak struct {
 	Hapus    bool `json:"hapus"`
 	Submit   bool `json:"submit"`
 	Putuskan bool `json:"putuskan"`
+	// Lampiran - Upload File / Delete lampiran (`BolehLampiran`); diisi saat berkas dibuka.
+	Lampiran bool `json:"lampiran"`
 }
 
 // HakAtas menilai hak aktor atas satu berkas (`PortalBordereaux_Sec` kolom Edit/Delete, `InputBordereaux` tab Submit):

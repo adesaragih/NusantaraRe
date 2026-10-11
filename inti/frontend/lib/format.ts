@@ -28,6 +28,28 @@ export function formatDate(v: string | Date | null | undefined): string {
   return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`;
 }
 
+/**
+ * Stempel waktu Pega → `DD-MM-YYYY HH:MM`.
+ *
+ * ⛔ Panel History menampilkan `20261009T050155.604 GMT` apa adanya sampai
+ * 8 Oktober 2026 — laporan pemilik proses. Bentuk itu stempel MESIN: ia
+ * terbaca sebagai satu deretan angka panjang, dan pembacanya harus memecahnya
+ * sendiri untuk tahu harinya.
+ *
+ * ⭐ Jamnya DIPERTAHANKAN, berbeda dari `formatDate`: di History urutan dua
+ * catatan pada hari yang sama hanya dapat dibedakan oleh jamnya.
+ *
+ * ⚠️ Zona waktunya TIDAK digeser — `GMT` di stempel itu ditampilkan sebagai
+ * jam yang sama. Menggesernya ke waktu setempat akan membuat catatan yang
+ * sama terbaca berbeda di dua mesin, dan nol di antaranya salah.
+ */
+export function formatDateTime(v: string | null | undefined): string {
+  if (!v) return "";
+  const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})/.exec(String(v).trim());
+  if (!m) return formatDate(v) || String(v);
+  return `${m[3]}-${m[2]}-${m[1]} ${m[4]}:${m[5]}`;
+}
+
 function parseDate(s: string): Date | null {
   const m = /^(\d{2})-(\d{2})-(\d{4})$/.exec(s);
   if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
@@ -213,3 +235,135 @@ function bulatkan(
  */
 export const PETUNJUK_ANGKA = "Isi dengan angka";
 export const PETUNJUK_PERSEN = "Isi dengan angka";
+
+// ---------------------------------------------------------------------
+// ISIAN ANGKA — pemisah ribuan SAAT MENGETIK
+// ---------------------------------------------------------------------
+//
+// ⛔ MENGAPA INI BUKAN `formatNumber` YANG DIPANGGIL TIAP KETUKAN.
+// `modul/treatyinadjustment/frontend/komponen/KerangkaTab.tsx` pernah
+// menuliskan sebabnya apa adanya:
+//
+//   "Nilai MENTAH ke kotak isian, tanpa format angka: memformat di tiap
+//    ketukan membuat koma desimal mustahil diketik."
+//
+// Dan itu benar untuk `formatNumber`: ia MEMBULATKAN dan MEMBUANG NOL EKOR.
+// Mengetik `12,` menjadi `12`; koma yang baru saja diketik hilang sebelum
+// digit berikutnya sempat masuk. Mengetik `1,05` mustahil: `1,0` menjadi
+// `1`.
+//
+// ⭐ Pemecahannya BUKAN membatalkan pemformatan, melainkan memformat HANYA
+// BAGIAN BULAT dan membiarkan ekor desimal persis seperti yang diketik —
+// termasuk koma sendirian dan nol di ekor.
+
+/** Pemisah konvensi Indonesia: `.` ribuan, `,` desimal. */
+const RIBUAN = ".";
+const DESIMAL = ",";
+
+/** Sisipkan titik tiap tiga digit dari kanan. */
+function kelompokkan(bulat: string): string {
+  let keluar = "";
+  for (let i = 0; i < bulat.length; i++) {
+    if (i > 0 && (bulat.length - i) % 3 === 0) keluar += RIBUAN;
+    keluar += bulat[i];
+  }
+  return keluar;
+}
+
+/**
+ * Bentuk TAMPIL saat mengetik: `1000000,5` → `1.000.000,5`.
+ *
+ * ⭐ EKOR DESIMAL LEWAT APA ADANYA. `12,` tetap `12,` dan `1,00` tetap
+ * `1,00` — keduanya keadaan SAH di tengah pengetikan, dan keduanya hilang
+ * bila `formatNumber` yang dipanggil.
+ *
+ * ⚠️ `desimalMaks` MEMOTONG ekor, tidak membulatkannya: yang mengetik digit
+ * kesembilan di belakang koma sedang salah tekan, dan membulatkan diam-diam
+ * mengubah angkanya. Pemotongan terlihat seketika di layar.
+ *
+ * Menerima titik MAUPUN koma sebagai pemisah desimal yang diketik — papan
+ * tik angka banyak yang hanya punya titik.
+ */
+export function formatKetik(mentah: string, desimalMaks: number): string {
+  const t = String(mentah ?? "").trim();
+  if (t === "") return "";
+  const minus = t.startsWith("-") ? "-" : "";
+  const tanpaTanda = t.replace(/^[+-]/, "");
+
+  // ⛔ TITIK SELALU PEMISAH RIBUAN, KOMA SELALU PEMISAH DESIMAL.
+  //
+  // Bentuk pertama menerima keduanya sebagai pemisah desimal, dan itu CACAT
+  // yang dilaporkan pemilik proses 7 Oktober 2026 (*"mentok … tidak bisa
+  // meng input lebih"*): kotak terkendali mengumpankan KELUARANNYA SENDIRI
+  // kembali, jadi sesudah `1.000` ketukan berikutnya tiba sebagai `1.0005`.
+  // Titik pemisah ribuan itu terbaca sebagai pemisah desimal, ekornya
+  // dipotong dua digit, dan angkanya kembali ke `1,00` — setiap ketukan,
+  // selamanya.
+  //
+  // ⭐ Titik yang benar-benar DIKETIK diterjemahkan menjadi koma di batas
+  // masukan oleh `normalisasiKetikan`, yang tahu huruf mana yang baru
+  // disisipkan. Di sini nol tebakan.
+  // ⛔ Kolom BULAT: yang diketik sesudah koma DIBUANG, bukan disambung.
+  // Menyambungnya mengubah `1000,5` menjadi `10005` — keliru sepuluh kali
+  // lipat, tanpa satu pun tanda di layar.
+  if (desimalMaks === 0) {
+    const batas = tanpaTanda.indexOf(DESIMAL);
+    const sumber = batas >= 0 ? tanpaTanda.slice(0, batas) : tanpaTanda;
+    const angka = sumber.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+    return angka === "" ? "" : minus + kelompokkan(angka);
+  }
+
+  const iKoma = tanpaTanda.lastIndexOf(DESIMAL);
+  const adaPemisah = iKoma >= 0;
+
+  const bulatMentah = (adaPemisah ? tanpaTanda.slice(0, iKoma) : tanpaTanda).replace(/\D/g, "");
+  let ekor = adaPemisah ? tanpaTanda.slice(iKoma + 1).replace(/\D/g, "") : "";
+  if (desimalMaks >= 0 && ekor.length > desimalMaks) ekor = ekor.slice(0, desimalMaks);
+
+  // Nol di depan dibuang, tetapi `0` sendirian dipertahankan — yang mengetik
+  // `0,5` melewati keadaan `0`, dan membuangnya memakan angkanya.
+  const bulat = bulatMentah.replace(/^0+(?=\d)/, "");
+  const kiri = bulat === "" ? (adaPemisah ? "0" : "") : kelompokkan(bulat);
+  if (!adaPemisah) return minus + kiri;
+  return minus + kiri + DESIMAL + ekor;
+}
+
+/**
+ * Terjemahkan TITIK YANG BARU DIKETIK menjadi koma.
+ *
+ * ⛔ Mengapa membandingkan dengan teks sebelumnya, bukan menebak dari
+ * bentuknya: `1.0005` dapat berarti "satu koma nol nol nol lima" ATAU
+ * "seribu, lalu digit kelima diketik". Bentuknya SAMA; yang membedakan
+ * hanya apa yang berubah. Jadi yang diperiksa adalah huruf yang disisipkan.
+ *
+ * ⭐ Gunanya papan tik angka: banyak yang hanya punya titik, dan yang
+ * mengetiknya bermaksud desimal.
+ */
+export function normalisasiKetikan(baru: string, lama: string): string {
+  if (baru.length !== lama.length + 1) return baru;
+  let i = 0;
+  while (i < lama.length && baru[i] === lama[i]) i++;
+  return baru[i] === "." ? baru.slice(0, i) + DESIMAL + baru.slice(i + 1) : baru;
+}
+
+/**
+ * Bentuk KABEL dari bentuk tampil: `1.000.000,5` → `1000000.5`.
+ *
+ * ⛔ Backend hanya menerima titik sebagai pemisah desimal; `formatNumber`
+ * menyatakannya di kepalanya. Kebalikan `formatKetik`, dan keduanya WAJIB
+ * tetap sepasang — uji `format.test.ts` mengadu bolak-baliknya.
+ */
+export function keKabelAngka(tampil: string): string {
+  const t = String(tampil ?? "").trim();
+  if (t === "") return "";
+  const minus = t.startsWith("-") ? "-" : "";
+  const tanpaTanda = t.replace(/^[+-]/, "");
+  const iKoma = tanpaTanda.lastIndexOf(DESIMAL);
+  if (iKoma < 0) return minus + tanpaTanda.replace(/\D/g, "");
+  const bulat = tanpaTanda.slice(0, iKoma).replace(/\D/g, "");
+  const ekor = tanpaTanda.slice(iKoma + 1).replace(/\D/g, "");
+  // ⚠️ Koma TANPA digit di belakangnya bukan angka yang sah di kabel —
+  // `12,` dikirim sebagai `12`. Yang mengetik belum selesai, dan layar
+  // tetap memperlihatkan komanya.
+  return ekor === "" ? minus + bulat : minus + bulat + "." + ekor;
+}

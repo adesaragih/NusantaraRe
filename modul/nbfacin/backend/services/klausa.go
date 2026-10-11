@@ -126,6 +126,9 @@ func (s *Service) GantiKlausa(ctx context.Context, pelaku inti.Pelaku, id string
 	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return nil, err
 	}
+	if err := s.wajibBolehUbah(ctx, pelaku, id); err != nil {
+		return nil, err
+	}
 	if err := periksaKlausa(baris); err != nil {
 		return nil, err
 	}

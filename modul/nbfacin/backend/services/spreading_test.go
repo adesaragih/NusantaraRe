@@ -25,6 +25,7 @@ type spreadingTiruan struct {
 	kap       *models.KapasitasTreaty
 	kurs      map[string]*apd.Decimal // id mata uang -> kurs
 	idUang    map[string]string       // nama -> id
+	tsiKap    []string                // TSI yang diminta KapasitasTreaty (8 desimal), urut panggilan
 }
 
 func (s *spreadingTiruan) BacaSpreading(context.Context, *db.Tx, string) (models.KasusSpreading, error) {
@@ -37,6 +38,9 @@ func (s *spreadingTiruan) BacaSpreading(context.Context, *db.Tx, string) (models
 }
 
 func (s *spreadingTiruan) TulisSpreading(_ context.Context, _ *db.Tx, _ string, k models.KasusSpreading, ubah bool) error {
+	if err := maskSpreading(k); err != nil {
+		return err
+	}
 	s.tulis, s.ubahShare = append(s.tulis, k), append(s.ubahShare, ubah)
 	return nil
 }
@@ -45,7 +49,8 @@ func (s *spreadingTiruan) DaftarTreaty(context.Context, string, string) ([]model
 	return s.treaty, nil
 }
 
-func (s *spreadingTiruan) KapasitasTreaty(context.Context, *apd.Decimal, string) (models.KapasitasTreaty, bool, error) {
+func (s *spreadingTiruan) KapasitasTreaty(_ context.Context, tsi *apd.Decimal, _ string) (models.KapasitasTreaty, bool, error) {
+	s.tsiKap = append(s.tsiKap, t8(tsi))
 	if s.kap == nil {
 		return models.KapasitasTreaty{}, false, nil
 	}
@@ -312,14 +317,14 @@ func TestSimpanSpreadingShareLebih100(t *testing.T) {
 func TestSalinSpreadingTidakMenyimpan(t *testing.T) {
 	src := &spreadingTiruan{baca: []models.KasusSpreading{kasusSatuCoverage("50")}, idUang: map[string]string{"IDR": idMataUangIDR}}
 	tpl := []models.TemplateSpreading{{TreatyType: "Q1", TreatyName: "QS", SharePercentage: d("50")}, {TreatyType: "X9", TreatyName: "LAIN", SharePercentage: d("50")}}
-	got, err := layananSpreading(src).SalinSpreading(context.Background(), "NB-1", d("50"), tpl)
+	got, err := layananSpreading(src).SalinSpreading(context.Background(), pelakuUji, "NB-1", d("50"), tpl)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(src.tulis) != 0 || len(got.Template) != 2 || len(got.Pesan) != 1 || got.Pesan[0] != pesanJenisTreaty {
 		t.Fatalf("tulis %d template %d pesan %v", len(src.tulis), len(got.Template), got.Pesan)
 	}
-	if _, err := layananSpreading(src).SalinSpreading(context.Background(), "NB-1", d("50"), nil); !errors.Is(err, ErrMasukanSpreading) {
+	if _, err := layananSpreading(src).SalinSpreading(context.Background(), pelakuUji, "NB-1", d("50"), nil); !errors.Is(err, ErrMasukanSpreading) {
 		t.Fatalf("template kosong: err = %v", err)
 	}
 }
@@ -480,12 +485,41 @@ func TestSalinSpreadingProteksi(t *testing.T) {
 		"kembar":            {[]string{"Q1", "Q1"}, pesanJenisKembar},
 		"kembar & tanpa QS": {[]string{"S1", "S1"}, pesanJenisKembar + "; " + pesanTanpaQS},
 	} {
-		_, err := layananSpreading(src).SalinSpreading(context.Background(), "NB-1", d("50"), tpl(c.jenis...))
+		_, err := layananSpreading(src).SalinSpreading(context.Background(), pelakuUji, "NB-1", d("50"), tpl(c.jenis...))
 		switch {
 		case c.mau == "" && err != nil:
 			t.Errorf("%s: err = %v", nama, err)
 		case c.mau != "" && (!errors.Is(err, ErrMasukanSpreading) || !strings.HasSuffix(err.Error(), ": "+c.mau)):
 			t.Errorf("%s: err = %v, mau %q", nama, err, c.mau)
 		}
+	}
+}
+
+// TestKapasitasLokasiBatas - tiket 48 (laporan work owner 11-10-2026, GetKapasitasTreaty cabang IsFire 7.2.5.3.20.5 L10118 /
+// DDL 6.2.4.3.19.5): lokasi NON top risk TSI RNM > maxtsi (QS 300 + SPL 400) -> "TSI in Location <n> exceeds treaty capacity"
+// (n = nomor lokasi 1-based, Local.idxloc); TEPAT 700 tidak; lokasi kedua bernomor 2; top risk tetap pesan lama.
+func TestKapasitasLokasiBatas(t *testing.T) {
+	ctx := context.Background()
+	src := &spreadingTiruan{kap: &kapasitasUji}
+	k := kasusSatuCoverage("70") // TSI RNM 700 = maxtsi
+	hitungNR(&k)
+	if pesan, err := spreadingOtomatis(ctx, src, &k); err != nil || len(pesan) != 0 {
+		t.Errorf("tepat 700: %v %v", pesan, err)
+	}
+	k = kasusSatuCoverage("70")
+	l2 := k.Lokasi[0]
+	l2.ObjectNo, l2.Items = "2", []models.ItemSpreading{l2.Items[0]}
+	l2.Items[0].Coverages = []models.CoverageSpreading{l2.Items[0].Coverages[0]}
+	l2.Items[0].Coverages[0].TSILiability = d("1001") // 700.7 > 700
+	k.Lokasi = append(k.Lokasi, l2)
+	hitungNR(&k)
+	if pesan, err := spreadingOtomatis(ctx, src, &k); err != nil || len(pesan) != 1 || pesan[0] != "TSI in Location 2 exceeds treaty capacity" {
+		t.Errorf("lokasi 2: %v %v", pesan, err)
+	}
+	k = kasusSatuCoverage("71")
+	k.Lokasi[0].IsTopRisk = true
+	hitungNR(&k)
+	if pesan, err := spreadingOtomatis(ctx, src, &k); err != nil || len(pesan) != 1 || pesan[0] != pesanKapasitasTop {
+		t.Errorf("top risk: %v %v", pesan, err)
 	}
 }

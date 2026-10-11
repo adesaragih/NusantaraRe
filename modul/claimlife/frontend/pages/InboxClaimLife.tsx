@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { MENU, PERAN, type KodePeran } from '../../../../inti/frontend/labels'
+import TabelKomite from '../components/TabelKomite'
 import { REGISTER_BANYAK, TAHAP } from '../labels'
 import { Halaman, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { PitaGalat } from '../components/PitaGalat'
@@ -146,6 +147,8 @@ export interface InboxProps {
   onBuka: (workID: string) => void
   /** Membuka halaman Register — tombol kepala, `Register_Flow.xml:155`. */
   onRegister: () => void
+  /** `PropsRute.onBukaModul` - tabel komite di bawah inbox: kasus komite dibuka di tempat (menu komite dihapus). */
+  onBukaModul?: (modul: string, id: string) => boolean
   /** Case ID yang baru saja didaftarkan (state rute, 10-10-2026) - pemberitahuan sukses; kosong = tidak tampil. */
   terdaftar?: readonly string[]
   /** Menutup pemberitahuan sukses. */
@@ -195,6 +198,7 @@ export default function InboxClaimLife({
   peran,
   onBuka,
   onRegister,
+  onBukaModul,
   terdaftar = [],
   onTutupTerdaftar,
   kabar = '',
@@ -254,11 +258,14 @@ export default function InboxClaimLife({
 
   if (semuaTab.length === 0) {
     return (
-      <Kosong
-        pesan={
-          'No queue for your role. Claim Life queues are held by ReasLifeAdmin, ReasLifeMedicalAdvisor, and ReasLifeSPV.'
-        }
-      />
+      <>
+        <Kosong
+          pesan={
+            'No queue for your role. Claim Life queues are held by ReasLifeAdmin, ReasLifeMedicalAdvisor, and ReasLifeSPV.'
+          }
+        />
+        <TabelKomite peran={peran} onBukaModul={onBukaModul} />
+      </>
     )
   }
 
@@ -367,6 +374,7 @@ export default function InboxClaimLife({
           <Halaman halaman={hal.halaman} ukuran={hal.ukuran} total={hal.total} onPindah={setHalaman} />
         </>
       )}
+      <TabelKomite peran={peran} onBukaModul={onBukaModul} />
     </section>
   )
 }

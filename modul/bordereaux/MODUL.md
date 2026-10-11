@@ -49,6 +49,12 @@ cadangan `760-899` dan `990-999` (Aggregate dipersempit ke `880-889`, keputusan 
 - Templat unduhan dikelola **Template Manager** (inti): 29 slot `bordereaux.*`; berkas bawaan `backend/templat/`
   berisi BARIS HEADER SAJA (data contoh tidak masuk repositori - unggah berkas lengkap lewat Template Manager).
 - Kode pos AI (Gemini) untuk FIRE dan ENGINEERING berjalan di belakang lewat outbox.
+- Lampiran (keputusan work owner 08-10-2026, "kaya XML nya"): panel `AttachmentsBdx` di form berkas tersimpan - grid
+  kategori `M_KATEGORIBORDEREAUX` + jumlah, Upload File (banyak berkas), View File (unduh, View Office Online untuk
+  xls..pptx, Delete). Berkas ke Google Storage lewat komponen bersama `inti/backend/penyimpanan` (padanan kelas Pega
+  `T_STORAGE_IMAGE`: Insert/GetUrl/Delete/GeminiAI); rekam di `M_ATTACHMENTBORDEREAUX`. Upload File dan Delete hanya
+  saat berkas dibuka Edit oleh yang berhak (`HakAtas.Ubah`, menu PENUH); mode View dan menu View only tidak bisa,
+  termasuk superadmin (keputusan work owner 08-10-2026 - pengecualian `IT Developer` Pega dibuang).
 
 ## Migrasi
 

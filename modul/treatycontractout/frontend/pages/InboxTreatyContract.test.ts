@@ -6,8 +6,18 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { TAHUN_TCO } from '../labels'
-import type { TahunTreaty } from '../api'
-import { formDari, formKosong, isiDariMulai, keMasuk, namaGrup, selTahun, tahunDari } from './InboxTreatyContract'
+import { kueriSaringTahun, type TahunTreaty } from '../api'
+import {
+  adaSaring,
+  formDari,
+  formKosong,
+  isiDariMulai,
+  keMasuk,
+  namaGrup,
+  SARING_KOSONG,
+  selTahun,
+  tahunDari,
+} from './InboxTreatyContract'
 
 const SUMBER = readFileSync(join(__dirname, 'InboxTreatyContract.tsx'), 'utf8')
 const KODE = SUMBER.split('\n')
@@ -83,20 +93,15 @@ describe('paritas layar', () => {
   it('ID, Modified Date, Username hanya dibaca', () => {
     expect((KODE.match(/readOnly/g) ?? []).length).toBe(3)
   })
-  it('layar tidak menyaring daftar; Reinsurance Type dari daftar Proportional/NonProportional (OQ-TCO-04)', () => {
+  it('layar tidak menyaring daftar di klien; Reinsurance Type dari daftar Proportional/NonProportional (OQ-TCO-04)', () => {
+    // saringan per kolom (work owner 11-10-2026) dikirim ke server - baris halaman tidak disaring di layar
     expect(KODE).not.toContain('.filter(')
     expect(KODE).toContain("from '../proporsi'")
   })
-  it('tiket 12: panel lampiran hanya untuk tahun yang sudah ber-ID, bukan syarat simpan', () => {
-    expect(KODE).toContain('<PanelLampiranTahun tahunID={form.id} />')
-    expect(KODE).toMatch(/form\.id !== '' &&/)
+  it('fitur lampiran dibuang (keputusan work owner 08-10-2026): form tahun tanpa panel lampiran', () => {
+    expect(KODE).not.toMatch(/[Ll]ampiran|Attachment/)
     // [keputusan work owner 30-09-2026] catatan "simpan dulu" tidak tampil.
     expect(KODE).not.toContain('simpanDulu')
-    // Simpan tahun tidak menunggu lampiran: fungsi simpan tidak menyebut lampiran.
-    const awal = KODE.indexOf('async function simpan')
-    const simpan = KODE.slice(awal, KODE.indexOf('\n  }\n', awal))
-    expect(simpan).toContain('simpanTahunTreaty(')
-    expect(simpan).not.toMatch(/[Ll]ampiran/)
   })
 
   it('panel rinci SATU saja, dan selama terbuka tabel utama tidak dirender (keputusan work owner 30-09-2026)', () => {
@@ -110,6 +115,33 @@ describe('paritas layar', () => {
   })
   it('nol catatan pengembang di layar (keputusan work owner 30-09-2026)', () => {
     expect(KODE).not.toMatch(/catatanLabelBersilang|polis__catatan/)
+  })
+})
+
+describe('saringan per kolom inbox (work owner 11-10-2026 "SEMUA HEADER BUAT FILTERNYA")', () => {
+  it('keenam kepala kolom punya isian saringan; grup dan jenis dipilih, sisanya diketik', () => {
+    for (const k of ['kolomUnderwritingYear', 'kolomTransactionYear', 'kolomStartDate', 'kolomEndDate'] as const) {
+      expect(KODE, k).toContain(`kolom: TAHUN_TCO.${k}`)
+    }
+    expect(KODE).toContain("onChange={(e) => ubahSaring('treatyGroupId', e.target.value)}")
+    expect(KODE).toContain("onChange={(e) => ubahSaring('proportion', e.target.value)}")
+    expect(KODE).toContain('<tr className="tco-saring">')
+  })
+  it('daftar dimuat dengan saringan dari halaman pertama; hasil kosong tetap menampilkan baris saringan', () => {
+    expect(KODE).toContain('ambilTahunTreaty(h, UKURAN, s)')
+    expect(KODE).toMatch(/setSaringKirim\(saring\)\s*setHalaman\(1\)/)
+    expect(KODE).toContain('TAHUN_TCO.saringKosong')
+  })
+  it('saringan kosong / terisi', () => {
+    expect(adaSaring(SARING_KOSONG)).toBe(false)
+    expect(adaSaring({ ...SARING_KOSONG, endDate: '  ' })).toBe(false)
+    expect(adaSaring({ ...SARING_KOSONG, treatyGroupId: '10011' })).toBe(true)
+  })
+  it('parameter kueri: isian kosong tidak dikirim, sisanya dipangkas', () => {
+    expect(kueriSaringTahun({ ...SARING_KOSONG, underwritingYear: ' 2024 ', proportion: 'Proportional' })).toEqual({
+      underwritingYear: '2024', treatyYear: undefined, startDate: undefined, endDate: undefined,
+      treatyGroupId: undefined, proportion: 'Proportional',
+    })
   })
 })
 

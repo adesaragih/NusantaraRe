@@ -21,7 +21,7 @@ export interface Ringkasan {
   jumlahKomisi?: number
 }
 
-/** Satu baris R/I COMM DETAIL - `models.Komisi` (tabel flat RICOMM_LIFE; angka bertitik desimal kanonik). */
+/** Satu baris R/I COMM DETAIL - `models.Komisi` (kolom M_RICOMM_LIFE; angka bertitik desimal kanonik). */
 export interface Komisi {
   id: string
   idUsedBy: string

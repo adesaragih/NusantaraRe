@@ -53,7 +53,7 @@ var (
 	ErrMasukanTidakSah = errors.New("services: masukan tidak sah")
 	// ErrDilarang - aktor tidak berhak; pesannya untuk pengguna.
 	ErrDilarang = errors.New("services: tidak berhak")
-	// ErrBelumAda - tabel, view, atau sequence tidak ada di skema ini.
+	// ErrBelumAda - tabel, kolom, atau sequence tidak ada di skema ini.
 	ErrBelumAda = repository.ErrBelumAda
 )
 

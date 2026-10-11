@@ -206,6 +206,8 @@ Kolom katalog yang procedure **tidak** set: `OBJECT VARCHAR2(50)`, `PROPORTIONAL
 
 ## M_ATTACHMENTTREATY_2
 
+> 08-10-2026: fitur lampiran dibuang (keputusan work owner). Modul ini kini hanya MENGHITUNG baris tabel ini sebagai anak tahun treaty; tidak menulis.
+
 Lampiran tahun treaty. Kunci pemilik **`TREATYID = TreatyYear + TreatyYearID`** (teks disambung) — `TreatyOutSaveAttachment`
 b1402 dan `DeleteAttachmentTreaty` b252 `[terverifikasi]`; **ralat** tiket 12 yang menyebutnya kunci treaty inward. Penulis
 Treaty Contract Out: procedure `PEGA_M_ATTACHMENT(IDPEGA, DATAPEGA)` — badannya **`[terbuka — DBA]`** (OQ-TCO-24); kolom
@@ -234,6 +236,8 @@ Tipe: `[terbuka — DBA]`, diperlakukan VARCHAR2.
 | `T_STORAGE_ID` | `[terbuka — DBA]` | `T_STORAGE_IMAGE.IMAGEID` objek berkas |
 
 ## T_STORAGE_IMAGE
+
+> 08-10-2026: fitur lampiran dibuang (keputusan work owner). Modul ini tidak lagi membaca atau menulis tabel ini.
 
 Objek berkas di layanan penyimpanan. Penulis: `Insert_T_Storage_SQL` (Saudara b85) sesudah unggah berhasil;
 `Update_T_Storage_SQL` b85; `DeleteStorage_SQL` b85 sesudah hapus berhasil. Pembaca `GetLinkStorage_SQL` b85.

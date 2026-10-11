@@ -18,7 +18,6 @@ const render = (varian: VarianTab, halaman: Halaman, boleh = true, wajib: string
       halaman={halaman}
       wajib={new Set(wajib)}
       boleh={boleh}
-      sibuk={false}
       opsi={kosong}
       opsiJenisReas={[{ nilai: '7', label: 'UJI-QS' }]}
       onUbah={() => {}}
@@ -54,10 +53,11 @@ describe('PropNewData2 (admin)', () => {
   })
 
   // keputusan work owner 07-10-2026 ("HAPUS AJA"): Save di dalam tab dibuang - Save kaki halaman (S19) tetap
-  it('tanpa Save di dalam tab; Calculate Value Difference (S24); isian Installment', () => {
+  // WO 08-10-2026 ("COBA CEK TOMBOLITU, APAKAH MASIH DIPERLUKAN? KALAU SUDAH TIDAK DIHAPUS AJA!"): tombol S24 dibuang
+  it('tanpa Save di dalam tab; tanpa Calculate Value Difference; isian Installment', () => {
     const html = render('baruAdmin', halaman)
     expect(html).not.toContain('>Save</button>')
-    expect(html).toContain('>Calculate Value Difference</button>')
+    expect(html).not.toContain('Calculate Value Difference')
     expect(html).toMatch(/<input[^>]*aria-label="Installment"[^>]*value="2"/)
   })
 
@@ -71,10 +71,11 @@ describe('PropNewData2 (admin)', () => {
 })
 
 describe('PropNewData (atasan)', () => {
-  it('hanya-baca, label "% Deduction", Net Premium, total berlabel 2 desimal, tanpa Installment', () => {
+  it('hanya-baca, label "(%) Deduction" sama dengan isian, Net Premium, total berlabel 2 desimal, tanpa Installment', () => {
     const html = render('baru', h({ 'PolicyTreatyIn.TotalPremium': '1234.5', 'PolicyTreatyIn.Installment': '3' }))
     expect(html).not.toMatch(/<input/)
-    expect(html).toContain('% Deduction In A (OGP)')
+    expect(html).toContain('(%) Deduction In A (OGP)')
+    expect(html).not.toContain('>% Deduction')
     expect(html).toContain('>Net Premium<')
     expect(html).toContain('data-jalur="PolicyTreatyIn.TotalPremium">1.234,50<')
     expect(html).not.toContain('>Installment<')

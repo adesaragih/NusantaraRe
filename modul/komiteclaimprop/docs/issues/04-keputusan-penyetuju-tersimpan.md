@@ -1,6 +1,11 @@
 # 04: Keputusan penyetuju tersimpan
 
-**Status:** ready-for-agent
+**Status:** dibangun *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+
+> **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
+>
+> - AC 81-82 ditempel di sini: simpan keputusan hanya oleh pemilik `KOMITE_OPERATORID` tingkat berjalan, ditegakkan di layanan (403 terbaca); uji `TestBukanPemilikDitolak`.
+
 
 **Blocked by:** **02 (kotak kerja dan rute giliran)** · **03 (layar komite)**
 

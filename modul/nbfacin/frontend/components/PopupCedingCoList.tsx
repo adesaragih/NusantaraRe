@@ -56,7 +56,7 @@ export default function PopupCedingCoList({
       onTutup={onTutup}
       lebar
       aksi={
-        <button type="button" className="btn btn--primary" onClick={() => onSubmit(daftar)}>
+        <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" onClick={() => onSubmit(daftar)}>
           {POPUP_CEDING.submit.label}
         </button>
       }
@@ -70,7 +70,7 @@ export default function PopupCedingCoList({
                 <span className="field__req">*</span>
               </th>
               <th scope="col" className="table__actions">
-                <button type="button" className="btn btn--ghost btn--sm" onClick={() => setMencari(true)}>
+                <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={() => setMencari(true)}>
                   {POPUP_CEDING.tambah.label}
                 </button>
               </th>
@@ -88,7 +88,7 @@ export default function PopupCedingCoList({
                   <td className="table__actions">
                     <button
                       type="button"
-                      className="btn btn--ghost btn--sm"
+                      className="btn nbf-tema__tombol btn--ghost btn--sm"
                       onClick={() => setDaftar((d) => d.filter((_, j) => j !== i))}
                     >
                       {POPUP_CEDING.hapus.label}

@@ -16,6 +16,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/cockroachdb/apd/v3"
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/modul/nbfacin/backend/models"
@@ -33,6 +37,15 @@ const (
 // PembacaOccupation - saran Occupation FIRE.
 type PembacaOccupation interface {
 	CariOccupation(ctx context.Context, kata string) ([]models.BarisOccupation, error)
+	// RateLowerOkupasi - tiket 52 FLEXAS (`RDBList\RateFlexas_Sql.xml` `SELECT RATELOWER AS CARI1 FROM OCCUPATION WHERE
+	// OCCUPATIONCODE = {Okupasi.CARI1}`, satu kueri per okupasi di Pega) untuk sekumpulan kode sekaligus: kode -> RATELOWER
+	// baris PERTAMA kode itu (pxResults(1) dari kueri tanpa urutan -> urut ID `[dugaan]`); nil = RATELOWER NULL. Kode tanpa
+	// baris tidak ada di peta.
+	RateLowerOkupasi(ctx context.Context, kode []string) (map[string]*apd.Decimal, error)
+	// RisikoOkupasiFire - tiket 54 `RDBList\GetRiskExposureOccupationFire.xml` (`SELECT NAME, OLDID, KDRISKEXPOSURE FROM
+	// POOLDATA.OCCUPATION WHERE type ='FIRE' AND OLDID = {OccupationIN.OldID}`, pxResults(1)) untuk sekumpulan OLDID: OLDID
+	// -> KDRISKEXPOSURE baris pertama urut ID `[dugaan]`; OLDID tanpa baris tidak ada di peta.
+	RisikoOkupasiFire(ctx context.Context, oldID []string) (map[string]string, error)
 }
 
 // OccupationOracle - PembacaOccupation atas Oracle.
@@ -81,6 +94,99 @@ func (r *OccupationOracle) CariOccupation(ctx context.Context, kata string) ([]m
 			return nil, fmt.Errorf("repository: %s: %w", TabelOccupation, err)
 		}
 		hasil = append(hasil, models.BarisOccupation{OldID: oldID.String, Name: nama.String, KdRiskExposure: kd.String})
+	}
+	if err := baris.Err(); err != nil {
+		return nil, fmt.Errorf("repository: %s: %w", TabelOccupation, err)
+	}
+	return hasil, nil
+}
+
+// sqlRateLowerOkupasi - :1..:n kode; urut kode lalu ID (baris pertama per kode dipakai). OCCUPATIONCODE VARCHAR2(1000),
+// RATELOWER NUMBER(20,6) (DDL `DDL\OCCUPATION.txt`); tanpa saringan TYPE / status (SQL asal tidak menyaring).
+func sqlRateLowerOkupasi(occ string, n int) string {
+	b := make([]string, n)
+	for i := range b {
+		b[i] = ":" + strconv.Itoa(i+1)
+	}
+	return "SELECT OCCUPATIONCODE, " + angkaKeluar("RATELOWER") + " FROM " + occ + " WHERE OCCUPATIONCODE IN (" +
+		strings.Join(b, ", ") + ") ORDER BY OCCUPATIONCODE, ID"
+}
+
+// RateLowerOkupasi - lihat PembacaOccupation.
+func (r *OccupationOracle) RateLowerOkupasi(ctx context.Context, kode []string) (map[string]*apd.Decimal, error) {
+	hasil := map[string]*apd.Decimal{}
+	if len(kode) == 0 {
+		return hasil, nil
+	}
+	q, err := r.db.Qualify(TabelOccupation)
+	if err != nil {
+		return nil, err
+	}
+	arg := make([]any, len(kode))
+	for i, k := range kode {
+		arg[i] = k
+	}
+	baris, err := r.db.QueryContext(ctx, sqlRateLowerOkupasi(q, len(kode)), arg...)
+	if err != nil {
+		return nil, fmt.Errorf("repository: baca %s: %w", TabelOccupation, err)
+	}
+	defer baris.Close()
+	for baris.Next() {
+		var k, rate sql.NullString
+		if err := baris.Scan(&k, &rate); err != nil {
+			return nil, fmt.Errorf("repository: %s: %w", TabelOccupation, err)
+		}
+		if _, ada := hasil[k.String]; ada {
+			continue
+		}
+		d, err := bacaDesimal(TabelOccupation+" "+k.String, "RATELOWER", &rate)
+		if err != nil {
+			return nil, err
+		}
+		hasil[k.String] = d
+	}
+	if err := baris.Err(); err != nil {
+		return nil, fmt.Errorf("repository: %s: %w", TabelOccupation, err)
+	}
+	return hasil, nil
+}
+
+// sqlRisikoOkupasiFire - :1 tipe, :2..:n+1 OLDID; urut OLDID lalu ID (baris pertama per OLDID dipakai).
+func sqlRisikoOkupasiFire(occ string, n int) string {
+	b := make([]string, n)
+	for i := range b {
+		b[i] = ":" + strconv.Itoa(i+2)
+	}
+	return "SELECT OLDID, KDRISKEXPOSURE FROM " + occ + " WHERE TYPE = :1 AND OLDID IN (" + strings.Join(b, ", ") + ") ORDER BY OLDID, ID"
+}
+
+// RisikoOkupasiFire - lihat PembacaOccupation.
+func (r *OccupationOracle) RisikoOkupasiFire(ctx context.Context, oldID []string) (map[string]string, error) {
+	hasil := map[string]string{}
+	if len(oldID) == 0 {
+		return hasil, nil
+	}
+	q, err := r.db.Qualify(TabelOccupation)
+	if err != nil {
+		return nil, err
+	}
+	arg := []any{TipeOccupationFire}
+	for _, k := range oldID {
+		arg = append(arg, k)
+	}
+	baris, err := r.db.QueryContext(ctx, sqlRisikoOkupasiFire(q, len(oldID)), arg...)
+	if err != nil {
+		return nil, fmt.Errorf("repository: baca %s: %w", TabelOccupation, err)
+	}
+	defer baris.Close()
+	for baris.Next() {
+		var k, kd sql.NullString
+		if err := baris.Scan(&k, &kd); err != nil {
+			return nil, fmt.Errorf("repository: %s: %w", TabelOccupation, err)
+		}
+		if _, ada := hasil[k.String]; !ada {
+			hasil[k.String] = kd.String
+		}
 	}
 	if err := baris.Err(); err != nil {
 		return nil, fmt.Errorf("repository: %s: %w", TabelOccupation, err)

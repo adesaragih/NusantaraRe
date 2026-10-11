@@ -17,11 +17,12 @@ describe('label Beranda', () => {
 })
 
 // Kotak masuk Beranda mengikuti workbasket (keputusan work owner 06-10-2026): modul yang mendaftarkan
-// `antreanBeranda` di PENDAFTARAN_MENU-nya - kini NB Treaty In dan EDM Treaty In (keputusan work owner 07-10-2026)
+// `antreanBeranda` di PENDAFTARAN_MENU-nya - kini NB Treaty In dan EDM Treaty In (keputusan work owner 07-10-2026),
+// dan NB FacIn (work owner 07-10-2026: login Team Leader harus melihat case NB FacIn di kotak masuknya)
 // - dan aktif.
 describe('kotak masuk Beranda', () => {
-  it('modul berpenghitung: NB Treaty In dan EDM Treaty In, dan hilang bila modulnya nonaktif', () => {
-    expect(modulBerkotakMasuk(MODUL_FRONTEND).map((m) => m.nama)).toEqual(['edmtreatyin', 'nbtreatyin'])
+  it('modul berpenghitung: NB Treaty In, EDM Treaty In, NB FacIn, dan hilang bila modulnya nonaktif', () => {
+    expect(modulBerkotakMasuk(MODUL_FRONTEND).map((m) => m.nama)).toEqual(['edmtreatyin', 'nbfacin', 'nbtreatyin'])
     expect(modulBerkotakMasuk(MODUL_FRONTEND, ['claimlife'])).toEqual([])
   })
 

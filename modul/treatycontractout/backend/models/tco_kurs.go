@@ -36,6 +36,8 @@ package models
 import (
 	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -69,8 +71,6 @@ const skalaRpDariUsdTCO = 8
 var (
 	// ErrKursTidakAda - tidak ada baris kurs berlaku pada tanggal itu (ADR-0015).
 	ErrKursTidakAda = errors.New("models: no exchange rate in effect")
-	// ErrKursGanda - lebih dari satu baris kurs berlaku pada tanggal yang sama.
-	ErrKursGanda = errors.New("models: more than one exchange rate in effect on the same date")
 	// ErrKursTakTerurai - teks tanggal/nilai kurs master tidak dapat diurai.
 	ErrKursTakTerurai = errors.New("models: exchange-rate master value cannot be parsed")
 )
@@ -102,12 +102,20 @@ type KursTCO struct {
 	IDCurrency string
 	Currency   string
 	Quarter    string
+	// ID - `ID` master (VARCHAR2, tidak unik di seluruh tabel): pemecah seri waktu input yang sama.
+	ID string
+	// DiinputPada - `DATEIU` diurai ORACLE (topeng `FormatTanggalKursTCO`) - HANYA untuk urutan antarbaris (driver
+	// memberi jam dinding zona server, semua baris bergeser sama); nol = kosong / ditolak Oracle (paling lama).
+	DiinputPada time.Time
 	// BarisDitolak - cacah baris master yang tanggalnya ditolak Oracle pada
 	// baca yang sama; diisi `PilihKursBerlakuTCO`, dilaporkan ke layar.
 	BarisDitolak int
 	// BarisKembar - cacah baris berlaku LAIN yang identik dengan yang dipakai
 	// (master memuat baris kembar); diisi `PilihKursBerlakuTCO`, disebut di layar.
 	BarisKembar int
+	// BarisTertimpa - cacah baris berlaku LAIN yang TIDAK identik dan kalah oleh input yang lebih baru
+	// (`PilihKursBerlakuTCO`); dilaporkan ke layar.
+	BarisTertimpa int
 }
 
 // BarisKursDitolakTCO - satu baris master yang tanggalnya ditolak Oracle
@@ -123,10 +131,26 @@ type HasilMasterKursTCO struct {
 	Ditolak []BarisKursDitolakTCO
 }
 
+// polaRibuanIndonesiaTCO - TOIDR berformat Indonesia yang ditulis menu Treaty Exchange Yearly: titik ribuan dengan
+// koma desimal ("16.000,00"), atau beberapa kelompok ribuan tanpa desimal ("1.234.567").
+var (
+	polaRibuanKomaTCO = regexp.MustCompile(`^\d{1,3}(\.\d{3})+,\d+$`)
+	polaRibuanSajaTCO = regexp.MustCompile(`^\d{1,3}(\.\d{3}){2,}$`)
+)
+
 // UraiNilaiKursTCO mengurai `TOIDR` (VARCHAR2) menjadi desimal persis > 0.
+//
+// Format Indonesia ("16.000,00", "1.234.567") diterima [keputusan work owner 11-10-2026, data master dari menu
+// Treaty Exchange Yearly]. Satu titik tanpa koma ("16500.00") tetap titik DESIMAL; koma-lalu-titik ("15,500.25")
+// dan bentuk campuran lain tetap ditolak - menebak salah pada kurs berarti salah pada setiap nilai Rupiah.
 func UraiNilaiKursTCO(teks string) (*apd.Decimal, error) {
 	t := strings.TrimSpace(teks)
-	if strings.Contains(t, ",") {
+	switch {
+	case polaRibuanKomaTCO.MatchString(t):
+		t = strings.ReplaceAll(strings.ReplaceAll(t, ".", ""), ",", ".")
+	case polaRibuanSajaTCO.MatchString(t):
+		t = strings.ReplaceAll(t, ".", "")
+	case strings.Contains(t, ","):
 		if strings.Contains(t, ".") {
 			return nil, fmt.Errorf("%w: TOIDR %q contains both a comma and a dot", ErrKursTakTerurai, teks)
 		}
@@ -145,16 +169,12 @@ func UraiNilaiKursTCO(teks string) (*apd.Decimal, error) {
 // PilihKursBerlakuTCO memilih SATU baris dari yang Oracle nyatakan berlaku
 // (`to_date(CARI1,'YYYYMMDD') BETWEEN trunc(..STARTDATE..) AND trunc(..ENDDATE..)`).
 //
-// ⚠️ Pega memutar seluruh hasil dan menyimpan yang TERAKHIR (`testingKurs`
-// langkah 3) - urutan tak tentu. Dua baris berlaku yang TOIDR-nya BERBEDA
-// dinyatakan sebagai galat (master rusak) [keputusan work owner 29-09-2026]
-// (OQ-TCO-18, ditutup). Baris KEMBAR IDENTIK - TOIDR yang sama persis, hari
-// mulai dan hari akhir yang sama - adalah satu kurs: "terakhir menang"
-// memberi nilai yang sama, jadi tidak ada yang ditebak [keputusan work owner
-// 29-09-2026, "Kembar identik = satu kurs", mempersempit OQ-TCO-18]; data DEV
-// memuat dua pasang baris kembar persis. Baris yang TIDAK identik - TOIDR,
-// mulai, atau akhir berbeda, termasuk teks lain untuk angka yang sama - tetap
-// master rusak.
+// ⭐ INPUT TERBARU MENANG [keputusan work owner 11-10-2026, menggantikan "tolak, jangan menebak" 29-09-2026
+// (OQ-TCO-18)]: master kurs dari menu Treaty Exchange Yearly membolehkan periode yang tumpang tindih, sehingga setiap
+// input kurs baru membuat TCO menolak. Dari baris yang berlaku dipakai yang `DATEIU`-nya paling baru (diurai
+// Oracle); waktu sama -> `ID` terbesar. Pega memutar seluruh hasil dan menyimpan yang TERAKHIR (`testingKurs`
+// langkah 3) dalam urutan tak tentu - di sini urutannya tentu. Baris kembar identik (TOIDR, mulai, akhir sama)
+// dicacah `BarisKembar`; baris lain yang kalah dicacah `BarisTertimpa` - keduanya dilaporkan ke layar.
 //
 // Tanpa baris berlaku tetapi ada baris yang tanggalnya ditolak Oracle: salah
 // satunya mungkin baris yang dicari - master rusak, bukan "tidak ada kurs".
@@ -168,17 +188,38 @@ func PilihKursBerlakuTCO(h HasilMasterKursTCO, tanggal time.Time) (KursTCO, erro
 		}
 		return KursTCO{}, fmt.Errorf("%w on %s", ErrKursTidakAda, tgl)
 	}
-	k := h.Berlaku[0]
-	for _, b := range h.Berlaku[1:] {
-		if !kembarIdentikTCO(k, b) {
-			return KursTCO{}, fmt.Errorf("%w: %d rows on %s that are not identical (TOIDR %q %s to %s and TOIDR %q %s to %s)",
-				ErrKursGanda, len(h.Berlaku), tgl, k.TeksToIDR, utils.FormatTanggal(k.Mulai), utils.FormatTanggal(k.Akhir),
-				b.TeksToIDR, utils.FormatTanggal(b.Mulai), utils.FormatTanggal(b.Akhir))
+	pilih := 0
+	for i := 1; i < len(h.Berlaku); i++ {
+		if lebihBaruTCO(h.Berlaku[i], h.Berlaku[pilih]) {
+			pilih = i
 		}
 	}
-	k.BarisKembar = len(h.Berlaku) - 1
+	k := h.Berlaku[pilih]
+	for i, b := range h.Berlaku {
+		switch {
+		case i == pilih:
+		case kembarIdentikTCO(k, b):
+			k.BarisKembar++
+		default:
+			k.BarisTertimpa++
+		}
+	}
 	k.BarisDitolak = len(h.Ditolak)
 	return k, nil
+}
+
+// lebihBaruTCO - `a` diinput lebih baru dari `b`: `DATEIU` lebih akhir (nol = paling lama); waktu sama -> `ID`
+// lebih besar (angka bila keduanya angka, selain itu teks).
+func lebihBaruTCO(a, b KursTCO) bool {
+	if !a.DiinputPada.Equal(b.DiinputPada) {
+		return a.DiinputPada.After(b.DiinputPada)
+	}
+	x, ex := strconv.ParseInt(strings.TrimSpace(a.ID), 10, 64)
+	y, ey := strconv.ParseInt(strings.TrimSpace(b.ID), 10, 64)
+	if ex == nil && ey == nil {
+		return x > y
+	}
+	return strings.TrimSpace(a.ID) > strings.TrimSpace(b.ID)
 }
 
 // kembarIdentikTCO - dua baris berlaku identik: teks TOIDR sama persis, hari

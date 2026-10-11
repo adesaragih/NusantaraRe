@@ -3,14 +3,16 @@ package repository
 // Uji bentuk SQL tahun treaty dan grup treaty - TANPA Oracle (tiket 03, tco4).
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
 	"nusantarare/inti/backend/db"
+	"nusantarare/modul/treatycontractout/backend/models"
 )
 
 func TestSQLTahunTreatyUrutIDDesc(t *testing.T) {
-	q := sqlDaftarTahunTreaty("S.TREATYYEAR")
+	q := sqlDaftarTahunTreaty("S.TREATYYEAR", "", 0)
 	for _, mau := range []string{"ORDER BY ID DESC", "OFFSET :1 ROWS FETCH NEXT :2 ROWS ONLY",
 		"STARTDATE, ENDDATE, USERID, TGLUPDATE"} {
 		if !strings.Contains(q, mau) {
@@ -25,10 +27,10 @@ func TestSQLTahunTreatyUrutIDDesc(t *testing.T) {
 	if strings.Contains(q, "SELECT *") {
 		t.Error("SELECT * dilarang")
 	}
-	if !strings.Contains(sqlCacahTahunTreaty("S.T"), "COUNT(*)") {
+	if !strings.Contains(sqlCacahTahunTreaty("S.T", ""), "COUNT(*)") {
 		t.Error("pencacah tersendiri hilang")
 	}
-	for _, q := range []string{sqlDaftarTahunTreaty("S.T"), sqlAmbilTahunTreaty("S.T"),
+	for _, q := range []string{sqlDaftarTahunTreaty("S.T", "", 0), sqlAmbilTahunTreaty("S.T"),
 		sqlSisipTahunTreaty("S.T"), sqlPerbaruiTahunTreaty("S.T"), sqlCariDobelTahunTreaty("S.T"),
 		sqlGrupTreatyTCO("S.G")} {
 		if err := db.PeriksaSQL(q); err != nil {
@@ -38,6 +40,43 @@ func TestSQLTahunTreatyUrutIDDesc(t *testing.T) {
 }
 
 // AC 8: pembaruan menimpa SELURUH kolom; AC 6: sisipan bernama sepuluh kolom.
+// Work owner 11-10-2026 "SEMUA HEADER BUAT FILTERNYA": saringan per kolom inbox - teks Contains tidak peka huruf
+// ber-ESCAPE, tanggal atas bentuk tampil DD-MM-YYYY, grup / jenis sama persis; bind bernomor urut lalu OFFSET / FETCH.
+func TestSQLSaringTahunTreaty(t *testing.T) {
+	if w, arg := sqlSaringTahunTreaty(models.SaringTahunTreaty{}); w != "" || arg != nil {
+		t.Fatalf("tanpa saringan: %q %v", w, arg)
+	}
+	w, arg := sqlSaringTahunTreaty(models.SaringTahunTreaty{UnderwritingYear: "2024", TreatyYear: "20_4%",
+		StartDate: "07-2024", EndDate: "31-12", TreatyGroupID: " 10011 ", Proportion: "Proportional"})
+	for _, mau := range []string{
+		`UPPER(UNDERWRITINGYEAR) LIKE :1 ESCAPE '\'`,
+		`UPPER(TREATYYEAR) LIKE :2 ESCAPE '\'`,
+		`UPPER(SUBSTR(STARTDATE, 7, 2) || '-' || SUBSTR(STARTDATE, 5, 2) || '-' || SUBSTR(STARTDATE, 1, 4)) LIKE :3`,
+		`UPPER(SUBSTR(ENDDATE, 7, 2) || '-' || SUBSTR(ENDDATE, 5, 2) || '-' || SUBSTR(ENDDATE, 1, 4)) LIKE :4`,
+		"TREATYGROUPID = :5", "PROPORTION = :6",
+	} {
+		if !strings.Contains(w, mau) {
+			t.Errorf("WHERE tanpa %q:\n%s", mau, w)
+		}
+	}
+	if mau := []any{"%2024%", `%20\_4\%%`, "%07-2024%", "%31-12%", "10011", "Proportional"}; !reflect.DeepEqual(arg, mau) {
+		t.Errorf("bind %v, mau %v", arg, mau)
+	}
+	q := sqlDaftarTahunTreaty("S.TREATYYEAR", w, len(arg))
+	if !strings.Contains(q, "FROM S.TREATYYEAR\n\t WHERE UPPER(UNDERWRITINGYEAR)") ||
+		!strings.Contains(q, "OFFSET :7 ROWS FETCH NEXT :8 ROWS ONLY") {
+		t.Errorf("SQL daftar tersaring:\n%s", q)
+	}
+	if c := sqlCacahTahunTreaty("S.TREATYYEAR", w); !strings.HasPrefix(c, "SELECT COUNT(*) FROM S.TREATYYEAR\n\t WHERE ") {
+		t.Errorf("SQL cacah tersaring:\n%s", c)
+	}
+	for _, s := range []string{q, sqlCacahTahunTreaty("S.TREATYYEAR", w)} {
+		if err := db.PeriksaSQL(s); err != nil {
+			t.Errorf("PeriksaSQL: %v", err)
+		}
+	}
+}
+
 func TestSQLTahunTreatySisipDanPerbaruiSeluruhKolom(t *testing.T) {
 	sisip := sqlSisipTahunTreaty("S.T")
 	perbarui := sqlPerbaruiTahunTreaty("S.T")

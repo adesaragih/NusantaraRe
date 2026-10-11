@@ -11,6 +11,12 @@ require (
 	// ADR-U-0003 - ADR-U-0016: uang tidak pernah float.
 	github.com/cockroachdb/apd/v3 v3.2.1
 
+	// PDF dokumen akseptasi Komite Claim Prop (PrintFileAcceptance_TKMT S11
+	// HTMLToPDF - mesin PDF platform Pega tanpa padanan). Keputusan work owner
+	// 08-10-2026 (OQ-KCP-07 "A"). Go murni, lisensi MIT; paket utamanya hanya
+	// memakai pustaka standar dan menuntut go 1.20 (baris `go` tidak naik).
+	github.com/go-pdf/fpdf v0.9.0
+
 	// [usulan] Driver Oracle murni Go, tanpa Instant Client. BELUM pernah
 	// diputuskan lewat ADR; boleh diganti lewat keputusan tertulis.
 	github.com/sijms/go-ora/v2 v2.8.19

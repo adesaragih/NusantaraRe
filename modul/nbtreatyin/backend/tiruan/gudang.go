@@ -48,8 +48,6 @@ type Gudang struct {
 	PKPAgen map[string]string  // STS_PKP per ID agen; tak terdaftar = StsPKP
 	StsPKP  string
 	OJK     string
-	// GrupBisnis - nama grup bisnis per TreatyGroupID (`GrupBisnisDariGrupTreaty`).
-	GrupBisnis map[string]string
 	// OldIDGrup - hasil RDB `FetchTreatyGroupOLDID` (`OldIDGrupTreaty`).
 	OldIDGrup string
 	urutPol   int
@@ -70,16 +68,15 @@ type Gudang struct {
 // Baru menyusun gudang kosong.
 func Baru() *Gudang {
 	return &Gudang{
-		Kasus:      map[string]models.Kasus{},
-		Halaman:    map[string]*models.Halaman{},
-		Nama:       map[string]string{},
-		Kontrak:    map[string]models.BarisKontrak{},
-		Bisnis:     map[string]models.BarisBisnis{},
-		Master:     map[string]models.MasterXOL{},
-		GrupBisnis: map[string]string{},
-		Closing:    25,
-		OJK:        "UJI-OJK",
-		OldIDGrup:  "UJI-OLD",
+		Kasus:     map[string]models.Kasus{},
+		Halaman:   map[string]*models.Halaman{},
+		Nama:      map[string]string{},
+		Kontrak:   map[string]models.BarisKontrak{},
+		Bisnis:    map[string]models.BarisBisnis{},
+		Master:    map[string]models.MasterXOL{},
+		Closing:   25,
+		OJK:       "UJI-OJK",
+		OldIDGrup: "UJI-OLD",
 	}
 }
 
@@ -210,6 +207,23 @@ func (g *Gudang) TutupKasus(_ context.Context, _ *db.Tx, id, statusLama, statusA
 	return nil
 }
 
+// medanCariTiruan - medan pencarian portal satu berkas, urutan `repository.kolomCariPortal`.
+func medanCariTiruan(id string, k models.Kasus, h *models.Halaman, pembuat string) []string {
+	m := []string{id, "", k.NoPolis, "", "", "", "", "", "", "", "", pembuat}
+	if h != nil {
+		for i, j := range map[int]string{
+			1: models.HalamanPolis + ".NoOffer", 3: models.HalamanQuotation + ".InsuredName",
+			4: models.HalamanPolis + ".InsuredName", 5: models.HalamanQuotation + ".BusinessName",
+			6: models.HalamanQuotation + ".MarketingName", 7: models.HalamanPolis + ".SOBName",
+			8: models.HalamanPolis + ".CedingCoName", 9: models.HalamanPolis + ".TreatyGroupName",
+			10: models.HalamanPolis + ".BizName",
+		} {
+			m[i] = h.Ambil(j)
+		}
+	}
+	return m
+}
+
 func (g *Gudang) DaftarKasus(_ context.Context, s models.SaringanKasus) ([]models.RingkasanKasus, error) {
 	var out []models.RingkasanKasus
 	for id, k := range g.Kasus {
@@ -225,13 +239,13 @@ func (g *Gudang) DaftarKasus(_ context.Context, s models.SaringanKasus) ([]model
 		if s.Pembuat == "" && s.Antrean != nil && !diAntrean {
 			continue
 		}
-		if !models.CocokCariPortal(id, s.Cari) { // filter G, sama dengan repository
+		if !models.CocokCariPortal(medanCariTiruan(id, k, g.Halaman[id], g.NamaPembuat[id]), s.Cari) { // sama dengan repository
 			continue
 		}
 		r := models.RingkasanKasus{ID: id, StatusWork: k.StatusWork, PositionNote: k.PositionNote, NoPolis: k.NoPolis,
 			TglCreate: k.TglCreate, NamaPembuat: g.NamaPembuat[id]}
 		if h := g.Halaman[id]; h != nil {
-			r.BusinessName = h.Ambil(models.HalamanQuotation + ".BusinessName")
+			r.TreatyGroupName = h.Ambil(models.HalamanPolis + ".TreatyGroupName") // g.TREATY_GROUP_NAME
 			r.InsuredName = h.Ambil(models.HalamanQuotation + ".InsuredName")
 			r.MarketingName = h.Ambil(models.HalamanQuotation + ".MarketingName")    // q.MARKETING_NAME, sama dengan repository
 			r.NBStatus = h.Ambil("NBStatus")                                         // g.NB_STATUS
@@ -320,6 +334,12 @@ func (g *Gudang) SetelNomorPolis(_ context.Context, _ *db.Tx, id, nopol string) 
 	if k.NoPolis != "" {
 		return repository.ErrNomorPolisSudahAda
 	}
+	// indeks unik UQ_GP_TREATY_NOPOLIS (tiruan NB hanya memegang generasi 0)
+	for lain, x := range g.Kasus {
+		if lain != id && x.NoPolis == nopol {
+			return repository.ErrNomorPolisDipakai
+		}
+	}
 	k.NoPolis = nopol
 	g.Kasus[id] = k
 	return nil
@@ -345,6 +365,20 @@ func (g *Gudang) DetailKontrak(_ context.Context, id string) (models.BarisKontra
 		return nil, repository.ErrDataKontrakTidakAda
 	}
 	return b, nil
+}
+
+// DetailKontrakTreaty - baris `Kontrak` ber-TREATYID itu dengan ID terkecil (ORDER BY ID, sama dengan repository).
+func (g *Gudang) DetailKontrakTreaty(_ context.Context, treatyID string) (models.BarisKontrak, error) {
+	var pilih models.BarisKontrak
+	for _, b := range g.Kontrak {
+		if treatyID != "" && b["TREATYID"] == treatyID && (pilih == nil || b["ID"] < pilih["ID"]) {
+			pilih = b
+		}
+	}
+	if pilih == nil {
+		return nil, repository.ErrDataKontrakTidakAda
+	}
+	return pilih, nil
 }
 
 // KomisiKontrak - baris `Kontrak` ber-TREATYID itu, berurut ID (sama dengan
@@ -406,10 +440,7 @@ func (g *Gudang) NamaMataUang(_ context.Context, id string) (string, error) {
 	return strings.TrimPrefix(id, "UJI-ID-"), nil
 }
 
-func (g *Gudang) OJKGrupTreaty(context.Context, string) (string, error) { return g.OJK, nil }
-func (g *Gudang) GrupBisnisDariGrupTreaty(_ context.Context, grupID string) (string, error) {
-	return g.GrupBisnis[grupID], nil
-}
+func (g *Gudang) OJKGrupTreaty(context.Context, string) (string, error)   { return g.OJK, nil }
 func (g *Gudang) OldIDGrupTreaty(context.Context, string) (string, error) { return g.OldIDGrup, nil }
 func (g *Gudang) KlienDariNama(context.Context, string) (string, error)   { return "", nil }
 func (g *Gudang) StsPKPAgen(_ context.Context, sobID string) (string, error) {
@@ -507,6 +538,22 @@ func (g *Gudang) CatatUsulan(_ context.Context, _ *db.Tx, idPega string, baris [
 		g.Usulan = append(g.Usulan, BarisRiwayatProduksi{IDPega: idPega, UsulanProduksi: u})
 	}
 	return nil
+}
+
+// AdaRiwayatIDPega = repository.AdaRiwayatIDPega: IDPEGA sudah punya baris SuggestList (Usulan) atau History
+// (Riwayat).
+func (g *Gudang) AdaRiwayatIDPega(_ context.Context, _ *db.Tx, idPega string) (bool, error) {
+	for _, u := range g.Usulan {
+		if u.IDPega == idPega {
+			return true, nil
+		}
+	}
+	for _, r := range g.Riwayat {
+		if r.IDPega == idPega {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (g *Gudang) DaftarRiwayat(_ context.Context, idPega string) ([]models.Riwayat, error) {

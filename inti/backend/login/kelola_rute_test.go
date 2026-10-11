@@ -89,7 +89,7 @@ func TestKelolaRuteAlurAdmin(t *testing.T) {
 		kode                 int
 	}{
 		{"POST", "/api/admin/pengguna", badan, http.StatusConflict},
-		{"POST", "/api/admin/pengguna", strings.Replace(badan, "Sandi-Admin-01", "pendek", 1), http.StatusBadRequest},
+		{"POST", "/api/admin/pengguna", strings.Replace(badan, "Sandi-Admin-01", strings.Repeat("a", 73), 1), http.StatusBadRequest},
 		{"POST", "/api/admin/pengguna", strings.Replace(badan, `"claimlife"`, `"tidakada"`, 1), http.StatusBadRequest},
 		{"PUT", "/api/admin/pengguna/UJI-KELOLA-3", `{"nama":"Uji Tiga Baru","menu":["premiumlistlife"]}`, http.StatusOK},
 		{"PUT", "/api/admin/pengguna/UJI-TIDAK-ADA", `{"nama":"X"}`, http.StatusNotFound},
@@ -156,7 +156,7 @@ func TestKelolaRuteSecurity(t *testing.T) {
 		jalur, badan string
 		kode         int
 	}{
-		{"/api/admin/pengguna/UJI-KUNCI/sandi", `{"sandi":"pendek","wajibGanti":true}`, http.StatusBadRequest},
+		{"/api/admin/pengguna/UJI-KUNCI/sandi", `{"sandi":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","wajibGanti":true}`, http.StatusBadRequest},
 		{"/api/admin/pengguna/UJI-KUNCI/sandi", `{"sandi":"Sandi-Baru-Admin-3"}`, http.StatusBadRequest},
 		{"/api/admin/pengguna/UJI-TIDAK-ADA/sandi", `{"wajibGanti":false}`, http.StatusNotFound},
 		{"/api/admin/pengguna/UJI-KUNCI/sandi", `{"wajibGanti":false}`, http.StatusOK},

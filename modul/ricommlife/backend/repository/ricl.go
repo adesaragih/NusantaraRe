@@ -1,8 +1,8 @@
 package repository
 
-// SQL modul R/I Comm Life. Ringkasan: baca dari view `RICOMM_LIFE_SUMMARY`, tulis tabel JSON `M_RICOMM_LIFE_SUMMARY`
-// (sisip `JSON_OBJECT`, ubah ricl_json.go). Rincian: tabel FLAT `RICOMM_LIFE` (migrasi inti 924) - kolom bernama, bukan
-// JSONDATA. Angka ditulis TANPA bergantung NLS sesi: bulat = `TO_NUMBER(:n)` atas teks angka saja, desimal =
+// SQL modul R/I Comm Life. Ringkasan dibaca DAN ditulis di kolom `M_RICOMM_LIFE_SUMMARY`, rincian di kolom
+// `M_RICOMM_LIFE` (RALAT R1, keputusan work owner 08-10-2026, migrasi inti 931-934) - kolom bernama, nol JSON. Angka
+// ditulis TANPA bergantung NLS sesi: bulat = `TO_NUMBER(:n)` atas teks angka saja, desimal =
 // `TO_NUMBER(:koef) / POWER(10, :skala)` (pola masterproductnamelife, ADR-U-0003 - nol float); dibaca `fmtAngka`.
 
 import (
@@ -19,8 +19,8 @@ import (
 var (
 	// ErrTidakAda - ID tidak ada.
 	ErrTidakAda = errors.New("repository: R/I Comm Life tidak ada")
-	// ErrBelumAda - tabel, view, atau sequence tidak ada di skema ini (ORA-00942 / ORA-00904 / ORA-02289).
-	ErrBelumAda = errors.New("repository: tabel, view, atau sequence R/I Comm Life tidak ada di skema ini")
+	// ErrBelumAda - tabel, kolom, atau sequence tidak ada di skema ini (ORA-00942 / ORA-00904 / ORA-02289).
+	ErrBelumAda = errors.New("repository: tabel atau sequence R/I Comm Life tidak ada di skema ini")
 	// ErrKembar - ORA-00001.
 	ErrKembar = errors.New("repository: ID sudah dipakai")
 	// ErrBacaSaja - SQL tulis diarahkan ke objek di luar DaftarTabelDitulis.
@@ -62,10 +62,9 @@ func bungkus(err error, apa string) error {
 	return fmt.Errorf("repository: %s: %w", apa, err)
 }
 
-// PeriksaTulis - lapis penjaga: pernyataan bukan SELECT hanya boleh atas objek DaftarTabelDitulis; satu-satunya
-// pernyataan sesi yang boleh = SqlSesiNLS (alat pindah).
+// PeriksaTulis - lapis penjaga: pernyataan bukan SELECT hanya boleh atas objek DaftarTabelDitulis.
 func PeriksaTulis(objek, q string) error {
-	if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(q)), "SELECT ") || q == SqlSesiNLS {
+	if strings.HasPrefix(strings.ToUpper(strings.TrimSpace(q)), "SELECT ") {
 		return nil
 	}
 	for _, t := range DaftarTabelDitulis {
@@ -84,15 +83,15 @@ func siap(objek, q string) error {
 }
 
 // nama - nama berskema setiap objek.
-type nama struct{ tabelRingkasan, tabelKomisi, viewRingkasan, tabelLama, tabelSitus, seqRingkasan, seqKomisi string }
+type nama struct{ tabelRingkasan, tabelKomisi, tabelSitus, seqRingkasan, seqKomisi string }
 
 func (g *Gudang) nama() (nama, error) {
 	var n nama
 	for _, p := range []struct {
 		ke    *string
 		objek string
-	}{{&n.tabelRingkasan, TabelRingkasan}, {&n.tabelKomisi, TabelKomisi}, {&n.viewRingkasan, ViewRingkasan},
-		{&n.tabelLama, TabelJSONLama}, {&n.tabelSitus, TabelSitus}, {&n.seqRingkasan, SeqRingkasan}, {&n.seqKomisi, SeqKomisi}} {
+	}{{&n.tabelRingkasan, TabelRingkasan}, {&n.tabelKomisi, TabelKomisi}, {&n.tabelSitus, TabelSitus},
+		{&n.seqRingkasan, SeqRingkasan}, {&n.seqKomisi, SeqKomisi}} {
 		q, err := g.db.Qualify(p.objek)
 		if err != nil {
 			return nama{}, err
@@ -170,16 +169,20 @@ func SqlNomorBaru(seq string) string { return fmt.Sprintf(`SELECT TO_CHAR(%s.NEX
 // SqlAdaID - ID sudah terpakai?
 func SqlAdaID(t string) string { return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE ID = :1`, t) }
 
-// SqlSisipRingkasan - ringkasan baru (`JSON_OBJECT`; `pxObjClass` seperti data DEV).
+// SqlSisipRingkasan - ringkasan baru (kolom bernama; `pxObjClass` Pega tidak lagi disimpan - bukan kolom view).
 func SqlSisipRingkasan(t string) string {
-	return fmt.Sprintf(`INSERT INTO %s (ID, %s) VALUES (:1, JSON_OBJECT('%s' VALUE :2, '%s' VALUE :3, '%s' VALUE :4, '%s' VALUE :5 ABSENT ON NULL))`,
-		t, KolomJSON, JSONUsedBy, JSONOperatorID, JSONModified, JSONKelas)
+	return fmt.Sprintf(`INSERT INTO %s (ID, USEDBY, OPERATORID, MODIFIEDDATE) VALUES (:1, :2, :3, :4)`, t)
+}
+
+// SqlUbahRingkasan - Edit / Save: USEDBY, OPERATORID, MODIFIEDDATE satu ringkasan.
+func SqlUbahRingkasan(t string) string {
+	return fmt.Sprintf(`UPDATE %s SET USEDBY = :1, OPERATORID = :2, MODIFIEDDATE = :3 WHERE ID = :4`, t)
 }
 
 // SqlHapusRingkasan - Delete ringkasan.
 func SqlHapusRingkasan(t string) string { return fmt.Sprintf(`DELETE FROM %s WHERE ID = :1`, t) }
 
-// kolomKomisi - kolom tabel flat sebagai teks.
+// kolomKomisi - kolom rincian sebagai teks.
 func kolomKomisi() string {
 	return fmt.Sprintf("ID, IDUSEDBY, USEDBY, %s, %s, %s", fmt.Sprintf(fmtAngka, "CONTRACT"), fmt.Sprintf(fmtAngka, "YEAR"),
 		fmt.Sprintf(fmtAngka, "COMM"))
@@ -205,12 +208,7 @@ func SqlKomisiDari(t string, n int) string {
 	return fmt.Sprintf(`SELECT %s FROM %s WHERE IDUSEDBY IN (%s) ORDER BY %s`, kolomKomisi(), t, strings.Join(ikat, ", "), urutID("ASC"))
 }
 
-// SqlSemuaKomisi - seluruh tabel flat (alat pindah).
-func SqlSemuaKomisi(t string) string {
-	return fmt.Sprintf(`SELECT %s FROM %s ORDER BY %s`, kolomKomisi(), t, urutID("ASC"))
-}
-
-// SqlSisipKomisi - satu baris flat; COMM dirakit dari koefisien dan skala.
+// SqlSisipKomisi - satu baris rincian; COMM dirakit dari koefisien dan skala.
 func SqlSisipKomisi(t string) string {
 	return fmt.Sprintf(`INSERT INTO %s (ID, IDUSEDBY, USEDBY, CONTRACT, YEAR, COMM) VALUES (:1, :2, :3, TO_NUMBER(:4), TO_NUMBER(:5), TO_NUMBER(:6) / POWER(10, :7))`, t)
 }
@@ -227,14 +225,6 @@ func SqlUbahNamaKomisi(t string) string {
 
 // SqlHapusKomisi - rincian milik ringkasan (`DeleteSummaryDetail`: ringkasan BESERTA rinciannya).
 func SqlHapusKomisi(t string) string { return fmt.Sprintf(`DELETE FROM %s WHERE IDUSEDBY = :1`, t) }
-
-// SqlKunciKomisi - kunci tabel flat sepanjang transaksi alat pindah.
-func SqlKunciKomisi(t string) string { return fmt.Sprintf(`LOCK TABLE %s IN EXCLUSIVE MODE`, t) }
-
-// SqlSumberJSON - seluruh baris JSON lama (alat pindah).
-func SqlSumberJSON(t string) string {
-	return fmt.Sprintf(`SELECT ID, %s FROM %s ORDER BY ID`, KolomJSON, t)
-}
 
 // PecahDesimal - desimal kanonik -> koefisien bulat (teks) dan skala: `12.05` -> ("1205", 2); kosong = (nil, 0).
 func PecahDesimal(kanonik string) (any, int64) {
@@ -368,11 +358,11 @@ func (g *Gudang) Daftar(ctx context.Context, s models.Saringan) ([]models.Ringka
 		return nil, 0, err
 	}
 	id, nm := PolaCari(s.ID), PolaCari(s.UsedBy)
-	total, err := g.satuNilai(ctx, nil, ViewRingkasan, SqlJumlah(n.viewRingkasan), id, id, nm, nm)
+	total, err := g.satuNilai(ctx, nil, TabelRingkasan, SqlJumlah(n.tabelRingkasan), id, id, nm, nm)
 	if err != nil {
 		return nil, 0, err
 	}
-	b, err := g.bacaBaris(ctx, nil, ViewRingkasan, SqlDaftar(n.viewRingkasan, s.Urut, s.Turun), 4, id, id, nm, nm,
+	b, err := g.bacaBaris(ctx, nil, TabelRingkasan, SqlDaftar(n.tabelRingkasan, s.Urut, s.Turun), 4, id, id, nm, nm,
 		(s.Halaman-1)*models.UkuranHalaman, models.UkuranHalaman)
 	return keRingkasan(b), angka(total), err
 }
@@ -383,7 +373,7 @@ func (g *Gudang) Ambil(ctx context.Context, tx *db.Tx, id string) (models.Ringka
 	if err != nil {
 		return models.Ringkasan{}, err
 	}
-	b, err := g.bacaBaris(ctx, tx, ViewRingkasan, SqlAmbil(n.viewRingkasan), 4, id)
+	b, err := g.bacaBaris(ctx, tx, TabelRingkasan, SqlAmbil(n.tabelRingkasan), 4, id)
 	if err != nil {
 		return models.Ringkasan{}, err
 	}
@@ -399,7 +389,7 @@ func (g *Gudang) PemakaiNama(ctx context.Context, tx *db.Tx, nama, kecualiID str
 	if err != nil {
 		return nil, err
 	}
-	b, err := g.bacaBaris(ctx, tx, ViewRingkasan, SqlPemakaiNama(n.viewRingkasan), 4, nama, db.KosongJadiNil(kecualiID))
+	b, err := g.bacaBaris(ctx, tx, TabelRingkasan, SqlPemakaiNama(n.tabelRingkasan), 4, nama, db.KosongJadiNil(kecualiID))
 	return keRingkasan(b), err
 }
 
@@ -432,7 +422,7 @@ func (g *Gudang) NomorBaru(ctx context.Context, tx *db.Tx, ringkasan bool) (stri
 	return g.satuNilai(ctx, tx, "DUAL", SqlNomorBaru(seq))
 }
 
-// AdaID - ID sudah terpakai di tabel ringkasan / flat?
+// AdaID - ID sudah terpakai di tabel ringkasan / rincian (satu tabel per jenis)?
 func (g *Gudang) AdaID(ctx context.Context, tx *db.Tx, ringkasan bool, id string) (bool, error) {
 	n, err := g.nama()
 	if err != nil {
@@ -454,18 +444,23 @@ func (g *Gudang) SisipRingkasan(ctx context.Context, tx *db.Tx, r models.Ringkas
 	}
 	k := db.KosongJadiNil
 	_, err = g.tulis(ctx, tx, TabelRingkasan, SqlSisipRingkasan(n.tabelRingkasan), "menyimpan ringkasan", r.ID,
-		k(r.UsedBy), k(r.OperatorID), k(r.ModifiedDate), models.KelasRingkasan)
+		k(r.UsedBy), k(r.OperatorID), k(r.ModifiedDate))
 	return err
 }
 
-// UbahRingkasan - hanya USEDBY, OPERATORID, MODIFIEDDATE yang diganti; kunci lain milik Pega tetap.
+// UbahRingkasan - USEDBY, OPERATORID, MODIFIEDDATE (kosong = NULL); ErrTidakAda bila ID tidak ada.
 func (g *Gudang) UbahRingkasan(ctx context.Context, tx *db.Tx, r models.Ringkasan) error {
 	n, err := g.nama()
 	if err != nil {
 		return err
 	}
-	return g.ubahJSON(ctx, tx, n.tabelRingkasan, r.ID, map[string]string{
-		JSONUsedBy: r.UsedBy, JSONOperatorID: r.OperatorID, JSONModified: r.ModifiedDate})
+	k := db.KosongJadiNil
+	j, err := g.tulis(ctx, tx, TabelRingkasan, SqlUbahRingkasan(n.tabelRingkasan), "mengubah ringkasan",
+		k(r.UsedBy), k(r.OperatorID), k(r.ModifiedDate), r.ID)
+	if err == nil && j == 0 {
+		return ErrTidakAda
+	}
+	return err
 }
 
 // HapusRingkasan - Delete ringkasan; ErrTidakAda bila ID tidak ada.
@@ -549,7 +544,7 @@ func argKomisi(k models.Komisi) []any {
 	return []any{db.KosongJadiNil(k.Contract), db.KosongJadiNil(k.Year), koef, skala}
 }
 
-// SisipKomisi - baris flat baru; ErrKembar bila ID terpakai.
+// SisipKomisi - baris rincian baru; ErrKembar bila ID terpakai.
 func (g *Gudang) SisipKomisi(ctx context.Context, tx *db.Tx, k models.Komisi) error {
 	n, err := g.nama()
 	if err != nil {

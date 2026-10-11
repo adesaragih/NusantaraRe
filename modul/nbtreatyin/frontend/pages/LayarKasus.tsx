@@ -10,12 +10,14 @@
 // Medan wajib datang dari backend (`medanWajib`). Padanan setiap tombol/aksi
 // dengan rule XML: `docs/alat/tombol.json`.
 
-import { Fragment, useCallback, useState, type ReactNode } from 'react'
+import { Fragment, useCallback, useRef, useState, type ReactNode } from 'react'
 
 import { Gagal, Memuat, Modal, Panel, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
+import PanelLampiranReas from '../../../../inti/frontend/lampiran/PanelLampiranReas'
 import { useAmbilBatal } from '../ambil'
 import {
   POLIS,
+  PREFIX_NBTREATYIN,
   ambilAcuan,
   bukaKasus,
   daftar,
@@ -70,8 +72,9 @@ import {
   type Medan,
 } from '../medan'
 import { tampilNonProp } from '../nonprop'
+import { pertahankanKetikan } from '../hitungLangsung'
 import { BARIS_PER_HALAMAN_USULAN, irisan } from '../paginasi'
-import { sajikan, sajikanTanggalJam, type Sajian } from '../sajian'
+import { idTampil, sajikan, sajikanTanggalJam, type Sajian } from '../sajian'
 import { TATA_UANG_ADMIN, TATA_UANG_ATASAN, TOTAL_ATASAN, deretLayer, deretQ, tataUmum } from '../tataletak'
 import { aktifTombolSurvei, DAFTAR_SURVEI, tampilTombolSurvei } from '../survei'
 import { tampilTanggalProduksi } from '../tempat'
@@ -97,6 +100,8 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   const [konfirmasi, setKonfirmasi] = useState(false)
   const [nomor, setNomor] = useState<NomorPolis | null>(null)
   const [halUsulan, setHalUsulan] = useState(1)
+  // nomor permintaan hitung terakhir - jawaban permintaan yang sudah disusul diabaikan (hitungLangsung.ts)
+  const hitungTerakhir = useRef(0)
 
   const terima = useCallback((ly: Layar) => {
     setLayar(ly)
@@ -143,7 +148,18 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
   /** Action set satu sel - SATU bentuk permintaan: `urutan` satu refresh atau lebih. */
   const refresh = (urutan: Aksi[], indeks?: number, halaman?: Halaman) => {
     if (urutan.length === 0) return
-    void jalankan(() => hitung(id, { urutan, indeks, halaman: halaman ?? h }), terima)
+    const dikirim = halaman ?? h
+    const ke = ++hitungTerakhir.current
+    // Hitung langsung saat mengetik (hitungLangsung.ts): jawaban yang sudah disusul permintaan lain diabaikan, dan
+    // medan yang diketik sesudah permintaan dikirim tidak ditimpa nilai lamanya.
+    void jalankan(
+      () => hitung(id, { urutan, indeks, halaman: dikirim }),
+      (ly) => {
+        if (ke !== hitungTerakhir.current) return
+        setLayar(ly)
+        setH((kini) => (kini ? pertahankanKetikan(ly.halaman, dikirim, kini) : ly.halaman))
+      },
+    )
   }
 
   const selesai = (m: Medan, v: string) => {
@@ -288,7 +304,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
     <div className="inbox nbti__layar nbti__akar">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">
-          {JUDUL_POSISI[posisi] ?? JUDUL.portal} — {layar.kasus.id}
+          {JUDUL_POSISI[posisi] ?? JUDUL.portal} — {idTampil(layar.kasus.id)}
         </h2>
         <button type="button" className="btn btn--ghost" onClick={() => onKembali()}>
           {TOMBOL.kembali}
@@ -570,6 +586,10 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
         </div>
       )}
 
+      {/* Lampiran "Reas" (`AttachmentGridReas`) di bawah layar kasus - keputusan work owner 08-10-2026; Upload / Delete
+          selama kasus belum Resolve (diputuskan backend). */}
+      <PanelLampiranReas dasar={`${PREFIX_NBTREATYIN}/kasus/${encodeURIComponent(id)}/lampiran`} />
+
       {popupSurvei && (
         <SurveiHistoris
           halaman={h}
@@ -650,7 +670,7 @@ export default function LayarKasus({ id, onKembali }: { id: string; onKembali: (
           {/* Section ShowPolicyNoTreaty_SC: pyWorkPage.pyID, LABEL "telah diaksep menjadi", PolicyNo - bertumpuk di
               tengah, nomor polis menonjol (perintah work owner 06-10-2026 "RAPIHIN") */}
           <div className="nbti__nomor">
-            <p className="nbti__nomor-kasus">{nomor.id}</p>
+            <p className="nbti__nomor-kasus">{idTampil(nomor.id)}</p>
             <p className="nbti__nomor-teks">{NOMOR_DIAKSEP}</p>
             <p className="nbti__nomor-polis">{nomor.policyNo}</p>
           </div>

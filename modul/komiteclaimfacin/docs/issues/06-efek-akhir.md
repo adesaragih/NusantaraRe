@@ -18,6 +18,26 @@ Sesudah tiket ini, ⭐ **Efek akhir terbit HANYA ketika jenjang terakhir menyetu
 | ⭐ Penyimpan sesungguhnya | ⭐ langkah penyimpan **diangkat ke rule pemanggil**, bergerbang *keputusan terima* **dan** *jenjang terakhir* |
 | ⚠️ Jalur kegagalan | ⛔ **NOL jalur kegagalan pada 25 langkah penyimpanan** di sistem lama |
 
+> ⛔ **RALAT 10-10-2026.** Kalimat dan baris lamanya dikutip utuh, tidak dihapus: *"Sesudah tiket ini, ⭐ **Efek akhir
+> terbit HANYA ketika jenjang terakhir menyetujui**, dan **tepat satu kali**: ringkasan akseptasi disusun lalu
+> **disimpan**, nomor terbit, dokumen tercetak, surel terkirim."* dan *"⚠️ Jalur kegagalan | ⛔ **NOL jalur kegagalan
+> pada 25 langkah penyimpanan** di sistem lama"* →
+>
+> - **Satu transaksi per Submit** (prompt §5 #6, perbaikan atas Obj-Save klaim + komite per iterasi
+>   `KomitePost_Adjustment` S7.2.1.10–14): keputusan tingkat, tulis balik klaim lewat kontrak, nomor
+>   (`inti/backend/penomor`), `OS_AKSEPTASI_KLAIM`, `JSON_KLAIM`, `HISTORYAKSEPTASIPEGA`, `SUBPROGRESSCLAIM.POSITION2`,
+>   dan kronologi di-commit bersama. Gagal di tengah = seluruh Submit batal; itulah jalur kegagalannya.
+> - **Efek luar lewat outbox, hanya produksi** (`IS_PEGA_PROD`): konversi, kasir, surel; `MUATAN` hanya pengenal +
+>   angka. PDF diterbitkan sesudah commit (isi berkasnya OQ, stream tidak diekspor).
+> - **`OS_AKSEPTASI_KLAIM` sekali per KMT** (prompt §5 #5): S8 `SaveOSClaim_SQL` berada di luar perulangan adjustment
+>   dan memakai `InputData` adjustment terakhir. Dengan satu adjustment per KMT (OQ-CFI-28) hasilnya sama; baris ditulis
+>   untuk adjustment KMT itu. STS **4** bila PaymentType 1, selain itu **1**; `CARI17` 8 bila objek retro, selain itu 7.
+> - **Penolakan TT2 tanpa OS**: S8 hanya berjalan bila `AcceptStatus == "1"` dan `KomiteCount == KomiteLoop`. Penolakan
+>   juga tanpa nomor, tanpa `JSON_KLAIM` (S16), tanpa konversi (S17).
+> - **Surel tidak hanya di tingkat akhir.** `SendEmailKlaim_KMT` (S7.2.1.15, `IsPEGAPROD`) berjalan di **setiap**
+>   keputusan: ke tingkat berikut (S12) atau ke pembuat dengan "(Approval)" (S14) / "(Reject)" (S15).
+>   `HISTORYAKSEPTASIPEGA` (S20–S21, Workbasket "KLAIM") dan kronologi (S3–S5) juga ditulis setiap keputusan.
+
 ⭐ Sumber: `komite-claim-facin\spec.md` · `claim-facin\STRUKTUR-TABEL-CLAIM-FACIN.md` §5.
 
 ## Keputusan work owner yang mengikat
@@ -46,3 +66,16 @@ Sesudah tiket ini, ⭐ **Efek akhir terbit HANYA ketika jenjang terakhir menyetu
 2. Periksa jenjang pertama dan kedua ⇒ ⛔ **nol efek akhir** di keduanya.
 3. Paksa gagal di tengah rangkaian efek ⇒ ⭐ kegagalannya **tercatat**, tidak hilang diam-diam.
 4. Jalankan di lingkungan bukan produksi ⇒ ⛔ surel **tidak terkirim**.
+
+> ⛔ **RALAT 10-10-2026.** Butir dan langkah lamanya dikutip utuh, tidak dihapus: *"Urutannya: ringkasan → nomor →
+> dokumen → surel → kasir"*, *"2. Periksa jenjang pertama dan kedua ⇒ ⛔ **nol efek akhir** di keduanya."* dan *"3. Paksa
+> gagal di tengah rangkaian efek ⇒ ⭐ kegagalannya **tercatat**, tidak hilang diam-diam."* →
+>
+> - **Urutan XML** `KomitePost_Adjustment`: nomor (S7.2.1.2) → tulis adjustment (S7.2.1.5) → surel (S7.2.1.15) →
+>   `SaveAcceptation_KMT` (S7.2.1.16) → `SaveAccept_ACT` (S7.2.1.17) → OS (S8) → PDF (S9) → `IsPrintAccept` (S12) →
+>   `JSON_KLAIM` (S16) → konversi (S17) → log "AKSEPATSI" (S19) → `HISTORYAKSEPTASIPEGA` (S20–S21) →
+>   `SUBPROGRESSCLAIM` (S23) → `KomiteCount + 1` (S24) → kasir (S25). Nomor terbit **sebelum** ringkasan disimpan.
+> - Langkah 2: jenjang pertama dan kedua tetap menulis surel, `HISTORYAKSEPTASIPEGA`, dan kronologi; yang nol hanya efek
+>   akseptasi (nomor, OS, `JSON_KLAIM`, konversi, kasir, PDF).
+> - Langkah 3: gagal di dalam transaksi ⇒ nol tulisan tersisa; gagal efek outbox ⇒ antre ulang. Tambah uji: tolak TT2
+>   di tingkat akhir ⇒ nol baris `OS_AKSEPTASI_KLAIM`.

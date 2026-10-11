@@ -120,4 +120,9 @@ dijalankan DBA berurutan (ganti `{skema}` dengan POOLDATA), lalu `DELETE FROM PO
 ('928_m_rate_life_summary_satu_tabel', '927_m_rate_life_summary_kolom'); COMMIT;` dan backend dari commit sebelum
 RALAT R6. JSONDATA dibangun ulang dari kolom (kunci USEDBY, TYPE, MODIFIEDDATE, OPERATORID); **FLAG lama dan ringkasan
 yang dibuang 928 hanya dapat dikembalikan dari cadangan CSV (a)**. Prosedur Pega tetap perlu dikompilasi ulang DBA.
+JSONDATA dikembalikan NULLABLE: repo tidak memuat bukti NOT NULL (fakta WO 07-10-2026 hanya "ID PK + JSONDATA CLOB IS
+JSON"); bila katalog DEV sebelum 928 menunjukkan NOT NULL, DBA menambah `ALTER TABLE POOLDATA.M_RATE_LIFE_SUMMARY MODIFY
+(JSONDATA NOT NULL);` sesudah mundur. **RALAT 08-10-2026:** `927_down` kini mulai dengan pelindung gagal-keras
+(`UPDATE … SET JSONDATA = JSONDATA WHERE 1 = 0`, ORA-00904 bila JSONDATA sudah dibuang): bila 928 membuang JSONDATA
+tetapi tidak tercatat, 927_down TIDAK BOLEH dijalankan - selesaikan 928 maju dulu (tabel Pemulihan di atas).
 ⛔ Jangan memakai `-migrate-down` di DEV (dipagari skema uji, membongkar SELURUH migrasi).

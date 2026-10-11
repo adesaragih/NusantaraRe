@@ -49,6 +49,9 @@ type coverageKabel struct {
 	Unit                    string `json:"unit"`
 	AccumulationCode        string `json:"accumulationCode"`
 	AccumulationDescription string `json:"accumulationDescription"`
+	// tiket 52 - teks apa adanya; boleh absen saat masuk.
+	Zone                   string `json:"zone"`
+	ConstructionEarthquake string `json:"constructionEarthquake"`
 }
 
 // deductibleKabel - kontrak `Deductible` (tiket 45); kode = teks, persen / uang / hari = teks desimal (ADR-0034).
@@ -126,7 +129,8 @@ func satuCoverageKabel(c models.CoverageObjek) coverageKabel {
 		PctLoL: teks(c.PctLoL), ProRatePercent: teks(c.ProRatePercent), IndemnityPercentage: teks(c.IndemnityPercentage),
 		FirstScale: teks(c.FirstScale), Sublimit: teks(c.Sublimit), LostLimit: teks(c.LostLimit), EmlPml: teks(c.EmlPml),
 		Discount: teks(c.Discount), Premium: teks(c.Premium), Conditions: c.Conditions, Deductibles: keDeductibleKabel(c.Deductibles),
-		Unit: c.Unit, AccumulationCode: c.AccumulationCode, AccumulationDescription: c.AccumulationDescription}
+		Unit: c.Unit, AccumulationCode: c.AccumulationCode, AccumulationDescription: c.AccumulationDescription,
+		Zone: c.Zone, ConstructionEarthquake: c.ConstructionEarthquake}
 }
 
 // keCoverageModel - satu coverage kabel -> model; `awal` = awalan jalur pesan 400 (mis. "baris[0].items[1].coverages[2].").
@@ -142,7 +146,7 @@ func keCoverageModel(awal string, c coverageKabel, masalah *[]string) models.Cov
 		Sublimit: u("sublimit", c.Sublimit), LostLimit: u("lostLimit", c.LostLimit), EmlPml: u("emlPml", c.EmlPml),
 		Discount: u("discount", c.Discount), Premium: u("premium", c.Premium),
 		Deductibles: keDeductibleModel(awal, c.Deductibles, masalah), Unit: c.Unit, AccumulationCode: c.AccumulationCode,
-		AccumulationDescription: c.AccumulationDescription}
+		AccumulationDescription: c.AccumulationDescription, Zone: c.Zone, ConstructionEarthquake: c.ConstructionEarthquake}
 }
 
 // keCoverageModelDaftar - coverages item; jalur pesan "<awalItem>coverages[k].".
@@ -247,6 +251,11 @@ type badanHitungCoverage struct {
 	ModeDiskon     string        `json:"modeDiskon"`
 	IsAdjustable   bool          `json:"isAdjustable"`
 	PctAdjustOther string        `json:"pctAdjustOther"`
+	// CallAct - tiket 52: "rate" = CountPremiRate_ACT (Coverage / Zone diubah); absen = hitung biasa. Province /
+	// OccupationIDs - isian objek saat itu, hanya bersama CallAct (4.3 / FLEXAS).
+	CallAct       string   `json:"callAct"`
+	Province      string   `json:"province"`
+	OccupationIDs []string `json:"occupationIds"`
 }
 
 // hitungCoverage - POST /api/nbfacin/kasus/{caseId}/hitung-coverage: hitung satu coverage tanpa menyimpan.
@@ -266,7 +275,8 @@ func hitungCoverage(svc *services.Service) http.HandlerFunc {
 			tulisGalat(w, err)
 			return
 		}
-		hasil, err := svc.HitungCoverageKasus(r.Context(), r.PathValue("caseId"), c, tsi, b.Mode, b.ModeDiskon, it)
+		hasil, err := svc.HitungCoverageKasus(r.Context(), r.PathValue("caseId"), c, tsi, b.Mode, b.ModeDiskon,
+			services.PermintaanRate{CallAct: b.CallAct, Province: b.Province, OccupationIDs: b.OccupationIDs}, it)
 		if err != nil {
 			tulisGalat(w, err)
 			return

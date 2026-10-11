@@ -44,16 +44,26 @@ func DariDasar(d *inti.Dasar) *Service {
 	if !d.PunyaDatabase() {
 		return Baru(nil)
 	}
+	portal := repository.NewPortalOracle(d.DB())               // portal Opportunity sekaligus kotak masuk Beranda
+	kasus := repository.NewKasusOracle(d.DB())                 // case NB sekaligus pembaca tahap (baca-saja)
+	lossRecord := repository.NewLossRecordOracle(d.DB())       // penyimpan tab Loss Record sekaligus pembaca JOB_POSITION
+	korespondensi := repository.NewKorespondensiOracle(d.DB()) // penyimpan korespondensi sekaligus pembaca akun login
 	return Baru(repository.NewLimitOracle(d.DB())).DenganAkun(repository.NewAkunOracle(d.DB())).
 		DenganKelasBisnis(repository.NewKelasBisnisOracle(d.DB())).
 		DenganTransaksi(d.DalamTransaksi).DenganCaseNB(repository.NewCaseNBOracle(d.DB())).
-		DenganKasus(repository.NewKasusOracle(d.DB())).
+		DenganKasus(kasus).DenganTahap(kasus).
 		DenganMarketingOfficer(repository.NewMarketingOfficerOracle(d.DB())).
-		DenganPortal(repository.NewPortalOracle(d.DB())).
+		DenganPortal(portal).DenganKotakMasuk(portal).
 		DenganSOB(repository.NewSOBOracle(d.DB())).
-		DenganObjek(repository.NewObjekOracle(d.DB())).
+		DenganObjek(repository.NewObjekOracle(d.DB())).DenganAkumulasiCoverage(repository.NewObjekOracle(d.DB())).
+		DenganObjekAneka(repository.NewObjekOracle(d.DB())).DenganLookupAneka(repository.NewLookupAnekaOracle(d.DB())).
+		DenganObjekCargo(repository.NewObjekOracle(d.DB())).DenganMasterCargo(repository.NewMasterCargoOracle(d.DB())). // tiket 74; MaxAge / agen menunggu DDL
+		DenganUnggahCsv(repository.NewUnggahCsvOracle(d.DB()), repository.NewObjekOracle(d.DB())).                      // tiket 75
+		DenganHalamanObjek(repository.NewObjekOracle(d.DB())).                                                          // tiket 75 F3
+		DenganUnggahCsvCargo(repository.NewObjekOracle(d.DB()), repository.NewKapalMasterOracle(d.DB())).               // tiket 74 P6
+		DenganUnggahCsvAneka(repository.NewObjekOracle(d.DB())).                                                        // tiket 73 P6
 		DenganRisk(repository.NewRiskOracle(d.DB())).
-		DenganRW(repository.NewRWOracle(d.DB())).
+		DenganRW(repository.NewRWOracle(d.DB())).DenganCsvObjek(repository.NewCsvObjekOracle(d.DB())).
 		DenganOccupation(repository.NewOccupationOracle(d.DB())).
 		DenganPilihanItem(repository.NewPilihanItemOracle(d.DB())).
 		DenganTableOfLimit(repository.NewTableOfLimitOracle(d.DB())).
@@ -62,7 +72,17 @@ func DariDasar(d *inti.Dasar) *Service {
 		DenganAddAkumulasi(repository.NewAddAkumulasiOracle(d.DB()), masterservices.DariDasar(d)).
 		DenganKlausa(repository.NewKlausaOracle(d.DB())).
 		DenganSpreading(repository.NewSpreadingOracle(d.DB())).
-		DenganCedant(repository.NewCedantOracle(d.DB()))
+		DenganCedant(repository.NewCedantOracle(d.DB())).
+		DenganDeduction(repository.NewDeductionOracle(d.DB())).
+		DenganPayment(repository.NewPaymentOracle(d.DB())).
+		DenganZona(repository.NewZonaOracle(d.DB())).
+		DenganScoring(repository.NewScoringOracle(d.DB())).
+		DenganLossRecord(lossRecord, lossRecord).
+		DenganKorespondensi(korespondensi, korespondensi).
+		DenganSubmit(repository.NewSubmitOracle(d.DB())).
+		DenganFollowing(repository.NewFollowingOracle(d.DB())).
+		DenganPolis(repository.NewPolisOracle(d.DB())).
+		DenganViewPolis(repository.NewViewPolisOracle(d.DB()))
 }
 
 // Service - layanan NB Fac In.
@@ -89,6 +109,27 @@ type Service struct {
 	sob repository.PembacaSOB
 	// objek - tab Object FIRE (tiket 35); nil = tanpa basis data (503).
 	objek repository.PenyimpanObjek
+	// objekAneka - tab Object keluarga Aneka (tiket 73 P1); nil = tanpa basis data (503).
+	objekAneka repository.PenyimpanObjekAneka
+	// tiket 74 - tab Object + Coverage MARINE CARGO; masterCargo menunggu nama tabel DEV (nil = belum terpasang).
+	objekCargo  repository.PenyimpanObjekCargo
+	masterCargo PembacaMasterCargo
+	// tiket 75 - unggah CSV objek tanpa batas: pekerjaan + penampung (migrasi 257), penambah objek kelompok berikutnya; latar =
+	// pelaksana pekerjaan latar (nil = goroutine; uji: sinkron).
+	unggahCsv     repository.PenyimpanUnggahCsv
+	penambahObjek repository.PenambahObjek
+	// penulisCargoCsv / kapalMaster - tiket 74 P6: unggah CSV Marine Cargo (nil = tanpa basis data).
+	penulisCargoCsv repository.PenulisCargoCsv
+	kapalMaster     repository.PenyimpanKapalMaster
+	// penulisAnekaCsv - tiket 73 P6: unggah CSV Aneka / Marine Hull (nil = tanpa basis data).
+	penulisAnekaCsv repository.PenulisAnekaCsv
+	// halamanObjek - tiket 75 F3: tab Object per halaman + simpan perubahan saja (nil = tanpa basis data).
+	halamanObjek repository.PenyimpanHalamanObjek
+	latar        func(func())
+	// lookupAneka - pilihan kapal / tipe kendaraan form objek Aneka (tiket 73 P1); nil = 503.
+	lookupAneka repository.PembacaLookupAneka
+	// akumulasiCoverage - PUT …/akumulasi tahap uw (tiket 60); nil = 503.
+	akumulasiCoverage repository.PenyimpanAkumulasiCoverage
 	// risk - pencarian alamat risiko (tiket 36); nil = tanpa basis data (503).
 	risk repository.PembacaRisk
 	// rw - saran Zip Code dan simpan alamat baru (tiket 37); nil = tanpa basis data (503).
@@ -114,7 +155,47 @@ type Service struct {
 	spreading repository.PenyimpanSpreading
 	// cedant - tab Inw Fac Cedant Panels (tiket 49); nil = tanpa basis data (503).
 	cedant repository.PenyimpanCedant
-	jam    func() time.Time
+	// following - Following Policy Number (tiket 70); nil = tanpa basis data (503).
+	following repository.PenyimpanFollowing
+	// polis - menu View Policy (tiket 71); nil = tanpa basis data (503).
+	polis repository.PembacaPolis
+	// viewPolis - tab View Policy Offer Facultative / Treaty / Life (tiket 71 perluasan); nil = tanpa basis data (503).
+	viewPolis repository.PembacaViewPolis
+	// deduction - tab Premium Deduction / Brokerage Fee (tiket 50); nil = tanpa basis data (503).
+	deduction repository.PenyimpanDeduction
+	// payment - tab Payment (tiket 51); nil = tanpa basis data (503).
+	payment repository.PenyimpanPayment
+	// zona - saran Zone / 4.2 Construction dan rate ZONEOJK (tiket 52); nil = tanpa basis data (503).
+	zona repository.PembacaZona
+	// scoring - tab Scoring Risk (tiket 54); nil = tanpa basis data (503).
+	scoring repository.PenyimpanScoring
+	// lossRecord, jabatan - tab Loss Record dan JOB_POSITION akun (tiket 55); nil = tanpa basis data (503) / tanpa akses.
+	lossRecord repository.PenyimpanLossRecord
+	jabatan    repository.PembacaJabatan
+	// korespondensi, akunLogin, surel - tab Correspondence (tiket 56); surel nil = SMTP belum dikonfigurasi (Send 503).
+	korespondensi repository.PenyimpanKorespondensi
+	akunLogin     repository.PembacaAkunLogin
+	surel         repository.PengirimSurel
+	// kotakMasuk - kotak masuk Beranda; nil = tanpa basis data (503).
+	kotakMasuk repository.PembacaKotakMasuk
+	// tahap - POSITION / FLAG kasus untuk penjaga baca-saja (bacasaja.go); nil = penjaga tidak aktif.
+	tahap repository.PembacaTahapKasus
+	// submit - Submit tahap marketing (tiket 57); nil = tanpa basis data (503).
+	submit repository.PenyimpanSubmit
+	// grup, produksi - penanda case group (When IsGroup, NBFACIN_GROUP_*) dan IS_PEGA_PROD (email "Waiting for Bind" hanya
+	// di produksi) - tiket 63.
+	// csv - pencarian master Save Data CSV objek (tiket 66); nil = tanpa basis data (503).
+	csv      repository.PembacaCsvObjek
+	grup     KonfigGrup
+	produksi bool
+	jam      func() time.Time
+	// lampiran, antreanLampiran, storageLampiran, unggahanDir, storageNyata - lampiran case (tiket 67): DOCUMENT_POLIS /
+	// T_STORAGE_IMAGE, outbox bersama, pelaksana penyimpanan (PELAKSANA_STORAGE), UNGGAHAN_DIR; nil = tanpa basis data (503).
+	lampiran        repository.PenyimpanLampiran
+	antreanLampiran AntreanLampiran
+	storageLampiran KlienStorageLampiran
+	unggahanDir     string
+	storageNyata    bool
 }
 
 // DenganAkun memasang pembaca tabel akun (tiket 27).

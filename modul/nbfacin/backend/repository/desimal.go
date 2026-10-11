@@ -7,6 +7,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"regexp"
 
 	"github.com/cockroachdb/apd/v3"
 
@@ -16,6 +17,11 @@ import (
 
 // fmtAngkaMasuk - teks desimal bertitik -> NUMBER(38,8): 30 digit bulat, 8 desimal; NLS titik eksplisit.
 const fmtAngkaMasuk = `TO_NUMBER(%s, 'FM999999999999999999999999999999D99999999', 'NLS_NUMERIC_CHARACTERS=''.,''')`
+
+// PolaAngkaMasuk - teks bind (ikatDesimal) yang diterima mask fmtAngkaMasuk: paling banyak 30 digit bulat dan 8 desimal, tanpa
+// eksponen; selain itu Oracle menolak ORA-01722. Dipakai uji dan tiruan penyimpan supaya nilai berskala 20 tertangkap
+// sebelum sampai Oracle (bug DEV 08-10-2026).
+var PolaAngkaMasuk = regexp.MustCompile(`^-?[0-9]{1,30}(\.[0-9]{1,8})?$`)
 
 // angkaMasuk - ekspresi SQL penerima bind desimal (mis. ":13") untuk kolom NUMBER(38,8).
 func angkaMasuk(bind string) string { return fmt.Sprintf(fmtAngkaMasuk, bind) }

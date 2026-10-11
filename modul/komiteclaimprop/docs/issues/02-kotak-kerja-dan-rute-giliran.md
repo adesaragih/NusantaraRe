@@ -1,6 +1,11 @@
 # 02: Kotak kerja penyetuju dan rute giliran
 
-**Status:** ready-for-agent
+**Status:** dibangun *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+
+> **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
+>
+> - Daftar kerja = KomiteRouter S6.1 (baris tangga PERTAMA ber-keputusan 0), saringan `w.LINI = 'PROP'` ketat + awalan `TKMT-`. AC 81-82 (wewenang simpan keputusan, galat terbaca) ditempel ke tiket **04**.
+
 
 **Blocked by:** **01 (kasus komite lahir)**
 

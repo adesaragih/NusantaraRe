@@ -64,7 +64,7 @@ func TestKenaliKondisi(t *testing.T) {
 		{awal + `compareTwoValues(.X, ">", 0)`, "", "operator"},
 		{"pyPortal.IsEdit", "", "bentuk ekspresi lain"},
 	} {
-		kd, alasan := kenaliKondisi(u.masuk)
+		kd, alasan := kenaliKondisi(u.masuk, nil)
 		if u.alasan != "" {
 			if !strings.HasPrefix(alasan, u.alasan) {
 				t.Errorf("%s: alasan %q, mau berawal %q", u.masuk, alasan, u.alasan)
@@ -87,7 +87,7 @@ func TestLoginTidakDisalin(t *testing.T) {
 	if err := os.WriteFile(jalur, []byte(xmlWhen), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	e, err := baca(jalur, "uji", "", sikapKhusus)
+	e, err := baca(jalur, "uji", "", sikapKhusus, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -190,7 +190,7 @@ func TestIdentitasTidakDisalinDalamBentukLain(t *testing.T) {
 		if err := os.WriteFile(jalur, []byte(xmlWhen), 0o600); err != nil {
 			t.Fatal(err)
 		}
-		e, err := baca(jalur, "uji", "", sikapKhusus)
+		e, err := baca(jalur, "uji", "", sikapKhusus, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -201,5 +201,29 @@ func TestIdentitasTidakDisalinDalamBentukLain(t *testing.T) {
 	// Garis miring biasa = folder NB yang sama.
 	if p, err := pilihProfil("NB FacIn/When", "rules"); err != nil || len(p.pinjaman) != len(pinjaman) {
 		t.Errorf("NB FacIn/When: %+v (%v)", p, err)
+	}
+}
+
+// TestPetaWorkbasket - pembetulan nama ReasFacInJuniorUnderwriting -> ReasFacInJuniorUnderwritingB (ADR-0032, keputusan work
+// owner 07-10-2026) hanya profil NB, untuk literal berkutip dan kata telanjang; nama lain (…A) tidak tersentuh; tanpa peta =
+// verbatim; profil folder lain tanpa peta.
+func TestPetaWorkbasket(t *testing.T) {
+	for masuk, mau := range map[string]string{
+		"@(Pega-RULES:ExpressionEvaluators).compareTwoValues(pyWorkPage.PositionNote, \"=\", \"ReasFacInJuniorUnderwriting\")":  `operand{teksLiteral, "ReasFacInJuniorUnderwritingB"}`,
+		"@(Pega-RULES:ExpressionEvaluators).compareTwoValues(pyWorkPage.PositionNote, \"=\", ReasFacInJuniorUnderwriting)":      `operand{teksLiteral, "ReasFacInJuniorUnderwritingB"}`,
+		"@(Pega-RULES:ExpressionEvaluators).compareTwoValues(pyWorkPage.PositionNote, \"=\", \"ReasFacInJuniorUnderwritingA\")": `operand{teksLiteral, "ReasFacInJuniorUnderwritingA"}`,
+	} {
+		kd, alasan := kenaliKondisi(masuk, PetaWorkbasket)
+		if alasan != "" || !strings.Contains(kd.literal, mau) {
+			t.Errorf("%s: %q %q", masuk, kd.literal, alasan)
+		}
+		if kd, _ := kenaliKondisi(masuk, nil); strings.Contains(kd.literal, "UnderwritingB") {
+			t.Errorf("tanpa peta harus verbatim: %s", kd.literal)
+		}
+	}
+	nb, _ := pilihProfil(folderUtama, "rules")
+	lain, _ := pilihProfil(`Endorsment Fac In\When`, "edm")
+	if nb.peta["ReasFacInJuniorUnderwriting"] != "ReasFacInJuniorUnderwritingB" || lain.peta != nil {
+		t.Errorf("profil: NB %v / lain %v", nb.peta, lain.peta)
 	}
 }

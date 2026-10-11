@@ -57,15 +57,18 @@ func (k Kasus) Tertutup() bool {
 // (`Section/SFAPortal_OpportunitiesList`: nomor, bisnis, tertanggung,
 // marketing, NBStatus).
 type RingkasanKasus struct {
-	ID            string `json:"id"`
-	BusinessName  string `json:"businessName"`
-	InsuredName   string `json:"insuredName"`
-	MarketingName string `json:"marketingName"`
-	NBStatus      string `json:"nbStatus"`
-	StatusWork    string `json:"statusWork"`
-	PositionNote  string `json:"positionNote"`
-	NoPolis       string `json:"noPolis"`
-	TglCreate     string `json:"tglCreate"`
+	ID string `json:"id"`
+	// TreatyGroupName - T_GENERAL_POLIS_TREATY.TREATY_GROUP_NAME, kolom "Treaty Business" portal dan kotak masuk
+	// Beranda (perintah work owner 10-10-2026: "ganti yang di inbox group bisnis jadi treaty bisnis"; dulu
+	// "Group Business" = Quotation.BusinessName, RD GetListOpportunity).
+	TreatyGroupName string `json:"treatyGroupName"`
+	InsuredName     string `json:"insuredName"`
+	MarketingName   string `json:"marketingName"`
+	NBStatus        string `json:"nbStatus"`
+	StatusWork      string `json:"statusWork"`
+	PositionNote    string `json:"positionNote"`
+	NoPolis         string `json:"noPolis"`
+	TglCreate       string `json:"tglCreate"`
 	// NamaPembuat - T_WORK_POLIS.CREATE_OP_NAME, kolom "User Create" portal (keputusan work owner 06-10-2026).
 	NamaPembuat string `json:"createOpName"`
 	// JenisProporsi - T_POLIS_QUOTATION.PROPORTIONAL_TYPE, kolom "Type" portal (keputusan work owner 06-10-2026).
@@ -96,11 +99,9 @@ const BatasDaftarPortal = 500
 
 // SaringanKasus - saringan daftar portal.
 type SaringanKasus struct {
-	// Cari - teks pencarian `.FilterTermForOpportunity` -> `Param.Search` RD
-	// `GetListOpportunity`: filter G `.TextNoQuotation Contains Param.Search`
-	// (tanpa beda huruf besar/kecil) = pengenal kasus (`CocokCariPortal`).
-	// ⛔ Filter C `.Name Contains Param.Search` tidak dibangun - `.Name`
-	// milik kelas CRM, ditulis nol rule korpus, tak berkolom di diagram.
+	// Cari - teks pencarian `.FilterTermForOpportunity` -> `Param.Search` RD `GetListOpportunity`. Filter G XML
+	// (`.TextNoQuotation Contains`) DIPERLUAS (perintah work owner 07-10-2026: "pencarian nya pada nb dan edm treaty buat bisa mencari nomor nb/edm. insured name dll, intinya buat searchnya itu sangat berguna"): setiap kata
+	// wajib cocok dengan salah satu medan `CocokCariPortal`.
 	Cari string
 	// Posisi - workbasket; kosong = semua posisi.
 	Posisi string
@@ -120,12 +121,37 @@ type SaringanKasus struct {
 	Selesai bool
 }
 
-// CocokCariPortal = filter G RD `GetListOpportunity`: `.TextNoQuotation
-// Contains Param.Search`, `pyCaseInsensitive=true`. Kosong = tanpa saringan.
-// Repository menulis padanannya di SQL (`UPPER(w.ID) LIKE`).
-func CocokCariPortal(id, cari string) bool {
-	cari = strings.TrimSpace(cari)
-	return cari == "" || strings.Contains(strings.ToUpper(id), strings.ToUpper(cari))
+// BatasKataCari - kata pencarian portal yang dipakai paling banyak; sisanya diabaikan (sama dengan portal EDM).
+const BatasKataCari = 5
+
+// KataCariPortal - teks pencarian portal dipecah per spasi, huruf besar, paling banyak `BatasKataCari` kata.
+func KataCariPortal(cari string) []string {
+	kata := strings.Fields(strings.ToUpper(cari))
+	if len(kata) > BatasKataCari {
+		kata = kata[:BatasKataCari]
+	}
+	return kata
+}
+
+// CocokCariPortal - pencarian portal (perintah work owner 07-10-2026: "pencarian nya pada nb dan edm treaty buat bisa mencari nomor nb/edm. insured name dll, intinya buat searchnya itu sangat berguna"; sama dengan
+// portal EDM): SETIAP kata (`KataCariPortal`) wajib termuat di SALAH SATU medan berkas - nomor kasus, Master ID,
+// nomor polis, insured name (polis dan quotation), group business, marketing, source of business, ceding, treaty
+// group, class of business, pembuat - tanpa beda huruf besar/kecil. Teks kosong = tanpa saringan. Repository
+// menulis padanannya di SQL (`kolomCariPortal`, urutan medan sama), tiruan memakai fungsi ini.
+func CocokCariPortal(medan []string, cari string) bool {
+	for _, k := range KataCariPortal(cari) {
+		ada := false
+		for _, m := range medan {
+			if strings.Contains(strings.ToUpper(m), k) {
+				ada = true
+				break
+			}
+		}
+		if !ada {
+			return false
+		}
+	}
+	return true
 }
 
 // JalurAnak - kunci daftar bersarang di halaman: `<induk>(<n>).<anak>`,

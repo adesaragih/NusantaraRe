@@ -65,7 +65,22 @@ func TestSetiapPernyataanSahDanBerskema(t *testing.T) {
 				if strings.TrimSpace(p) == "" {
 					t.Errorf("%s pernyataan %d kosong", m.Nama, i)
 				}
-				if !strings.Contains(p, "{skema}") {
+				// ⛔ SATU pengecualian, dan Oracle yang memaksakannya:
+				// `RENAME lama TO baru` TIDAK MENERIMA awalan skema. Menulis
+				// `RENAME {skema}.A TO B` memberi ORA-01765 ("specified owner
+				// does not match that of the table"), jadi pernyataan yang
+				// mematuhi ADR-U-0033 di sini adalah pernyataan yang tidak
+				// dapat dijalankan.
+				//
+				// ⚠️ Pengecualiannya SESEMPIT bentuknya: hanya pernyataan yang
+				// DIMULAI `RENAME `. `ALTER TABLE {skema}.X RENAME TO Y` —
+				// bentuk untuk tabel dan index — tetap wajib berskema, dan
+				// memang sudah.
+				berskema := strings.Contains(p, "{skema}")
+				if !berskema && strings.HasPrefix(strings.ToUpper(strings.TrimSpace(p)), "RENAME ") {
+					berskema = true
+				}
+				if !berskema {
 					t.Errorf("%s pernyataan %d tidak menyebut skema (ADR-U-0033): %.60s",
 						m.Nama, i, p)
 				}
@@ -212,25 +227,55 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 	// pengguna), bukan atribut klaim dan bukan dokumen JSON. Pengecualiannya SATU kolom BLOB di SATU tabel, dan
 	// berkas itu tidak boleh memuat CLOB atau JSON.
 	const berkasTemplat = "912_m_template_file"
-	// Ringkasan R/I Rate Life satu tabel (keputusan work owner 07-10-2026): 928 MEMBUANG kolom JSON warisan
-	// M_RATE_LIFE_SUMMARY.JSONDATA - searah dengan penjaga ini. Pengecualiannya SATU perintah di SATU berkas, persis.
-	const berkasBuangJSON, perintahBuangJSON = "928_m_rate_life_summary_satu_tabel",
-		"DROP COLUMN JSONDATA CASCADE CONSTRAINTS"
-	buangJSON := 0
-	dokumenDiOutbox, blobTemplat := 0, 0
+	// Master Life satu tabel (keputusan work owner 07/08-10-2026): berkas-berkas ini MEMBUANG kolom JSON warisan
+	// `JSONDATA` tabel Pega - searah dengan penjaga ini. Pengecualiannya SATU perintah di SETIAP berkas, persis:
+	// R/I Rate Life 928/930, R/I Comm Life 932/934, R/I Risk 937/940, Benefit 944, Plan 948 (inti), Cause Of Loss
+	// Life 092 dan Cover Life 086 (folder modul). Berkas `_down` tidak termasuk.
+	const perintahBuangJSON = "DROP COLUMN JSONDATA CASCADE CONSTRAINTS"
+	buangJSON := map[string]int{
+		"928_m_rate_life_summary_satu_tabel":   0,
+		"930_m_rate_life_satu_tabel":           0,
+		"932_m_ricomm_life_summary_satu_tabel": 0,
+		"934_m_ricomm_life_satu_tabel":         0,
+		"937_ririsk_life_summary_satu_tabel":   0,
+		"940_ririsk_life_satu_tabel":           0,
+		"944_benefit_life_satu_tabel":          0,
+		"948_product_type_life_satu_tabel":     0,
+		"092_causeofloss_life_satu_tabel":      0,
+		"086_cover_life_satu_tabel":            0,
+	}
+	// Treaty In (keputusan pemilik proses 06-10-2026): kelima `CLOB` di `439`
+	// adalah KOLOM BERNAMA — satu per ejaan medan teks bebas tab `Exclusions`
+	// dan `Special Conditions`, terukur mencapai 23.453 aksara sementara
+	// `VARCHAR2` Oracle berhenti di 4.000.
+	//
+	// ⛔ Larangan ini berbunyi "atribut klaim harus menjadi KOLOM BERNAMA";
+	// kelimanya justru kolom bernama. Alternatifnya MEMOTONG teks tanpa
+	// bersuara — kehilangan yang baru ketahuan bertahun kemudian.
+	//
+	// ⚠️ Cacahnya DIPATOK lima, dan berkas itu tidak boleh memuat BLOB.
+	const berkasTeksPanjang = "439_akar_dan_nilai_sisa"
+	const clobTeksPanjang = 5
+	dokumenDiOutbox, blobTemplat, teksPanjang := 0, 0, 0
 	for nama, isi := range seluruhSQL(t, false) {
 		atas := strings.ToUpper(isi)
 		if strings.Contains(nama, berkasOutbox) {
 			dokumenDiOutbox += strings.Count(atas, "CLOB")
 			continue
 		}
+		if strings.Contains(nama, berkasTeksPanjang) && !strings.Contains(nama, "_down") {
+			teksPanjang += strings.Count(atas, "CLOB")
+			atas = strings.ReplaceAll(atas, "CLOB", "")
+		}
 		if strings.Contains(nama, berkasTemplat) && !strings.Contains(nama, "_down") {
 			blobTemplat += len(regexp.MustCompile(`(?m)^\s*ISI\s+BLOB\s+NOT NULL,$`).FindAllString(atas, -1))
 			atas = regexp.MustCompile(`(?m)^\s*ISI\s+BLOB\s+NOT NULL,$`).ReplaceAllString(atas, "")
 		}
-		if strings.Contains(nama, berkasBuangJSON) && !strings.Contains(nama, "_down") {
-			buangJSON += strings.Count(atas, perintahBuangJSON)
-			atas = strings.ReplaceAll(atas, perintahBuangJSON, "")
+		if kunci := strings.TrimSuffix(nama, ".sql"); !strings.Contains(nama, "_down") {
+			if _, ada := buangJSON[kunci]; ada {
+				buangJSON[kunci] += strings.Count(atas, perintahBuangJSON)
+				atas = strings.ReplaceAll(atas, perintahBuangJSON, "")
+			}
 		}
 		for _, tipe := range []string{" JSON", "CLOB", "BLOB", "JSON_KLAIM"} {
 			if strings.Contains(atas, tipe) {
@@ -239,8 +284,14 @@ func TestKolomUangDesimalDanNolJSON(t *testing.T) {
 			}
 		}
 	}
-	if buangJSON != 1 {
-		t.Errorf("928 memuat %d perintah %q, mau tepat 1", buangJSON, perintahBuangJSON)
+	for berkas, n := range buangJSON {
+		if n != 1 {
+			t.Errorf("%s memuat %d perintah %q, mau tepat 1", berkas, n, perintahBuangJSON)
+		}
+	}
+	if teksPanjang != clobTeksPanjang {
+		t.Errorf("%s memuat %d kolom CLOB, mau tepat %d (kelima ejaan medan teks panjang)",
+			berkasTeksPanjang, teksPanjang, clobTeksPanjang)
 	}
 	if blobTemplat != 1 {
 		t.Errorf("M_TEMPLATE_FILE memuat %d kolom ISI BLOB, mau tepat 1", blobTemplat)
@@ -327,7 +378,12 @@ func TestPernyataanMulaiDenganPerintah(t *testing.T) {
 					kata = strings.ToUpper(strings.Fields(perintah)[0])
 				}
 				switch kata {
-				case "CREATE", "ALTER", "DROP", "INSERT", "UPDATE", "DELETE", "SELECT":
+				// ⭐ `RENAME` ditambahkan 06-10-2026. Ia perintah DDL Oracle
+				// sepenuhnya, dan satu-satunya cara menamai ulang SEQUENCE:
+				// Oracle tidak punya `ALTER SEQUENCE … RENAME TO`. Daftar ini
+				// sekadar belum pernah bertemu dengannya sampai migrasi
+				// `436_nama_tabel_tab.sql`.
+				case "CREATE", "ALTER", "DROP", "INSERT", "UPDATE", "DELETE", "SELECT", "RENAME":
 				default:
 					t.Errorf("%s pernyataan %d mulai dengan %q, bukan perintah SQL",
 						m.Nama, i, kata)
@@ -431,6 +487,10 @@ func TestKolomCreateTableMembacaSeluruhTabel(t *testing.T) {
 // yang ditulis di dalam EXECUTE IMMEDIATE (bukan ADD CONSTRAINT).
 var polaTambahKolomSebaris = regexp.MustCompile(`(?i)^ALTER\s+TABLE\s+\S+\s+ADD\s*\(`)
 
+// polaGantiNamaTabel - satu-satunya bentuk RENAME tabel di blok berpelindung (R/I Risk 935/938): nama baru TANPA skema
+// (syarat Oracle `RENAME TO`).
+var polaGantiNamaTabel = regexp.MustCompile(`^ALTER TABLE \{skema\}\.(\w+) RENAME TO (\w+)$`)
+
 // perintahBlokPLSQL menjawab perintah di dalam blok PL/SQL, atau mengapa blok
 // itu tidak sah (kosong = sah). Dua bentuk diterima: sequence dari kueri
 // (`migrasi.BacaSequenceDariKueri`, 810 Company Detail - jalur maju saja,
@@ -462,6 +522,16 @@ func pelanggaranBlokPLSQL(p string, mundur bool) (string, string) {
 	// Objek dicocokkan sebagai KATA UTUH: kolom `C` tidak boleh "ditemukan"
 	// di dalam kata COLUMN.
 	objekUtuh := regexp.MustCompile(`(^|[^A-Za-z0-9_])` + regexp.QuoteMeta(pk.Objek) + `([^A-Za-z0-9_]|$)`)
+	// RENAME tabel (R/I Risk 935/938, keputusan work owner 08-10-2026 K1): blok menanyakan kolom tabel SUMBER
+	// (ALL_TAB_COLUMNS, n > 0 = sumber masih ada) dan perintahnya PERSIS `ALTER TABLE {skema}.<sumber> RENAME TO <baru>`
+	// - kolom yang ditanyakan hanya bukti tabel sumber masih ada, jadi ia tidak disebut perintah. Target yang sudah ada
+	// sebagai tabel membuat RENAME gagal keras (ORA-00955), bukan dilewati. ⚠️ Tinjauan tim inti.
+	if m := polaGantiNamaTabel.FindStringSubmatch(pk.Perintah); m != nil {
+		if pk.Katalog != "ALL_TAB_COLUMNS" || !pk.BilaAda || m[1] != pk.Tabel {
+			return "", "RENAME harus berpelindung ALL_TAB_COLUMNS tabel sumbernya (n > 0): " + pk.Perintah
+		}
+		return pk.Perintah, ""
+	}
 	if !atasTabel || !objekUtuh.MatchString(pk.Perintah) {
 		return "", "blok memeriksa " + pk.Tabel + "." + pk.Objek + " tetapi perintahnya " + pk.Perintah
 	}
@@ -497,6 +567,20 @@ func TestAturanBlokPLSQLMenggigit(t *testing.T) {
 		{"kolom baru lewat blok, jalur maju", blok("ALL_TAB_COLUMNS", "T_A", "COLUMN_NAME", "C", "=", "ALTER TABLE {skema}.T_A ADD (C VARCHAR2(10))"), false, false},
 		{"kolom kembali lewat blok, jalur mundur", blok("ALL_TAB_COLUMNS", "T_A", "COLUMN_NAME", "C", "=", "ALTER TABLE {skema}.T_A ADD (C VARCHAR2(10))"), true, true},
 		{"tanpa pemeriksaan katalog", "BEGIN\n  EXECUTE IMMEDIATE 'DROP TABLE {skema}.T_A';\nEND;", false, false},
+		{"RENAME tabel sumber yang ditanyakan", blok("ALL_TAB_COLUMNS", "M_T_A", "COLUMN_NAME", "ID", ">", "ALTER TABLE {skema}.M_T_A RENAME TO T_A"), false, true},
+		{"RENAME tabel lain", blok("ALL_TAB_COLUMNS", "M_T_A", "COLUMN_NAME", "ID", ">", "ALTER TABLE {skema}.M_T_B RENAME TO T_A"), false, false},
+		{"RENAME bila sumber TIDAK ada", blok("ALL_TAB_COLUMNS", "M_T_A", "COLUMN_NAME", "ID", "=", "ALTER TABLE {skema}.M_T_A RENAME TO T_A"), false, false},
+		{"RENAME berpelindung indeks", blok("ALL_INDEXES", "M_T_A", "INDEX_NAME", "IX_A", ">", "ALTER TABLE {skema}.M_T_A RENAME TO T_A"), false, false},
+		{"DROP VIEW berpelindung ALL_VIEWS", "DECLARE\n  n NUMBER;\nBEGIN\n  SELECT COUNT(*) INTO n FROM SYS.ALL_VIEWS\n" +
+			"   WHERE OWNER = UPPER('{skema}') AND VIEW_NAME = 'V_A';\n  IF n > 0 THEN\n    EXECUTE IMMEDIATE 'DROP VIEW {skema}.V_A';\n  END IF;\nEND;", false, true},
+		{"ALL_VIEWS membuang view lain", "DECLARE\n  n NUMBER;\nBEGIN\n  SELECT COUNT(*) INTO n FROM SYS.ALL_VIEWS\n" +
+			"   WHERE OWNER = UPPER('{skema}') AND VIEW_NAME = 'V_A';\n  IF n > 0 THEN\n    EXECUTE IMMEDIATE 'DROP VIEW {skema}.V_B';\n  END IF;\nEND;", false, false},
+		{"indeks bila belum ada indeks berkolom pertama itu", "DECLARE\n  n NUMBER;\nBEGIN\n  SELECT COUNT(*) INTO n FROM SYS.ALL_IND_COLUMNS\n" +
+			"   WHERE TABLE_OWNER = UPPER('{skema}') AND TABLE_NAME = 'T_A' AND COLUMN_NAME = 'C' AND COLUMN_POSITION = 1;\n" +
+			"  IF n = 0 THEN\n    EXECUTE IMMEDIATE 'CREATE INDEX {skema}.IX_T_A_C ON {skema}.T_A (C)';\n  END IF;\nEND;", false, true},
+		{"ALL_IND_COLUMNS mengindeks kolom lain", "DECLARE\n  n NUMBER;\nBEGIN\n  SELECT COUNT(*) INTO n FROM SYS.ALL_IND_COLUMNS\n" +
+			"   WHERE TABLE_OWNER = UPPER('{skema}') AND TABLE_NAME = 'T_A' AND COLUMN_NAME = 'C' AND COLUMN_POSITION = 1;\n" +
+			"  IF n = 0 THEN\n    EXECUTE IMMEDIATE 'CREATE INDEX {skema}.IX_T_A_D ON {skema}.T_A (D)';\n  END IF;\nEND;", false, false},
 	} {
 		if _, alasan := pelanggaranBlokPLSQL(k.p, k.mundur); (alasan == "") != k.sah {
 			t.Errorf("%s: sah=%v, mau %v (%s)", k.nama, alasan == "", k.sah, alasan)

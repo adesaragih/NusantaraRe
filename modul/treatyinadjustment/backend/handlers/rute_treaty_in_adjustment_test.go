@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"nusantarare/modul/treatyinadjustment/backend/handlers"
@@ -17,6 +18,19 @@ import (
 type gudangTiruan struct {
 	kontrak []models.Kontrak
 	versi   map[int64][]models.Versi
+
+	lampiran        []models.BarisLampiranWarisan
+	katalogKategori map[string]string
+	riwayat         []models.BarisRiwayatWarisan
+	galatLampiran   error
+
+	daftarPenyesuaian []models.BarisPenyesuaian
+	penyesuaian       map[string]models.Penyesuaian
+	galatPenyesuaian  error
+
+	// Picker Add dan tombol `Choose`.
+	master        []models.BarisMasterPilihan
+	dokumenMaster map[string]models.SisiPenyesuaian
 }
 
 func (g gudangTiruan) DaftarKontrak(context.Context) ([]models.Kontrak, error) {
@@ -140,4 +154,109 @@ func TestDaftarKontrakMenjawab200(t *testing.T) {
 	if len(k) != 1 || k[0].NomorKontrakWarisan != "TRI-7" {
 		t.Errorf("badan tidak sesuai: %+v", k)
 	}
+}
+
+// Panel Attachment - `M_ATTACHMENTTREATY_2`, tabel warisan.
+func (g gudangTiruan) BacaLampiranKontrak(_ context.Context, _ string) ([]models.BarisLampiranWarisan, error) {
+	return g.lampiran, g.galatLampiran
+}
+
+func (g gudangTiruan) BacaKatalogKategoriLampiran(_ context.Context) (map[string]string, error) {
+	return g.katalogKategori, g.galatLampiran
+}
+
+// ---------------------------------------------------------------------
+// Rute panel Attachment - `GET /kontrak-warisan/{id}/lampiran`.
+// ---------------------------------------------------------------------
+
+func routerLampiran() http.Handler {
+	return handlers.RouterDengan(services.LayananDengan(gudangTiruan{
+		// Kesebelas pasangan `M_KATEGORIMASTERTREATY` (8 Oktober 2026).
+		katalogKategori: map[string]string{
+			"00000": "Others", "00001": "Analysed Email", "00002": "Approval Email",
+			"00003": "Binding, signed share Email", "00004": "Info Pack",
+			"00005": "Summary Treaty Leader", "00006": "Assessment Inward Treaty Form / Format Analisa Treaty",
+			"00007": "Pega Proportional Calculation /Perhitungan Pega Proportional",
+			"00008": "Letter of Acknowledgment / LOA", "00009": "Claim Data", "00010": "Offer Email",
+		},
+		lampiran: []models.BarisLampiranWarisan{
+			{ID: "1", KodeKategori: "00001", NamaBerkas: "a.pdf", JenisMime: "application/pdf"},
+		},
+	}), true, true)
+}
+
+func TestLampiranMenjawab200DenganKategoriLengkap(t *testing.T) {
+	w := minta(t, routerLampiran(), "/api/treaty-in-adjustment/kontrak-warisan/1001851/lampiran", "UJI")
+	if w.Code != http.StatusOK {
+		t.Fatalf("kode %d, mau 200 (badan %s)", w.Code, w.Body.String())
+	}
+	var isi struct {
+		Kategori []struct {
+			Kode       string `json:"kode"`
+			Nama       string `json:"nama"`
+			Cacah      int    `json:"cacah"`
+			Dipastikan bool   `json:"dipastikan"`
+		} `json:"kategori"`
+		Berkas []struct {
+			NamaBerkas string `json:"namaBerkas"`
+		} `json:"berkas"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &isi); err != nil {
+		t.Fatalf("badan bukan JSON yang diharapkan: %v - %s", err, w.Body.String())
+	}
+	if len(isi.Kategori) != 11 {
+		t.Errorf("%d kategori, mau 11", len(isi.Kategori))
+	}
+	if len(isi.Berkas) != 1 {
+		t.Errorf("%d berkas, mau 1", len(isi.Berkas))
+	}
+	// ⭐ Kesebelasnya BERNAMA, urut nama seperti Pega (`order by note`).
+	if k := isi.Kategori[0]; k.Nama != "Analysed Email" || k.Cacah != 1 {
+		t.Errorf("baris pertama %+v, mau Analysed Email (1)", k)
+	}
+	for _, k := range isi.Kategori {
+		if !k.Dipastikan || k.Nama == "" {
+			t.Errorf("kode %s sampai ke layar tanpa nama", k.Kode)
+		}
+	}
+}
+
+// `?jenis=NonProportional` — kode 00007 bernama Non-Prop
+// (`GetMasterTreatyCategory_Act` [2.2]).
+func TestLampiranNonPropMemakaiNamaNonProp(t *testing.T) {
+	w := minta(t, routerLampiran(), "/api/treaty-in-adjustment/kontrak-warisan/1001851/lampiran?jenis=NonProportional", "UJI")
+	if w.Code != http.StatusOK {
+		t.Fatalf("kode %d (badan %s)", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "Pega Non Proportional Calculation /Perhitungan Pega Non Proportional") {
+		t.Errorf("nama Non-Prop tidak sampai: %s", w.Body.String())
+	}
+}
+
+// Tanpa identitas -> 401, dan rute barunya ikut dijaga pagar yang sama.
+func TestLampiranTanpaIdentitasMenjawab401(t *testing.T) {
+	h := handlers.RouterDengan(services.LayananDengan(gudangTiruan{}), true, false)
+	w := minta(t, h, "/api/treaty-in-adjustment/kontrak-warisan/1001851/lampiran", "")
+	if w.Code != http.StatusUnauthorized {
+		t.Errorf("kode %d, mau 401", w.Code)
+	}
+}
+
+// Tanpa basis data -> 503, sama seperti rute lain.
+func TestLampiranTanpaBasisDataMenjawab503(t *testing.T) {
+	h := handlers.RouterDengan(services.LayananDengan(gudangTiruan{}), false, true)
+	w := minta(t, h, "/api/treaty-in-adjustment/kontrak-warisan/1001851/lampiran", "UJI")
+	if w.Code != http.StatusServiceUnavailable {
+		t.Errorf("kode %d, mau 503", w.Code)
+	}
+}
+
+// Panel History - `T_VIEW_COMMENT`, tabel warisan.
+// Panel `Existing Policy for Master ID` - `TREATYINPRODUCTION`, tabel warisan.
+func (g gudangTiruan) BacaPolisMaster(_ context.Context, _ string) ([]models.BarisPolisMaster, error) {
+	return []models.BarisPolisMaster{}, g.galatLampiran
+}
+
+func (g gudangTiruan) BacaRiwayatKontrak(_ context.Context, _ string) ([]models.BarisRiwayatWarisan, error) {
+	return g.riwayat, g.galatLampiran
 }

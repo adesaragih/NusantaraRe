@@ -1,5 +1,10 @@
 # Langkah work owner — menyalakan R/I Comm Life di DEV
 
+> ⛔ **ARSIP (RALAT R1, keputusan work owner 08-10-2026).** Langkah di bawah = migrasi 924 yang SUDAH dijalankan di DEV.
+> Berkas DBA `DBA-LEPAS-VIEW-RICOMM_LIFE.sql` dan alat `pindahflat` yang dirujuknya sudah DIHAPUS (riwayat git). Langkah
+> yang berlaku: [`LANGKAH-WO-RICOMMLIFE-SATU-TABEL.md`](LANGKAH-WO-RICOMMLIFE-SATU-TABEL.md) (931-934). Berkas ini
+> dipertahankan karena komentar migrasi 924 (sudah jalan, tidak diubah) merujuknya.
+
 > Untuk work owner / DBA. **Dijalankan WO, bukan executor** — tidak satu pun perintah di bawah pernah dijalankan saat
 > menulis berkas ini. Keadaan DEV yang dicek WO 06-10-2026 (baca-saja): backend :8080 sudah memuat `ricommlife`;
 > BELUM ada baris `M_NAV_MENU` ricommlife, catatan `T_MIGRASI` 924/925, maupun hak `M_LOGIN_GO_MENU`;

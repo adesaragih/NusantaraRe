@@ -69,13 +69,16 @@ describe('label layar = LABEL XML', () => {
   it('portal SFAPortal_OpportunitiesList / Header: judul kolom, judul halaman, placeholder saring', () => {
     expect([KOLOM_PORTAL.id, KOLOM_PORTAL.bisnis, KOLOM_PORTAL.tertanggung, KOLOM_PORTAL.marketing, KOLOM_PORTAL.status]).toEqual([
       'Offer No',
-      'Group Business',
+      'Treaty Business', // perintah work owner 10-10-2026 (dulu "Group Business" GetListOpportunity)
       'Insured Name',
       'Marketing',
       'Status',
     ])
     expect(PORTAL.judul).toBe('Opportunity')
-    expect(PORTAL.placeholder).toBe('NB-1234 or Name')
+    // placeholder menyebut kolom yang dicari (perintah work owner 07-10-2026), menyimpang dari pyPlaceholder XML
+    expect(PORTAL.placeholder).not.toBe('NB-1234 or Name')
+    expect(PORTAL.placeholder).toContain('NB no')
+    expect(PORTAL.placeholder).toContain('insured')
   })
 
   it('popup pilih bisnis: Section BusinessAndSOBList grid aktif (BrowseTreatyJoinEDM) baris 1 LABEL / baris 2 sel, pyWindowName', () => {

@@ -90,9 +90,9 @@ menampung data dari M_UNIT, M_DIVISION, M_ORGANIZATION”; “simpan aja code ny
 
 | Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
 | --- | --- | --- | --- | --- | --- |
-| `LOGIN_ID` | teks | tidak | PK | layar login, `CREATE_OP` | keputusan work owner 01-10-2026 — akun yang diketik |
+| `LOGIN_ID` | teks | tidak | PK | layar login, `CREATE_OP` | keputusan work owner 01-10-2026 — akun yang diketik; disimpan apa adanya, login dicari **tanpa beda huruf** sejak 11-10-2026 (`LOWER(LOGIN_ID) = LOWER(:1)`, index `UX_M_LOGIN_GO_LOGIN_ID`) |
 | `NAME` | teks | tidak | | `CREATE_OP_NAME`, Shell | nama tampilan |
-| `PASSWORD_HASH` | teks | tidak | | login | hash bcrypt (cost 12); sandi asli tidak disimpan |
+| `PASSWORD_HASH` | teks | tidak | | login | hash bcrypt (cost 12); sandi asli tidak disimpan. Aturan sandi sejak 11-10-2026 (perintah work owner *"password ... ubah jadi tidak ada batasan"*): tidak kosong dan paling banyak 72 byte (batas bcrypt) saja; password awal akun baru `123456` (`login.SandiBawaan`) |
 | `ORGANIZATION_CODE` | teks | ya | | profil | `M_ORGANIZATION.CODE` — tanpa FK, diperiksa aplikasi saat menyimpan |
 | `DIVISION_CODE` | teks | ya | | profil | `M_DIVISION.CODE` — harus milik organisasinya |
 | `UNIT_CODE` | teks | ya | | profil | `M_UNIT.CODE` — harus milik divisinya |
@@ -116,7 +116,13 @@ username tidak boleh hanya beda huruf)*; `UX_M_LOGIN_GO_EMAIL` *(`LOWER(EMAIL)`,
 **Login** tetap dengan username (`LOGIN_ID`) saja — login lewat email **dibatalkan** work owner 03-10-2026
 *("LOGIN LEWAT EMAIL TIDAK JADI!!")*. Username dan email masing-masing unik tanpa beda huruf, diperiksa aplikasi
 saat menyimpan (pesan 409 `Username is already registered` / `Email is already registered to another account`);
-index unik di atas adalah pengaman terakhir.
+index unik di atas adalah pengaman terakhir. Sejak 11-10-2026 username saat login juga tanpa beda huruf (perintah
+work owner *"saat login, username hiraukan besar kecil"*); sesi memakai `LOGIN_ID` tersimpan.
+
+**Pemuat akun** `cmd/api -muat-pengguna <LOGIN.csv> -muat-kontak <CONTACT.csv> [-jalankan]` (11-10-2026): akun dari
+ekspor operator Pega; `CONTACT_ID` tetap = kode contact SFAGIS sheet CONTACT bila ada, selain itu sequence; akun yang
+sudah ada dilewati; password `123456` tidak wajib diganti; divisi / unit dipetakan dari divisi Pega
+(`login.petaDivisiPega`). Data orang tidak masuk repo - CSV disimpan di luar repo.
 
 **Relasi:** tidak ada FK ke `M_ORGANIZATION`, `M_DIVISION`, `M_UNIT` *(keputusan work owner — ketiga master tidak
 dibuat migrasi aplikasi)*. Anaknya `M_LOGIN_GO_WORKBASKET` dan `M_LOGIN_GO_MENU` — **Hapus permanen** di Kelola User

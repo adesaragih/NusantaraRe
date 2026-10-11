@@ -32,4 +32,6 @@ export const ACC = {
   wajib: 'Value cannot be blank',
   pilih: '— select —',
   tersimpan: (id: string) => `Account ${id} saved.`,
+  /** Popup Add dari tombol New Group Business NB FacIn, akun hanya View (10-10-2026). Teks sistem baru, bukan Pega. */
+  tanpaHakTambah: 'Your account can only view Accounts.',
 } as const

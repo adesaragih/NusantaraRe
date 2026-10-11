@@ -32,16 +32,15 @@ var namaTabelTiruanTCO = []string{
 	"TREATYYEAR", "TREATYCONTRACT", "TREATYREINSURER",
 	"MTREATYSECURITY", "TREATYBUSINESS", "PROPORTIONALARRG",
 	repository.MasterJenisReasuransiTCO, repository.MasterGrupTreatyTCO,
-	// Tiket 12: master kategori lampiran.
-	repository.MasterKategoriLampiranTCO,
 	// Tiket 05: master reinsurer.
 	repository.MasterReinsurerAgentTCO,
 	// Tiket 07: master bisnis.
 	repository.MasterBusinessTCO,
 	// Tiket 08: master jenis klausul dan pemilih ExclutionTreaty.
 	repository.MasterJenisKlausulTCO, repository.MasterOccupationTCO, repository.MasterClauseTCO,
-	// tco4: lampiran di tabel warisan.
-	repository.TabelLampiranTCO, repository.TabelObjekPenyimpananTCO,
+	// tco4: lampiran warisan Pega - dihitung anak tahun saja (fitur lampiran
+	// dibuang, keputusan work owner 08-10-2026).
+	repository.TabelLampiranTCO,
 }
 
 // namaTabelWarisanTCO adalah enam tabel warisan yang modul ini tulis dan baca
@@ -103,11 +102,6 @@ func ddlTiruanTCO(skema string) []string {
 	out = append(out, fmt.Sprintf(
 		"CREATE TABLE %s.%s (ID VARCHAR2(1000), TREATYGROUPNAME VARCHAR2(1000), OLDID VARCHAR2(1000))",
 		skema, repository.MasterGrupTreatyTCO))
-	// Tiket 12: master kategori lampiran - hanya `NOTE` yang terbukti dipakai
-	// (`SetCategoryAttachTreatyin.xml` b500); ID ditiru sebagai kolom bebas.
-	out = append(out, fmt.Sprintf(
-		"CREATE TABLE %s.%s (ID VARCHAR2(1000), NOTE VARCHAR2(1000))",
-		skema, repository.MasterKategoriLampiranTCO))
 	// Tiket 05: master reinsurer - kolom yang SQL korpus sebut (ID, CLIENTNAME,
 	// CLIENTID) + STATUSACTIVE dari properti RD (OQ-TCO-12, dikonfirmasi work owner).
 	out = append(out, fmt.Sprintf(
@@ -133,16 +127,13 @@ func ddlTiruanTCO(skema string) []string {
 			skema, repository.MasterKursTahunanTCO),
 		fmt.Sprintf("CREATE TABLE %s.%s (ID VARCHAR2(100), OLDID VARCHAR2(100), CURRENCY VARCHAR2(100), "+
 			"CURRENCYSYMBOL VARCHAR2(100))", skema, repository.MasterMataUangTCO))
-	// tco4: tabel lampiran warisan. Kolom = RDB korpus (GetAllAttachment2_Sql,
-	// InsertAttachment2_Sql Treaty In, Insert/Update_T_Storage_SQL); TIPE
-	// [terbuka - DBA] - teks generik, EXPDATE/TANGGAL_UPLOAD DATE (To_date korpus).
+	// tco4: tabel lampiran warisan, dihitung anak tahun (`JumlahAnak`). Kolom =
+	// RDB korpus (GetAllAttachment2_Sql, InsertAttachment2_Sql Treaty In); TIPE
+	// [terbuka - DBA] - teks generik.
 	out = append(out,
 		fmt.Sprintf("CREATE TABLE %s.%s (ID VARCHAR2(100), TREATYID VARCHAR2(100), CATEGORY VARCHAR2(1000), "+
 			"FILENAME VARCHAR2(1000), FILEMIMETYPE VARCHAR2(1000), DATA_JSON CLOB, USERNAME VARCHAR2(1000), "+
-			"CATEGORY_ID VARCHAR2(1000), T_STORAGE_ID VARCHAR2(100))", skema, repository.TabelLampiranTCO),
-		fmt.Sprintf("CREATE TABLE %s.%s (IMAGEID VARCHAR2(100), URLPUBLIC VARCHAR2(4000), APPFOLDER VARCHAR2(1000), "+
-			"EXPDATE DATE, FILENAME VARCHAR2(1000), APPNAME VARCHAR2(100), STORAGE VARCHAR2(100), TANGGAL_UPLOAD DATE)",
-			skema, repository.TabelObjekPenyimpananTCO))
+			"CATEGORY_ID VARCHAR2(1000), T_STORAGE_ID VARCHAR2(100))", skema, repository.TabelLampiranTCO))
 	return out
 }
 
@@ -236,18 +227,6 @@ func IsiGrupTreatyTCO(ctx context.Context, db *sql.DB, skema string, baris []Gru
 	for _, b := range baris {
 		if _, err := db.ExecContext(ctx, q, b.ID, b.TreatyGroupName); err != nil {
 			return fmt.Errorf("skemauji: mengisi tiruan master grup treaty: %w", err)
-		}
-	}
-	return nil
-}
-
-// IsiKategoriLampiranTCO mengisi tiruan CATEGORY_ATTACH_REAS (tiket 12).
-func IsiKategoriLampiranTCO(ctx context.Context, db *sql.DB, skema string, note []string) error {
-	q := fmt.Sprintf("INSERT INTO %s.%s (ID, NOTE) VALUES (:1, :2)",
-		skema, repository.MasterKategoriLampiranTCO)
-	for i, n := range note {
-		if _, err := db.ExecContext(ctx, q, fmt.Sprintf("UJI-%02d", i+1), n); err != nil {
-			return fmt.Errorf("skemauji: mengisi tiruan master kategori lampiran: %w", err)
 		}
 	}
 	return nil

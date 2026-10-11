@@ -38,7 +38,7 @@ inti 912.
 
 ## Tabel
 
-Menulis isi `NATION` (tabel datar yang DIBUAT `companydetail` 802-804; strukturnya tidak diubah). Status aktif / nonaktif dan jejak ubahnya di `T_MASTER_STATUS` (`masterprovince` 881 / 882).
+Menulis isi `NATION` (tabel datar yang DIBUAT `companydetail` 802-804; strukturnya tidak diubah). Status aktif / nonaktif dan jejak ubahnya di `T_MASTER_STATUS` (`masterprovince` 216 / 217).
 
 ## Rute
 

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/apd/v3"
+
 	"nusantarare/modul/nbfacin/backend/models"
 )
 
@@ -14,6 +16,14 @@ type occupationTiruan struct{ kata *string }
 func (o occupationTiruan) CariOccupation(_ context.Context, k string) ([]models.BarisOccupation, error) {
 	*o.kata = k
 	return []models.BarisOccupation{{OldID: "UJI01", Name: "UJI PABRIK"}}, nil
+}
+
+func (occupationTiruan) RateLowerOkupasi(context.Context, []string) (map[string]*apd.Decimal, error) {
+	return nil, nil
+}
+
+func (occupationTiruan) RisikoOkupasiFire(context.Context, []string) (map[string]string, error) {
+	return nil, nil
 }
 
 // TestCariOccupation - tiket 38/40: kosong (= semua) atau >= 2 karakter (dipangkas) dan <= 255, tanpa identitas, 503

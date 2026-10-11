@@ -12,7 +12,7 @@ import OutstandingClaimLife from './pages/OutstandingClaimLife'
 import RegisterKlaim from './pages/RegisterKlaim'
 import './claimlife.css'
 
-export function RuteClaimLife({ halaman, masuk, onPindah }: PropsRute<HalamanClaimLife>) {
+export function RuteClaimLife({ halaman, masuk, onPindah, onBukaModul }: PropsRute<HalamanClaimLife>) {
   // Kasus yang sedang dibuka. Kosong berarti belum ada yang dipilih.
   const [kasus, setKasus] = useState('')
   // Case ID yang baru didaftarkan - pemberitahuan sukses di Inbox (10-10-2026). State modul, bukan penyimpanan peramban.
@@ -29,6 +29,7 @@ export function RuteClaimLife({ halaman, masuk, onPindah }: PropsRute<HalamanCla
       {halaman === 'inbox' && (
         <InboxClaimLife
           peran={masuk.peran}
+          onBukaModul={onBukaModul}
           onBuka={(workID) => {
             setKabar('')
             // Baris Inbox membuka layar kasus yang SAMA untuk setiap tahap (11-10-2026): OutstandingClaimLife menyesuaikan

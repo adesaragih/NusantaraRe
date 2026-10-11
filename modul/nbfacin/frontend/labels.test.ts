@@ -165,7 +165,8 @@ describe.skipIf(!adaPortal)('label portal Opportunity = korpus SFAPortalOpportun
   it.each(KOLOM_PORTAL.map((k) => [k.sel, k] as const))('judul kolom sel %s', (_, k) => {
     const blok = blokSel(daftar, k.sel)
     expect(blok).toHaveLength(1)
-    if (k.label === '') {
+    // Sel 95 (`.NBStatus`) berjudul kosong di Pega; judul "NB Status" = permintaan work owner 07-10-2026.
+    if (k.label === '' || k.sel === '95') {
       // Kolom berjudul kosong: sel judulnya tanpa `pyValue` berisi.
       expect(blok[0]).not.toMatch(/<pyValue>[^<]+<\/pyValue>/)
     } else {

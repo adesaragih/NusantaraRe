@@ -1,0 +1,1953 @@
+/* Disalin dari `modul/claimnonprop/frontend/claimnonprop.css` (pola, bukan impor; asal `modul/claimprop/frontend/claimprop.css`):
+   keputusan work owner yang disebut di bawah adalah keputusan layar Claim Prop yang ditiru Claim Fac In. */
+/* Gaya modul Claim Fac In - satu berkas milik modul; setiap pemilih di bawah akar `.claimfacin`, kelas modul berawalan
+   `claimfacin__`. Tampilan SAMA dengan Kelola User dari inbox sampai isi kasus (work owner 08-10-2026 "SAMAIN DENGAN
+   MENU KELOLA USER SKIN NYA", "SEMUA DONG DARI LUAR SAMPE DALAM"): neumorfisme rapi di atas alas #eef1f6, isian
+   timbul ke dalam, tombol kapsul, tombol utama merah bergradasi, tabel sebagai kartu timbul berkepala navy, jalur tab
+   cekung. Nilainya disalin dari tema `.kelola-user` inti ke token `--cfi-*` milik modul ini - TIDAK menumpang ke kelas
+   inti (pola Marketing Officer). Warna hanya di blok token akar. TANPA backdrop-filter, filter, atau transform:
+   Modal tanpa portal akan terperangkap. */
+
+.claimfacin {
+  display: contents;
+}
+
+/* --------------------------------------------------------------- kulit Kelola User */
+
+.claimfacin .claimfacin__akar {
+  --cfi-latar: #eef1f6;
+  --cfi-latar-tepi: #cfd7e5;
+  --cfi-latar-atas: #f9fafd;
+  --cfi-latar-bawah: #e4e9f3;
+  --cfi-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --cfi-lembut: #e9edf3;
+  --cfi-lembut-tepi: #dde3ec;
+  --cfi-teks: #101828;
+  --cfi-teks-redup: #4f586b;
+  --cfi-aksen: var(--primary-tanda);
+  --cfi-aksen-teks: #2339a3;
+  --cfi-aksen-lembut: #e3e8f6;
+  --cfi-aksen-garis: #b9c5ee;
+  --cfi-kepala-tabel: #dde4f2;
+  --cfi-kepala-teks: #22326b;
+  --cfi-kepala-garis: #c3cde2;
+  --cfi-isi: #ffffff;
+  --cfi-baris-hover: #e6ecfa;
+  --cfi-garis: #e1e6ef;
+  --cfi-tepi: #c8d1e1;
+  --cfi-jalur-tab: #dfe5ef;
+  --cfi-tombol: #d63a42;
+  --cfi-tombol-ujung: #bf2f37;
+  --cfi-tombol-hover: #c2333b;
+  --cfi-tombol-hover-ujung: #a9282f;
+  --cfi-terang: rgba(255, 255, 255, 0.92);
+  --cfi-gelap: rgba(163, 177, 198, 0.55);
+  --cfi-kilau: rgba(255, 255, 255, 0.7);
+  --cfi-tekan: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+  --cfi-timbul: 8px 8px 18px var(--cfi-gelap), -8px -8px 18px var(--cfi-terang);
+  --cfi-timbul-kecil: 4px 4px 9px var(--cfi-gelap), -4px -4px 9px var(--cfi-terang);
+  --cfi-cekung: inset 3px 3px 7px var(--cfi-gelap), inset -3px -3px 7px var(--cfi-terang);
+  --cfi-cekung-kecil: inset 2px 2px 4px var(--cfi-gelap), inset -2px -2px 4px var(--cfi-terang);
+  --cfi-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --cfi-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--cfi-terang);
+  --cfi-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --cfi-bahaya-teks: #b42318;
+  --cfi-unggah: #3bb273;
+  --cfi-lihat: #12b5c6;
+  --cfi-ikon-teks: #ffffff;
+  --text-3: var(--cfi-teks-redup);
+  color: var(--cfi-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--cfi-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--cfi-latar-atas) 0%, var(--cfi-latar-bawah) 100%);
+  box-shadow: var(--cfi-bayang-akar);
+}
+
+:root[data-theme="dark"] .claimfacin .claimfacin__akar {
+  --cfi-latar: #1b2130;
+  --cfi-latar-tepi: #323b50;
+  --cfi-latar-atas: #222a3b;
+  --cfi-latar-bawah: #161b27;
+  --cfi-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --cfi-lembut: #181d2a;
+  --cfi-lembut-tepi: #242b3a;
+  --cfi-teks: #eef0f6;
+  --cfi-teks-redup: #aab2c4;
+  --cfi-aksen-teks: #aebcff;
+  --cfi-aksen-lembut: #222b45;
+  --cfi-aksen-garis: #3a4b8f;
+  --cfi-kepala-tabel: #273152;
+  --cfi-kepala-teks: #dbe2ff;
+  --cfi-kepala-garis: #3a4670;
+  --cfi-isi: #1f2638;
+  --cfi-baris-hover: #2b3554;
+  --cfi-garis: #2c3447;
+  --cfi-tepi: #3a4459;
+  --cfi-jalur-tab: #151a26;
+  --cfi-terang: rgba(255, 255, 255, 0.045);
+  --cfi-gelap: rgba(0, 0, 0, 0.55);
+  --cfi-kilau: rgba(255, 255, 255, 0.04);
+  --cfi-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --cfi-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--cfi-terang);
+  --cfi-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --cfi-bahaya-teks: #fda29b;
+  --cfi-unggah: #2f8f5c;
+  --cfi-lihat: #0e8f9c;
+  --cfi-ikon-teks: #f2fbf6;
+}
+
+/* Judul dan teks redup. */
+.claimfacin .inbox__judul,
+.claimfacin .modal__title,
+.claimfacin .panel__title {
+  color: var(--cfi-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.claimfacin .muted {
+  color: var(--cfi-teks-redup);
+}
+
+.claimfacin :focus-visible {
+  outline: 2px solid var(--cfi-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.claimfacin .field__input {
+  background: var(--cfi-isi);
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 12px;
+  box-shadow: var(--cfi-cekung-kecil);
+  color: var(--cfi-teks);
+}
+
+.claimfacin .field__input:hover:not(:disabled) {
+  border-color: var(--cfi-aksen-garis);
+}
+
+.claimfacin .field__input:focus {
+  border-color: var(--cfi-aksen);
+  box-shadow: var(--cfi-cekung-kecil), var(--cfi-cincin);
+  outline: none;
+}
+
+/* Hanya-baca: abu lembut bertulisan redup, terbedakan dari isian yang dapat diketik. */
+.claimfacin .field__input--readonly,
+.claimfacin .field__input--readonly:hover {
+  background: var(--cfi-lembut);
+  border-color: var(--cfi-lembut-tepi);
+  color: var(--cfi-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.claimfacin .btn {
+  border-radius: 999px;
+}
+
+.claimfacin .btn--primary {
+  background: linear-gradient(180deg, var(--cfi-tombol), var(--cfi-tombol-ujung));
+  border-color: var(--cfi-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--cfi-bayang-tombol);
+}
+
+.claimfacin .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--cfi-tombol-hover), var(--cfi-tombol-hover-ujung));
+  border-color: var(--cfi-tombol-hover-ujung);
+}
+
+.claimfacin .btn--primary:active:not(:disabled) {
+  box-shadow: var(--cfi-tekan);
+}
+
+.claimfacin .btn--ghost {
+  background: var(--cfi-isi);
+  border: 1px solid var(--cfi-tepi);
+  color: var(--cfi-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--cfi-timbul-kecil);
+}
+
+.claimfacin .btn--ghost:hover:not(:disabled) {
+  background: var(--cfi-aksen-lembut);
+  border-color: var(--cfi-aksen-garis);
+  color: var(--cfi-aksen-teks);
+}
+
+.claimfacin .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--cfi-cekung-kecil);
+}
+
+.claimfacin .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut; isinya ikut neumorfisme. */
+.claimfacin .modal {
+  background: var(--cfi-latar);
+  border: 1px solid var(--cfi-kilau);
+  border-radius: 22px;
+  box-shadow: var(--cfi-bayang-popup);
+}
+
+.claimfacin .modal__head,
+.claimfacin .modal__actions {
+  border-color: var(--cfi-garis);
+}
+
+.claimfacin .alert {
+  border-radius: 12px;
+}
+
+/* SEMUA tab modul (work owner 11-10-2026 "UBAH TAMPILAN TAB NYA INI JADI LEBIH BAGUS DAN MODERN! DAN BUAT PERPINDAHAN
+   TAB DAN HALAMAN NYA ITU SMOOTH" + "INTINYA SEMUA TAB DI MENU KLAIM FACIN"): kontrol bersegmen - jalur TIMBUL KE DALAM,
+   kapsul penanda TIMBUL KELUAR yang MELUNCUR ke tab terpilih. `TabGeser` mengukur letak tombol aktif, jadi label Pega
+   panjang ("Policy Detail & Claims History") tetap selebar teksnya dan boleh terbungkus. Tebal huruf sama aktif / tidak
+   supaya lebar tombol tidak melompat. Tanpa transform: memerangkap Modal tanpa portal. */
+.claimfacin .claimfacin__tabs {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  gap: 2px;
+  padding: 4px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--cfi-jalur-tab);
+  box-shadow: var(--cfi-cekung-kecil);
+}
+
+/* Di layout group Tab isi tab sudah berjarak sendiri (padding-top claimfacin__tab-isi); di halaman awal jarak bawah inti
+   (16 px) memisahkan tab dari toolbar pencarian. */
+.claimfacin .claimfacin__tab > .claimfacin__tabs {
+  margin-bottom: 0;
+}
+
+.claimfacin .claimfacin__tabs-penanda {
+  position: absolute;
+  border-radius: 10px;
+  background: var(--cfi-isi);
+  box-shadow: var(--cfi-timbul-kecil);
+  pointer-events: none;
+  transition:
+    left 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    top 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.claimfacin .claimfacin__tabs > .tabs__item {
+  position: relative;
+  z-index: 1;
+  justify-content: center;
+  min-width: 88px;
+  height: 32px;
+  margin-bottom: 0;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cfi-teks-redup);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    color 220ms ease,
+    background 220ms ease;
+}
+
+.claimfacin .claimfacin__tabs > .tabs__item:hover {
+  background: var(--cfi-kilau);
+  color: var(--cfi-teks);
+}
+
+.claimfacin .claimfacin__tabs > .tabs__item--aktif,
+.claimfacin .claimfacin__tabs > .tabs__item--aktif:hover {
+  background: transparent;
+  color: var(--cfi-aksen-teks);
+}
+
+.claimfacin .claimfacin__tabs > .tabs__item:focus-visible {
+  outline: none;
+  box-shadow: var(--cfi-cincin);
+}
+
+/* Tab di dalam isi tab (Claim Details > Registration / Estimation / Adjustment & Acceptation, Policy Detail > Claim
+   Status): jalur tenang bergaris rambut, kapsul aksen lembut - tingkatnya terbaca tanpa bersaing dengan tab induknya. */
+.claimfacin .claimfacin__tab-isi .claimfacin__tabs {
+  padding: 3px;
+  border: 1px solid var(--cfi-lembut-tepi);
+  border-radius: 12px;
+  background: var(--cfi-lembut);
+  box-shadow: none;
+}
+
+.claimfacin .claimfacin__tab-isi .claimfacin__tabs-penanda {
+  border-radius: 9px;
+  background: var(--cfi-aksen-lembut);
+  box-shadow: inset 0 0 0 1px var(--cfi-aksen-garis);
+}
+
+.claimfacin .claimfacin__tab-isi .claimfacin__tabs > .tabs__item {
+  min-width: 0;
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 9px;
+  font-size: 12.5px;
+}
+
+/* Isi tab baru dan layar baru (buka kasus, kembali ke daftar, pindah tahap) MUNCUL MEMUDAR, tidak berganti mendadak.
+   Hanya opacity dan tanpa sisa sesudah selesai (fill backwards): opacity < 1 membuat stacking context, jadi Modal tanpa
+   portal di dalamnya hanya terkurung selama animasi berjalan, bukan sesudahnya. */
+@keyframes claimfacin-muncul {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.claimfacin .claimfacin__akar,
+.claimfacin .claimfacin__halaman > *,
+.claimfacin .claimfacin__tab-isi {
+  animation: claimfacin-muncul 280ms ease-out backwards;
+}
+
+/* `display: contents`: pembungkus berkunci tahap layar kasus tanpa kotak - panel tetap anak langsung .inbox (jarak antar
+   panelnya), anaknya yang dipasang ulang saat tahap berganti. */
+.claimfacin .claimfacin__halaman {
+  display: contents;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .claimfacin .claimfacin__tabs-penanda,
+  .claimfacin .claimfacin__tabs > .tabs__item {
+    transition: none;
+  }
+
+  .claimfacin .claimfacin__akar,
+  .claimfacin .claimfacin__halaman > *,
+  .claimfacin .claimfacin__tab-isi {
+    animation: none;
+  }
+}
+
+.claimfacin .claimfacin__tabel {
+  background: var(--cfi-isi);
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 18px;
+  box-shadow: var(--cfi-timbul);
+}
+
+.claimfacin .claimfacin__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.claimfacin .claimfacin__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.claimfacin .claimfacin__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.claimfacin .claimfacin__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.claimfacin .claimfacin__tabel thead th {
+  background: var(--cfi-kepala-tabel);
+  color: var(--cfi-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--cfi-kepala-garis);
+}
+
+.claimfacin .claimfacin__tabel td {
+  color: var(--cfi-teks);
+  background: var(--cfi-isi);
+  border-bottom-color: var(--cfi-garis);
+}
+
+.claimfacin .claimfacin__tabel tbody tr:nth-child(even),
+.claimfacin .claimfacin__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.claimfacin .claimfacin__tabel tbody tr:nth-child(even) > td {
+  background: var(--cfi-lembut);
+}
+
+.claimfacin .claimfacin__tabel tbody tr:hover > td {
+  background: var(--cfi-baris-hover);
+}
+
+/* Kartu bagian layar kasus: putih TIMBUL KELUAR seperti kartu tabel Kelola User; tabel di dalamnya tanpa bayangan
+   kedua (dua lapis bayangan terbaca sebagai kotak mengapung di atas kotak). */
+.claimfacin .claimfacin__akar .panel {
+  background: var(--cfi-isi);
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 18px;
+  box-shadow: var(--cfi-timbul);
+}
+
+.claimfacin .panel .claimfacin__tabel {
+  box-shadow: none;
+}
+
+.claimfacin .claimfacin__centang input {
+  accent-color: var(--cfi-aksen);
+}
+
+@media (max-width: 640px) {
+  .claimfacin .claimfacin__akar {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .claimfacin .claimfacin__tabel,
+  .claimfacin .claimfacin__akar .panel {
+    box-shadow: var(--cfi-timbul-kecil);
+  }
+}
+
+/* --------------------------------------------------------------- halaman awal */
+
+/* Switch Teknik (Choose Surveyor, workbasket ReasKlaimTeknik): jalur TIMBUL KE DALAM, kenop TIMBUL KELUAR;
+   nyala = jalur aksen. Nonaktif bagi akun tanpa workbasket itu. */
+.claimfacin .claimfacin__saklar-bungkus {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.claimfacin .claimfacin__saklar {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 999px;
+  background: var(--cfi-jalur-tab);
+  box-shadow: var(--cfi-cekung-kecil);
+  cursor: pointer;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease;
+}
+
+.claimfacin .claimfacin__saklar--nyala {
+  background: var(--cfi-aksen);
+  border-color: var(--cfi-aksen);
+}
+
+.claimfacin .claimfacin__saklar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.claimfacin .claimfacin__saklar-kenop {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--cfi-isi);
+  box-shadow: var(--cfi-timbul-kecil);
+  transition: left 200ms ease;
+}
+
+.claimfacin .claimfacin__saklar--nyala .claimfacin__saklar-kenop {
+  left: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .claimfacin .claimfacin__saklar,
+  .claimfacin .claimfacin__saklar-kenop {
+    transition: none;
+  }
+}
+
+.claimfacin .claimfacin__saklar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cfi-teks-redup);
+}
+
+.claimfacin .claimfacin__cari {
+  flex: 0 1 420px;
+}
+
+/* --------------------------------------------------------------- ukuran huruf (work owner 08-10-2026 "font juga
+   kecilin") - seluruh modul: halaman awal, layar kasus, pop-up */
+
+.claimfacin .claimfacin__akar {
+  font-size: 13px;
+}
+
+.claimfacin .claimfacin__akar .inbox__judul {
+  font-size: 22px;
+}
+
+.claimfacin .claimfacin__akar .panel {
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.claimfacin .claimfacin__akar .panel__title {
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+.claimfacin .claimfacin__akar .field__label {
+  font-size: 12px;
+}
+
+.claimfacin .claimfacin__akar .field__input {
+  height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+  border-radius: 10px;
+}
+
+.claimfacin .claimfacin__akar textarea.field__input {
+  height: auto;
+  padding: 6px 10px;
+}
+
+.claimfacin .claimfacin__akar .btn {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.claimfacin .claimfacin__akar .btn--sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.claimfacin .claimfacin__akar .alert {
+  font-size: 13px;
+}
+
+.claimfacin .claimfacin__tabel th,
+.claimfacin .claimfacin__tabel td {
+  padding: 7px 10px;
+  font-size: 12.5px;
+}
+
+/* --------------------------------------------------------------- layar kasus: layout lama Pega dirapikan */
+
+/* Kepala: judul tahap di tengah, Claim No di bawahnya (Inline grid triple, sel tengah). */
+.claimfacin .claimfacin__kepala {
+  text-align: center;
+  margin: 0 0 16px;
+}
+
+.claimfacin .claimfacin__kepala-judul {
+  margin: 0 0 4px;
+  font-family: "Poppins", var(--font);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--cfi-teks);
+}
+
+.claimfacin .claimfacin__kepala-teks {
+  color: var(--cfi-teks-redup);
+}
+
+/* Stacked: baris bertumpuk berjarak rapat (grid, bukan flex kolom - basis flex medan pernah menjadi tinggi). */
+.claimfacin .claimfacin__tumpuk {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Stacked with labels left: label di kiri selebar tetap, nilai di kanan. */
+.claimfacin .claimfacin__baris {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 12px;
+  min-height: 32px;
+}
+
+/* Medan tanpa label di sub-bagian (pesan Information): selebar kotak. */
+.claimfacin .claimfacin__sub .claimfacin__baris--tanpa-label {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.claimfacin .claimfacin__sub .claimfacin__baris--tanpa-label > .claimfacin__label-medan {
+  display: none;
+}
+
+.claimfacin .claimfacin__label-medan {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cfi-teks-redup);
+}
+
+.claimfacin .claimfacin__isi-medan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+}
+
+.claimfacin .claimfacin__isi-medan > .field__input {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.claimfacin .claimfacin__isi-medan > .btn {
+  flex: none;
+}
+
+.claimfacin .claimfacin__nilai {
+  color: var(--cfi-teks);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Di sel tabel `anywhere` membuat lebar minimum kolom = satu huruf: tabel sempit memeras kolom tampil (Type Loss)
+   menjadi satu huruf per baris. `break-word` hanya memotong kata yang melebihi lebar kolom. */
+.claimfacin .claimfacin__tabel .claimfacin__nilai {
+  overflow-wrap: break-word;
+}
+
+/* Inline grid double: dua kolom; sel ketiga turun ke baris berikutnya. */
+.claimfacin .claimfacin__dua {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 32px;
+}
+
+.claimfacin .claimfacin__sel {
+  min-width: 0;
+}
+
+/* Inline grid double bersarang (panel AdjustmentDetail: [Type, Currency | Payment Type, DLA] di setengah kiri, seperti
+   Pega): kolom label lebih sempit supaya isian selebar seperempat tetap terbaca. */
+.claimfacin .claimfacin__dua .claimfacin__dua {
+  gap: 8px 16px;
+}
+
+.claimfacin .claimfacin__dua .claimfacin__dua .claimfacin__baris {
+  grid-template-columns: 96px minmax(0, 1fr);
+}
+
+/* Inline: anak sebaris (Quarter/Year, RNM Share, baris tombol). */
+.claimfacin .claimfacin__sebaris {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.claimfacin .claimfacin__sebaris-medan {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.claimfacin .claimfacin__sebaris-medan > .field__input {
+  width: auto;
+  min-width: 120px;
+}
+
+.claimfacin .claimfacin__label-sebaris {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cfi-teks-redup);
+}
+
+/* Inline grid double berlabel DI ATAS isian (`duaAtas`) - rupa Input Register Pega (screenshot work owner 11-10-2026
+   "UBAH LAYOUTNYA BEGINI"): sel diisi per baris kiri-kanan, label kecil di atas kotak selebar sel. Pemilih berkelas
+   ganda supaya juga menang atas aturan `dua` bersarang (label 96 px). */
+.claimfacin .claimfacin__dua.claimfacin__dua-atas {
+  gap: 12px 24px;
+  align-items: start;
+}
+
+.claimfacin .claimfacin__dua.claimfacin__dua-atas .claimfacin__baris {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+
+/* Pesan galat medan (Date of Loss should not be more than ...) turun ke bawah kotak, tidak menyempitkan isian. */
+.claimfacin .claimfacin__dua.claimfacin__dua-atas .claimfacin__isi-medan > .field__error {
+  flex: 1 0 100%;
+}
+
+.claimfacin .claimfacin__dua.claimfacin__dua-atas .claimfacin__sebaris {
+  align-items: flex-start;
+  gap: 8px 24px;
+}
+
+.claimfacin .claimfacin__dua.claimfacin__dua-atas .claimfacin__sebaris-medan {
+  display: inline-grid;
+  justify-items: start;
+  gap: 4px;
+}
+
+/* Inline grid triple berlabel DI ATAS isian (`tiga`) - rupa layout lama InputAdjustment (screenshot work owner
+   11-10-2026 "PERBAIKI TAMPILAN ADJUSTMENT! INI SAYA LAMPIRKAN LAYOUT LAMA"): paling banyak tiga sel per baris, sel
+   minimal 280 px - panel sempit turun ke dua / satu sel per baris tanpa media query (lebar panel bersarang berbeda). */
+.claimfacin .claimfacin__tiga {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(max(280px, calc((100% - 2 * 28px) / 3)), 1fr));
+  gap: 16px 28px;
+  align-items: start;
+  padding: 4px 0;
+}
+
+.claimfacin .claimfacin__tiga + .claimfacin__tiga {
+  padding-top: 16px;
+  border-top: 1px dashed var(--cfi-garis);
+}
+
+.claimfacin .claimfacin__tiga .claimfacin__baris,
+.claimfacin .claimfacin__kolom .claimfacin__baris {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  min-height: 0;
+}
+
+.claimfacin .claimfacin__tiga .claimfacin__isi-medan > .field__error {
+  flex: 1 0 100%;
+}
+
+.claimfacin .claimfacin__tiga .claimfacin__baris--tanpa-label > .claimfacin__label-medan {
+  display: none;
+}
+
+/* Nilai hanya-baca kosong di sel berlabel atas ditandai "—" (layout lama Pega "——"), bukan label yang menggantung
+   tanpa isi (Detail Chronology to Comitee, DLA No SOB; work owner 11-10-2026 "RAPIHKAN!"). */
+.claimfacin .claimfacin__tiga .claimfacin__nilai:empty::after {
+  content: "—";
+  color: var(--cfi-teks-redup);
+}
+
+/* Kotak centang berkapsi di kanan (Net For Collection, Transfer Direct to Kasir), seperti Pega. */
+.claimfacin .claimfacin__tiga .claimfacin__baris:has(> .claimfacin__isi-medan > .claimfacin__centang) {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.claimfacin
+  .claimfacin__tiga
+  .claimfacin__baris:has(> .claimfacin__isi-medan > .claimfacin__centang)
+  > .claimfacin__label-medan {
+  order: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cfi-teks);
+  cursor: pointer;
+}
+
+/* Kontainer sel berisi medan sejajar (`kolom`, LS16 Payment Type | Payment Type Detail): selebar sama, angka panjang
+   membungkus medan ke baris berikutnya alih-alih terpotong. */
+.claimfacin .claimfacin__kolom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 10px 16px;
+}
+
+.claimfacin .claimfacin__kolom > .claimfacin__sel {
+  flex: 1 1 96px;
+}
+
+.claimfacin .claimfacin__kolom .claimfacin__nilai {
+  overflow-wrap: break-word;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Kontainer sel Stacked with labels left (`kiri`, Payable To / Specify, bank). */
+.claimfacin .claimfacin__tiga .claimfacin__kiri .claimfacin__baris {
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 4px 10px;
+  min-height: 32px;
+}
+
+/* Dropdown yang dapat dicari (PilihSaring inti) di kolom nilai: label sudah di kiri baris, kotak mengisi lebar. */
+.claimfacin .claimfacin__saring {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.claimfacin .claimfacin__tanggal {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+/* Isian tanggal (InputTanggal): di baris medan kotak boleh menyempit; sel grid memakai lebar minimum kelasnya. */
+.claimfacin .claimfacin__tanggal > .field__input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.claimfacin .claimfacin__tanggal > .claimfacin__input--sel {
+  min-width: 110px;
+}
+
+/* Pemilih bawaan tersembunyi (sr-only, absolut) berjangkar di tombol kalender. */
+.claimfacin .claimfacin__tanggal-kalender {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+
+.claimfacin .claimfacin__saring .pilih-saring {
+  margin: 0;
+}
+
+.claimfacin .claimfacin__saring .pilih-saring > .field__label {
+  display: none;
+}
+
+.claimfacin .claimfacin__satuan {
+  font-weight: 600;
+  color: var(--cfi-teks-redup);
+}
+
+.claimfacin .claimfacin__centang {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+.claimfacin .claimfacin__radio {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.claimfacin .claimfacin__radio label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.claimfacin .claimfacin__radio input,
+.claimfacin .claimfacin__centang input {
+  accent-color: var(--cfi-aksen);
+}
+
+.claimfacin .claimfacin__input--angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.claimfacin .claimfacin__area {
+  min-height: 64px;
+}
+
+/* Sub-bagian bertitel (layout "add border"): kotak bergaris tipis di dalam kartu. */
+.claimfacin .claimfacin__sub {
+  border: 1px solid var(--cfi-garis);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.claimfacin .claimfacin__subjudul {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cfi-teks);
+}
+
+/* Baris tombol: rata kiri seperti layout lama. */
+.claimfacin .claimfacin__tombol,
+.claimfacin .claimfacin__aksi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.claimfacin .claimfacin__tombol--akhir {
+  margin-top: 4px;
+}
+
+.claimfacin .claimfacin__aksi {
+  margin: 0 0 16px;
+}
+
+/* Tombol ikon (pi-plus, pi-trash, pi-pencil, pi-check): kapsul bundar sekecil ikonnya. */
+.claimfacin .claimfacin__akar .claimfacin__ikon {
+  width: 28px;
+  padding: 0;
+}
+
+.claimfacin .claimfacin__ikon--hapus,
+.claimfacin .claimfacin__ikon--hapus:hover:not(:disabled) {
+  color: var(--cfi-bahaya-teks);
+}
+
+/* Layout group Tab. */
+.claimfacin .claimfacin__tab {
+  min-width: 0;
+}
+
+.claimfacin .claimfacin__tab-isi {
+  padding-top: 14px;
+}
+
+@media (max-width: 860px) {
+  .claimfacin .claimfacin__dua {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .claimfacin .claimfacin__baris {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --------------------------------------------------------------- grid */
+
+/* Tabel lebih lebar dari kartunya (grid item / estimasi 12 kolom) menggulir di dalam kartu. */
+.claimfacin .claimfacin__grid {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Grid hasil Choose Polis (ViewPolis LS10): nomor polis, tanggal, dan Endorsment Status tidak dilipat - nama boleh
+   melipat; tabel menggulir mendatar bila tidak muat (temuan work owner 10-10-2026 "RAPIHKAN INI"). */
+.claimfacin .claimfacin__grid--polis {
+  margin: 8px 0 12px;
+}
+
+/* Pop-up Outstanding Claim (Outstanding_SC): No Claim, Policy No, Accepted No tidak dilipat di tanda hubung (temuan work
+   owner 11-10-2026 "PERBAIKI TAMPILAN INI"). */
+.claimfacin .claimfacin__grid--os td:nth-child(-n + 3) {
+  white-space: nowrap;
+}
+
+.claimfacin .claimfacin__grid--polis td:nth-child(1),
+.claimfacin .claimfacin__grid--polis td:nth-child(6),
+.claimfacin .claimfacin__grid--polis td:nth-child(7),
+.claimfacin .claimfacin__grid--polis td:nth-child(8),
+.claimfacin .claimfacin__grid--polis th {
+  white-space: nowrap;
+}
+
+/* Daftar PilihSaring sel grid (item, coverage, okupasi) yang terbuka: pembungkus grid memberi ruang setinggi daftar
+   (max-height inti 260px) supaya tidak terpotong guliran grid. Hanya sel baris grid itu sendiri - bukan grid di panel
+   baris di dalamnya. */
+.claimfacin .claimfacin__grid:has(> table > tbody > tr:not(.claimfacin__baris-rinci) > td .pilih-saring__daftar) {
+  padding-bottom: 270px;
+}
+
+.claimfacin .claimfacin__grid table {
+  width: 100%;
+}
+
+.claimfacin .claimfacin__grid td {
+  vertical-align: middle;
+}
+
+.claimfacin .claimfacin__th-aksi,
+.claimfacin .claimfacin__td-aksi {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.claimfacin .claimfacin__pager {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 6px;
+  font-size: 12px;
+  color: var(--cfi-teks-redup);
+}
+
+/* Kaki grid = bilah ringkasan (total estimasi / spreading, work owner 11-10-2026 "tolong rapihin. buat lebih user
+   frendly dan enak dilihat"): label kecil di atas nilai tebal rata angka, rata kanan di bawah grid; nilai kosong "—". */
+.claimfacin .claimfacin__grid-kaki {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 8px 28px;
+  margin-top: 8px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--cfi-lembut);
+}
+
+.claimfacin .claimfacin__grid-kaki .claimfacin__sebaris-medan {
+  display: inline-grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.claimfacin .claimfacin__grid-kaki .claimfacin__label-sebaris {
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.claimfacin .claimfacin__grid-kaki .claimfacin__nilai {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.claimfacin .claimfacin__grid-kaki .claimfacin__nilai:empty::after {
+  content: "—";
+  font-weight: 400;
+  color: var(--cfi-teks-redup);
+}
+
+/* Panel baris selebar AREA TERLIHAT grid (`--cfi-lebar-grid`, diukur Grid), menempel kiri: tabel lebar (item Input
+   Estimasi 12 kolom) tetap menggulir sendiri, isi panel tidak terpotong di kanan. */
+.claimfacin .claimfacin__grid > table > tbody > tr.claimfacin__baris-rinci > td > .claimfacin__rinci {
+  position: sticky;
+  left: 0;
+  box-sizing: border-box;
+  /* dikurangi garis tepi kiri + kanan tabel (1 px) supaya panel tidak memaksa gulir mendatar */
+  width: calc(var(--cfi-lebar-grid, 100%) - 2px);
+}
+
+.claimfacin .claimfacin__grid > .claimfacin__grid-kaki {
+  position: sticky;
+  left: 0;
+  box-sizing: border-box;
+  width: var(--cfi-lebar-grid, auto);
+}
+
+.claimfacin .claimfacin__grid-alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.claimfacin .claimfacin__input--sel {
+  height: 28px;
+  font-size: 12.5px;
+  min-width: 110px;
+}
+
+/* Grid item / estimasi Fac In lebar (12 kolom): sel angka lebih sempit supaya kolom aksi (Add / Delete) tidak
+   terpotong di lebar layar biasa. */
+.claimfacin .claimfacin__input--sel.claimfacin__input--angka {
+  min-width: 68px;
+}
+
+.claimfacin .claimfacin__angka {
+  display: block;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.claimfacin .claimfacin__rinci {
+  border-left: 3px solid var(--cfi-aksen);
+  border-radius: 0 12px 12px 0;
+  padding: 10px 16px 14px;
+  background: var(--cfi-isi);
+}
+
+/* Panel bersarang (objek -> item -> estimasi / adjustment): setiap tingkat bergaris aksen sendiri di dalam induknya. */
+.claimfacin .claimfacin__rinci .claimfacin__rinci {
+  padding: 8px 12px 10px;
+  background: var(--cfi-latar-atas);
+}
+
+/* Panel baris (work owner 08-10-2026 "pewarnaan ... kurang enak diliat"): baris panel bukan baris zebra / sorot - latar
+   tetap tenang; baris yang terbuka disorot aksen supaya tersambung dengan panelnya. */
+.claimfacin .claimfacin__tabel tbody tr.claimfacin__baris-rinci > td,
+.claimfacin .claimfacin__tabel tbody tr.claimfacin__baris-rinci:hover > td {
+  padding: 0 0 10px;
+  background: var(--cfi-latar-atas);
+}
+
+.claimfacin .claimfacin__tabel tbody tr[aria-expanded="true"] > td,
+.claimfacin .claimfacin__tabel tbody tr[aria-expanded="true"]:hover > td {
+  background: var(--cfi-aksen-lembut);
+  color: var(--cfi-aksen-teks);
+  font-weight: 600;
+}
+
+/* Di dalam panel: tabel tanpa bayangan timbul. */
+.claimfacin .claimfacin__rinci .claimfacin__tabel {
+  box-shadow: none;
+}
+
+/* Penanda baris ber-panel: seluruh baris dapat diklik, panah menunjukkan terbuka / tertutup. */
+.claimfacin .claimfacin__panah {
+  display: inline-block;
+  width: 1.1em;
+  color: var(--cfi-teks-redup);
+}
+
+/* Layout bebas berkolom XML (LetakTabel). */
+.claimfacin .claimfacin__tabel--tetap {
+  width: 100%;
+  margin: 8px 0 12px;
+}
+
+.claimfacin .claimfacin__tabel--tetap th,
+.claimfacin .claimfacin__tabel--tetap td {
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid var(--cfi-kepala-garis);
+}
+
+/* --------------------------------------------------------------- pop-up */
+
+.claimfacin .claimfacin__label {
+  font-weight: 600;
+  color: var(--cfi-teks-redup);
+  padding: 4px 0;
+}
+
+/* Baris total pop-up Outstanding (Total Outstanding, IDR). */
+.claimfacin .claimfacin__tabel tfoot td {
+  font-weight: 700;
+  border-top: 1px solid var(--cfi-kepala-garis);
+}
+
+/* Tautan Policy Number grid ViewPolis (pxLink, CopyNB_Act). */
+.claimfacin .claimfacin__tautan {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cfi-aksen-teks);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+/* Tab "Lampiran" (screenshot Pega 09-10-2026): tombol kanan, ikon unggah hijau / lihat toska. */
+.claimfacin .claimfacin__lampiran-aksi {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 0 8px;
+}
+
+/* Kolom Upload File / View File selebar layar Pega, ikon di tengah. */
+.claimfacin .claimfacin__kolom-ikon {
+  width: 140px;
+  text-align: center;
+}
+
+.claimfacin .claimfacin__akar .claimfacin__ikon-lampiran {
+  width: 40px;
+  padding: 0;
+  color: var(--cfi-ikon-teks);
+}
+
+.claimfacin .claimfacin__ikon-lampiran--unggah,
+.claimfacin .claimfacin__ikon-lampiran--unggah:hover:not(:disabled) {
+  background: var(--cfi-unggah);
+}
+
+.claimfacin .claimfacin__ikon-lampiran--lihat,
+.claimfacin .claimfacin__ikon-lampiran--lihat:hover:not(:disabled) {
+  background: var(--cfi-lihat);
+}
+
+/* Jendela unggah: area seret-lepas berkas (dragDropFileUpload). */
+.claimfacin .claimfacin__seret {
+  margin: 0 0 12px;
+  padding: 18px;
+  border: 2px dashed var(--cfi-tepi);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--cfi-teks-redup);
+}
+
+.claimfacin .claimfacin__seret--aktif {
+  border-color: var(--cfi-aksen-garis);
+  background: var(--cfi-aksen-lembut);
+}
+
+/* Popup penampil lampiran (View / View Office Online, pola NB Treaty In). */
+.claimfacin .claimfacin__penampil-bingkai {
+  display: block;
+  width: 100%;
+  height: 75vh;
+  border: 0;
+}
+
+.claimfacin .claimfacin__penampil-gambar {
+  display: block;
+  max-width: 100%;
+  max-height: 75vh;
+  margin: 0 auto;
+}
+
+/* Autocomplete di sel grid (item objek, coverage, okupasi): kotak selebar sel, tidak menyempit menjadi satu huruf. */
+.claimfacin .claimfacin__tabel .claimfacin__saring {
+  display: block;
+  min-width: 160px;
+}
+
+/* Panah PilihSaring setinggi isian modul (32 px, inti 42 px). */
+.claimfacin .claimfacin__akar .pilih-saring__panah {
+  height: 32px;
+}
+
+/* Tabel komite di bawah inbox (modul Komite Claim Fac In tanpa menu, pola Claim Non Prop). */
+.claimfacin .claimfacin__komite {
+  margin-top: 24px;
+}
+
+/* --------------------------------------------------------------- tampilan polis NB Fac In (hanya-baca) */
+
+/* Salinan rupa layar Inward Facultative `modul/nbfacin/frontend/nbfacin.css` (`nbf-inward`, `nbf-lapis`,
+   `nbf-alamat`, `nbf-sekitar`, `nbf-ringkas`, `nbf-cov`, `nbf-spread`, `nbf-cedant`) di kulit modul ini: blok General
+   dua kolom berlabel kiri 120 px, nilai di kotak lembut setinggi isian, tab langsung (tanpa pemisah / Show Detail -
+   work owner 11-10-2026), kartu sub-tab, ringkasan hijau,
+   total kuning (perintah work owner 10-10-2026 "IKUTI MODUL NB FACIN. TAMPILAN READ ONLY"). */
+.claimfacin .claimfacin__nb {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.claimfacin .claimfacin__nb-kartu {
+  min-width: 0;
+  padding: 14px 18px;
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 14px;
+  background: var(--cfi-isi);
+}
+
+.claimfacin .claimfacin__nb-judul {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cfi-kepala-teks);
+}
+
+.claimfacin .claimfacin__nb-kolom {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 40px;
+  align-items: start;
+}
+
+.claimfacin .claimfacin__nb-tumpuk {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-width: 0;
+}
+
+.claimfacin .claimfacin__nb-medan {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  min-width: 0;
+}
+
+.claimfacin .claimfacin__nb-medan--kiri {
+  grid-template-columns: 120px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+}
+
+.claimfacin .claimfacin__nb-lebar {
+  grid-column: 1 / -1;
+}
+
+.claimfacin .claimfacin__nb-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cfi-teks-redup);
+}
+
+.claimfacin .claimfacin__nb-teks {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--cfi-lembut);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.claimfacin .claimfacin__nb-teks--angka {
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+
+.claimfacin .claimfacin__nb-radio {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  padding: 4px 0;
+}
+
+.claimfacin .claimfacin__nb-pilihan {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.claimfacin .claimfacin__nb-pilihan input {
+  accent-color: var(--cfi-aksen);
+}
+
+.claimfacin .claimfacin__nb-mentah {
+  color: var(--cfi-teks-redup);
+}
+
+/* Di dalam kartu polis: tabel tanpa bayangan timbul kedua. */
+.claimfacin .claimfacin__nb .claimfacin__tabel {
+  box-shadow: none;
+}
+
+.claimfacin .claimfacin__nb-isi {
+  display: grid;
+  gap: 12px;
+  padding: 4px 0;
+  min-width: 0;
+}
+
+.claimfacin .claimfacin__nb-blok {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 14px 14px;
+  border: 1px solid var(--cfi-garis);
+  border-radius: 10px;
+  background: var(--cfi-isi);
+}
+
+.claimfacin .claimfacin__nb-subjudul {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cfi-kepala-teks);
+}
+
+.claimfacin .claimfacin__nb-sisi {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.claimfacin .claimfacin__nb-sebaris {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.claimfacin .claimfacin__nb-faktor {
+  margin: 0;
+  color: var(--success-text);
+  font-weight: 600;
+}
+
+.claimfacin .claimfacin__nb-dua {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 24px;
+}
+
+.claimfacin .claimfacin__nb-tiga {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 240px));
+  gap: 10px 16px;
+}
+
+.claimfacin .claimfacin__nb-empat {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 200px));
+  gap: 10px 16px;
+}
+
+.claimfacin .claimfacin__nb-ringkasan,
+.claimfacin .claimfacin__nb-total {
+  display: grid;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--success-border);
+  border-radius: 10px;
+  background: var(--success-bg);
+}
+
+.claimfacin .claimfacin__nb-total {
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+}
+
+.claimfacin .claimfacin__nb-kode {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--cfi-aksen-lembut);
+  color: var(--cfi-aksen-teks);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.claimfacin .claimfacin__nb-cov {
+  padding: 14px 16px;
+  border: 1px solid var(--cfi-garis);
+  border-radius: 14px;
+  background: var(--cfi-latar-atas);
+}
+
+.claimfacin .claimfacin__nb-cov .claimfacin__nb-medan--kiri {
+  grid-template-columns: 130px minmax(0, 1fr);
+}
+
+.claimfacin .claimfacin__nb-cov-kolom {
+  gap: 10px 48px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--cfi-tepi);
+}
+
+.claimfacin .claimfacin__nb-share {
+  max-width: 360px;
+}
+
+.claimfacin .claimfacin__nb-share .claimfacin__nb-medan--kiri {
+  grid-template-columns: 110px minmax(0, 200px);
+}
+
+.claimfacin .claimfacin__nb-angka-lima {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.claimfacin .claimfacin__nb-angka-lima dt {
+  font-size: 12px;
+  color: var(--cfi-teks-redup);
+}
+
+.claimfacin .claimfacin__nb-angka-lima dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Polis NB keluarga Aneka (work owner 11-10-2026 "tampilan view polis yang belum tergenerate"): form objek berkartu dan
+   form coverage = satu kisi mengalir tiga kolom seperti nbfacin (`nbf-aneka-form__grid` / `nbf-aneka-cov__grid`); kartu
+   kecil (Sum Insured, Identity, Period) sebaris; detail coverage spreading empat angka. */
+.claimfacin .claimfacin__nb-tiga {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+  gap: 10px 24px;
+  align-items: start;
+}
+
+.claimfacin .claimfacin__nb-aneka-baris {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 12px;
+}
+
+.claimfacin .claimfacin__nb-angka-lima.claimfacin__nb-angka-empat {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.claimfacin .claimfacin__nb-cedant {
+  max-width: 640px;
+}
+
+.claimfacin .claimfacin__nb-cedant-grid {
+  max-width: 760px;
+}
+
+@media (max-width: 900px) {
+  .claimfacin .claimfacin__nb-kolom,
+  .claimfacin .claimfacin__nb-sisi,
+  .claimfacin .claimfacin__nb-dua {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .claimfacin .claimfacin__nb-tiga,
+  .claimfacin .claimfacin__nb-empat,
+  .claimfacin .claimfacin__nb-angka-lima {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .claimfacin .claimfacin__nb-medan--kiri,
+  .claimfacin .claimfacin__nb-tiga,
+  .claimfacin .claimfacin__nb-empat {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Tab Scoring Risk tampilan polis NB (FIRE, hanya-baca) - salinan rupa `nbfacin.css` blok "Tab Scoring Risk" (pola, bukan
+   impor; token NB -> token --cfi-*): kepala dua kolom berlabel kiri, satu tabel faktor menerus (pita faktor + subtotal,
+   judul sub-faktor, pilihan menjorok, centang dan skor di slot tetap), ringkasan total, kartu hasil. */
+.claimfacin .claimfacin__nb-skor {
+  min-width: 0;
+}
+.claimfacin .claimfacin__nb-skor-judul {
+  margin: 0 0 10px;
+}
+.claimfacin [data-nada="baik"] {
+  --cfi-nada: var(--success-text);
+}
+.claimfacin [data-nada="sedang"] {
+  --cfi-nada: var(--warning-text);
+}
+.claimfacin [data-nada="buruk"] {
+  --cfi-nada: var(--danger-text);
+}
+.claimfacin .claimfacin__nb-skor-pil {
+  padding: 1px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+/* General: angka biasa, hanya lencana kelas berwarna (nbfacin, work owner 06-10-2026). */
+.claimfacin .claimfacin__nb-skor-pil--umum {
+  display: inline-block;
+  margin-left: 4px;
+  color: var(--cfi-nada, inherit);
+}
+
+/* Kepala */
+.claimfacin .claimfacin__nb-skor-kepala {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 10px;
+  background: var(--cfi-isi);
+}
+.claimfacin .claimfacin__nb-skor-kepala dl {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 8px 12px;
+  align-items: center;
+  margin: 0;
+}
+.claimfacin .claimfacin__nb-skor-kepala dt {
+  color: var(--cfi-teks-redup);
+}
+.claimfacin .claimfacin__nb-skor-kepala dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.claimfacin .claimfacin__nb-skor-nilai {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--cfi-nada, inherit);
+}
+
+/* Tabel faktor */
+.claimfacin .claimfacin__nb-skor-bungkus {
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 10px;
+  background: var(--cfi-isi);
+  overflow-x: auto;
+}
+.claimfacin .claimfacin__nb-skor-tabel {
+  width: 100%;
+  border-collapse: collapse;
+}
+.claimfacin .claimfacin__nb-skor-tabel thead th {
+  padding: 8px 12px;
+  background: var(--cfi-lembut);
+  border-bottom: 1px solid var(--cfi-tepi);
+  text-align: left;
+}
+.claimfacin .claimfacin__nb-skor-tabel thead th:nth-child(n + 2),
+.claimfacin .claimfacin__nb-skor-tabel td:nth-child(n + 2) {
+  width: 140px;
+}
+.claimfacin .claimfacin__nb-skor-tabel thead th:nth-child(n + 2) {
+  text-align: center;
+}
+.claimfacin .claimfacin__nb-skor-tabel tbody td,
+.claimfacin .claimfacin__nb-skor-tabel tbody th {
+  padding: 4px 12px;
+  border: 0;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+.claimfacin .claimfacin__nb-skor-tabel tbody .claimfacin__nb-skor-faktor > th,
+.claimfacin .claimfacin__nb-skor-tabel tbody .claimfacin__nb-skor-faktor > td {
+  padding: 8px 12px;
+  background: var(--cfi-lembut);
+  border-top: 2px solid var(--cfi-tepi);
+  font-weight: 700;
+}
+.claimfacin .claimfacin__nb-skor-faktor > th {
+  text-align: left;
+}
+.claimfacin .claimfacin__nb-skor-no {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--cfi-aksen-lembut);
+  color: var(--cfi-aksen-teks);
+  font-size: 11px;
+}
+.claimfacin .claimfacin__nb-skor-bobot {
+  margin-left: 8px;
+  padding: 0 8px;
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 999px;
+  color: var(--cfi-teks-redup);
+  font-size: 11px;
+  font-weight: 400;
+}
+.claimfacin .claimfacin__nb-skor-tabel tbody .claimfacin__nb-skor-judul-sub > td {
+  padding: 8px 12px 2px 42px;
+  font-weight: 600;
+}
+.claimfacin .claimfacin__nb-skor-tabel tbody td.claimfacin__nb-skor-opsi {
+  padding-left: 42px;
+}
+.claimfacin .claimfacin__nb-skor-tabel tbody .claimfacin__nb-skor-judul-sub ~ tr > td.claimfacin__nb-skor-opsi {
+  padding-left: 62px;
+}
+.claimfacin
+  .claimfacin__nb-skor-tabel
+  tbody
+  tr:not(.claimfacin__nb-skor-faktor):not(.claimfacin__nb-skor-judul-sub):hover
+  > td {
+  background: var(--cfi-baris-hover);
+}
+.claimfacin .claimfacin__nb-skor-baris--pilih > td {
+  background: var(--cfi-aksen-lembut);
+}
+.claimfacin .claimfacin__nb-skor-baris--pilih > .claimfacin__nb-skor-opsi {
+  font-weight: 600;
+}
+.claimfacin .claimfacin__nb-skor-sel label,
+.claimfacin .claimfacin__nb-skor-faktor > .claimfacin__nb-skor-sel {
+  display: grid;
+  grid-template-columns: 20px 64px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+.claimfacin .claimfacin__nb-skor-sel label {
+  margin: 0;
+}
+.claimfacin .claimfacin__nb-skor-sel input {
+  margin: 0;
+  accent-color: var(--cfi-aksen);
+}
+.claimfacin .claimfacin__nb-skor-faktor > .claimfacin__nb-skor-sel {
+  display: table-cell;
+  text-align: center;
+  white-space: nowrap;
+}
+.claimfacin .claimfacin__nb-skor-slot {
+  display: inline-block;
+  width: 20px;
+}
+.claimfacin .claimfacin__nb-skor-poin {
+  display: inline-block;
+  min-width: 64px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-weight: 700;
+}
+.claimfacin .claimfacin__nb-skor-poin--sub {
+  margin-left: 10px;
+}
+.claimfacin .claimfacin__nb-skor-sistem {
+  margin-left: 8px;
+  color: var(--cfi-teks-redup);
+  font-size: 11px;
+  font-style: italic;
+}
+.claimfacin .claimfacin__nb-skor-persen td {
+  padding-top: 4px;
+  padding-bottom: 6px;
+}
+.claimfacin .claimfacin__nb-skor-persen td.claimfacin__nb-skor-sel {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bawah: ringkasan total + kartu hasil */
+.claimfacin .claimfacin__nb-skor-ringkas {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.claimfacin .claimfacin__nb-skor-ringkas > div {
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 10px;
+  background: var(--cfi-lembut);
+}
+.claimfacin .claimfacin__nb-skor-ringkas dt {
+  color: var(--cfi-teks-redup);
+  font-size: 11px;
+}
+.claimfacin .claimfacin__nb-skor-ringkas dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.claimfacin .claimfacin__nb-skor-ringkas > div[data-nada="baik"],
+.claimfacin .claimfacin__nb-skor-ringkas > div[data-nada="sedang"],
+.claimfacin .claimfacin__nb-skor-ringkas > div[data-nada="buruk"] {
+  border-left: 4px solid var(--cfi-nada);
+}
+.claimfacin .claimfacin__nb-skor-ringkas > div[data-nada] dd {
+  color: var(--cfi-nada, inherit);
+}
+.claimfacin .claimfacin__nb-skor-hasil {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+.claimfacin .claimfacin__nb-skor-kartu {
+  padding: 10px 12px;
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 10px;
+  background: var(--cfi-isi);
+}
+.claimfacin .claimfacin__nb-skor-kartu h5 {
+  margin: 0 0 8px;
+}
+.claimfacin .claimfacin__nb-skor-kartu h6 {
+  margin: 0 0 4px;
+  color: var(--cfi-teks-redup);
+  font-size: 11px;
+  font-weight: 600;
+}
+.claimfacin .claimfacin__nb-skor-kartu ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.claimfacin .claimfacin__nb-skor-kartu li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  color: var(--cfi-teks-redup);
+}
+.claimfacin .claimfacin__nb-skor-kartu li.claimfacin__nb-skor-aktif {
+  background: var(--cfi-aksen-lembut);
+  color: var(--cfi-nada, var(--cfi-aksen-teks));
+  font-weight: 700;
+}
+.claimfacin .claimfacin__nb-skor-rentang {
+  min-width: 64px;
+  font-variant-numeric: tabular-nums;
+}
+.claimfacin .claimfacin__nb-skor-tanda {
+  width: 14px;
+}
+.claimfacin .claimfacin__nb-skor-setuju {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1100px) {
+  .claimfacin .claimfacin__nb-skor-kepala {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+@media (max-width: 900px) {
+  .claimfacin .claimfacin__nb-skor-ringkas,
+  .claimfacin .claimfacin__nb-skor-hasil {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .claimfacin .claimfacin__nb-skor-kepala dl,
+  .claimfacin .claimfacin__nb-skor-ringkas,
+  .claimfacin .claimfacin__nb-skor-hasil,
+  .claimfacin .claimfacin__nb-skor-setuju {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Tab Clauses tampilan polis NB (FIRE, hanya-baca) - kartu klausa `nbfacin.css` `nbf-klausa__*` (pola, bukan impor). */
+.claimfacin .claimfacin__nb-klausa {
+  display: grid;
+  gap: 10px;
+}
+.claimfacin .claimfacin__nb-klausa-kartu {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--cfi-tepi);
+  border-left: 3px solid var(--cfi-aksen);
+  border-radius: 10px;
+  background: var(--cfi-isi);
+}
+.claimfacin .claimfacin__nb-klausa-identitas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.claimfacin .claimfacin__nb-klausa-label {
+  display: block;
+  color: var(--cfi-teks-redup);
+  font-size: 11px;
+}
+.claimfacin .claimfacin__nb-klausa-identitas .claimfacin__nb-klausa-label {
+  display: inline;
+}
+.claimfacin .claimfacin__nb-klausa-jumlah {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--cfi-lembut);
+  color: var(--cfi-teks-redup);
+  font-size: 11px;
+}
+.claimfacin .claimfacin__nb-klausa-deskripsi {
+  margin: 2px 0 0;
+  color: var(--cfi-teks-redup);
+  white-space: pre-wrap;
+}
+
+/* Tab Loss Record / Correspondence tampilan polis NB (akun IT, hanya-baca) - `nbfacin.css` `nbf-lr__*` / `nbf-kor__*`
+   (pola, bukan impor). */
+.claimfacin .claimfacin__nb-lr {
+  display: grid;
+  gap: 14px;
+}
+.claimfacin .claimfacin__nb-lr-premi {
+  display: grid;
+  gap: 8px;
+  max-width: 560px;
+}
+.claimfacin .claimfacin__nb-lr-total {
+  padding: 10px;
+  border: 1px solid var(--success-border);
+  border-radius: 10px;
+  background: var(--success-bg);
+}
+.claimfacin .claimfacin__nb-lr-rasio {
+  padding: 4px 12px;
+  border: 1px solid var(--cfi-tepi);
+  border-radius: 10px;
+  background: var(--cfi-aksen-lembut);
+}
+.claimfacin .claimfacin__nb-lr-rasio-baris {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+.claimfacin .claimfacin__nb-lr-rasio-baris + .claimfacin__nb-lr-rasio-baris {
+  border-top: 1px solid var(--cfi-tepi);
+}
+.claimfacin .claimfacin__nb-lr-rasio-judul {
+  font-weight: 700;
+}
+.claimfacin .claimfacin__nb-lr-rasio dl {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+}
+.claimfacin .claimfacin__nb-lr-rasio dt {
+  color: var(--cfi-teks-redup);
+}
+.claimfacin .claimfacin__nb-lr-rasio dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.claimfacin .claimfacin__nb-kor {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--cfi-tepi);
+  border-left: 3px solid var(--cfi-aksen);
+  border-radius: 10px;
+  background: var(--cfi-isi);
+}
+.claimfacin .claimfacin__nb-kor-judul {
+  margin: 0 0 6px;
+  color: var(--cfi-teks-redup);
+  font-size: 12px;
+  font-weight: 600;
+}
+.claimfacin .claimfacin__nb-kor-penerima {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--cfi-tepi);
+}
+.claimfacin .claimfacin__nb-kor-pesan {
+  min-height: 60px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--cfi-lembut);
+  overflow-wrap: anywhere;
+}
+.claimfacin .claimfacin__nb-kor-status {
+  display: inline-block;
+  padding: 1px 10px;
+  border: 1px solid var(--warning-border);
+  border-radius: 999px;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: 11px;
+  font-weight: 600;
+}
+.claimfacin .claimfacin__nb-kor-status--terkirim {
+  border-color: var(--success-border);
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+@media (max-width: 560px) {
+  .claimfacin .claimfacin__nb-lr-rasio-baris,
+  .claimfacin .claimfacin__nb-kor-penerima {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

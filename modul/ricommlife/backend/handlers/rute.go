@@ -214,7 +214,7 @@ func jawabGalat(w http.ResponseWriter, err error, apa string) bool {
 	case errors.Is(err, services.ErrBelumAda):
 		log.Printf("ricommlife: %s: %v", apa, err)
 		galat.Tulis(w, http.StatusServiceUnavailable,
-			"R/I Comm Life: table, view, or sequence (M_RICOMM_LIFE_SUMMARY, RICOMM_LIFE_SUMMARY, RICOMM_LIFE, M_SITE_DATABASE, M_RICOMM_LIFE_SUMMARY_SEQ, M_RICOMM_LIFE_SEQ) is not in this schema")
+			"R/I Comm Life: table or sequence (M_RICOMM_LIFE_SUMMARY, M_RICOMM_LIFE, M_SITE_DATABASE, M_RICOMM_LIFE_SUMMARY_SEQ, M_RICOMM_LIFE_SEQ) is not in this schema")
 	default:
 		log.Printf("ricommlife: %s: %v", apa, err)
 		galat.Tulis(w, http.StatusInternalServerError, "R/I Comm Life: "+apa+" gagal; rinciannya di log server")

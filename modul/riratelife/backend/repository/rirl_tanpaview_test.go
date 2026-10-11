@@ -2,7 +2,8 @@ package repository
 
 // Penjaga lintas modul (RALAT R7, keputusan work owner 10-10-2026): view `RATE_LIFE` dibuang di DEV (ORA-00942) - nol kode
 // produksi Go di `modul/` dan `inti/` yang masih menyebut objek `RATE_LIFE` (kata utuh; `M_RATE_LIFE`, `M_RATE_LIFE_SUMMARY`,
-// `SEQ_M_RATE_LIFE` tidak terkena). Komentar diabaikan (riwayat boleh menyebut view itu). `modul/nbfacin` dikecualikan:
+// `SEQ_M_RATE_LIFE` tidak terkena). Komentar diabaikan (riwayat boleh menyebut view itu). `modul/nbfacin` dan
+// `modul/claimfacin` (masuk dari dev 11-10-2026, peta kolom tabel polis FacIn) dikecualikan:
 // di sana `RATE_LIFE` adalah NAMA KOLOM, bukan view.
 
 import (
@@ -39,7 +40,7 @@ func TestTidakAdaViewRateLifeDiKodeProduksi(t *testing.T) {
 			}
 			n := filepath.ToSlash(p)
 			if d.IsDir() {
-				if d.Name() == "node_modules" || strings.HasSuffix(n, "/modul/nbfacin") {
+				if d.Name() == "node_modules" || strings.HasSuffix(n, "/modul/nbfacin") || strings.HasSuffix(n, "/modul/claimfacin") {
 					return filepath.SkipDir
 				}
 				return nil

@@ -1,0 +1,18 @@
+-- 563 - T_CLAIM_ESTIMATION (tabel Claim Prop 521) dipakai lini FAC: baris ObjectList(n).ObjectItemList(i).EstimationList
+-- mengisi CLAIM_ID DAN OBJECT_ITEM_ID (OQ-CFI-01, nol MODIFY); kolom khas Fac In (Estimasi / EstimasiPA /
+-- EstimasiMarine) nullable.
+-- NOL COMMIT (ADR-U-0029), nol MODIFY / DROP kolom yang sudah ada. -migrate dijalankan work owner.
+ALTER TABLE {skema}.T_CLAIM_ESTIMATION ADD (
+  OBJECT_ITEM_ID       VARCHAR2(32),
+  GROSS_ESTIMATION_MBU NUMBER(38,10),
+  DEDUCTIBLE           NUMBER(38,10),
+  NET_ESTIMATION_VALUE NUMBER(38,10),
+  IS_MORE_THAN_TSI     VARCHAR2(16),
+  CREATED_BY           VARCHAR2(64)
+)
+/
+ALTER TABLE {skema}.T_CLAIM_ESTIMATION ADD CONSTRAINT FK_CLAIM_EST_OBJ_ITEM FOREIGN KEY (OBJECT_ITEM_ID)
+  REFERENCES {skema}.T_CLAIM_OBJECT_ITEM (ID) ON DELETE CASCADE
+/
+CREATE INDEX {skema}.IX_CLAIM_EST_OBJ_ITEM ON {skema}.T_CLAIM_ESTIMATION (OBJECT_ITEM_ID)
+/

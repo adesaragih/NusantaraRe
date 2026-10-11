@@ -1,0 +1,53 @@
+-- ⛔⛔ BERKAS INI MEMBUANG TABEL MILIK MODUL `treatyin`, TETAPI TINGGAL DI
+-- FOLDER MIGRASI `treatyinadjustment` — tempat parkir yang sama dengan
+-- `444`, `445`, dan `446`, dengan sebab yang sama: rentang `treatyin`
+-- (`400-439`) PENUH, dan `447` jatuh di rentang modul ini (`440-479`).
+--
+-- ---------------------------------------------------------------------
+-- `T_TREATY_CURRENCY` — TABEL YATIM, dibuang
+-- ---------------------------------------------------------------------
+-- Keputusan pemilik proses 7 Oktober 2026:
+--
+--   "hapus table ini T_TREATY_CURRENCY krn tidak digunakan, yg digunakan
+--    adalah TREATYEXCHANGEYEARLY"
+--
+-- ⭐ Ia memang yatim, dan itu TERUKUR — bukan disimpulkan dari namanya:
+--
+--   • NOL migrasi pernah MEMBUATNYA. Sapuan seluruh `backend/migrations/`
+--     keempat modul: nol `CREATE TABLE … T_TREATY_CURRENCY`. Ia lahir di
+--     luar jalur migrasi.
+--   • NOL kode merujuknya. Tiga sebutan yang ada seluruhnya KOMENTAR, dan
+--     ketiganya justru menyatakan ia tidak dipakai:
+--       `437_anak_treaty_in.sql`      xlsx menautkannya ke MATA_UANG_KONTRAK
+--       `439_akar_dan_nilai_sisa.sql` "TIDAK DIBANGUN, dan itu keputusan
+--                                      pemilik proses"
+--       `treatyinadjustment/.../kurs_tahunan.go`  "BUKAN `T_TREATY_CURRENCY`"
+--   • NOL baris. Dicacah 7 Oktober 2026: 0.
+--   • NOL di `repository.PetaPendaratan`, jadi pemuat tidak pernah
+--     menyentuhnya dan `KosongkanKontrak` melewatinya.
+--
+-- ⛔ YANG DIPAKAI SEBAGAI GANTINYA: `TREATYEXCHANGEYEARLY` — tabel WARISAN,
+-- hanya dibaca, dan DIPAKAI BERSAMA `aggregate`, `treatycontractout`, serta
+-- `nbfacin`. Berkas ini NOL menyentuhnya.
+--
+-- ---------------------------------------------------------------------
+-- ⚠️ MENGAPA `PURGE`, DAN APA YANG HILANG
+-- ---------------------------------------------------------------------
+-- `PURGE` melewati recycle bin — sama dengan `446_down`. Yang hilang: nol.
+-- Tabelnya kosong, dan bentuknya dicatat utuh di berkas `_down` supaya
+-- pembalikannya tidak menebak.
+--
+-- ⚠️ Nol `CASCADE CONSTRAINTS`: bila ternyata ada kunci asing yang
+-- menunjuknya, `DROP` ini GAGAL dengan berisik — dan itu yang diinginkan.
+-- `CASCADE` akan membuangnya diam-diam beserta yang menunjuknya.
+--
+-- ⛔ TIGA SEQUENCE LAIN BERNAMA MIRIP TIDAK DISENTUH, dan ini bukan
+-- kelalaian — ketiganya milik pihak lain:
+--   `CURRENCY_SEQ` · `CURRENCYSTANDARD_SEQ` · `SEQ_T_CURRENCYLIST`
+-- Hanya `SEQ_TT_CURRENCY` yang dibuang, sebab hanya ia yang berpasangan
+-- dengan tabel ini (awalan `SEQ_TT_` = tabel pendaratan `T_TREATY_*`).
+
+DROP SEQUENCE {skema}.SEQ_TT_CURRENCY
+/
+DROP TABLE {skema}.T_TREATY_CURRENCY PURGE
+/

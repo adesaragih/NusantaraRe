@@ -70,4 +70,7 @@ type KapasitasTreaty struct {
 type TemplateSpreading struct {
 	TreatyType, TreatyName string
 	SharePercentage        *apd.Decimal
+	// FlagSpreading - Type Facultative template salin-lokasi (tiket 73 P5, K73-51): divalidasi, tidak disimpan; "" di salin
+	// case-level.
+	FlagSpreading string
 }

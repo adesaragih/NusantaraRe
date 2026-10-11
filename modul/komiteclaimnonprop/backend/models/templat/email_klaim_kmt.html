@@ -1,0 +1,154 @@
+{{/* EmailKlaim_HTML_KMT (ASM-FW-GCNMFW-Data-Adjustment, diekspor work owner 08-10-2026) - markup VERBATIM; JSP / pega:reference diganti aksi templat (models/surat.go). */}}<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style type="text/css">
+    /* CSS Responsif untuk Mobile (Gmail App, iOS Mail, dll) */
+    @media only screen and (max-width: 600px) {
+      .email-container {
+        width: 100% !important;
+        border-radius: 0 !important;
+      }
+      .mobile-padding {
+        padding: 20px 15px !important;
+      }
+      .stack-column {
+        display: block !important;
+        width: 100% !important;
+        text-align: left !important;
+        padding-top: 5px !important;
+      }
+      .info-label {
+        width: 100% !important;
+        display: block !important;
+        padding-bottom: 2px !important;
+      }
+      .info-value {
+        width: 100% !important;
+        display: block !important;
+        padding-bottom: 10px !important;
+      }
+      .colon { display: none !important; }
+      .table-data th, .table-data td {
+        padding: 8px 5px !important;
+        font-size: 12px !important;
+      }
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: Arial, Helvetica, sans-serif; color: #333333; -webkit-font-smoothing: antialiased;">
+
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f4f6f8;">
+    <tr>
+      <td align="center" style="padding: 30px 10px;">
+
+        <table border="0" cellpadding="0" cellspacing="0" width="650" class="email-container" style="background-color: #ffffff; border-radius: 8px; border: 1px solid #dddddd; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); overflow: hidden;">
+          <tr>
+            <td class="mobile-padding" style="padding: 30px;">
+
+              <p style="margin-top: 0; margin-bottom: 20px; font-size: 15px; color: #333333;">
+                Dear <strong>{{.Sapaan}}</strong>,
+              </p>
+
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fafbfc; border: 1px solid #e1e4e8; border-radius: 6px; margin-bottom: 25px;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <table border="0" cellpadding="6" cellspacing="0" width="100%" style="font-size: 14px;">
+                      <tr>
+                        <td class="info-label" width="35%" style="font-weight: bold; color: #34495e;">Claim No / Committee No</td>
+                        <td class="info-value" width="65%" style="color: #2d3436;"><span class="colon">: </span>{{.KlaimID}} / {{.KomiteNo}}</td>
+                      </tr>
+                      <tr>
+                        <td class="info-label" style="font-weight: bold; color: #34495e;">Date of Loss</td>
+                        <td class="info-value" style="color: #2d3436;"><span class="colon">: </span>{{.DateOfLoss}}</td>
+                      </tr>
+                      <tr>
+                        <td class="info-label" style="font-weight: bold; color: #34495e;">Policy No</td>
+                        <td class="info-value" style="color: #2d3436;"><span class="colon">: </span>{{.PolicyNo}}</td>
+                      </tr>
+                      <tr>
+                        <td class="info-label" style="font-weight: bold; color: #34495e;">Ceding</td>
+                        <td class="info-value" style="color: #2d3436;"><span class="colon">: </span>{{.Ceding}}</td>
+                      </tr>
+                      <tr>
+                        <td class="info-label" style="font-weight: bold; color: #34495e;">Insured Name</td>
+                        <td class="info-value" style="color: #2d3436;"><span class="colon">: </span>{{.InsuredName}}</td>
+                      </tr>
+                      <tr>
+                        <td class="info-label" style="font-weight: bold; color: #34495e;">SOB</td>
+                        <td class="info-value" style="color: #2d3436;"><span class="colon">: </span>{{.SOB}}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <h2 style="color: #0056b3; font-size: 18px; font-weight: bold; border-bottom: 2px solid #0056b3; padding-bottom: 8px; margin-top: 0; margin-bottom: 15px;">
+                Spreading Adjustment
+              </h2>
+
+              <table border="0" cellpadding="10" cellspacing="0" width="100%" class="table-data" style="font-size: 13px; border-collapse: collapse; margin-bottom: 20px;">
+                <thead>
+                  <tr>
+                    <th style="background-color: #0056b3; color: #ffffff; text-align: left; border: 1px solid #0056b3;">#</th>
+                    <th style="background-color: #0056b3; color: #ffffff; text-align: left; border: 1px solid #0056b3;">Currency</th>
+                    <th style="background-color: #0056b3; color: #ffffff; text-align: left; border: 1px solid #0056b3;">Treaty Types</th>
+                    <th style="background-color: #0056b3; color: #ffffff; text-align: right; border: 1px solid #0056b3;">Share %</th>
+                    <th style="background-color: #0056b3; color: #ffffff; text-align: right; border: 1px solid #0056b3;">Claim Spreaded</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {{- range .Baris}}
+                  <tr>
+                    <td style="border-bottom: 1px solid #eeeeee; text-align: left; color: #333333;">{{.No}}</td>
+                    <td style="border-bottom: 1px solid #eeeeee; text-align: left; color: #333333;">{{.Currency}}</td>
+                    <td style="border-bottom: 1px solid #eeeeee; text-align: left; color: #333333;">{{.TreatyName}}</td>
+                    <td style="border-bottom: 1px solid #eeeeee; text-align: right; color: #333333;">{{.Share}}</td>
+                    <td style="border-bottom: 1px solid #eeeeee; text-align: right; color: #333333;">{{.ClaimSpreaded}}</td>
+                  </tr>
+                  {{- end}}
+                </tbody>
+              </table>
+
+              {{/* <pega:when test="!IsCLMNP"> - modul ini hanya CLMP (LINI PROP): blok selalu tampil. */}}
+                <table border="0" cellpadding="15" cellspacing="0" width="100%" style="background-color: #e8f0fe; border-radius: 6px; margin-bottom: 20px;">
+                  <tr>
+                    <td class="stack-column" width="50%" style="font-size: 14px; font-weight: bold; color: #004085;">
+                      Total Share Percentage (%): {{.TotalShare}}
+                    </td>
+                    <td class="stack-column" width="50%" style="font-size: 14px; font-weight: bold; color: #004085; text-align: right;">
+                      Total Claim Spreaded: {{.TotalClaim}}
+                    </td>
+                  </tr>
+                </table>
+
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom: 30px;">
+                <tr>
+                  <td style="background-color: #e3f2fd; border-left: 4px solid #2196f3; padding: 12px 15px; font-size: 14px; color: #0c5460; line-height: 1.5;">
+                    <div style="font-weight: bold; font-style: italic;">
+                      Status: <span style="font-weight: normal;">{{.Status}}</span><br />
+                      {{- if .AcceptedNo}}
+                        Accepted No: <span style="font-weight: normal;">{{.AcceptedNo}}</span><br />
+                      {{- end}}
+                      Remarks: <span style="font-weight: normal;">{{.Remarks}}</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin: 0; font-size: 15px; color: #333333; line-height: 1.6;">
+                Thank you,<br />
+                <strong>{{.Pengirim}}</strong>
+              </p>
+
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

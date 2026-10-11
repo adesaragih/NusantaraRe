@@ -12,9 +12,9 @@ import { describe, expect, it } from 'vitest'
 
 import { AKAR_APLIKASI, folderKorpusBelumDimigrasi } from '../inti/frontend/uji/sumber'
 import { MENU, MODUL_LAIN_TERLARANG } from '../inti/frontend/labels'
-import { LABEL_MENU } from './katalogKorpus'
+import { FOLDER_TANPA_MENU, LABEL_MENU } from './katalogKorpus'
 import { MENU_TCO } from '../modul/treatycontractout/frontend/labels'
-import { ENTRI_MENU, MODUL_FRONTEND } from './daftar'
+import { ENTRI_MENU, MODUL_BERMENU } from './daftar'
 import { KELOMPOK_CLAIMLIFE } from '../modul/claimlife/frontend/menu'
 
 const SUMBER = readFileSync(join(AKAR_APLIKASI, 'inti', 'frontend', 'components', 'Shell.tsx'), 'utf8')
@@ -61,7 +61,14 @@ describe('menu hanya yang berbukti korpus', () => {
     // + Reinsurance Type (921).
     // + R/I Rate Life (922).
     // + R/I Comm Life (925).
-    expect(KELOMPOK_SIDEBAR).toHaveLength(42)
+    // + R/I Risk (941).
+    // + Benefit (945).
+    // + Plan (949).
+    // + Cause Of Loss Life (slot menu modul 955).
+    // + Disease Life (slot menu modul 951).
+    // + Cover Life (slot menu modul 957).
+    // - empat modul komite (menu dihapus, perintah work owner 09-10-2026; migrasi inti 949).
+    expect(KELOMPOK_SIDEBAR).toHaveLength(44)
     // Dan seluruhnya disebut di Shell, supaya tidak ada kelompok yang
     // terdaftar di label tetapi tidak dirender.
     for (const nama of KELOMPOK_SIDEBAR) {
@@ -77,7 +84,10 @@ describe('menu hanya yang berbukti korpus', () => {
     // Kelola User (01-10-2026) juga TIDAK dihitung - ia menu aplikasi, bukan
     // modul korpus (`daftar.kelolauser.test.ts`).
     // Template Manager (04-10-2026) sama: menu aplikasi.
-    const modul = ENTRI_MENU.filter((e) => e.modul !== 'beranda' && e.modul !== 'kelolauser' && e.modul !== 'templatemanager')
+    // Tombol di bawah Beranda (`MenuModul.menuAtas`, 09-10-2026) bukan tombol modul - tidak dihitung.
+    const modul = ENTRI_MENU.filter(
+      (e) => e.modul !== 'beranda' && e.modul !== 'kelolauser' && e.modul !== 'templatemanager' && e.atas !== true,
+    )
     // Lima sejak tiket 03 Treaty Contract Out. Sempat tujuh (tiket 04, 08);
     // tco5 [keputusan work owner 29-09-2026]: kelompok Treaty Contract Out
     // SATU butir "Treaty Contract Out" - ReinsType dan Description popup form
@@ -93,7 +103,7 @@ describe('menu hanya yang berbukti korpus', () => {
     // inti lewat pull request - menu tetap keputusan yang ditinjau, bukan
     // keputusan sepi.
     const label = modul.map((e) => e.label)
-    expect(modul).toHaveLength(MODUL_FRONTEND.length)
+    expect(modul).toHaveLength(MODUL_BERMENU.length)
     for (const l of label) expect(Object.values(LABEL_MENU), l).toContain(l)
     // Label butir navigasi lama tidak tampil lagi sebagai menu.
     for (const lama of ['Inbox Claim Life', 'Register', 'PremiumList', 'Inbox Komite']) {
@@ -114,7 +124,7 @@ describe('menu hanya yang berbukti korpus', () => {
     // kini daftarnya pernyataan `Status` di MODUL.md setiap modul.
     const berbutir = new Set(ENTRI_MENU.map((e) => e.kelompok))
     const kosong = KELOMPOK_SIDEBAR.filter((n) => !berbutir.has(n))
-    expect([...kosong].sort()).toEqual(folderKorpusBelumDimigrasi())
+    expect([...kosong].sort()).toEqual(folderKorpusBelumDimigrasi().filter((f) => !FOLDER_TANPA_MENU.includes(f)))
     expect(kosong.length).toBeGreaterThan(0)
     expect(kode).toContain('KETERANGAN_BELUM_DIMIGRASI')
     expect(kode).toContain('aria-disabled="true"')

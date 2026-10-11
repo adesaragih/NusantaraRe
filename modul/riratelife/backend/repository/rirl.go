@@ -1,11 +1,9 @@
 package repository
 
-// SQL modul R/I Rate Life. Ringkasan: kolom `M_RATE_LIFE_SUMMARY` (migrasi inti 927/928, RALAT R6) - baca dan tulis
-// kolom bernama, satu tabel. Rincian (RALAT R7, 10-10-2026): baca DAN tulis kolom tabel flat `M_RATE_LIFE` - sisip =
-// INSERT kolom, ubah = UPDATE kolom, baris milik satu ringkasan = `IDUSEDBY = :n` (makna sama dengan pembaca lain,
-// `GetRateRetro`, `BrowseLifeRate_SQL`). View `RATE_LIFE` dan JSONDATA tidak lagi ada di DEV.
-//
-// Kunci kembar upload tetap dibaca SEKALI untuk seluruh ringkasan berkas (daftar IN).
+// SQL modul R/I Rate Life - semuanya kolom bernama, nol JSONDATA. Ringkasan: `M_RATE_LIFE_SUMMARY` (migrasi inti
+// 927/928, RALAT R6). Rincian: tabel flat `M_RATE_LIFE` (migrasi inti 929/930, RALAT R7) - baca DAN tulis kolom
+// IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE (TYPE tidak ditulis); baris milik satu ringkasan dipilih lewat kolom
+// IDUSEDBY (indeks `IX_M_RATE_LIFE_IDUSEDBY`). Kunci kembar upload tetap dibaca SEKALI untuk seluruh ringkasan berkas.
 
 import (
 	"context"
@@ -21,8 +19,8 @@ import (
 var (
 	// ErrTidakAda - ID tidak ada.
 	ErrTidakAda = errors.New("repository: ringkasan R/I rate tidak ada")
-	// ErrBelumAda - tabel, view, atau sequence tidak ada di skema ini (ORA-00942 / ORA-00904 / ORA-02289).
-	ErrBelumAda = errors.New("repository: tabel, view, atau sequence R/I Rate Life tidak ada di skema ini")
+	// ErrBelumAda - tabel, kolom, atau sequence tidak ada di skema ini (ORA-00942 / ORA-00904 / ORA-02289).
+	ErrBelumAda = errors.New("repository: tabel atau sequence R/I Rate Life tidak ada di skema ini")
 	// ErrKembar - ORA-00001.
 	ErrKembar = errors.New("repository: ID sudah dipakai")
 	// ErrBacaSaja - SQL tulis diarahkan ke view atau objek di luar DaftarTabelDitulis.
@@ -83,8 +81,7 @@ func (g *Gudang) nama() (nama, error) {
 	for _, p := range []struct {
 		ke    *string
 		objek string
-	}{{&n.tabelRingkasan, TabelRingkasan}, {&n.tabelRate, TabelRate},
-		{&n.seqRingkasan, SeqRingkasan}, {&n.seqRate, SeqRate}} {
+	}{{&n.tabelRingkasan, TabelRingkasan}, {&n.tabelRate, TabelRate}, {&n.seqRingkasan, SeqRingkasan}, {&n.seqRate, SeqRate}} {
 		q, err := g.db.Qualify(p.objek)
 		if err != nil {
 			return nama{}, err
@@ -177,13 +174,17 @@ func SqlUbahRingkasan(t string) string {
 func SqlHapusRingkasan(t string) string { return fmt.Sprintf(`DELETE FROM %s WHERE ID = :1`, t) }
 
 // SqlHapusRate - baris rate milik ringkasan (`DeleteSummaryDetail`: ringkasan BESERTA rinciannya).
-func SqlHapusRate(t string) string {
-	return fmt.Sprintf(`DELETE FROM %s WHERE %s = :1`, t, KolomRateIDUsedBy)
+func SqlHapusRate(t string) string { return fmt.Sprintf(`DELETE FROM %s WHERE IDUSEDBY = :1`, t) }
+
+// SqlUbahNamaRate - salinan nama (`USEDBY`) di setiap baris rate ringkasan (Edit nama, ASUMSI A6).
+func SqlUbahNamaRate(t string) string {
+	return fmt.Sprintf(`UPDATE %s SET USEDBY = :1 WHERE IDUSEDBY = :2`, t)
 }
 
-// SqlUbahNamaRate - salinan nama (USEDBY) setiap baris rate milik ringkasan; kosong = NULL.
-func SqlUbahNamaRate(t string) string {
-	return fmt.Sprintf(`UPDATE %s SET %s = :1 WHERE %s = :2`, t, KolomRateUsedBy, KolomRateIDUsedBy)
+// SqlUbahRate - Edit satu baris rate (`EditList_DT` b9853): GENDER, CONTRACT, AGE, RATE; baris harus milik ringkasan
+// itu (IDUSEDBY). TYPE dan USEDBY tetap.
+func SqlUbahRate(t string) string {
+	return fmt.Sprintf(`UPDATE %s SET GENDER = :1, CONTRACT = :2, AGE = :3, RATE = :4 WHERE ID = :5 AND IDUSEDBY = :6`, t)
 }
 
 // SqlJumlahRate - jumlah baris rate milik ringkasan.
@@ -209,16 +210,9 @@ func SqlRateDari(v string, n int) string {
 	return fmt.Sprintf(`SELECT %s FROM %s WHERE IDUSEDBY IN (%s)`, kolomRate, v, strings.Join(ikat, ", "))
 }
 
-// SqlSisipRate - baris rate baru: INSERT kolom (RALAT R7); TYPE tidak ditulis (NULL); nilai kosong diikat NULL.
+// SqlSisipRate - baris rate baru, kolom bernama; TYPE tidak diisi; isian kosong = NULL.
 func SqlSisipRate(t string) string {
-	return fmt.Sprintf(`INSERT INTO %s (ID, %s, %s, %s, %s, %s, %s) VALUES (:1, :2, :3, :4, :5, :6, :7)`,
-		t, KolomRateIDUsedBy, KolomRateUsedBy, KolomRateGender, KolomRateContract, KolomRateAge, KolomRateRate)
-}
-
-// SqlUbahRate - Edit satu baris rate milik ringkasan :6 (RALAT R7): GENDER, CONTRACT, AGE, RATE langsung; kosong = NULL.
-func SqlUbahRate(t string) string {
-	return fmt.Sprintf(`UPDATE %s SET %s = :1, %s = :2, %s = :3, %s = :4 WHERE ID = :5 AND TRIM(%s) = :6`,
-		t, KolomRateGender, KolomRateContract, KolomRateAge, KolomRateRate, KolomRateIDUsedBy)
+	return fmt.Sprintf(`INSERT INTO %s (ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE) VALUES (:1, :2, :3, :4, :5, :6, :7)`, t)
 }
 
 type pemindai interface{ Scan(...any) error }
@@ -420,13 +414,13 @@ func (g *Gudang) UbahRingkasan(ctx context.Context, tx *db.Tx, r models.Ringkasa
 	return err
 }
 
-// UbahNamaRate - salinan nama (`USEDBY`) di setiap baris rate ringkasan idUsedBy.
+// UbahNamaRate - salinan nama (`USEDBY`) di setiap baris rate ringkasan idUsedBy; jumlah baris.
 func (g *Gudang) UbahNamaRate(ctx context.Context, tx *db.Tx, idUsedBy, nama string) (int, error) {
 	n, err := g.nama()
 	if err != nil {
 		return 0, err
 	}
-	j, err := g.tulis(ctx, tx, TabelRate, SqlUbahNamaRate(n.tabelRate), "mengubah nama rate", db.KosongJadiNil(nama), idUsedBy)
+	j, err := g.tulis(ctx, tx, TabelRate, SqlUbahNamaRate(n.tabelRate), "mengganti nama rate", db.KosongJadiNil(nama), idUsedBy)
 	return int(j), err
 }
 
@@ -507,8 +501,8 @@ func (g *Gudang) SisipRate(ctx context.Context, tx *db.Tx, r models.Rate) error 
 	return err
 }
 
-// UbahRate - Edit satu baris rate: GENDER, CONTRACT, AGE, RATE (kosong = NULL, RALAT R7); baris harus milik
-// ringkasan r.IDUsedBy (kolom IDUSEDBY), selain itu ErrTidakAda.
+// UbahRate - Edit satu baris rate: GENDER, CONTRACT, AGE, RATE (kosong = NULL); baris harus milik ringkasan
+// r.IDUsedBy, selain itu ErrTidakAda.
 func (g *Gudang) UbahRate(ctx context.Context, tx *db.Tx, r models.Rate) error {
 	n, err := g.nama()
 	if err != nil {

@@ -184,7 +184,7 @@ func TestMigrasi905ContactIDDanEmailUnik(t *testing.T) {
 		t.Errorf("905:\n dapat %q\n mau   %q", satu, mau)
 	}
 	// Aplikasi memberi nomor dengan sequence dan awalan yang SAMA dengan migrasi.
-	sisip := strings.Join(strings.Fields(sqlSisipAkun("T", "S")), " ")
+	sisip := strings.Join(strings.Fields(sqlSisipAkun("T", "S", false)), " ")
 	nilai := nilaiSisipAkun(AkunBaru{ID: "UJI"}, "hash", true)
 	if !strings.Contains(sisip, ":13 || S.NEXTVAL)") || len(nilai) != 13 || nilai[12] != "CON-" ||
 		AwalanIDKontak != "CON-" || sekuensIDKontak != "M_LOGIN_GO_CONTACT_SEQ" {

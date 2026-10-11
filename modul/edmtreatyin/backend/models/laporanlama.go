@@ -90,6 +90,8 @@ type RingkasanPemuat struct {
 	BarisDibaca   int
 	BukanTreatyIn int
 	GenerasiNB    int
+	// BarisAplikasiBaru - baris json_polis tulisan Utility1 aplikasi baru (ErrBarisAplikasiBaru), dilewati.
+	BarisAplikasiBaru int
 	// Dimuat - ditulis (`-jalankan`) atau siap ditulis (uji-kering).
 	Dimuat       int
 	SudahDimuat  int
@@ -130,7 +132,8 @@ const (
 	UsulanTanpaBaris NasibUsulan = iota
 	// UsulanDisalin - baris ditulis (atau, uji-kering, siap ditulis).
 	UsulanDisalin
-	// UsulanDilewati - penjaga dobel: IDPEGA sudah punya baris riwayat produksi.
+	// UsulanDilewati - proteksi dobel (WO 07-10-2026): IDPEGA sudah punya baris di HISTORYAKSEPTASIPRODUCTION atau
+	// HISTORYAKSEPTASIPEGA - tidak ditulis lagi.
 	UsulanDilewati
 )
 
@@ -170,6 +173,9 @@ func (r RingkasanPemuat) Teks() string {
 	if r.GenerasiNB > 0 {
 		fmt.Fprintf(&b, "Generasi NB (PRODKE 0), dilewati - pemuat NB     : %d\n", r.GenerasiNB)
 	}
+	if r.BarisAplikasiBaru > 0 {
+		fmt.Fprintf(&b, "Baris json_polis aplikasi baru, dilewati         : %d\n", r.BarisAplikasiBaru)
+	}
 	fmt.Fprintf(&b, "%-49s: %d\n", dimuat, r.Dimuat)
 	fmt.Fprintf(&b, "Sudah dimuat sebelumnya, dilewati                : %d\n", r.SudahDimuat)
 	fmt.Fprintf(&b, "Dokumen gagal (berkas laporan galat)             : %d\n", r.DokumenGagal)
@@ -183,7 +189,7 @@ func (r RingkasanPemuat) Teks() string {
 	fmt.Fprintf(&b, "Catatan SuggestList %-29s: %d baris -> POOLDATA.HISTORYAKSEPTASIPRODUCTION\n", disalin, r.Usulan.Disalin)
 	b.WriteString("    AKSES_LOGIN selalu NULL (anggota sumbernya tidak ada di dokumen lama)\n")
 	fmt.Fprintf(&b, "    PIC kosong (baris dokumen tanpa OperatorName, ditulis NULL)      : %d\n", r.Usulan.TanpaPIC)
-	fmt.Fprintf(&b, "    dokumen dilewati - IDPEGA sudah punya baris riwayat produksi    : %d\n", r.Usulan.DokumenSudahAda)
+	fmt.Fprintf(&b, "    dokumen dilewati - IDPEGA sudah ada di riwayat produksi / Pega  : %d\n", r.Usulan.DokumenSudahAda)
 	fmt.Fprintf(&b, "Medan dibuang menurut keputusan tertulis (arsip CSV, KEPUTUSAN dibuang):\n")
 	pmTulisPeta(&b, r.DiabaikanPerAlasan)
 	fmt.Fprintf(&b, "Medan BELUM DIPUTUSKAN (arsip CSV, KEPUTUSAN %s): %d  - WAJIB 0 sebelum pekerjaan dinyatakan selesai (F3)\n",
@@ -227,10 +233,14 @@ func LaporanPemuatBaru(arsip, galat io.Writer, tulis bool) (*LaporanPemuat, erro
 // Dibaca mencatat satu baris JSON_POLIS yang dibaca.
 func (l *LaporanPemuat) Dibaca() { l.r.BarisDibaca++ }
 
-// Lewat mencatat dokumen di luar lingkup (ErrBukanTreatyIn, ErrBukanGenerasiEndorsemen).
+// Lewat mencatat dokumen di luar lingkup (ErrBukanTreatyIn, ErrBukanGenerasiEndorsemen, ErrBarisAplikasiBaru).
 func (l *LaporanPemuat) Lewat(err error) {
 	if errors.Is(err, ErrBukanGenerasiEndorsemen) {
 		l.r.GenerasiNB++
+		return
+	}
+	if errors.Is(err, ErrBarisAplikasiBaru) {
+		l.r.BarisAplikasiBaru++
 		return
 	}
 	l.r.BukanTreatyIn++
@@ -289,8 +299,10 @@ func (l *LaporanPemuat) Berhasil(h HasilPecahEDM, usulan NasibUsulan, p PenandaM
 	l.r.Penanda.BergeserAngsuran += a
 	l.r.Penanda.BergeserLapisan += x
 	l.r.Penanda.Berlapis += b
-	if n, err := strconv.ParseInt(strings.TrimPrefix(h.ID, AwalanKasus), 10, 64); err == nil &&
-		strings.HasPrefix(h.ID, AwalanKasus) && n > l.r.AngkaKasusTerbesar {
+	// ID salinan = pzInsKey utuh (WO 07-10-2026): nomor dari pyID-nya
+	py := PyIDKasus(h.ID)
+	if n, err := strconv.ParseInt(strings.TrimPrefix(py, AwalanKasus), 10, 64); err == nil &&
+		strings.HasPrefix(py, AwalanKasus) && n > l.r.AngkaKasusTerbesar {
 		l.r.AngkaKasusTerbesar = n
 	}
 	if h.ProdKe > l.r.GenerasiTerbesar {

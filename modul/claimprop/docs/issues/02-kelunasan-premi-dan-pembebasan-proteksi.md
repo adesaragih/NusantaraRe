@@ -1,6 +1,6 @@
 # 02: Pemeriksaan kelunasan premi dan pembebasannya lewat data proteksi
 
-**Status:** ready-for-agent
+**Status:** sebagian 07-10-2026 — gerbang premi lunas dibangun; View Status Payment Premi nonaktif (OQ-CP-03); bacaan ARASAPAS tidak terlihat dari DEV (OQ-CP-11) — RALAT 07-10-2026 (semula `ready-for-agent`)
 **Blocked by:** 00 (PREFACTOR) · 01 (registrasi klaim dan nomor polis)
 **Menutup:** AC 113 · 114 · 115 · 116 · 117 *(5 AC)* — US 5–6
 

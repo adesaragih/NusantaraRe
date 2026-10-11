@@ -32,14 +32,15 @@ func (c *cedantTiruanH) TulisCedant(_ context.Context, _ *db.Tx, id string, k mo
 // TestCedantKasus - tiket 49: GET bentuk TampilanCedant persis (larik selalu [], angka teks), PUT baca ulang, isian
 // (kunci asing, share, tipe) 400, 401, 404, 503.
 func TestCedantKasus(t *testing.T) {
-	c := &cedantTiruanH{ada: models.KasusCedant{SobName: "UJI SOB", Cedant: []models.BarisCedant{},
+	c := &cedantTiruanH{ada: models.KasusCedant{SobName: "UJI SOB", ShareOfCeding: "10%", Cedant: []models.BarisCedant{},
 		CedingUmum: []models.BarisCedant{{CedingCo: "A1", CedingCoName: "UJI A"}}}}
 	sp := kasusSpreadingUji()
 	sp.PercentShare = angkaUji("50")
 	svc := services.Baru(nil).DenganCedant(c).DenganSpreading(&spreadingTiruanH{tersimpan: sp}).DenganTransaksi(tanpaOracleKlausa)
 	kode, isi := minta(t, svc, "GET", "/api/nbfacin/kasus/S1/cedant", "", "")
-	if kode != 200 || isi != `{"sobName":"UJI SOB","shareCedantType":"","percentShare":"50","totalTsiRnm":"500","totalPremiRnm":"4",`+
-		`"wajib":false,"cedant":[],"cedingUmum":[{"cedingCo":"A1","cedingCoName":"UJI A","shareCeding":""}]}` {
+	if kode != 200 || isi != `{"sobName":"UJI SOB","shareCedantType":"","shareOfCeding":"10%","percentShare":"50","totalTsiRnm":"500",`+
+		`"totalPremiRnm":"4","wajib":false,"wajibType":false,"cedant":[],"cedingUmum":[{"cedingCo":"A1","cedingCoName":"UJI A","shareCeding":""}],`+
+		`"dasarMataUang":[{"currency":"IDR","tsiRnm":"0","premiumRnm":"4","tsiGross":"0","premiumGross":"8"}],"kursTidakAda":[]}` {
 		t.Fatalf("GET: %d %s", kode, isi)
 	}
 	badan := `{"shareCedantType":"0","cedant":[{"cedingCo":"A1","cedingCoName":"UJI A","shareCeding":"60.5"}]}`

@@ -1,7 +1,7 @@
 package repository
 
 // RALAT R7 (10-10-2026): penulis rate mengikat nilai kosong sebagai NULL (dulu "kunci JSON dibuang") lewat
-// db.KosongJadiNil - pemeriksaan sumber, karena Gudang butuh Oracle nyata (uji nyata: TestDBRateKolomFlat, tag db).
+// db.KosongJadiNil - pemeriksaan sumber, karena Gudang butuh Oracle nyata (uji nyata: TestDBRateKolomFlatTulis, tag db).
 
 import (
 	"os"

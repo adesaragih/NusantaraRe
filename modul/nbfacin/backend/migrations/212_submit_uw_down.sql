@@ -1,0 +1,3 @@
+-- Jalur mundur 212 - kolom Validity Of Acceptance dan Comment T_GENERAL_POLIS.
+ALTER TABLE {skema}.T_GENERAL_POLIS DROP (DAYS_VALIDITY, DATE_VALIDITY, WAITING_BIND_DATE, COMMENT_TEXT)
+/

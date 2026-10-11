@@ -71,8 +71,12 @@ func argItem(it models.ItemObjek) []any {
 }
 
 // bacaItem - item case `id` per T_PROPERTY.ID (teks).
-func (r *ObjekOracle) bacaItem(ctx context.Context, t tabelObjek, id string) (map[string][]models.ItemObjek, error) {
-	baris, err := r.db.QueryContext(ctx, sqlBacaItem(t), id)
+func (r *ObjekOracle) bacaItem(ctx context.Context, t tabelObjek, b lingkupBaca) (map[string][]models.ItemObjek, error) {
+	q, arg, err := b.kueri(sqlBacaItem(t))
+	if err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca item objek: %w", err)
 	}
@@ -117,7 +121,7 @@ func (r *ObjekOracle) bacaItem(ctx context.Context, t tabelObjek, id string) (ma
 		return nil, fmt.Errorf("repository: item objek: %w", err)
 	}
 	baris.Close()
-	cov, err := r.bacaCoverage(ctx, t, id)
+	cov, err := r.bacaCoverage(ctx, t, b)
 	if err != nil {
 		return nil, err
 	}
@@ -130,25 +134,21 @@ func (r *ObjekOracle) bacaItem(ctx context.Context, t tabelObjek, id string) (ma
 }
 
 // sisipItem - item satu property, SEQ_NO dan PROPERTY_ITEM_NO = 1..n (K-6 tiket 39).
-func (r *ObjekOracle) sisipItem(ctx context.Context, tx *db.Tx, t tabelObjek, idProperty string, item []models.ItemObjek) error {
+func (w *tulisObjek) sisipItem(ctx context.Context, idProperty string, item []models.ItemObjek) error {
 	for j, it := range item {
-		idItem, err := r.db.NomorBerikut(ctx, tx, sequencePropertyItemList)
+		idItem, err := w.p.nomor(ctx, sequencePropertyItemList)
 		if err != nil {
 			return err
 		}
-		uid, err := uidAcak()
+		uid, err := w.uid()
 		if err != nil {
 			return err
 		}
 		arg := append([]any{idItem, idProperty, j + 1, uid, strconv.Itoa(j + 1)}, argItem(it)...)
-		h, err := jalankan(ctx, tx, sqlSisipItem(t.item), "menyisipkan "+TabelPropertyItemList, arg...)
-		if err != nil {
+		if err := w.p.sisip(ctx, sqlSisipItem(w.t.item), TabelPropertyItemList, arg); err != nil {
 			return err
 		}
-		if err := db.PastikanSatuBaris(h, TabelPropertyItemList); err != nil {
-			return err
-		}
-		if err := r.sisipCoverage(ctx, tx, t, idItem, it.Currency, it.Coverages); err != nil {
+		if err := w.sisipCoverage(ctx, idItem, it.Currency, it.Coverages); err != nil {
 			return err
 		}
 	}

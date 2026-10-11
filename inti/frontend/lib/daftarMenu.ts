@@ -107,6 +107,29 @@ export interface EntriMenu<H extends string = string> {
    * (mis. Outstanding milik Claim Life). Kosong untuk Beranda.
    */
   halamanModul?: readonly H[]
+  /**
+   * Tombol di bawah Beranda milik modul `pemilik` (`MenuModul.menuAtas`, 09-10-2026) - bukan tombol modul. Tampil bila
+   * tombol modul pemiliknya tampil; halamannya tidak menyalakan tombol modul.
+   */
+  atas?: boolean
+}
+
+/**
+ * Modul tanpa menu sendiri yang dipakai lewat menu modul LAIN (`pinjam`: modul -> modul peminjam; padanan
+ * `ruteDipinjam` cmd/api) ikut dipasang bagi pemegang menu peminjamnya - asal aktif di backend (`aktif`; `null` =
+ * belum terbaca, semua dianggap aktif). `boleh` null = tanpa saringan akun, tetap null. Keputusan work owner
+ * 09-10-2026: menu Komite Claim Prop dibuang, kasus komite dibuka dari inbox Claim Prop.
+ */
+export function tambahModulDipinjam(
+  boleh: readonly string[] | null,
+  aktif: readonly string[] | null,
+  pinjam: Readonly<Record<string, readonly string[]>>,
+): readonly string[] | null {
+  if (boleh === null) return null
+  const tambah = Object.entries(pinjam)
+    .filter(([m, p]) => !boleh.includes(m) && (aktif === null || aktif.includes(m)) && p.some((x) => boleh.includes(x)))
+    .map(([m]) => m)
+  return tambah.length === 0 ? boleh : [...boleh, ...tambah]
 }
 
 /**
@@ -188,6 +211,8 @@ export function bentukMenuTabel(x: unknown): x is MenuTabel {
 export interface MenuTersusun<H extends string = string> {
   /** Golongan yang TAMPIL, masing-masing dengan tombol modulnya. */
   golongan: GolonganSidebar<H>[]
+  /** Tombol di bawah Beranda (`EntriMenu.atas`) yang modul pemiliknya tampil - urutan daftar rute. */
+  atas: EntriMenu<H>[]
   /** Daftar palet: Beranda, lalu setiap modul dimigrasi yang tampil - urutan sidebar. */
   entri: EntriMenu<H>[]
   /** Baris dimigrasi tanpa modul frontend terdaftar, `<kode>` - untuk konsol. */
@@ -218,11 +243,14 @@ export function entriAplikasi<H extends string>(rute: readonly EntriMenu<H>[]): 
  * Beranda bukan baris tabel: ia diambil dari `rute` (pemilik `null`).
  */
 export function susunMenu<H extends string>(tabel: MenuTabel, rute: readonly EntriMenu<H>[]): MenuTersusun<H> {
-  const hasil: MenuTersusun<H> = { golongan: [], entri: entriAplikasi(rute), tanpaRute: [], nonaktifBerute: [] }
+  const hasil: MenuTersusun<H> = { golongan: [], atas: [], entri: entriAplikasi(rute), tanpaRute: [], nonaktifBerute: [] }
+  // Halaman tombol di bawah Beranda tidak menyalakan tombol modul pemiliknya.
+  const halamanAtas = new Set<string>(rute.filter((e) => e.atas === true).map((e) => e.modul))
+  const tampil = new Set<string>()
   for (const g of tabel.golongan) {
     const modul: TombolModul<H>[] = []
     for (const m of g.modul) {
-      const r = rute.find((e) => e.pemilik !== null && e.pemilik === m.kode)
+      const r = rute.find((e) => e.pemilik !== null && e.pemilik === m.kode && e.atas !== true)
       if (!m.dimigrasi) {
         if (r !== undefined) hasil.nonaktifBerute.push(m.kode)
         modul.push({ kode: m.kode, label: m.label, halaman: null, halamanModul: [] })
@@ -232,13 +260,23 @@ export function susunMenu<H extends string>(tabel: MenuTabel, rute: readonly Ent
         hasil.tanpaRute.push(m.kode)
         continue
       }
-      modul.push({ kode: m.kode, label: m.label, halaman: r.modul, halamanModul: r.halamanModul ?? [r.modul] })
+      modul.push({
+        kode: m.kode,
+        label: m.label,
+        halaman: r.modul,
+        halamanModul: (r.halamanModul ?? [r.modul]).filter((h) => !halamanAtas.has(h)),
+      })
+      tampil.add(m.kode)
       // Palet = sidebar: entri dari tombol yang SAMA. `kelompok` tetap nama
       // modul (satu makna); golongannya dibawa sendiri untuk konteks palet.
       hasil.entri.push({ modul: r.modul, label: m.label, kelompok: m.label, golongan: g.kode, pemilik: m.kode })
     }
     if (modul.length > 0) hasil.golongan.push({ kode: g.kode, modul })
   }
+  hasil.atas = rute.filter((e) => e.atas === true && e.pemilik !== null && tampil.has(e.pemilik))
+  // Palet: Beranda (entri aplikasi), lalu tombol di bawah Beranda, lalu tombol modul - urutan sidebar.
+  const aplikasi = hasil.entri.filter((e) => e.pemilik === null).length
+  hasil.entri.splice(aplikasi, 0, ...hasil.atas)
   return hasil
 }
 

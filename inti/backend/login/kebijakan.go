@@ -12,8 +12,9 @@ const (
 	BatasDiam = 30 * time.Minute
 	// BatasSesi - sesi berakhir paling lambat sekian sejak login, walau terus dipakai.
 	BatasSesi = 10 * time.Hour
-	// PanjangMinSandi - panjang sandi minimal, dalam KARAKTER.
-	PanjangMinSandi = 10
+	// PanjangMinSandi - panjang sandi minimal, dalam KARAKTER. Perintah work owner 11-10-2026 "password ... ubah jadi
+	// tidak ada batasan" (semula 10): cukup tidak kosong.
+	PanjangMinSandi = 1
 	// PanjangMaksSandi - bcrypt hanya membaca 72 BYTE pertama; sisanya akan
 	// diabaikan diam-diam, jadi ditolak terang.
 	PanjangMaksSandi = 72

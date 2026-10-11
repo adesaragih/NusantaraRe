@@ -1,6 +1,13 @@
 # 10: Efek keluar ke basis data — akseptasi, riwayat, log
 
-**Status:** ready-for-agent
+**Status:** dibangun — tanpa procedure, tanpa COMMIT *(RALAT 08-10-2026; status lama: `ready-for-agent`)*
+
+> **RALAT 08-10-2026** — implementasi satu modul (prompt `_brief/PROMPT-IMPLEMENTASI-MODUL-KOMITE-CLAIM-PROP.md` §7). Kalimat lama tetap di bawah, dikutip di sini:
+>
+> - `InsertJsonClaimTreaty_act` / `PEGA_JSON_KLAIM_PNC` / `PEGA_JSON_OS_AKSEP_KLAIM` — procedure **tidak dipanggil**; isinya ditulis ulang sebagai SQL langsung (keputusan work owner 08-10-2026). `JSON_KLAIM` tanpa DATA_JSON; `OS_AKSEPTASI_KLAIM` **DENGAN** DATA_JSON halaman `TempOSAkseptasi` (keputusan work owner 08-10-2026 sore, "isi json nya khusus os_akseptasi_klaim", meralat prompt §3).
+> - AC 56 (*"sembilan rule menyimpan sendiri ... tetap menyimpan sendiri"*) — diganti SATU transaksi aplikasi per Submit (prompt §6 butir 7): keputusan yang gagal di tengah batal utuh. Penyimpangan sadar, dicatat di PARITAS.
+> - Penolakan klaim di `KomitePost_Close` / `KomitePost_Reject` langkah 13 — jalur TT 4 / TT 3 di luar lingkup.
+
 
 **Blocked by:** **08 (nomor akseptasi)**
 

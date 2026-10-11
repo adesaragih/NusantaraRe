@@ -30,7 +30,7 @@ type GudangMaster interface {
 	AmbilMaster(ctx context.Context, jenis models.JenisMaster, id string) (models.NilaiMaster, bool, error)
 	CariPlan(ctx context.Context, kata string) ([]models.JenisPlan, error)
 	AmbilPlan(ctx context.Context, id string) (models.JenisPlan, bool, error)
-	// DaftarRate - tabel `M_RATE_LIFE` satu IDUSEDBY; `terpotong` = lebih dari repository.BatasRate baris.
+	// DaftarRate - `M_RATE_LIFE` satu IDUSEDBY; `terpotong` = lebih dari repository.BatasRate baris.
 	DaftarRate(ctx context.Context, idUsedBy string) ([]models.BarisRate, bool, error)
 }
 
@@ -65,7 +65,7 @@ type JawabanRate struct {
 }
 
 // DaftarRate - tombol `View Rate` b34113 (`SetParamRate` b34310 + `localAction ViewRate` b34354, section
-// `ViewRate` RD `BrowseRateLife_RD`), tabel `M_RATE_LIFE` baca saja (K1 keputusan work owner 01-10-2026, OQ-MPNL-03).
+// `ViewRate` RD `BrowseRateLife_RD`), `M_RATE_LIFE` (dulu view `RATE_LIFE`) baca saja (K1 keputusan work owner 01-10-2026, OQ-MPNL-03).
 //
 // ⚠️ Penyimpangan sadar: grid `ViewRate.xml` b1024 menyaring `idusedby = ParamID.OUTWARDRATEID`, padahal
 // `SetParamRate` b259 hanya mengisi `ParamID.RIRATEID` - dari halaman `InputBusinessLife` milik Retro Life

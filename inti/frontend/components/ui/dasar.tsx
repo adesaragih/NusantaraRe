@@ -20,6 +20,7 @@ import { klasifikasiGalat } from "../../lib/keadaanGalat";
 import { useBahasaUI, useTeksUI } from "./bahasaUI";
 
 import { keInputTanggal, dariInputTanggal } from "../../lib/tanggalInput";
+import { formatKetik, keKabelAngka, normalisasiKetikan, formatNumber } from "../../lib/format";
 
 export function Field({
   label,
@@ -105,6 +106,130 @@ export function Field({
  * supaya CSS `.field`/`.field__label`/`.field__input`/`.field__error`
  * yang sudah ada tetap berlaku tanpa duplikasi aturan.
  */
+/**
+ * Kotak ISIAN ANGKA berpemisah ribuan — konvensi Indonesia.
+ *
+ * ⭐ Permintaan pemilik proses 7 Oktober 2026: *"titik pemisah ribuan
+ * jutann contoh 1.000.000,00 dan saat meng input juga sudah otomatis
+ * langsung ada pemisahnya"*.
+ *
+ * ---------------------------------------------------------------------
+ * ⛔ MENGAPA KOMPONEN TERPISAH, BUKAN PROP BARU DI `Field`
+ * ---------------------------------------------------------------------
+ * Sama dengan sebab `FieldSandi` dan `FieldTanggal` berdiri sendiri:
+ * `Field` dipakai 100+ titik panggil untuk teks biasa, dan menanam
+ * penguraian angka di sana membebani seratusan pemanggil yang tidak
+ * pernah memakainya — serta membuat teks yang KEBETULAN berangka
+ * (`>=30% up to < 50%`) diurai sebagai bilangan.
+ *
+ * ---------------------------------------------------------------------
+ * ⛔ DUA BENTUK, DAN KEDUANYA PERLU
+ * ---------------------------------------------------------------------
+ *   KABEL   `1000000.5`     yang disimpan dan dikirim backend
+ *   TAMPIL  `1.000.000,5`   yang dibaca dan diketik pemakai
+ *
+ * `nilai` dan `onUbah` SELALU bentuk KABEL. Terjemahannya di sini saja,
+ * supaya nol pemanggil perlu mengingat arah mana yang sedang dipegang.
+ *
+ * ---------------------------------------------------------------------
+ * ⚠️ MENGAPA BERGANTUNG PADA FOKUS
+ * ---------------------------------------------------------------------
+ * Saat DIKETIK, ekor desimal lewat apa adanya: `12,` tetap `12,` dan
+ * `1,00` tetap `1,00`. Keduanya keadaan SAH di tengah pengetikan, dan
+ * keduanya akan hilang bila `formatNumber` yang dipanggil — itulah sebab
+ * `KerangkaTab.tsx` dahulu menyerah dan membiarkan angka tanpa format.
+ *
+ * Saat DILEPAS, barulah `formatNumber` dipanggil untuk memadankan desimal
+ * (`1.000.000` → `1.000.000,00`) dan menempelkan `%` bila `persen`.
+ */
+export function FieldAngka({
+  label,
+  value,
+  onChange,
+  desimal = 2,
+  persen = false,
+  readOnly,
+  placeholder,
+  error,
+  ariaLabel,
+}: {
+  label: string;
+  /** Bentuk KABEL (titik desimal, tanpa pemisah ribuan). */
+  value: string;
+  /** Menerima bentuk KABEL. */
+  onChange: (v: string) => void;
+  /** Desimal maksimum; ekor yang lebih panjang DIPOTONG, bukan dibulatkan. */
+  desimal?: number;
+  /** Tempelkan `%` saat tidak sedang diketik. */
+  persen?: boolean;
+  readOnly?: boolean;
+  placeholder?: string;
+  error?: string;
+  /**
+   * Nama medan untuk pembaca layar ketika `label` sengaja KOSONG.
+   *
+   * ⛔ Sel tabel sudah bernama oleh `<th>`-nya, jadi label kedua di
+   * dalam sel menggandakan judul kolom — `Pct Share` tercetak dua kali
+   * bertumpuk (laporan pemilik proses 8 Oktober 2026). Mengosongkan
+   * `label` saja membuang namanya dari pembaca layar juga; prop ini
+   * menyembunyikan labelnya TANPA membuat medannya anonim.
+   */
+  ariaLabel?: string;
+}) {
+  const [fokus, setFokus] = useState(false);
+  const [ketik, setKetik] = useState("");
+
+  // ⛔ Saat fokus, yang tampil adalah apa yang DIKETIK — bukan hasil
+  // pembacaan ulang `value`. Membaca ulang akan memaksa ekor desimal
+  // kembali ke bentuk kanonik di tengah pengetikan.
+  const tampil = fokus
+    ? ketik
+    : (() => {
+        const t = formatNumber(value, desimal);
+        if (t === "") return "";
+        const padan = t.includes(",")
+          ? t + "0".repeat(Math.max(0, desimal - (t.length - t.indexOf(",") - 1)))
+          : desimal > 0
+            ? t + "," + "0".repeat(desimal)
+            : t;
+        return persen ? padan + "%" : padan;
+      })();
+
+  return (
+    <div className="field">
+      {label !== "" && <label className="field__label">{label}</label>}
+      <input
+        className={"field__input" + (error ? " field__input--error" : "")}
+        type="text"
+        inputMode="decimal"
+        value={tampil}
+        readOnly={readOnly}
+        placeholder={placeholder}
+        aria-label={label === "" ? ariaLabel : label}
+        onFocus={() => {
+          // ⛔ Bentuk KABEL memakai TITIK desimal; `formatKetik` membaca titik
+          // sebagai pemisah ribuan. Terjemahkan dulu, atau `1000000.5`
+          // terbaca `10.000.005`.
+          setKetik(formatKetik(value.replace(".", ","), desimal));
+          setFokus(true);
+        }}
+        onBlur={() => {
+          setFokus(false);
+        }}
+        onChange={(e) => {
+          // ⭐ Titik yang BARU DIKETIK menjadi koma — diputuskan dengan
+          // membandingkan terhadap teks sebelumnya, bukan ditebak dari
+          // bentuknya. Lihat `normalisasiKetikan`.
+          const t = formatKetik(normalisasiKetikan(e.target.value, ketik), desimal);
+          setKetik(t);
+          onChange(keKabelAngka(t));
+        }}
+      />
+      {error && <div className="field__error">{error}</div>}
+    </div>
+  );
+}
+
 export function FieldSandi({
   label,
   value,
@@ -878,6 +1003,17 @@ export function IkonRumah({ ukuran = 20 }: { ukuran?: number }) {
     <svg {...sifatIkon(ukuran)} strokeWidth={1.8}>
       <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
       <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    </svg>
+  );
+}
+
+/** `file-text` — tombol sidebar di bawah Beranda milik modul (`MenuModul.menuAtas`). */
+export function IkonDokumen({ ukuran = 20 }: { ukuran?: number }) {
+  return (
+    <svg {...sifatIkon(ukuran)} strokeWidth={1.8}>
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+      <path d="M10 9H8M16 13H8M16 17H8" />
     </svg>
   );
 }

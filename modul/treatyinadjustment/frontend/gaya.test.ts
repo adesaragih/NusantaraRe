@@ -17,12 +17,49 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const AKAR = __dirname
+
+/**
+ * ⛔ Akhir baris DISERAGAMKAN sebelum dicocokkan.
+ *
+ * Penjaga di berkas ini mencari penambat yang MENYEBERANGI baris. Berkas
+ * CSS modul pernah berpindah LF ↔ CRLF tanpa satu pun perubahan isi, dan
+ * penambat yang menyebut `\n` lalu nol ketemu — uji merah tanpa ada yang
+ * rusak.
+ */
+function normalkanBarisCSS(teks: string): string {
+  return teks.split('\r\n').join('\n')
+}
 const CSS = readFileSync(join(AKAR, 'treatyinadjustment.css'), 'utf8')
 const RUTE = readFileSync(join(AKAR, 'rute.tsx'), 'utf8')
 const INTI = readFileSync(join(AKAR, '..', '..', '..', 'inti', 'frontend', 'styles.css'), 'utf8')
 
 /** Kelas khusus modul ini: wajib hidup di berkas modul, dan nol jejak di inti. */
-const KELAS_MODUL = ['tria__aturan', 'tria__redup'] as const
+const KELAS_MODUL = [
+  'tria__aturan',
+  'tria__redup',
+  'tria__tabel',
+  'tria__spanduk',
+  'tria__catatan',
+  'tria__aksi',
+  // Layar Adjustment — 5 Oktober 2026.
+  'tria__bandingan',
+  'tria__sisi',
+  'tria__dwikolom',
+  'tria__kolom',
+  'tria__kepala',
+  'tria__radio',
+  'tria__centang',
+  'tria__tak-ada',
+  'tria__belum',
+  'tria__teks',
+  'tria__grid',
+  'tria__subjudul',
+  'tria__angka',
+  'tria__nilai',
+  'tria__prorata',
+  'tria__blok',
+  'tria__teks-sel',
+] as const
 
 /** Setiap berkas di bawah folder frontend modul (rekursif). */
 function berkas(d = AKAR): string[] {
@@ -56,7 +93,11 @@ function pemilihCSS(css: string): string[] {
 }
 
 function terisolasi(p: string): boolean {
-  return p === '.treatyinadjustment' || p.startsWith('.treatyinadjustment ') || p.startsWith(':where(.treatyinadjustment ')
+  // ⭐ 8 Oktober 2026 — tema Treaty Exchange Yearly: varian GELAP ditulis
+  // `:root[data-theme="dark"] .treatyinadjustment …`, pengecualian SEMPIT yang
+  // sama dengan penjaga `treatyexchangeyearly/frontend/gaya.test.ts`.
+  const p2 = p.startsWith(':root[data-theme="dark"] ') ? p.slice(':root[data-theme="dark"] '.length) : p
+  return p2 === '.treatyinadjustment' || p2.startsWith('.treatyinadjustment ') || p2.startsWith(':where(.treatyinadjustment ')
 }
 
 /** Kelas dari `daftar` yang masih disebut pemilih di `css`. */
@@ -84,6 +125,9 @@ describe('gaya modul Treaty In Adjustment', () => {
   it('aturan isolasi menggigit', () => {
     const contoh = pemilihCSS('table { x: 1 } .treatyinadjustment .a, .b { y: 2 } .treatyinadjustment :is(.c, .d):disabled { z: 3 } @media (max-width: 1px) { .e { w: 4 } }')
     expect(contoh.filter((p) => !terisolasi(p))).toEqual(['table', '.b', '.e'])
+    // Tema gelap berakar modul diterima; tema gelap GLOBAL tetap ditolak.
+    const gelap = pemilihCSS(':root[data-theme="dark"] .treatyinadjustment > .inbox { a: 1 } :root[data-theme="dark"] .x { b: 2 }')
+    expect(gelap.filter((p) => !terisolasi(p))).toEqual([':root[data-theme="dark"] .x'])
   })
 
   it('kelas khusus modul ini tidak menumpang di inti/frontend/styles.css', () => {
@@ -99,5 +143,161 @@ describe('gaya modul Treaty In Adjustment', () => {
   it('tanpa properti yang mengurung popup position: fixed', () => {
     const tanpaKomentar = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
     expect([...tanpaKomentar.matchAll(PENAMPUNG_FIXED)].map((m) => m[1])).toEqual([])
+    // `container-type` juga mengurung popup fixed (layout containment).
+    expect(tanpaKomentar).not.toMatch(/container(-type)?\s*:/)
+  })
+})
+
+// ⭐ 8 Oktober 2026 — "perbaiki design nya seperti [Pega] … kalau zoom in
+// zoom out … jadi bagus".
+describe('bentuk Pega + responsif saat zoom', () => {
+  const tanpaKomentar = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+
+  it('Old ‖ New bertumpuk menurut lebar wadahnya, bukan lebar layar', () => {
+    expect(tanpaKomentar).toMatch(
+      /\.treatyinadjustment \.tria__bandingan \{[^}]*grid-template-columns: repeat\(auto-fit, minmax\(min\(100%, 520px\), 1fr\)\);/,
+    )
+    expect(tanpaKomentar).toMatch(
+      /\.treatyinadjustment \.tria__dwikolom \{[^}]*grid-template-columns: repeat\(auto-fit, minmax\(min\(100%, 340px\), 1fr\)\);/,
+    )
+    expect(tanpaKomentar).not.toMatch(/@media \(max-width: 1100px\)/)
+  })
+
+  it('strip tab SATU baris, digulir mendatar', () => {
+    expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.tabs \{\s*flex-wrap: nowrap;\s*overflow-x: auto;/)
+    expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.tabs__item \{\s*flex: 0 0 auto;/)
+  })
+
+  it('label di KIRI kotak kepala (132px), hanya dari 900px ke atas', () => {
+    const i = tanpaKomentar.indexOf('@media (min-width: 900px)')
+    expect(i).toBeGreaterThan(0)
+    const blok = tanpaKomentar.slice(i, i + 700)
+    expect(blok).toContain('grid-template-columns: 132px minmax(0, 1fr);')
+    expect(blok).toMatch(/\.tria__kolom \.field > :not\(\.field__label\) \{\s*grid-column: 2;/)
+  })
+
+  // ⚠️ Angkanya turun 34 → 28px pada 8 Oktober 2026 atas permintaan pemilik
+  // proses. Yang dijaga uji ini BUKAN angkanya sendiri, melainkan bahwa ia
+  // SAMA dengan Treaty In: dua layar form yang sama harus terlihat sama.
+  it('kerapatan sama dengan Treaty In: kotak 28px, label 13px', () => {
+    expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.field__input \{\s*height: 28px;\s*font-size: 13px;/)
+    expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.field__label \{\s*font-size: 13px;/)
+  })
+
+  it('kotak di sel grid tidak terpotong; tabel ber-rincian (fixed) tetap boleh menyusut', () => {
+    expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.tria__tabel td \.field__input \{\s*min-width: 96px;/)
+    expect(tanpaKomentar).toMatch(/\.treatyinadjustment \.tria__tabel td \.tria__tgl \{\s*min-width: 150px;/)
+    expect(tanpaKomentar).toMatch(
+      /\.treatyinadjustment \.tria__tabel:has\(> tbody > \.tria__rincian\) td \.field__input,\s*\.treatyinadjustment \.tria__tabel:has\(> tbody > \.tria__rincian\) td \.tria__tgl \{\s*min-width: 0;/,
+    )
+  })
+})
+
+// ⭐ 8 Oktober 2026 — "ubah tema … menjadi seperti tema Treaty Exchange Yearly".
+describe('tema Treaty Exchange Yearly', () => {
+  const css = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+  const akar = css.slice(css.indexOf('.treatyinadjustment > .inbox {'))
+
+  it('token terang di AKAR MODUL (juga layar tanpa `.inbox`), kartu akar halaman: `--tria-*` bernilai `--tey-*`, gradasi lembut, sudut 26px', () => {
+    expect(css).toMatch(/^\.treatyinadjustment \{[^}]*--tria-latar: #eef1f6;/m)
+    expect(akar.slice(0, 3000)).toContain('border-radius: 26px;')
+    expect(akar.slice(0, 3000)).toContain('background: linear-gradient(180deg, var(--tria-latar-atas) 0%, var(--tria-latar-bawah) 100%);')
+  })
+
+  it('varian gelap ditulis berakar modul', () => {
+    expect(css).toMatch(/^:root\[data-theme="dark"\] \.treatyinadjustment \{[^}]*--tria-isi: #1f2638;/m)
+  })
+
+  it('tombol kapsul: utama merah bergradasi, kartu panel putih timbul, isian cekung', () => {
+    expect(css).toMatch(/\.treatyinadjustment \.btn \{\s*border-radius: 999px;/)
+    expect(css).toMatch(/\.treatyinadjustment \.btn--primary,\s*\.treatyinadjustment \.tl-tambah \{\s*background: linear-gradient\(180deg, var\(--tria-tombol\), var\(--tria-tombol-ujung\)\);/)
+    expect(css).toMatch(/\.treatyinadjustment \.panel \{\s*background: var\(--tria-isi\);[^}]*border-radius: 18px;[^}]*box-shadow: var\(--tria-timbul\);/)
+    expect(css).toMatch(/\.treatyinadjustment \.field__input \{[^}]*box-shadow: var\(--tria-cekung-kecil\);/)
+  })
+
+  it('strip tab = kontrol segmen kapsul; kepala tabel navy muda dan TIDAK tembus pandang', () => {
+    expect(css).toMatch(/\.treatyinadjustment \.tabs__item--aktif,\s*\.treatyinadjustment \.tabs__item--aktif:hover \{\s*background: var\(--tria-isi\);/)
+    expect(css).toMatch(/\.treatyinadjustment \.table-wrap \.tria__tabel thead th \{\s*background: var\(--tria-kepala-tabel\);/)
+  })
+
+  it('lapisan tema TIDAK menimpa ukuran kontrol — kerapatan tetap milik bloknya', () => {
+    const tema = css.slice(css.indexOf('.treatyinadjustment > .inbox {'))
+    expect(tema).not.toMatch(/\.(btn|field__input)[^{]*\{[^}]*height:/)
+  })
+})
+
+// ⛔ LABEL DI KIRI MEDAN — permintaan pemilik proses 8 Oktober 2026 atas tab
+// Account Reporting Period layar Adjustment.
+//
+// ⚠️ DUA cacat sekaligus, dan yang kedua bukan CSS:
+//
+//   1. Lebar kolom label PERSEN (`38%`) → tiap blok punya lebar sendiri,
+//      nol baris segaris. Sama dengan cacat yang sudah diperbaiki di
+//      `modul/treatyin`; 132px adalah angka yang dipakai di sana.
+//   2. `kerangka.gen.ts` melebur SELURUH `Inline*` Pega menjadi satu nilai
+//      `alir`, sehingga `Inline labels left` kehilangan "labels left"-nya.
+//      Tab itu memakai tujuh blok `alir`.
+describe('label kiri blok tata Adjustment', () => {
+  const CSS2 = readFileSync(join(AKAR, 'treatyinadjustment.css'), 'utf8')
+
+  it('⛔ lebarnya TETAP 132px, bukan persen', () => {
+    const i = CSS2.indexOf('.treatyinadjustment .tria__blok.tria__tata--kiri > .field,')
+    expect(i).toBeGreaterThan(0)
+    const aturan = CSS2.slice(i, CSS2.indexOf('}', i))
+    expect(aturan).toContain('grid-template-columns: 132px minmax(0, 1fr)')
+    expect(aturan).not.toContain('38%')
+  })
+
+  it('⛔ blok `alir` IKUT berlabel kiri — `Inline labels left` lebur ke sana', () => {
+    const i = CSS2.indexOf('.treatyinadjustment .tria__blok.tria__tata--kiri > .field,')
+    expect(CSS2.slice(i, CSS2.indexOf('{', i))).toContain('.tria__tata--alir > .field')
+  })
+
+  it('⭐ angkanya sama dengan Treaty In — satu ukuran untuk kedua layar', () => {
+    const TRIN = readFileSync(join(AKAR, '..', '..', 'treatyin', 'frontend', 'treatyin.css'), 'utf8')
+    expect(TRIN).toContain('grid-template-columns: 132px minmax(0, 1fr)')
+  })
+})
+
+// ⛔ ISI TIDAK BOLEH KELUAR DARI PANELNYA — keluhan pemilik proses
+// 8 Oktober 2026: *"jangan aneh seperti ini, buat designnya tidak keluar
+// dari container"*.
+//
+// ⚠️ Cacatnya lahir dari penggabungan selektor satu giliran sebelumnya:
+// `flex: none` milik blok `kiri` ikut terbawa ke blok `alir`. `kiri` adalah
+// KOLOM — di sana `flex: none` tidak berbahaya. `alir` adalah BARIS, dan di
+// sana ia berarti "tidak boleh menyusut": tiga medan Submission ·
+// Confirmation · Settlement menuntut ±1.400px dan meluber keluar panel.
+describe('isi tidak meluber keluar panel', () => {
+  // ⚠️ Akhir baris DISERAGAMKAN: penambat di bawah menyeberangi baris,
+  // dan berkas CSS pernah berpindah LF ↔ CRLF tanpa perubahan isi.
+  const CSS3 = normalkanBarisCSS(readFileSync(join(AKAR, 'treatyinadjustment.css'), 'utf8'))
+
+  /** Badan aturan PERTAMA yang pemilihnya cocok DAN badannya memuat `tanda`. */
+  const aturan = (pemilih: string, tanda = ''): string => {
+    for (let i = CSS3.indexOf(pemilih); i > 0; i = CSS3.indexOf(pemilih, i + 1)) {
+      const badan = CSS3.slice(i, CSS3.indexOf('}', i))
+      if (tanda === '' || badan.includes(tanda)) return badan
+    }
+    expect(CSS3).toContain(pemilih + ' … ' + tanda)
+    return ''
+  }
+
+  it('⛔ medan blok `alir` BOLEH menyusut', () => {
+    expect(aturan('.tria__tata--alir > .field {', 'flex:')).toContain('flex: 1 1 260px')
+  })
+
+  it('⛔ `flex: none` HANYA untuk blok `kiri` yang berkolom', () => {
+    expect(aturan('.tria__tata--kiri > .field {', 'flex:')).toContain('flex: none')
+    // Bentuk yang melahirkan cacatnya: satu aturan untuk keduanya.
+    expect(CSS3).not.toMatch(
+      /tria__tata--kiri > \.field,\s*\.treatyinadjustment \.tria__blok\.tria__tata--alir > \.field \{[^}]*flex: none/,
+    )
+  })
+
+  it('⭐ grid menggulir DI DALAM panelnya', () => {
+    const a = aturan('.treatyinadjustment .tria__grid {')
+    expect(a).toContain('max-width: 100%')
+    expect(a).toContain('overflow-x: auto')
   })
 })

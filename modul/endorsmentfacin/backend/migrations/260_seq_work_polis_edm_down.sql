@@ -1,0 +1,3 @@
+-- Jalur mundur 260 - SEQ_WORK_POLIS_EDM.
+DROP SEQUENCE {skema}.SEQ_WORK_POLIS_EDM
+/

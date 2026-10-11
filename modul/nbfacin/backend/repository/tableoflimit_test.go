@@ -11,8 +11,15 @@ func TestSQLTableOfLimit(t *testing.T) {
 	if q := sqlTableOfLimit("UJI.T", false); q != "SELECT DESCRIPTION, PCTLIMIT FROM (SELECT DISTINCT BIZCODE, CATEGORY, DESCRIPTION, PCTLIMIT, NOTE FROM UJI.T WHERE BIZCODE = :1) ORDER BY CATEGORY, DESCRIPTION, PCTLIMIT, NOTE FETCH FIRST :2 ROWS ONLY" {
 		t.Errorf("tanpa kategori: %q", q)
 	}
+	if q := sqlOldIDBisnis("UJI.B"); q != "SELECT OLDID FROM UJI.B WHERE NOTE = :1 AND BUSINESSGROUPID = :2 ORDER BY ID FETCH FIRST 2 ROWS ONLY" {
+		t.Errorf("%q", q)
+	}
 	if q := sqlKodeBisnis("UJI.B"); q != "SELECT ID FROM UJI.B WHERE NOTE = :1 AND BUSINESSGROUPID = :2 ORDER BY ID FETCH FIRST 2 ROWS ONLY" {
 		t.Errorf("kode bisnis: %q", q)
+	}
+	// Tiket 73 P0 lini: saringan Pega GetOldIDBusiness_SQL (keputusan work owner 09-10-2026); tiga kolom satu baris.
+	if q := sqlBisnisLini("UJI.B"); q != "SELECT ID, OLDID, GROUPPANEL FROM UJI.B WHERE NOTE = :1 AND BUSINESSGROUPID = :2 AND GROUPPANEL IS NOT NULL ORDER BY ID FETCH FIRST 2 ROWS ONLY" {
+		t.Errorf("lini: %q", q)
 	}
 	if BatasTableOfLimit != 500 || TabelTableOfLimitWarisan != "TABLEOFLIMIT" {
 		t.Error("parameter RD / nama tabel DDL berubah")

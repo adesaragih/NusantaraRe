@@ -125,7 +125,7 @@ function PopupPilihKlausa({
       aksi={
         <button
           type="button"
-          className="btn btn--primary"
+          className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary"
           disabled={pilih.size === 0}
           onClick={() => onSubmit([...pilih.values()])}
         >
@@ -158,7 +158,7 @@ function PopupPilihKlausa({
           <label className="field__label">{K.keyword.label}</label>
           <input className="field__input" type="search" value={kata} onChange={(e) => setKata(e.target.value)} />
         </div>
-        <button type="submit" className="btn btn--primary">
+        <button type="submit" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary">
           {K.cari.label}
         </button>
         {pilih.size > 0 && <span className="nbf-akum__jumlah">{T.dipilih(pilih.size)}</span>}
@@ -252,7 +252,7 @@ function PopupArgumen({
       aksi={
         <button
           type="button"
-          className="btn btn--primary"
+          className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary"
           disabled={argumen === null}
           onClick={() =>
             argumen &&
@@ -360,7 +360,7 @@ export default function TabClauses({ caseId }: { caseId: string }) {
       <Gagal galat={galat} />
       {tersimpan && <div className="alert alert--ok">{T.tersimpan}</div>}
       <div className="nbf-klausa__atas">
-        <button type="button" className="btn btn--primary" onClick={() => setPilih(true)}>
+        <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" onClick={() => setPilih(true)}>
           {K.pilihKlausa.label}
         </button>
       </div>
@@ -380,7 +380,7 @@ export default function TabClauses({ caseId }: { caseId: string }) {
                 )}
               </div>
               <div className="nbf-klausa__aksi">
-                <button type="button" className="btn btn--ghost btn--sm" onClick={() => setArgumen(i)}>
+                <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={() => setArgumen(i)}>
                   {K.lihatArgumen.label}
                 </button>
                 <button
@@ -405,7 +405,7 @@ export default function TabClauses({ caseId }: { caseId: string }) {
         ))}
       </div>
       <div className="nbf-objek__kaki">
-        <button type="button" className="btn btn--primary" onClick={() => void simpan()} disabled={menyimpan}>
+        <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" onClick={() => void simpan()} disabled={menyimpan}>
           {menyimpan ? TEKS_FORM_OPPORTUNITY.menyimpan : K.simpan}
         </button>
       </div>

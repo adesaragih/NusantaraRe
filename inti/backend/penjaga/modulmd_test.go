@@ -243,8 +243,25 @@ func rentangNomor(nilai string) (awal, akhir int, err error) {
 	return awal, akhir, nil
 }
 
+// rentangNomorJamak membaca satu atau beberapa rentang `NNN-NNN` dipisah koma (`180-214, 255-259`; backtick boleh di seluruh
+// nilai atau per rentang) - rentang tambahan untuk modul yang rentang pertamanya habis sesudah migrasinya jalan di DEV
+// (keputusan work owner 09-10-2026, nbfacin 255-259). Tiap rentang diperiksa rentangNomor; tumpang-tindih (juga antar-rentang
+// modul yang sama) ditolak R2.
+func rentangNomorJamak(nilai string) ([][2]int, error) {
+	var hasil [][2]int
+	for _, bagian := range strings.Split(strings.Trim(strings.TrimSpace(nilai), "`"), ",") {
+		a, b, err := rentangNomor(bagian)
+		if err != nil {
+			return nil, err
+		}
+		hasil = append(hasil, [2]int{a, b})
+	}
+	return hasil, nil
+}
+
 // tanpaSlot - nilai `Slot menu` modul luar korpus yang PUNYA rentang migrasi tetapi tanpa slot (keputusan work owner
-// 04-10-2026): barisnya lahir di langkah inti, DIMIGRASI '1'. Bedanya dengan tandaTanpaMigrasi: rentangnya tetap
+// 04-10-2026): barisnya lahir di langkah inti, DIMIGRASI '1'. Juga modul TANPA MENU (`modulTanpaMenu`, perintah work
+// owner 09-10-2026): tanpa baris menu sama sekali. Bedanya dengan tandaTanpaMigrasi: rentangnya tetap
 // bernomor, jadi berkas migrasinya tetap dijaga R2.
 const tanpaSlot = "—"
 
@@ -261,7 +278,7 @@ func jatahDari(rentang, slot string) (jatahModul, error) {
 		}
 		return jatahModul{}, nil
 	}
-	a, b, err := rentangNomor(rentang)
+	mig, err := rentangNomorJamak(rentang)
 	if err != nil {
 		return jatahModul{}, fmt.Errorf("\"Rentang migrasi\": %w", err)
 	}
@@ -269,13 +286,13 @@ func jatahDari(rentang, slot string) (jatahModul, error) {
 	if err != nil {
 		return jatahModul{}, fmt.Errorf("\"Slot menu\": %w", err)
 	}
-	return jatahModul{migrasi: [2]int{a, b}, slot: [2]int{c, d}}, nil
+	return jatahModul{migrasi: mig[0], migrasiLain: mig[1:], slot: [2]int{c, d}}, nil
 }
 
 // rentangModul - rentang migrasi dan slot menu sebuah modul (R2, R3); modul tanpa migrasi (`—` di kedua kunci,
 // tandaTanpaMigrasi) = keduanya nol. `kosong` = rentang bernomor dengan `Slot menu` — (tanpaSlot), sah HANYA untuk
-// modul luar korpus (`modulLuarKorpus`).
-func rentangModul(t *testing.T, m modulMD) (migrasi, slot [2]int, kosong bool) {
+// modul luar korpus (`modulLuarKorpus`). `lain` = rentang migrasi tambahan (rentangNomorJamak).
+func rentangModul(t *testing.T, m modulMD) (migrasi, slot [2]int, kosong bool, lain [][2]int) {
 	t.Helper()
 	for _, kunci := range []string{"Rentang migrasi", "Slot menu"} {
 		if _, ada := m.kunci[kunci]; !ada {
@@ -285,20 +302,23 @@ func rentangModul(t *testing.T, m modulMD) (migrasi, slot [2]int, kosong bool) {
 	r := strings.Trim(strings.TrimSpace(m.kunci["Rentang migrasi"]), "`")
 	s := strings.Trim(strings.TrimSpace(m.kunci["Slot menu"]), "`")
 	if s == tanpaSlot && r != tandaTanpaMigrasi {
-		if _, luar := modulLuarKorpus[m.folder]; !luar {
-			t.Fatalf("%s: `Slot menu` %s hanya untuk modul luar korpus (modulLuarKorpus)", m.jalur, tanpaSlot)
+		_, luar := modulLuarKorpus[m.folder]
+		_, tanpaMenu := modulTanpaMenu[m.folder]
+		if !luar && !tanpaMenu {
+			t.Fatalf("%s: `Slot menu` %s hanya untuk modul luar korpus (modulLuarKorpus) dan modul tanpa menu "+
+				"(modulTanpaMenu)", m.jalur, tanpaSlot)
 		}
-		a, b, err := rentangNomor(m.kunci["Rentang migrasi"])
+		mig, err := rentangNomorJamak(m.kunci["Rentang migrasi"])
 		if err != nil {
 			t.Fatalf("%s, %q: %v", m.jalur, "Rentang migrasi", err)
 		}
-		return [2]int{a, b}, [2]int{}, true
+		return mig[0], [2]int{}, true, mig[1:]
 	}
 	j, err := jatahDari(m.kunci["Rentang migrasi"], m.kunci["Slot menu"])
 	if err != nil {
 		t.Fatalf("%s, %v", m.jalur, err)
 	}
-	return j.migrasi, j.slot, false
+	return j.migrasi, j.slot, false, j.migrasiLain
 }
 
 // --- Agregat pernyataan, dibaca penjaga di paket ini ------------------------

@@ -13,13 +13,24 @@
 //	GET  /api/bordereaux/lama                  popup Copy Old Data - superadmin
 //	POST /api/bordereaux/lama/salin            Process Copy {"ids": [...]} - superadmin
 //
+// Lampiran (`AttachmentsBdx`, `AttachmentDetailBdx`; penyimpanan bersama `inti/backend/penyimpanan`):
+//
+//	GET  /api/bordereaux/berkas/{id}/lampiran                               kategori + jumlah (`GetKategotyDocBdx`)
+//	GET  /api/bordereaux/berkas/{id}/lampiran/{kategori}                    lampiran satu kategori (`getAttcachmentList`)
+//	POST /api/bordereaux/berkas/{id}/lampiran/{kategori}                    Upload File, multipart `berkas` (`AttachDocBdx_Post`)
+//	GET  /api/bordereaux/berkas/{id}/lampiran/{kategori}/{lid}/isi          unduh (`DownloadAttachmentBdx`)
+//	GET  /api/bordereaux/berkas/{id}/lampiran/{kategori}/{lid}/office       URL View Office Online (`ViewOffice=true`)
+//	POST /api/bordereaux/berkas/{id}/lampiran/{kategori}/{lid}/hapus        Delete (`DeleteAttachmentBdx`)
+//
 // Gerbang menu `bordereaux` dipasang `cmd/api` (403). Superadmin = pemegang menu Kelola User.
 package handlers
 
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
+	"mime"
 	"net/http"
 	"strconv"
 	"strings"
@@ -27,6 +38,8 @@ import (
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
 	"nusantarare/inti/backend/menu"
+	"nusantarare/inti/backend/penyimpanan"
+	"nusantarare/inti/backend/unggah"
 	"nusantarare/modul/bordereaux/backend/models"
 	"nusantarare/modul/bordereaux/backend/services"
 )
@@ -203,6 +216,101 @@ func daftarkan(mux *http.ServeMux, layanan func() *services.Layanan, adaDB func(
 		}
 		galat.TulisJSON(w, j)
 	})
+	daftarkanLampiran(pasang)
+}
+
+func daftarkanLampiran(pasang func(pola string, f rute)) {
+	const dasar = Prefix + "/berkas/{id}/lampiran"
+	pasang("GET "+dasar, func(w http.ResponseWriter, r *http.Request, l *services.Layanan, a services.Aktor) {
+		d, err := l.KategoriLampiran(r.Context(), a, r.PathValue("id"))
+		if jawabGalat(w, err, "membaca kategori lampiran") {
+			return
+		}
+		galat.TulisJSON(w, struct {
+			Daftar []models.KategoriLampiran `json:"daftar"`
+		}{d})
+	})
+	pasang("GET "+dasar+"/{kategori}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, a services.Aktor) {
+		d, err := l.DaftarLampiran(r.Context(), a, r.PathValue("id"), r.PathValue("kategori"))
+		if jawabGalat(w, err, "membaca lampiran") {
+			return
+		}
+		galat.TulisJSON(w, struct {
+			Daftar []models.Lampiran `json:"daftar"`
+		}{d})
+	})
+	pasang("POST "+dasar+"/{kategori}", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, a services.Aktor) {
+		nama, isi, ok := bacaBerkas(w, r)
+		if !ok {
+			return
+		}
+		b, err := l.UnggahLampiran(r.Context(), a, r.PathValue("id"), r.PathValue("kategori"), nama, isi)
+		if jawabGalat(w, err, "mengunggah lampiran") {
+			return
+		}
+		galat.TulisJSON(w, b)
+	})
+	pasang("GET "+dasar+"/{kategori}/{lid}/isi", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, a services.Aktor) {
+		f, err := l.UnduhLampiran(r.Context(), a, r.PathValue("id"), r.PathValue("kategori"), r.PathValue("lid"))
+		if jawabGalat(w, err, "mengunduh lampiran") {
+			return
+		}
+		defer func() { _ = f.Isi.Close() }()
+		w.Header().Set("Content-Type", f.Mime)
+		w.Header().Set("Content-Disposition", mime.FormatMediaType("attachment", map[string]string{"filename": f.Nama}))
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		if _, err := io.Copy(w, f.Isi); err != nil {
+			log.Printf("bordereaux: mengirim lampiran %s: %v", r.PathValue("lid"), err)
+		}
+	})
+	pasang("GET "+dasar+"/{kategori}/{lid}/office", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, a services.Aktor) {
+		u, err := l.TautanOffice(r.Context(), a, r.PathValue("id"), r.PathValue("kategori"), r.PathValue("lid"))
+		if jawabGalat(w, err, "membuka View Office Online") {
+			return
+		}
+		galat.TulisJSON(w, struct {
+			URL string `json:"url"`
+		}{u})
+	})
+	pasang("POST "+dasar+"/{kategori}/{lid}/hapus", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, a services.Aktor) {
+		err := l.HapusLampiran(r.Context(), a, r.PathValue("id"), r.PathValue("kategori"), r.PathValue("lid"))
+		if jawabGalat(w, err, "menghapus lampiran") {
+			return
+		}
+		galat.TulisJSON(w, struct {
+			OK bool `json:"ok"`
+		}{true})
+	})
+}
+
+// bacaBerkas membaca satu berkas multipart `berkas`; galat = 400 / 413.
+func bacaBerkas(w http.ResponseWriter, r *http.Request) (string, []byte, bool) {
+	r.Body = http.MaxBytesReader(w, r.Body, unggah.BatasUkuranUnggahan+1<<20)
+	if err := r.ParseMultipartForm(8 << 20); err != nil {
+		var besar *http.MaxBytesError
+		if errors.As(err, &besar) {
+			galat.Tulis(w, http.StatusRequestEntityTooLarge, "The file is larger than 25 MB")
+			return "", nil, false
+		}
+		galat.Tulis(w, http.StatusBadRequest, "No file attached")
+		return "", nil, false
+	}
+	f, kepala, err := r.FormFile("berkas")
+	if err != nil {
+		galat.Tulis(w, http.StatusBadRequest, "No file attached")
+		return "", nil, false
+	}
+	defer func() { _ = f.Close() }()
+	isi, err := io.ReadAll(io.LimitReader(f, unggah.BatasUkuranUnggahan+1))
+	if err != nil {
+		galat.Tulis(w, http.StatusBadRequest, "The file could not be read")
+		return "", nil, false
+	}
+	if len(isi) > unggah.BatasUkuranUnggahan {
+		galat.Tulis(w, http.StatusRequestEntityTooLarge, "The file is larger than 25 MB")
+		return "", nil, false
+	}
+	return kepala.Filename, isi, true
 }
 
 func angka(r *http.Request, nama string) int {
@@ -244,6 +352,18 @@ func jawabGalat(w http.ResponseWriter, err error, apa string) bool {
 		galat.Tulis(w, http.StatusConflict, "This bordereaux has just been processed by someone else; reopen it")
 	case errors.Is(err, services.ErrMasukanTidakSah):
 		galat.Tulis(w, http.StatusUnprocessableEntity, pesan(err, services.ErrMasukanTidakSah))
+	case errors.Is(err, services.ErrLampiranTidakAda):
+		galat.Tulis(w, http.StatusNotFound, "Attachment not found")
+	case errors.Is(err, penyimpanan.ErrBerkasDitolak):
+		galat.Tulis(w, http.StatusUnprocessableEntity, "The file cannot be stored: "+pesan(err, penyimpanan.ErrBerkasDitolak))
+	case errors.Is(err, penyimpanan.ErrObjekTidakAda), errors.Is(err, penyimpanan.ErrBerkasTidakDiStorage):
+		galat.Tulis(w, http.StatusConflict, "The attachment file is not in storage")
+	case errors.Is(err, penyimpanan.ErrStorageBelumSiap):
+		log.Printf("bordereaux: %s: %v", apa, err)
+		galat.Tulis(w, http.StatusServiceUnavailable, penyimpanan.PesanBelumSiap(err))
+	case errors.Is(err, penyimpanan.ErrStorageGagal):
+		log.Printf("bordereaux: %s: %v", apa, err)
+		galat.Tulis(w, http.StatusBadGateway, "File storage failed: "+pesan(err, penyimpanan.ErrStorageGagal))
 	case errors.Is(err, services.ErrBelumDimigrasi):
 		log.Printf("bordereaux: %s: %v", apa, err)
 		galat.Tulis(w, http.StatusServiceUnavailable, "Bordereaux is not migrated yet (run -migrate: inti 913, 890, 891, 998)")

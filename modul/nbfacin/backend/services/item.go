@@ -135,7 +135,10 @@ func (s *Service) periksaMataUang(ctx context.Context, baris []models.ObjekFire)
 			mataUang = append(mataUang, mataUangDi{fmt.Sprintf("baris[%d].items[%d]", n, m), it.Currency})
 		}
 		for m, c := range o.LossRecords {
-			mataUang = append(mataUang, mataUangDi{fmt.Sprintf("baris[%d].lossRecords[%d]", n, m), c.Currency})
+			// tiket 42b: Currency catatan kerugian boleh kosong (keputusan work owner 07-10-2026); yang diisi tetap diperiksa.
+			if c.Currency != "" {
+				mataUang = append(mataUang, mataUangDi{fmt.Sprintf("baris[%d].lossRecords[%d]", n, m), c.Currency})
+			}
 		}
 		// tiket 45: mata uang deductible yang diisi (kosong boleh, A169).
 		for m, it := range o.Items {

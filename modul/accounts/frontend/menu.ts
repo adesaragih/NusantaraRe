@@ -14,6 +14,8 @@ export const PENDAFTARAN_MENU: MenuModul<HalamanACC> = {
   kelompok: MENU_ACC.kelompok,
   halaman: HALAMAN_ACC,
   halamanAwal: HALAMAN_AWAL_ACC,
+  // Form Add sudah popup sendiri: tombol New Group Business NB FacIn memunculkan popup itu saja (work owner 10-10-2026).
+  formBaruBerjendela: true,
 }
 
 declare module '../../../inti/frontend/modul' {

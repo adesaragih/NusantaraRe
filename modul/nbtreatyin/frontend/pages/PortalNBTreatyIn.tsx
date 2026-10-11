@@ -8,7 +8,8 @@
 //
 // W6 audit silang P3 (dibaca ulang 04-10-2026): grid `GetListOpportunity` -
 // LABEL "Offer No" (`.TextNoQuotation`), "Name" (`.Name`), "Group Business",
-// "Insured Name", "Marketing", "Status". Kolom "Position" / "No Polis" (tanpa sel
+// "Insured Name", "Marketing", "Status" ("Group Business" kini "Treaty Business" = TREATY_GROUP_NAME, perintah
+// work owner 10-10-2026). Kolom "Position" / "No Polis" (tanpa sel
 // XML) dibuang. ⛔ RALAT tiket 11: kolom "Name" (pxLink `.Name` -> `openWorkByHandle
 // .pzInsKey`) tidak dirender - `.Name` ditulis nol rule korpus, tak berkolom, jadi
 // tautannya selalu tanpa teks; pembuka berkas (kunci yang sama) dipasang di sel
@@ -16,14 +17,28 @@
 //
 // RALAT 06-10-2026 (keputusan work owner): daftar HANYA berkas buatan akun ini (filter pembuat, LINI non-life tetap),
 // dengan switch In Progress / Resolved di atasnya, bawaan In Progress.
+//
+// Tombol Copy Old di samping Create (perintah work owner 07-10-2026, khusus superuser; bukan layar Pega): tampil bila
+// `GET /hak` menyatakan superadmin ber-hak penuh; popup `components/DialogCopyOld.tsx`; portal dimuat ulang bila ada
+// dokumen yang tersalin.
 
 import { useState } from 'react'
 
 import { Gagal, Kosong, Memuat, StripTab } from '../../../../inti/frontend/components/ui/dasar'
 import { useAmbil } from '../ambil'
-import { buatKasus, daftarKasus, type RingkasanKasus } from '../api'
-import { KOLOM_PORTAL, KOLOM_PORTAL_SELESAI, PORTAL, STATUS_PORTAL, TOMBOL, type StatusPortal } from '../labels'
-import { sajikan } from '../sajian'
+import { ambilHak, buatKasus, daftarKasus, type RingkasanKasus } from '../api'
+import DialogCopyOld from '../components/DialogCopyOld'
+import {
+  COPY_OLD,
+  KOLOM_PORTAL,
+  KOLOM_PORTAL_SELESAI,
+  PORTAL,
+  STATUS_PORTAL,
+  TOMBOL,
+  type StatusPortal,
+} from '../labels'
+import { tampilCopyOld } from '../lama'
+import { idTampil, sajikan } from '../sajian'
 
 /** Grid `GetListOpportunity` - kolom VERBATIM `SFAPortal_OpportunitiesList` C[1.x]/C[2.x]; tab Resolved (`selesai`)
  *  menambah Policy Number sesudah Offer No dan Production Date di akhir (keputusan work owner 07-10-2026). */
@@ -63,16 +78,18 @@ export function TabelPortal({
                 <td data-label={KOLOM_PORTAL.id}>
                   {/* `.TextNoQuotation`; tautan openWorkByHandle (dari sel `.Name`, RALAT tiket 11) */}
                   <button type="button" className="nbti__tautan" onClick={() => onBuka(b.id)}>
-                    {b.id}
+                    {idTampil(b.id)}
                   </button>
                 </td>
                 {selesai && <td data-label={KOLOM_PORTAL_SELESAI.noPolis}>{b.noPolis}</td>}
                 {/* T_POLIS_QUOTATION.PROPORTIONAL_TYPE apa adanya - tidak disingkat (perintah work owner 06-10-2026) */}
                 <td data-label={KOLOM_PORTAL.jenis}>{b.proportionalType}</td>
-                <td data-label={KOLOM_PORTAL.bisnis}>{b.businessName}</td>
+                <td data-label={KOLOM_PORTAL.bisnis}>{b.treatyGroupName}</td>
                 <td data-label={KOLOM_PORTAL.tertanggung}>{b.insuredName}</td>
                 <td data-label={KOLOM_PORTAL.marketing}>{b.marketingName}</td>
-                <td data-label={KOLOM_PORTAL.status}>{status !== '' && <span className="nbti__status">{status}</span>}</td>
+                <td data-label={KOLOM_PORTAL.status}>
+                  {status !== '' && <span className="nbti__status">{status}</span>}
+                </td>
                 <td data-label={KOLOM_PORTAL.pembuat}>{b.createOpName}</td>
                 <td data-label={KOLOM_PORTAL.tanggal}>{sajikan(b.tglCreate, 'tanggal')}</td>
                 {selesai && (
@@ -84,6 +101,35 @@ export function TabelPortal({
         </tbody>
       </table>
     </div>
+  )
+}
+
+/** Kepala portal: judul, tombol Copy Old (superadmin, perintah work owner 07-10-2026) di samping tombol Create. */
+export function KepalaPortal({
+  copyOld,
+  sibuk,
+  onCopyOld,
+  onBuat,
+}: {
+  copyOld: boolean
+  sibuk: boolean
+  onCopyOld: () => void
+  onBuat: () => void
+}) {
+  return (
+    <header className="inbox__kepala">
+      <h2 className="inbox__judul">{PORTAL.judul}</h2>
+      <div className="nbti__kepala-aksi">
+        {copyOld && (
+          <button type="button" className="btn" onClick={onCopyOld}>
+            {COPY_OLD.tombol}
+          </button>
+        )}
+        <button type="button" className="btn btn--primary" disabled={sibuk} onClick={onBuat}>
+          {TOMBOL.create}
+        </button>
+      </div>
+    </header>
   )
 }
 
@@ -104,7 +150,11 @@ export default function PortalNBTreatyIn({
   const [statusLokal, setStatusLokal] = useState<StatusPortal>(STATUS_PORTAL[0])
   const aktif = status ?? statusLokal
   const selesai = aktif === STATUS_PORTAL[1]
-  const { data: baris, galat: galatDaftar } = useAmbil(() => daftarKasus(kueri, '', selesai), [kueri, selesai])
+  // ketuk - muat ulang sesudah Copy Old menyalin (saringan sama)
+  const [ketuk, setKetuk] = useState(0)
+  const { data: baris, galat: galatDaftar } = useAmbil(() => daftarKasus(kueri, '', selesai), [kueri, selesai, ketuk])
+  const { data: hak } = useAmbil(() => ambilHak(), [])
+  const [copyOld, setCopyOld] = useState(false)
   const [galatBuat, setGalatBuat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(false)
   const galat = galatBuat ?? galatDaftar
@@ -124,12 +174,12 @@ export default function PortalNBTreatyIn({
 
   return (
     <div className="inbox nbti__akar">
-      <header className="inbox__kepala">
-        <h2 className="inbox__judul">{PORTAL.judul}</h2>
-        <button type="button" className="btn btn--primary" disabled={sibuk} onClick={() => void buat()}>
-          {TOMBOL.create}
-        </button>
-      </header>
+      <KepalaPortal
+        copyOld={tampilCopyOld(hak)}
+        sibuk={sibuk}
+        onCopyOld={() => setCopyOld(true)}
+        onBuat={() => void buat()}
+      />
       {pesan && <div className="alert alert--ok">{pesan}</div>}
       {/* switch In Progress / Resolved (keputusan work owner 06-10-2026, bawaan In Progress) */}
       <StripTab tab={STATUS_PORTAL} aktif={aktif} onPilih={onStatus ?? setStatusLokal} />
@@ -184,6 +234,14 @@ export default function PortalNBTreatyIn({
           <Kosong pesan={PORTAL.kosong} petunjuk={PORTAL.kosongPetunjuk} />
         ))}
       {baris !== null && baris.length > 0 && <TabelPortal baris={baris} onBuka={onBuka} selesai={selesai} />}
+      {copyOld && (
+        <DialogCopyOld
+          onTutup={(adaYangDisalin) => {
+            setCopyOld(false)
+            if (adaYangDisalin) setKetuk((k) => k + 1)
+          }}
+        />
+      )}
     </div>
   )
 }

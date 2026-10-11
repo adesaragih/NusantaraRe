@@ -275,7 +275,7 @@ func (g *Gudang) KomisiDari(_ context.Context, _ *db.Tx, ids []string) ([]models
 	return out, nil
 }
 
-// SisipKomisi memenuhi services.Gudang - PK ID seperti tabel flat.
+// SisipKomisi memenuhi services.Gudang - PK ID seperti M_RICOMM_LIFE.
 func (g *Gudang) SisipKomisi(_ context.Context, _ *db.Tx, k models.Komisi) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()

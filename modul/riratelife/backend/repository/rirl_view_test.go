@@ -21,11 +21,10 @@ func TestKolomViewRingkasanEnamKolom(t *testing.T) {
 	}
 }
 
-// Setiap kolom ringkasan yang ditulis / dibaca ADA di definisi view ringkasan, dan setiap kolom rate ADA di M_RATE_LIFE
-// (ALL_TAB_COLUMNS DEV 10-10-2026) - nol nama karangan.
+// Setiap kolom ringkasan dan rincian yang ditulis / dibaca ADA di definisi kolomnya - nol nama karangan.
 // TYPE dan FLAG tidak dirujuk XML InboxSummaryRIRate: tidak ditulis, tidak dibaca.
 func TestKunciDanKolomCocokDenganView(t *testing.T) {
-	ring, rate := KolomViewRingkasan, KolomTabelRate
+	ring, rate := KolomViewRingkasan, KolomRate
 	for _, k := range []string{KolomUsedBy, KolomOperatorID, KolomModified} {
 		if !slices.Contains(ring, k) {
 			t.Errorf("kolom tulis ringkasan %s tidak ada di view", k)
@@ -36,17 +35,12 @@ func TestKunciDanKolomCocokDenganView(t *testing.T) {
 			t.Errorf("kolom ringkasan %s tidak ada di view", k)
 		}
 	}
-	for _, k := range []string{KolomRateIDUsedBy, KolomRateUsedBy, KolomRateGender, KolomRateContract, KolomRateAge, KolomRateRate} {
-		if !slices.Contains(rate, k) {
-			t.Errorf("kolom tulis rate %s tidak ada di M_RATE_LIFE", k)
-		}
-	}
 	for _, k := range strings.Split(kolomRate, ", ") {
 		if !slices.Contains(rate, k) {
 			t.Errorf("kolom rate %s tidak ada di M_RATE_LIFE", k)
 		}
 	}
-	for _, q := range []string{SqlSisipRingkasan("T"), SqlSisipRate("T"), SqlUbahRate("T"), SqlUbahNamaRate("T"), SqlDaftar("V", "", false), kolomRingkasan} {
+	for _, q := range []string{SqlSisipRingkasan("T"), SqlUbahRate("T"), SqlSisipRate("T"), SqlDaftar("V", "", false), kolomRingkasan, kolomRate} {
 		for _, k := range []string{"'TYPE'", "'FLAG'", "TYPE,", "FLAG"} {
 			if strings.Contains(q, k) {
 				t.Errorf("%q memuat %s:\n%s", k, k, q)
@@ -57,10 +51,10 @@ func TestKunciDanKolomCocokDenganView(t *testing.T) {
 
 // RALAT R7: M_RATE_LIFE flat 8 kolom dengan lebar ALL_TAB_COLUMNS DEV 10-10-2026; batas validasi Go muat di kolomnya.
 func TestLebarKolomRateFlat(t *testing.T) {
-	if !slices.Equal(KolomTabelRate, []string{"ID", "IDUSEDBY", "USEDBY", "TYPE", "GENDER", "CONTRACT", "AGE", "RATE"}) {
-		t.Fatalf("kolom M_RATE_LIFE %v", KolomTabelRate)
+	if !slices.Equal(KolomRate, []string{"ID", "IDUSEDBY", "USEDBY", "TYPE", "GENDER", "CONTRACT", "AGE", "RATE"}) {
+		t.Fatalf("kolom M_RATE_LIFE %v", KolomRate)
 	}
-	for _, k := range KolomTabelRate {
+	for _, k := range KolomRate {
 		if LebarKolomRate[k] == 0 {
 			t.Errorf("lebar %s tidak tercatat", k)
 		}

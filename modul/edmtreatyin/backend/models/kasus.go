@@ -94,8 +94,11 @@ const BatasDaftarPortal = 500
 
 // SaringanKasus - saringan daftar portal RD `InboxEDM_RD2` (logika `B AND C AND A AND D AND E`).
 type SaringanKasus struct {
-	// Cari - filter B `.OfferFacIn.QuotationData.OldPolicyNo Contains Param.FilterTermForEndorsement`
-	// (kotak saring berplaceholder "Policy Number").
+	// Cari - kotak saring portal. XML filter B hanya `.OfferFacIn.QuotationData.OldPolicyNo Contains
+	// Param.FilterTermForEndorsement`; ⛔ perintah work owner 07-10-2026 ("pencarian ... buat bisa mencari nomor
+	// nb/edm, insured name dll, intinya buat searchnya itu sangat berguna"): setiap kata (`KataCari`) cocok dengan
+	// salah satu kolom portal - nomor kasus, Offer No, nomor polis, EDM No, insured, group business, SOB, ceding,
+	// marketing, treaty group, class of business, nama pembuat (`repository.kolomCariPortal`; seragam dengan NB).
 	Cari string
 	// Pembuat - filter A `.pxCreateOperator = Param.UserNameID`. Kosong = tanpa saringan pembuat.
 	Pembuat string

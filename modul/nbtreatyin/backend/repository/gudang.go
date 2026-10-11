@@ -54,6 +54,8 @@ var (
 	ErrTahapBerubah = errors.New("repository: kasus sudah berpindah tahap; muat ulang")
 	// ErrNomorPolisSudahAda - nomor polis dibentuk SEKALI per berkas (AC 74).
 	ErrNomorPolisSudahAda = errors.New("repository: berkas ini sudah bernomor polis")
+	// ErrNomorPolisDipakai - nomor polis sudah dipegang berkas NB lain (indeks unik UQ_GP_TREATY_NOPOLIS, AC 31).
+	ErrNomorPolisDipakai = errors.New("repository: nomor polis sudah dipakai berkas NB Treaty In lain")
 	// ErrDataKontrakTidakAda - baris view kontrak yang dipilih tidak ada
 	// (AC 36-38: pembacaan gagal menghentikan proses).
 	ErrDataKontrakTidakAda = errors.New("repository: data kontrak treaty yang dipilih tidak ditemukan di view")

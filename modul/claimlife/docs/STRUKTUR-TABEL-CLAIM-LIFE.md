@@ -155,6 +155,144 @@ Header klaim Life. Satu baris mewakili **satu klaim**. `ID`-nya **sama persis** 
 | `ENDORSMENT_NO` | teks | ya | | keputusan tiket 14 — penunjuk polis |
 | `BUSINESS_CODE` | teks | ya | | **temuan audit A0**, A1 — nomor akseptasi memuatnya (`Generate_NoAccept_Life` 85), model relasional tidak menyimpannya |
 | `TYPE` | teks | ya | | korpus `TYPE` — UpdOS, InsOS; pindah dari `T_WORK_CLAIM` (migrasi `023`, **keputusan work owner 01-10-2026**). **Bukan** `LINI` |
+| `SUMBER` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `MASTER_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `TREATY_NAME` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `TREATY_GROUP_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `TREATY_GROUP_NAME` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `PROPORTION_TYPE` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `START_DATE_TREATY` | DATE | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `END_DATE_TREATY` | DATE | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `YEAR_OF_ACCOUNT` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `RNM_SHARE_PCT` | angka desimal | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `CLAIM_NO_TEMP` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `POLICY_START_DATE` | DATE | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `POLICY_END_DATE` | DATE | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `QUARTER` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `YEAR_OF_QUARTAL` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `TREATY_YEAR` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `POLICY_NO_CEDING` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `INSURED_NAME` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `PLA_NO_CEDING` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `PLA_NO_SOB` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `PERIOD_POLICY_TBA` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `DATE_OF_LOSS` | DATE | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `REPORT_DATE` | DATE | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `DATE_RECEIVED` | DATE | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `REPORTER_NAME` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `REPORTER_PHONE` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `REPORT_TYPE` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `REPORTER_STATUS` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `INSURED_RELATIONSHIP_OTHERS` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `REPORT_ADDRESS` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `CATASTROPHE_STATUS` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `NON_CATASTROPHE_TYPE` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `CATASTROPHE_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `CAUSE_OF_LOSS` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `CAUSE_OF_LOSS_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `CONSULTANT_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `CONSULTANT_NAME` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `ADJUSTER_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `ADJUSTER_NAME` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `REPORT_DESCRIPTION` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `LOCATION_OF_LOSS` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `OCCUPATION` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `PROVINCE` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `PROVINCE_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `POSTAL_CODE` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `RW` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `RW_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `DISTRICT` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `DISTRICT_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `CITY` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `CITY_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `INSURED_INTEREST` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `SHARE_CEDING` | angka desimal | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `DEDUCTIBLE_TYPE` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `DEDUCTIBLE_FORM_TYPE` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `DEDUCTIBLE_CURRENCY_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `DEDUCTIBLE_PCT` | angka desimal | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `DEDUCTIBLE_BASIS` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `TSI_DEDUCTIBLE` | angka desimal | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `DEDUCTIBLE_VALUE` | angka desimal | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `NET_DEDUCTIBLE_VALUE` | angka desimal | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `IS_OUTSTANDING` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `IS_ACCEPTATION` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `IS_CFS` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `RE_CFS` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `IS_REALISATION` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `AKTIF_BUTTON` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `IS_PLA` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `NO_PLA` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `REMARK` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `REMARK_CLOSE` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `PAYABLE` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `PAYABLE_TO` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `DLA_NO_CEDING` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `DLA_NO_SOB` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `MARKETING_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `MARKETING_CLIENT_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `MARKETING_CLIENT_NAME` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `MARKETING_TEAM_GROUP` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `MARKETING_BRANCH_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `MARKETING_BRANCH_NAME` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `RECEIVER_NAME` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `RECEIVER_BANK_NAME` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `RECEIVER_BANK_BRANCH` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `RECEIVER_ACCOUNT_NO` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `RECEIVER_SWIFT_CODE` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `RECEIVER_BANK_ID` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `START_DATE_ESTIMATION` | DATE | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `END_DATE_ESTIMATION` | DATE | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `START_DATE_ADJUSTMENT` | DATE | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `IS_CLOSE_FILE` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `IS_RESERVED_CLAIM` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `IS_ANY_ACCEPTATION` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `IS_SUBJECTIVITY` | teks | ya | | Claim Prop — migrasi `520` (lini `PROP`, keputusan work owner 07-10-2026 "Tabel bersama"); nullable, wajib-isi di Go |
+| `BUSINESS_OLD_ID` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `MASTER_ID_TO` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `POLICY_COB` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `REINSURANCE_SLIP` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `CLAIM_NO_CEDING` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `CIRCUMSTANCES` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `SUPPORTING_DOCUMENT` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `DEDUCTIBLE_MIN_MAX` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `IS_TPL` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `TPL_FORMAT` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `TPL_TYPE` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `TPL_PCT` | angka desimal | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `IS_SAVE_TO_OS` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `WAITING_ACTUAL_PREMIUM` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `STATUS_CASE` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `IS_REJECT` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `KOMITE_NO` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `FLAG_PRINT_PLA` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `RECEIVER_CURRENCY` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `RECEIVER_BANK_NAME2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `RECEIVER_BANK_BRANCH2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `RECEIVER_ACCOUNT_NO2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `RECEIVER_SWIFT_CODE2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `RECEIVER_BANK_ID2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `RECEIVER_CURRENCY2` | teks | ya | | Claim Non Prop — migrasi `600` (lini `NONPROP`, keputusan work owner 09-10-2026 OQ-CNP-06 + izin sunting STRUKTUR); nullable, wajib-isi di Go |
+| `PRODKE` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `QQ_NAME` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `CEDING_CO_NAME` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `SOB_NAME` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `COUNTRY` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `COUNTRY_ID` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `CURRENCY_VALUE_IDR` | angka desimal | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `GROSS_ESTIMATE` | angka desimal | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `CLAIM_ESTIMATE` | angka desimal | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `EX_GRATIA` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `IS_ERROR` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `IS_REGISTER` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `IS_ESTIMATION` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `IS_ADJUSTMENT` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `IS_PIC_TRANSFER` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `IS_TREATY_OUT` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `PY_NOTE` | teks | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `START_DATE_REGISTER` | DATE | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
+| `END_DATE_REGISTER` | DATE | ya | | Claim Fac In — migrasi `560` (lini `FACIN`, prompt tahap 1 §6 butir 2 + izin sunting STRUKTUR work owner 09-10-2026); nullable |
 
 **Index:** tidak ada di luar PK.
 
@@ -782,15 +920,29 @@ yang §1 sebut sebagai sumbernya. Tiket 00 Komite kelak **memverifikasi**, bukan
 
 ⛔ **`ADJUSTMENT_ID` TANPA `REFERENCES`** — tabel ini **lintas-lini**, jadi satu kolom punya **dua**
 tabel tujuan menurut `T_WORK_CLAIM.LINI`. Oracle hanya dapat menunjuk satu; keutuhannya **dijaga
-kode Go**. `NOT NULL` dan ber-index **UNIK**: satu baris adjustment = tepat satu kasus komite.
+kode Go**. `NOT NULL` dan ber-index **biasa** (`IX_GENERAL_KOMITE_ADJ`, migrasi `komiteclaimprop/681`): satu baris adjustment = tepat satu kasus komite dijaga `KOMITE_ID` UNIK di tabel adjustment masing-masing lini.
+
+> **RALAT 08-10-2026** (izin work owner 08-10-2026, Komite Claim Prop). Kalimat lama: *"`NOT NULL` dan ber-index **UNIK**: satu baris adjustment = tepat satu kasus komite."* — ID adjustment Prop (`SEQ_T_CLAIM`) dan Life (`SEQ_CLAIMLF_ADJ`) sama-sama angka polos, sehingga indeks unik lintas lini suatu saat menolak penyerahan sah (ORA-00001); diganti indeks biasa. Dua kolom usul `KOMITE_USUL_TUTUP` / `KOMITE_USUL_CADANG` ditambahkan migrasi `komiteclaimprop/680` (`CHAR(1) DEFAULT '0' NOT NULL`, CHECK `'0'`/`'1'`); kasus Life tidak menulisnya (bawaan `'0'`).
 
 | Kolom | Tipe | Boleh kosong | Kunci | Catatan |
 | --- | --- | --- | --- | --- |
 | `ID` | teks | tidak | PK, FK | → `T_WORK_CLAIM.ID` *(shared PK)*, awalan `KMTLF-` |
-| `ADJUSTMENT_ID` | teks | tidak | index unik | LIFE → `T_CLAIMLF_ADJUSTMENT.ID`; **tanpa** `REFERENCES` |
+| `ADJUSTMENT_ID` | teks | tidak | index biasa | LIFE → `T_CLAIMLF_ADJUSTMENT.ID`; **tanpa** `REFERENCES` (RALAT 08-10-2026: dulu index unik) |
 | `KOMITE_LOOP` | angka bulat | ya | | tinggi tangga — `KomitePostAdjustment` 1322 |
 | `KOMITE_COUNT` | angka bulat | ya | | tingkat sekarang — 1398, 6172, 9028 |
 | `ACCEPT_STATUS` | teks | ya | | `"1"` aksep / `"2"` tolak — gerbang 5695, 8119, 8648, 8887 |
+| `KOMITE_USUL_TUTUP` | teks | tidak | | usul tutup klaim, `'1'`/`'0'` bawaan `'0'` — migrasi `komiteclaimprop/680` (RALAT 08-10-2026) |
+| `KOMITE_USUL_CADANG` | teks | tidak | | usul cadangkan klaim, `'1'`/`'0'` bawaan `'0'` — migrasi `komiteclaimprop/680` (RALAT 08-10-2026) |
+| `KOMITE_SUBJECTIVITY` | teks | tidak | | isian Subjectivity tingkat 1 Komite Claim Prop, `'1'`/`'0'` bawaan `'0'` — migrasi `komiteclaimprop/682` (RALAT 08-10-2026); kasus Life tidak menulisnya |
+| `KOMITE_SUBJECTIVITY_NOTE` | teks | ya | | catatan Subjectivity tingkat 1 Komite Claim Prop — migrasi `komiteclaimprop/682` (RALAT 08-10-2026) |
+| `TRANSFER_TYPE` | teks | tidak | | jenis penyerahan `'2'` adjustment / `'3'` Reject Claim / `'4'` Close Without Payment, bawaan `'2'` — migrasi `komiteclaimfacin/642` (RALAT 10-10-2026); kasus Life tidak menulisnya |
+| `KOMITE_CIRCUM_CAUSE_OF_LOSS` | teks | ya | | teks pop-up Chronology kasus komite Fac In TT3 / TT4 — migrasi `komiteclaimfacin/643` (RALAT 10-10-2026); kasus Life tidak menulisnya |
+| `KOMITE_EXTENT_OF_LOSS` | teks | ya | | teks pop-up Extent Of Loss kasus komite Fac In TT3 / TT4 — migrasi `komiteclaimfacin/643` (RALAT 10-10-2026); kasus Life tidak menulisnya |
+| `KOMITE_LEGAL_LIABILITY` | teks | ya | | teks pop-up Policy Liability kasus komite Fac In TT3 / TT4 — migrasi `komiteclaimfacin/643` (RALAT 10-10-2026); kasus Life tidak menulisnya |
+
+> **RALAT 10-10-2026** (izin work owner 10-10-2026, Komite Claim Fac In tahap 2, keputusan KCF-03). `ADJUSTMENT_ID` kini **boleh kosong** (migrasi `komiteclaimfacin/641`, `MODIFY ... NULL`): kasus komite Fac In TT3 Reject Claim dan TT4 Close Without Payment (`T_WORK_CLAIM.LINI = 'FACIN'`, awalan `KMT-`) lahir tanpa baris adjustment; kasus Life / Prop / Non Prop tetap mengisinya. Kolom `TRANSFER_TYPE` ditambahkan migrasi `komiteclaimfacin/642` (`CHAR(1) DEFAULT '2' NOT NULL`, CHECK `'2'`/`'3'`/`'4'` = jenis penyerahan `pyWorkPage.TransferType`); baris lini lain bernilai bawaan `'2'` (penyerahan adjustment). Mundur 641 = `NOT NULL NOVALIDATE` (baris kosong yang ada dibiarkan).
+
+> **RALAT 10-10-2026 (migrasi 643)** (jawaban work owner 10-10-2026, Komite Claim Fac In, OQ-KCFI-03). Kolom `KOMITE_CIRCUM_CAUSE_OF_LOSS` / `KOMITE_EXTENT_OF_LOSS` / `KOMITE_LEGAL_LIABILITY` (`VARCHAR2(4000)`, boleh kosong, ADD saja) ditambahkan migrasi `komiteclaimfacin/643`: teks pop-up Chronology / Extent Of Loss / Policy Liability kasus komite Fac In TT3 Reject Claim / TT4 Close Without Payment (`SendRejectClaimToKomite2` / `SendCloseClaimToKomite` 7.2 -> `childPageKomite.Komite.*`, Section `ShowTransfer` LS39). Kasus lini lain dan TT2 tidak menulisnya (TT2 menyimpan teks yang sama di baris adjustment).
 
 ---
 

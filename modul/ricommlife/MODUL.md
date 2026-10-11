@@ -10,7 +10,8 @@ konsepnya hampir sama dengan menu R/I Rate, membuat CRUD, dan detail bisa di sav
 (kelas `ASM-FW-GISFW-Int-RI_COMM_LIFE`, judul "R/I COMM DETAIL" b349). Templat: modul saudara `riratelife`.
 
 ⛔ **Tanpa migrasi sendiri** (`—` di bawah, `tandaTanpaMigrasi` di `inti/backend/penjaga`): tabel flat `RICOMM_LIFE` =
-migrasi inti `924`, baris menunya = migrasi inti `925`.
+migrasi inti `924` (riwayat - dibuang 934), baris menunya = migrasi inti `925`, satu tabel per jenis data = migrasi inti
+`931`-`934` (RALAT R1).
 
 | Kunci | Nilai |
 | --- | --- |
@@ -25,7 +26,48 @@ migrasi inti `924`, baris menunya = migrasi inti `925`.
 | Kontrak disediakan | — |
 | Kontrak dipakai | — |
 
+## Keputusan work owner 08-10-2026 — SATU tabel per jenis data (RALAT R1)
+
+*"R/I COMM LIFE DIBUAT SATU TABEL PER JENIS DATA, sama seperti R/I Rate Life (ringkasan 927/928, detail 929/930)"*:
+`M_RICOMM_LIFE_SUMMARY` = tabel flat `ID, USEDBY, MODIFIEDDATE, OPERATORID` (kolom view `RICOMM_LIFE_SUMMARY`; JSONDATA
+dan view dibuang); `M_RICOMM_LIFE` = tabel flat rincian berkolom PERSIS tabel `RICOMM_LIFE` 924 (`IDUSEDBY
+VARCHAR2(10)`, `USEDBY VARCHAR2(200)`, `CONTRACT NUMBER(5)`, `YEAR NUMBER(5)`, `COMM NUMBER(38,8)`; JSONDATA dibuang);
+tabel `RICOMM_LIFE` (924) DIHAPUS. Nol tabel baru. Sequence dan rumus ID TETAP (`site || LPAD(seq, 6, '0')`).
+
+Fakta POOLDATA (WO 08-10-2026, baca-saja): `M_RICOMM_LIFE_SUMMARY` = ID PK + JSONDATA (`ENSURE_M_RICOMM_LIFE_SUMMARY_JSON`,
+33 byte), 3 baris; `M_RICOMM_LIFE` = ID PK + JSONDATA (`ENSURE_M_RICOMM_LIFE_JSON`), 0 baris; `RICOMM_LIFE` 2 baris
+(`PK_RICOMM_LIFE`, `IX_RICOMM_LIFE_IDUSEDBY`, satu CHECK sistem `SYS_C0015437`); panjang maksimum ID 7, IDUSEDBY 7,
+USEDBY 18; prosedur `PEGA_M_RICOMM_LIFE` dan `PEGA_M_RICOMM_LIFE_SUMMARY` akan INVALID (diterima WO).
+
+Penerapan (pola dan pelajaran riratelife 927-930 + tinjauan independennya):
+
+- Migrasi inti `931_m_ricomm_life_summary_kolom.sql` (ADD tiga kolom, berdiri sendiri), `932_m_ricomm_life_summary_satu_tabel.sql`
+  (isi dari JSONDATA + buang JSONDATA lewat blok berpelindung katalog, indeks `IX_M_RICOMM_LIFE_SUMMARY_NAMA`, DROP VIEW
+  terakhir), `933_m_ricomm_life_kolom.sql` (ADD lima kolom), `934_m_ricomm_life_satu_tabel.sql` (isi dari JSON bila ada,
+  buang JSONDATA, timpa + sisip dari `RICOMM_LIFE` SESUDAH JSONDATA dibuang, indeks `IX_M_RICOMM_LIFE_IDUSEDBY`, DROP
+  TABLE `RICOMM_LIFE` terakhir). USEDBY ringkasan 200 byte (= salinan di rincian dan `BatasNama`). CHECK `SYS_C0015437`
+  tidak disalin (= `ID` NOT NULL 924; ID sudah PK). Jalur mundur aman diulang; `931_down`/`933_down` mulai dengan
+  pelindung gagal-keras `UPDATE … SET JSONDATA = JSONDATA WHERE 1 = 0` (ORA-00904 bila JSONDATA sudah dibuang langkah
+  maju yang tidak tercatat). JSONDATA dikembalikan NULLABLE (bukti NOT NULL tidak ada di repo; LANGKAH-WO (a) mencatat).
+- Kode: ringkasan dan rincian dibaca/ditulis lewat kolom (`backend/repository/ricl.go`, `ricl_tabel.go`); `pxObjClass`
+  tidak lagi disimpan (bukan kolom view); ID terpakai satu tabel per jenis; transaksi ringkasan + rincian tetap satu
+  transaksi Go.
+- **Dihapus** (alasan: objek yang mereka layani tidak ada lagi sesudah 932/934): `backend/alat/pindahflat/` dan
+  `repository/pindah.go` (+ uji) - memindah JSON `M_RICOMM_LIFE` ke `RICOMM_LIFE`, kini dikerjakan 934 sekali jalan;
+  `repository/ricl_json.go` (+ uji) - baca-ubah-tulis JSONDATA ringkasan; `docs/DBA-LEPAS-VIEW-RICOMM_LIFE.sql` - langkah
+  DBA prasyarat 924 yang SUDAH dijalankan di DEV (komentar 924, yang tidak diubah, masih merujuknya; isinya di riwayat
+  git). `docs/LANGKAH-WO-RICOMMLIFE.md` diarsipkan (spanduk ARSIP; 924 merujuknya).
+- `inti/backend/db/koneksi.go` (`db.Koneksi`) kini TIDAK dipakai kode mana pun (satu-satunya pemakai = alat pindahflat).
+  TIDAK dihapus - kandidat bersih-bersih tim inti (`docs/PR-RICOMMLIFE.md`).
+- Langkah WO: `docs/LANGKAH-WO-RICOMMLIFE-SATU-TABEL.md` + berkas SQL\*Plus `docs/sql/satu_tabel_*.sql`.
+
+| # | Bunyi lama | Bunyi baru | Bukti |
+| --- | --- | --- | --- |
+| R1 (08-10-2026) | butir 2 (DROP VIEW lewat berkas DBA), butir 3 (*"M_RICOMM_LIFE tidak disentuh; alat pindahflat"*), butir 6 (*"ringkasan tetap JSON"*), bab "Tabel warisan" (`M_RICOMM_LIFE_SUMMARY`, `M_RICOMM_LIFE`), A8 (alat pindah) | **Satu tabel per jenis data**: ringkasan = kolom `M_RICOMM_LIFE_SUMMARY`, rincian = kolom `M_RICOMM_LIFE`; JSONDATA, view `RICOMM_LIFE_SUMMARY`, dan tabel `RICOMM_LIFE` dibuang (931-934); alat pindahflat, `ricl_json.go`, berkas DBA dihapus; A8 dicabut | keputusan WO 08-10-2026; uji `TestMigrasi931KolomRingkasan`, `TestMigrasi932SatuTabel`, `TestMigrasi933KolomKomisi`, `TestMigrasi934SatuTabel`, `TestSqlRingkasan`, `TestSqlKomisi`, `TestNolJSONDanObjekLamaDiRepository`, `-tags=db` `TestDBMigrasiSatuTabelDanMundur`, `TestDBKembarKepemilikanDanDeleteBerantai` |
+
 ## Keputusan work owner 06-10-2026 (dikutip, diikuti persis)
+
+> Butir 2, 3, 6 dan A8 digantikan RALAT R1 (08-10-2026) di atas; tabel ini riwayat.
 
 Fakta DEV (dicek WO 06-10-2026):
 
@@ -58,7 +100,11 @@ Arahan → penerapan:
 
 ## Urutan langkah work owner (DEV)
 
-➡️ **Urutan eksak dan perintah siap-tempel: [`docs/LANGKAH-WO-RICOMMLIFE.md`](docs/LANGKAH-WO-RICOMMLIFE.md)** - (a) berkas
+➡️ **RALAT R1 (931-934): [`docs/LANGKAH-WO-RICOMMLIFE-SATU-TABEL.md`](docs/LANGKAH-WO-RICOMMLIFE-SATU-TABEL.md)** -
+prasyarat ⛔ (Pega R/I Comm dan backend dihentikan, nol kunci DML), angka acuan dua kali, cadangan CSV, `-migrate`,
+verifikasi, restart; tabel pemulihan K0-K5; jalur mundur.
+
+RIWAYAT (924, sudah jalan di DEV): [`docs/LANGKAH-WO-RICOMMLIFE.md`](docs/LANGKAH-WO-RICOMMLIFE.md) (ARSIP) - (a) berkas
 DBA pelepas view, (b) `-migrate` dari cabang ini (muat-env), (c) kueri verifikasi (`ALL_OBJECTS`, `T_MIGRASI`,
 `M_NAV_MENU`), (d) INSERT hak menu superadmin (pemegang `kelolauser`), (e) restart backend, dan pemulihan bila (b)
 terjalankan sebelum (a). Alat `pindahflat` (M_RICOMM_LIFE 0 baris DEV) opsional sesudah (c).
@@ -89,8 +135,8 @@ worktree sementara tidak memuat berkas `.env` (tidak masuk git) - bukan akibat m
 
 | Folder | Isi |
 | --- | --- |
-| `docs/` | `STRUKTUR-TABEL-RICOMMLIFE.md` (bukti tipe kolom, indeks), `DBA-LEPAS-VIEW-RICOMM_LIFE.sql` (langkah DBA), `LANGKAH-WO-RICOMMLIFE.md` (urutan WO), `PR-RICOMMLIFE.md` |
-| `backend/` | `models/` `repository/` `services/` `handlers/` `tiruan/` `alat/pindahflat/` `modul.go` (tanpa `migrations/`) |
+| `docs/` | `STRUKTUR-TABEL-RICOMMLIFE.md` (bukti tipe kolom, indeks), `LANGKAH-WO-RICOMMLIFE-SATU-TABEL.md` + `sql/satu_tabel_*.sql` (urutan WO RALAT R1), `LANGKAH-WO-RICOMMLIFE.md` (ARSIP 924), `PR-RICOMMLIFE.md` |
+| `backend/` | `models/` `repository/` `services/` `handlers/` `tiruan/` `modul.go` (tanpa `migrations/`) |
 | `frontend/` | `pages/` `components/` `labels.ts` `api.ts` `aturan.ts` `ricommlife.css` `menu.ts` `rute.tsx` dan `*.test.ts` |
 
 ## Rule XML → kode
@@ -130,14 +176,18 @@ nol When selain `1=1`, `1=2`, `InputParam.DATASHOW` (S b1966/b2261/b3582/b4647, 
 | A5 | CSV: kepala USEDBY, CONTRACT, YEAR, COMM (urutan bebas); pemisah `;`/`,`; 4 MB, 10.000 baris, 100 nama; nama dicocokkan ke ringkasan atau dibuat baru | kolom **[terverifikasi]** S b5569 (`Format excel : USEDBY, CONTRACT, YEAR, COMM`); sisanya **[penyimpangan sadar - menunggu WO]** (butir 7 "gaya riratelife") |
 | A6 | R/I COMM DETAIL tanpa Delete per baris; View only tanpa Add/Edit/Delete/Upload/View Upload | tanpa Delete **[terverifikasi]**: grid D hanya tombol Edit b9295 (`EditList_DT` b9323), nol `Delete` di D; hak View only = **[keputusan work owner 06-10-2026 butir 9]** |
 | A7 | ID yang ternyata terpakai dilewati (≤ 100 nomor); nomor sequence > 6 angka = galat | **[penyimpangan sadar - menunggu WO]** - rumus `site || LPAD(seq, 6)` = keputusan WO butir 4 (prosedur `PEGA_M_RICOMM_LIFE` b13/b21) |
-| A8 | Alat pindah: kosong = NULL; normalisasi teks angka menahan `-jalankan` sampai `-terima-normalisasi` | **[penyimpangan sadar - menunggu WO]** (pola masterproductnamelife; M_RICOMM_LIFE 0 baris DEV) |
+| A8 | ~~Alat pindah: kosong = NULL; normalisasi teks angka menahan `-jalankan`~~ | **DICABUT RALAT R1** - alat pindahflat dihapus; pemindahan = migrasi inti 934 |
 | A9 | Delete ringkasan menghapus rinciannya dalam SATU transaksi, TANPA cek rujukan produk | berantai **[terverifikasi]**: S b9704 `DeleteSummaryDetail` (nama = summary + detail), param `DeleteID=.ID` b9719; tanpa cek rujukan **[penyimpangan sadar - menunggu WO]**. ⚠️ Risiko: produk life Pega yang memegang `RICOMMID` ringkasan itu tertinggal menunjuk ID yang sudah tidak ada (modul lain tidak disentuh) |
 | — | Grid urut ID menaik (ringkasan dan detail) | **[terverifikasi]** sort kolom pertama ASC, `pySortOrder` 1: S b9857/b9863, D b9515/b9520 |
 
 ## Migrasi
 
-Nol migrasi modul. Migrasi inti `924_ricomm_life.sql` (tabel flat, prasyarat DBA di atas) dan
-`925_m_nav_menu_ricommlife.sql` (baris menu MASTER TREATY URUTAN 10, langsung menyala).
+Nol migrasi modul. Migrasi inti `924_ricomm_life.sql` (tabel flat - riwayat, sudah jalan di DEV, dibuang 934),
+`925_m_nav_menu_ricommlife.sql` (baris menu MASTER TREATY URUTAN 10, langsung menyala), dan RALAT R1:
+`931_m_ricomm_life_summary_kolom.sql`, `932_m_ricomm_life_summary_satu_tabel.sql`, `933_m_ricomm_life_kolom.sql`,
+`934_m_ricomm_life_satu_tabel.sql`. ⚠️ Karena 931-934 mengubah bentuk `M_RICOMM_LIFE_SUMMARY` dan `M_RICOMM_LIFE`,
+keduanya TIDAK lagi dinyatakan "Tabel warisan" di bawah (preseden `adjusterconsultant` 870, riratelife 927/929); kolom
+yang dibuat migrasi tercatat di `docs/STRUKTUR-TABEL-RICOMMLIFE.md`.
 
 ## Menjalankan uji modul ini saja
 
@@ -157,6 +207,4 @@ npx vitest run modul/ricommlife
 
 | Tabel | Alasan |
 | --- | --- |
-| `M_RICOMM_LIFE_SUMMARY` | tabel JSON warisan Pega (ringkasan R/I comm life); modul ini menambah, mengubah, dan menghapus barisnya, tidak pernah membuat atau mengubah strukturnya (keputusan work owner 06-10-2026 butir 6) |
-| `RICOMM_LIFE_SUMMARY` | view warisan atas `M_RICOMM_LIFE_SUMMARY`; dibaca grid; tidak di-DROP |
-| `M_RICOMM_LIFE` | tabel JSON warisan Pega (0 baris DEV); TIDAK disentuh (butir 3) - dibaca alat pindahflat saja; dasar view yang dipulihkan jalur mundur 924 |
+| `RICOMM_LIFE_SUMMARY` | view warisan Pega atas `M_RICOMM_LIFE_SUMMARY.JSONDATA`; tidak pernah dibuat migrasi maju - DIBUANG `932_m_ricomm_life_summary_satu_tabel.sql` (RALAT R1), dibangun ulang hanya oleh jalur mundur 932; nol pembaca sesudah 932 |

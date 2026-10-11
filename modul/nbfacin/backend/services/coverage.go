@@ -61,7 +61,6 @@ var konteksCoverage = func() *apd.Context {
 var (
 	seratus    = apd.New(100, 0)
 	enamPuluh  = apd.New(60, 0)
-	seribu     = apd.New(1000, 0)
 	errBagiNol = errors.New("pembagi nol")
 	pangkat    = func(n int32) *apd.Decimal { return apd.New(1, n) }
 )
@@ -379,7 +378,7 @@ func periksaCoverage(awalItem string, cov []models.CoverageObjek) []string {
 // lebarMataUangCoverage - T_COVERAGELIST.CURRENCY_CODE VARCHAR2(10) (migrasi 193).
 const lebarMataUangCoverage = 10
 
-// lebarCoverage - lebar kolom (BYTE) migrasi 193 / 195 medan teks coverage.
+// lebarCoverage - lebar kolom (BYTE) migrasi 193 / 195 / 203 / 204 medan teks coverage.
 var lebarCoverage = []struct {
 	nama  string
 	nilai func(models.CoverageObjek) string
@@ -387,7 +386,7 @@ var lebarCoverage = []struct {
 }{
 	{"coverage", func(c models.CoverageObjek) string { return c.Coverage }, 50},
 	{"oldId", func(c models.CoverageObjek) string { return c.OldID }, 50},
-	{"coverageNote", func(c models.CoverageObjek) string { return c.CoverageNote }, 500},
+	{"coverageNote", func(c models.CoverageObjek) string { return c.CoverageNote }, 4000}, // migrasi 251
 	{"coverageBasis", func(c models.CoverageObjek) string { return c.CoverageBasis }, 50},
 	{"day", func(c models.CoverageObjek) string { return c.Day }, 50},
 	{"indemnity", func(c models.CoverageObjek) string { return c.Indemnity }, 50},
@@ -396,6 +395,9 @@ var lebarCoverage = []struct {
 	{"unit", func(c models.CoverageObjek) string { return c.Unit }, 50},
 	{"accumulationCode", func(c models.CoverageObjek) string { return c.AccumulationCode }, 50},
 	{"accumulationDescription", func(c models.CoverageObjek) string { return c.AccumulationDescription }, 500},
+	// tiket 52 (migrasi 203)
+	{"zone", func(c models.CoverageObjek) string { return c.Zone }, 4000}, // 204 (203: 1000)
+	{"constructionEarthquake", func(c models.CoverageObjek) string { return c.ConstructionEarthquake }, 500},
 }
 
 // desimalCoverage - medan desimal masukan coverage (medan server tsi / tsiLiability / proRatePercent diabaikan).
@@ -435,11 +437,15 @@ func (s *Service) periodeKasus(ctx context.Context, id string) (Periode, error) 
 }
 
 // HitungCoverageKasus - POST hitung-coverage: Prorate dari periode case, tanpa menyimpan. Tanpa identitas tidak perlu
-// (tidak menulis) - tetap ikut kebijakan rute (pola lookup).
+// (tidak menulis) - tetap ikut kebijakan rute (pola lookup). rate.CallAct CallActRate (tiket 52) = CountPremiRate_ACT
+// lebih dulu (terapkanRate), kosong = hitung biasa.
 func (s *Service) HitungCoverageKasus(ctx context.Context, id string, c models.CoverageObjek, tsi *apd.Decimal, mode,
-	modeDiskon string, it PenyesuaianItem) (models.CoverageObjek, error) {
+	modeDiskon string, rate PermintaanRate, it PenyesuaianItem) (models.CoverageObjek, error) {
 	if modeDiskon != "" && modeDiskon != ModePercent && modeDiskon != ModeAmount {
 		return c, fmt.Errorf("%w: modeDiskon harus percent atau amount", ErrMasukanCoverage)
+	}
+	if err := rate.periksa(); err != nil {
+		return c, err
 	}
 	if !idKasusSah(id) {
 		return c, ErrKasusTidakAda
@@ -452,6 +458,11 @@ func (s *Service) HitungCoverageKasus(ctx context.Context, id string, c models.C
 	if err != nil {
 		return c, err
 	}
+	if rate.CallAct == CallActRate {
+		if c, err = s.terapkanRate(ctx, c, rate); err != nil {
+			return c, err
+		}
+	}
 	return HitungCoverage(c, tsi, prorate, mode, modeDiskon, it)
 }
 
@@ -459,6 +470,12 @@ func (s *Service) HitungCoverageKasus(ctx context.Context, id string, c models.C
 // net rate dan Total Net Rate terisi - tiket 44, A166), TotalGrossPremi item = Σ Premium tersimpan (A159; item tanpa
 // coverage -> nil). Periode case dibaca hanya bila ada coverage.
 func (s *Service) siapkanCoverage(ctx context.Context, id string, baris []models.ObjekFire) error {
+	return s.siapkanCoverageDengan(ctx, id, baris, nil)
+}
+
+// siapkanCoverageDengan - siapkanCoverage dengan periode pengganti (nil = periode tersimpan case): Save Data CSV (tiket 66)
+// mengganti Begin / End date dalam transaksi yang sama, sehingga Prorate memakai tanggal barunya.
+func (s *Service) siapkanCoverageDengan(ctx context.Context, id string, baris []models.ObjekFire, ganti *Periode) error {
 	var prorate *apd.Decimal
 	for n := range baris {
 		// Salinan item: larik item pemanggil tidak diubah (larik kosong tetap bukan nil).
@@ -476,11 +493,19 @@ func (s *Service) siapkanCoverage(ctx context.Context, id string, baris []models
 				if err != nil {
 					return err
 				}
+				if ganti != nil {
+					periode = *ganti
+				}
 				if prorate, err = Prorate(periode); err != nil {
 					return err
 				}
 			}
 			penyesuaian := PenyesuaianItem{it.IsAdjustable, it.PctAdjustOther}
+			// Tiket 68 tambahan: medan khusus basis diberi nilai awal SEBELUM hitung (salinan - larik pemanggil tidak diubah).
+			it.Coverages = append([]models.CoverageObjek(nil), it.Coverages...)
+			for k := range it.Coverages {
+				nilaiAwalBasis(&it.Coverages[k])
+			}
 			var hasil []models.CoverageObjek
 			flag := FlagNetRate(it.Coverages)
 			if flag && it.TotalNetRate != nil {
@@ -503,6 +528,9 @@ func (s *Service) siapkanCoverage(ctx context.Context, id string, baris []models
 					hasil[k] = c2
 				}
 			}
+			for k := range hasil {
+				nilaiAwalCoverage(&hasil[k]) // tiket 68: SESUDAH hitung (mode hitung diturunkan dari isian kosong)
+			}
 			if !flag {
 				// CekNetRate_ACT langkah 4: tanpa kelima coverage net rate -> TotalNetRate 0.
 				it.TotalNetRate = apd.New(0, 0)
@@ -520,8 +548,58 @@ func (s *Service) siapkanCoverage(ctx context.Context, id string, baris []models
 	return nil
 }
 
+// nilaiAwalCoverage - tiket 68, keputusan work owner 08-10-2026 ("ini nilai default saat isi coverage, dan jika tidak di isi,
+// dikasih nilainya, jangan null"; tangkapan layar form coverage basis Sum Insured). BUKAN dari korpus `[terverifikasi]` sesi 9d:
+// CountPremi_ACT L3482/L3627 "Default LossLimit = 100" hanya mengisi Local.LossLimit (variabel hitung), AddCoverageAutoFire
+// hanya CoverageBasis 1 / IndemnityPercentage 100, tidak ada rule default Data-Coverage. Medan KOSONG diisi; isian pengguna
+// (termasuk 0) tidak diubah: INDEMNITY "0", UNIT "0" (Day (s)), RATE / DISCOUNT_PERCENTAGE / NET_RATE / LIMITOF_LIABILITY /
+// PCT_LO_L / DISCOUNT / PREMIUM 0, LOST_LIMIT 100. FIRST_LOSS / SUBLIMIT / EML_PML = nilaiAwalBasis (sebelum hitung); FIRST_SCALE,
+// RATE_OJK dan medan server tidak disentuh.
+// ⛔ Dipanggil SESUDAH hitungSimpan / TerapkanNetRate: mode hitung diturunkan dari kosongnya Rate / Premium (A158) - Rate 0
+// sebelum hitung akan mengubah premi ketikan pengguna (amount) menjadi 0. Sesudah hitung, Rate / Premium kosong hanya bila
+// KEDUANYA kosong; simpan ulang dengan nilai awal memberi hasil sama (LossLimit kosong / 0 = 100, NetRate 0 = kosong,
+// DiscountPercentage 0 -> Discount 0) - TestNilaiAwalCoverageSimpanUlang.
+func nilaiAwalCoverage(c *models.CoverageObjek) {
+	if strings.TrimSpace(c.Indemnity) == "" {
+		c.Indemnity = "0"
+	}
+	if strings.TrimSpace(c.Unit) == "" {
+		c.Unit = "0"
+	}
+	for _, d := range []**apd.Decimal{&c.Rate, &c.DiscountPercentage, &c.NetRate, &c.LimitOfLiability, &c.PctLoL, &c.Discount,
+		&c.Premium} {
+		if *d == nil {
+			*d = apd.New(0, 0)
+		}
+	}
+	if c.LostLimit == nil {
+		c.LostLimit = apd.New(100, 0)
+	}
+}
+
+// nilaiAwalBasis - tiket 68 tambahan (work owner 08-10-2026 "perlu juga, ikutin seperti xml dari pega", telusur sesi 9d):
+// SUBLIMIT kosong -> 100 (CountPremi_ACT L3638 `Local.SubLimit = 100` bila tidak > 0, pola LossLimit), FIRST_LOSS kosong -> 0
+// dan EML_PML kosong -> 0 (rumus TSILiability `TSI*x/100` memperlakukan kosong = 0); FIRST_SCALE TIDAK (dihitung dari tabel
+// First Loss Scale). Diisi SEBELUM hitung sehingga TSILiability memakai nilai awal dan simpan ulang konsisten. Premi tidak
+// berubah; ⚠️ satu tepi: basis 4 dengan PctAdjustment / NetRate memakai `.Sublimit` MENTAH (langkah 45-50) - kosong dulu
+// TSILiability 0, kini TSI × 100 / 100 (TestNilaiAwalBasis).
+func nilaiAwalBasis(c *models.CoverageObjek) {
+	if c.Sublimit == nil {
+		c.Sublimit = apd.New(100, 0)
+	}
+	if c.FirstLoss == nil {
+		c.FirstLoss = apd.New(0, 0)
+	}
+	if c.EmlPml == nil {
+		c.EmlPml = apd.New(0, 0)
+	}
+}
+
 // TotalPerMataUang - SumTotalTSIPremiGross_Act cabang FIRE atas satu objek: per mata uang item (urut kemunculan),
-// TSI = Σ TSIObjectItem, Premium = Σ TotalGrossPremi, Rate = Premium / TSI (20 desimal) x 1000, TSI 0 -> 0; disimpan8.
+// TSI = Σ TSIObjectItem, Premium = Σ TotalGrossPremi, Rate = Premium / TSI (20 desimal), TSI 0 -> 0; disimpan8.
+// MENYIMPANG dari korpus (activity menulis `@divide(Premium, TSI, 20) * 1000`): work owner 05-10-2026 "ikutin sesuai pega
+// saja" - layar Pega DEV menampilkan Total Gross Rate 0,1878 untuk premi 9.391.000.000 / TSI 50.000.000.000, jadi TANPA
+// ×1000 (tiket 43, bagian "Keputusan work owner 05-10-2026").
 func TotalPerMataUang(item []models.ItemObjek) []models.TotalCoverage {
 	hasil := []models.TotalCoverage{}
 	posisi := map[string]int{}
@@ -540,7 +618,7 @@ func TotalPerMataUang(item []models.ItemObjek) []models.TotalCoverage {
 		if t.TSI.IsZero() {
 			t.Rate = apd.New(0, 0)
 		} else if r, err := bagi(t.Premium, t.TSI, skalaBagi); err == nil {
-			t.Rate = simpan8(kali(r, seribu))
+			t.Rate = simpan8(r)
 		} // bagi hanya gagal bila hasil melampaui presisi 120 digit - Rate dibiarkan kosong (baca-saja, tidak disimpan)
 		t.TSI, t.Premium = simpan8(t.TSI), simpan8(t.Premium)
 	}

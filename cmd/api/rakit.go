@@ -188,6 +188,42 @@ var ruteDipinjam = map[string][]string{
 	// Panel Data Polis Claim Life membaca polis versi berjalan dari PremiumList
 	// Life (`modul/claimlife/frontend/api.ts`, butir av).
 	"GET /api/polis-life/ringkas": {"claimlife"},
+	// Tombol "+" Consultant / Adjuster Claim Prop menambah master adjuster lewat API modul Adjuster Consultant
+	// (Pega MstAdjusterConsultant; keputusan work owner 08-10-2026, `modul/claimprop/frontend/api.ts`).
+	"POST /api/adjuster-consultant": {"claimprop"},
+	// Komite Claim Prop tanpa menu sendiri: tabel komite di inbox Claim Prop dan layar komitenya (jendela
+	// `JENDELA_DIPINJAM` frontend/App.tsx) dipakai pemegang menu Claim Prop; siapa yang boleh memutus tetap dijaga
+	// layanan komite (anggota workbasket tingkat berjalan). Keputusan work owner 09-10-2026.
+	"GET /api/komite-claim-prop/kasus":                {"claimprop"},
+	"GET /api/komite-claim-prop/kasus/{id}":           {"claimprop"},
+	"POST /api/komite-claim-prop/kasus/{id}/putuskan": {"claimprop"},
+	// Lampiran klaim induk di layar komite, hanya-baca (perintah work owner 11-10-2026).
+	"GET /api/komite-claim-prop/kasus/{id}/lampiran":              {"claimprop"},
+	"GET /api/komite-claim-prop/kasus/{id}/lampiran/{lid}/isi":    {"claimprop"},
+	"GET /api/komite-claim-prop/kasus/{id}/lampiran/{lid}/office": {"claimprop"},
+	// Komite Claim Non Prop - pola yang sama atas inbox Claim Non Prop (perintah work owner 09-10-2026).
+	"GET /api/komite-claim-non-prop/kasus":                {"claimnonprop"},
+	"GET /api/komite-claim-non-prop/kasus/{id}":           {"claimnonprop"},
+	"POST /api/komite-claim-non-prop/kasus/{id}/putuskan": {"claimnonprop"},
+	// Komite Claim Fac In tanpa menu sendiri (prompt work owner tahap 2 10-10-2026, pola Komite Claim Prop / Non Prop):
+	// tabel komite di inbox Claim Fac In dan layar komitenya dibuka di tempat; yang boleh memutus tetap dijaga layanan
+	// komite (anggota workbasket tingkat berjalan, KCF-01).
+	"GET /api/komite-claim-fac-in/kasus":                {"claimfacin"},
+	"GET /api/komite-claim-fac-in/kasus/{id}":           {"claimfacin"},
+	"POST /api/komite-claim-fac-in/kasus/{id}/putuskan": {"claimfacin"},
+	// Lampiran klaim induk di layar komite, hanya-baca (perintah work owner 11-10-2026).
+	"GET /api/komite-claim-fac-in/kasus/{id}/lampiran":              {"claimfacin"},
+	"GET /api/komite-claim-fac-in/kasus/{id}/lampiran/{lid}/isi":    {"claimfacin"},
+	"GET /api/komite-claim-fac-in/kasus/{id}/lampiran/{lid}/office": {"claimfacin"},
+	// Komite Claim Life - menu komite dihapus (perintah work owner 09-10-2026, "anggap menu itu tidak pernah ada"):
+	// tabel komite inbox Claim Life dan layar kasusnya (modul tanpa menu, `layar.ts`) dipakai pemegang menu Claim Life;
+	// siapa yang boleh memutus tetap dijaga layanan komite (anggota tangga tingkat berjalan).
+	"GET /api/komite":                 {"claimlife"},
+	"GET /api/komite/laporan-harian":  {"claimlife"},
+	"GET /api/komite/{id}":            {"claimlife"},
+	"GET /api/komite/{id}/riwayat":    {"claimlife"},
+	"POST /api/komite/{id}/keputusan": {"claimlife"},
+	"POST /api/komite/{id}/eskalasi":  {"claimlife"},
 }
 
 // izinMenu menjawab apakah permintaan ini boleh memakai rute milik `pemilik`,

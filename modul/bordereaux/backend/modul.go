@@ -63,7 +63,7 @@ func Pendaftaran() inti.Pendaftaran {
 		// ber-hak LIHAT - layanan menegakkan siapa boleh apa (`services.HakAtas`).
 		HakLihat: &inti.HakLihat{Bebas: []string{"POST " + handlers.Prefix + "/unggah-csv", "POST " + handlers.Prefix + "/berkas/{id}/submit"}},
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
-			return Modul{svc: services.DariDasar(p.Dasar()), stubPelaku: p.Config().AuthStub}, nil
+			return Modul{svc: services.DariDasar(p.Dasar()).DenganGaram(p.Config().StorageTokenSalt), stubPelaku: p.Config().AuthStub}, nil
 		},
 	}
 }

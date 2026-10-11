@@ -38,7 +38,7 @@ inti 918.
 
 ## Tabel
 
-Menulis `ACCUMULATION` (dibuat `masterprovince` 880); ID dibuat backend dari `ACCUMULATION_SEQ`. Rujukan Accumulated Type dari `ACCUMULATEDTYPE`, Province dari `PROVINCE`.
+Menulis `ACCUMULATION` (dibuat `masterprovince` 215); ID dibuat backend dari `ACCUMULATION_SEQ`. Rujukan Accumulated Type dari `ACCUMULATEDTYPE`, Province dari `PROVINCE`.
 
 ## Rute
 

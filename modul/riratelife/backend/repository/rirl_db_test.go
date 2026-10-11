@@ -6,8 +6,8 @@ package repository_test
 // POOLDATA tidak pernah menjadi sasaran - `uji/skemauji`). Tanpa ORACLE_DSN MELEWATI. Keadaan DEV sebelum 927 ditiru:
 // M_RATE_LIFE_SUMMARY (ID PK + JSONDATA ber-constraint IS JSON) dan tabel flat 926 dari berkas migrasi YANG SAMA;
 // lalu 927 + 928 dijalankan dari berkasnya (termasuk pengulangan sesudah gagal di tengah) dan jalur mundurnya.
-// M_RATE_LIFE flat 8 kolom (ALL_TAB_COLUMNS DEV 10-10-2026, RALAT R7 - view RATE_LIFE dibuang), dua sequence 923 ditiru.
-// Fixture UJI-.
+// M_RATE_LIFE (ID PK + JSONDATA ber-constraint IS JSON) + view RATE_LIFE ditiru seperti DEV, lalu 929 + 930 (RALAT R7)
+// dijalankan dari berkasnya; dua sequence 923 ditiru. Fixture UJI-.
 //
 // ⚠️ Koneksi lewat `skemauji.BukaRepositori()`, BUKAN `skemauji.Buka()` (penjaga Claim Life
 // `TestSetiapPemanggilBukaMemeriksaBolehDilewati` mengunci cacah pemanggilnya).
@@ -75,12 +75,20 @@ func pasang(t *testing.T) *ujiDB {
 	u := &ujiDB{repo: repo, skema: repo.Skema(), ctx: ctx}
 	u.bongkar(t)
 	for _, q := range []string{
-		`CREATE TABLE {s}.M_RATE_LIFE_SUMMARY (ID VARCHAR2(10) PRIMARY KEY, JSONDATA CLOB NOT NULL
+		// Bentuk DEV yang tercatat (fakta WO 07-10-2026): ID PK + JSONDATA CLOB ber-constraint IS JSON. NOT NULL pada
+		// JSONDATA TIDAK terbukti di repo, jadi tidak ditiru (LANGKAH-WO (a) mencatat NULLABLE aslinya).
+		`CREATE TABLE {s}.M_RATE_LIFE_SUMMARY (ID VARCHAR2(10) PRIMARY KEY, JSONDATA CLOB
 			CONSTRAINT ENSURE_M_RATE_LIFE_SUMMARY_JSON CHECK (JSONDATA IS JSON))`,
-		`CREATE TABLE {s}.M_RATE_LIFE (ID VARCHAR2(10) NOT NULL, IDUSEDBY VARCHAR2(10), USEDBY VARCHAR2(500), TYPE VARCHAR2(100),
-			GENDER VARCHAR2(10), CONTRACT VARCHAR2(10), AGE VARCHAR2(10), RATE VARCHAR2(50))`,
+		`CREATE TABLE {s}.M_RATE_LIFE (ID VARCHAR2(10) PRIMARY KEY, JSONDATA CLOB
+			CONSTRAINT ENSURE_M_RATE_LIFE_JSON CHECK (JSONDATA IS JSON))`,
+		`CREATE VIEW {s}.RATE_LIFE AS SELECT a.ID, a.JSONDATA.IDUSEDBY, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.GENDER,
+			a.JSONDATA.CONTRACT, a.JSONDATA.AGE, a.JSONDATA.RATE FROM {s}.M_RATE_LIFE a`,
 		`CREATE SEQUENCE {s}.SEQ_M_RATE_LIFE_SUMMARY START WITH 100`,
 		`CREATE SEQUENCE {s}.SEQ_M_RATE_LIFE START WITH 9000`,
+		// Rincian DEV: RATE berkoma / bertitik apa adanya, FLAG di JSON (tidak dipindah), 8999 yatim (ringkasan 999 tidak ada).
+		`INSERT INTO {s}.M_RATE_LIFE (ID, JSONDATA) VALUES ('8997', '{"IDUSEDBY":"100","USEDBY":"UJI RATE A","GENDER":"U","CONTRACT":"1","AGE":"30","RATE":"0,5","FLAG":"AP"}')`,
+		`INSERT INTO {s}.M_RATE_LIFE (ID, JSONDATA) VALUES ('8998', '{"IDUSEDBY":"100","USEDBY":"UJI RATE A","GENDER":"M","CONTRACT":"2","RATE":"1.25"}')`,
+		`INSERT INTO {s}.M_RATE_LIFE (ID, JSONDATA) VALUES ('8999', '{"IDUSEDBY":"999","USEDBY":"UJI YATIM","GENDER":"F","CONTRACT":"3","AGE":"40","RATE":"2"}')`,
 		`INSERT INTO {s}.M_RATE_LIFE_SUMMARY (ID, JSONDATA) VALUES ('100', '{"USEDBY":"UJI RATE A","TYPE":"L","MODIFIEDDATE":"20240102T030405.000 GMT","OPERATORID":"UJI-LAMA","FLAG":"AP"}')`,
 		`INSERT INTO {s}.M_RATE_LIFE_SUMMARY (ID, JSONDATA) VALUES ('102', '{"USEDBY":"UJI DIHAPUS","FLAG":"PM"}')`,
 	} {
@@ -119,6 +127,15 @@ func (u *ujiDB) exec(t *testing.T, q string) {
 	}
 }
 
+// gagalORA - pernyataan `q` HARUS gagal dengan kode Oracle `kode` (pelindung gagal-keras jalur mundur).
+func (u *ujiDB) gagalORA(t *testing.T, q, kode string) {
+	t.Helper()
+	_, err := u.repo.ExecContext(u.ctx, strings.ReplaceAll(q, "{s}", u.skema))
+	if err == nil || !strings.Contains(err.Error(), kode) {
+		t.Errorf("%.60s: mau %s, dapat %v", q, kode, err)
+	}
+}
+
 func (u *ujiDB) cacah(t *testing.T, q string) int {
 	t.Helper()
 	var n int
@@ -140,6 +157,63 @@ func (u *ujiDB) satuTabel(t *testing.T) {
 	}
 	for _, q := range l {
 		u.exec(t, q)
+	}
+}
+
+// rincianFlat - 929 lalu 930; 930 sengaja dijalankan SEBAGIAN dua kali dulu (blok isi + blok buang, lalu penuh).
+func (u *ujiDB) rincianFlat(t *testing.T) {
+	t.Helper()
+	for _, q := range ddl(t, "929_m_rate_life_kolom", false, u.skema) {
+		u.exec(t, q)
+	}
+	l := ddl(t, "930_m_rate_life_satu_tabel", false, u.skema)
+	for _, q := range l[:2] {
+		u.exec(t, q)
+	}
+	for _, q := range l {
+		u.exec(t, q)
+	}
+}
+
+// 930: kolom berisi nilai JSON APA ADANYA (RATE berkoma tetap berkoma), baris yatim ikut, FLAG tidak dipindah,
+// JSONDATA + constraint + view hilang, indeks ada; jalur mundur 930 + 929 membangun ulang JSONDATA dan view.
+func TestDBMigrasiRincianFlatDanMundur(t *testing.T) {
+	u := pasang(t)
+	u.satuTabel(t)
+	u.rincianFlat(t)
+	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.M_RATE_LIFE WHERE (ID = '8997' AND IDUSEDBY = '100' AND RATE = '0,5' AND AGE = '30')
+		OR (ID = '8998' AND RATE = '1.25' AND AGE IS NULL) OR (ID = '8999' AND IDUSEDBY = '999' AND GENDER = 'F')`); n != 3 {
+		t.Errorf("isi rincian apa adanya %d", n)
+	}
+	for q, mau := range map[string]int{
+		`SELECT COUNT(*) FROM SYS.ALL_TAB_COLUMNS WHERE OWNER = UPPER('{s}') AND TABLE_NAME = 'M_RATE_LIFE'`:                              8,
+		`SELECT COUNT(*) FROM SYS.ALL_TAB_COLUMNS WHERE OWNER = UPPER('{s}') AND TABLE_NAME = 'M_RATE_LIFE' AND COLUMN_NAME = 'JSONDATA'`: 0,
+		`SELECT COUNT(*) FROM SYS.ALL_CONSTRAINTS WHERE OWNER = UPPER('{s}') AND CONSTRAINT_NAME = 'ENSURE_M_RATE_LIFE_JSON'`:             0,
+		`SELECT COUNT(*) FROM SYS.ALL_OBJECTS WHERE OWNER = UPPER('{s}') AND OBJECT_NAME = 'RATE_LIFE'`:                                   0,
+		`SELECT COUNT(*) FROM SYS.ALL_INDEXES WHERE OWNER = UPPER('{s}') AND INDEX_NAME = 'IX_M_RATE_LIFE_IDUSEDBY'`:                      1,
+	} {
+		if n := u.cacah(t, q); n != mau {
+			t.Errorf("%d, mau %d: %s", n, mau, q)
+		}
+	}
+	// 930 dibuang JSONDATA-nya tetapi (seolah) tidak tercatat: 929_down langsung TIDAK BOLEH membuang kolom.
+	pelindung := ddl(t, "929_m_rate_life_kolom", true, u.skema)[0]
+	u.gagalORA(t, pelindung, "ORA-00904")
+	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.M_RATE_LIFE WHERE RATE IS NOT NULL`); n != 3 {
+		t.Errorf("pelindung 929_down: kolom rincian harus utuh (%d)", n)
+	}
+	// 930_down aman diulang: dua blok pertama dua kali, lalu penuh.
+	turun := ddl(t, "930_m_rate_life_satu_tabel", true, u.skema)
+	for _, q := range turun[:2] {
+		u.exec(t, q)
+	}
+	for _, kunci := range []string{"930_m_rate_life_satu_tabel", "929_m_rate_life_kolom"} {
+		for _, q := range ddl(t, kunci, true, u.skema) {
+			u.exec(t, q)
+		}
+	}
+	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.RATE_LIFE WHERE ID = '8997' AND IDUSEDBY = '100' AND RATE = '0,5'`); n != 1 {
+		t.Error("view RATE_LIFE dan JSONDATA dibangun ulang dari kolom")
 	}
 }
 
@@ -165,6 +239,10 @@ func TestDBMigrasiSatuTabelDanMundur(t *testing.T) {
 		if n := u.cacah(t, q); n != mau {
 			t.Errorf("%d, mau %d: %s", n, mau, q)
 		}
+	}
+	u.gagalORA(t, ddl(t, "927_m_rate_life_summary_kolom", true, u.skema)[0], "ORA-00904")
+	if n := u.cacah(t, `SELECT COUNT(*) FROM {s}.M_RATE_LIFE_SUMMARY WHERE USEDBY IS NOT NULL`); n != 2 {
+		t.Errorf("pelindung 927_down: kolom ringkasan harus utuh (%d)", n)
 	}
 	for _, kunci := range []string{"928_m_rate_life_summary_satu_tabel", "927_m_rate_life_summary_kolom"} {
 		for _, q := range ddl(t, kunci, true, u.skema) {
@@ -202,6 +280,7 @@ var penuhDB = services.Aktor{AkunID: "UJI-ADMIN", Penuh: true}
 func TestDBRumusIDDanPulangPergi(t *testing.T) {
 	u := pasang(t)
 	u.satuTabel(t)
+	u.rincianFlat(t)
 	l := layananOracle(u)
 	r, err := l.Simpan(u.ctx, penuhDB, "", models.Isian{UsedBy: "UJI RATE DB"})
 	if err != nil || r.ID != "102" || r.OperatorID != "UJI-ADMIN" || r.UsedBy != "UJI RATE DB" {
@@ -226,6 +305,7 @@ func TestDBRumusIDDanPulangPergi(t *testing.T) {
 func TestDBTransaksiDanDeleteBerantai(t *testing.T) {
 	u := pasang(t)
 	u.satuTabel(t)
+	u.rincianFlat(t)
 	g := repository.Baru(u.repo)
 	tx, err := u.repo.Mulai(u.ctx)
 	if err != nil {
@@ -261,11 +341,45 @@ func TestDBTransaksiDanDeleteBerantai(t *testing.T) {
 	}
 }
 
-// RALAT R7: rincian ditulis ke kolom M_RATE_LIFE (nol JSONDATA): sisip menulis kolom, TYPE NULL, nilai kosong = NULL;
-// Edit rate = UPDATE kolom (kosong = NULL) dan hanya untuk ringkasannya sendiri; Edit nama memperbarui USEDBY.
-func TestDBRateKolomFlat(t *testing.T) {
+// Rate milik ringkasan LAIN: Edit lewat ringkasan 101 atas rate 8997 (milik 100) ditolak ErrRateTidakAda (layanan) dan
+// ErrTidakAda (repository, WHERE ID AND IDUSEDBY); Delete ringkasan 101 tidak menyentuh rate milik 100. Isi 8997 utuh.
+func TestDBRateRingkasanLainDitolak(t *testing.T) {
 	u := pasang(t)
 	u.satuTabel(t)
+	u.rincianFlat(t)
+	utuh := `SELECT COUNT(*) FROM {s}.M_RATE_LIFE WHERE ID = '8997' AND IDUSEDBY = '100' AND GENDER = 'U'
+		AND CONTRACT = '1' AND AGE = '30' AND RATE = '0,5'`
+	l := layananOracle(u)
+	if _, err := l.SimpanRate(u.ctx, penuhDB, "101", "8997", models.IsianRate{Gender: "M", Contract: "9", Age: "50", Rate: "7"}); !errors.Is(err, services.ErrRateTidakAda) {
+		t.Errorf("SimpanRate rate ringkasan lain: mau ErrRateTidakAda, dapat %v", err)
+	}
+	g := repository.Baru(u.repo)
+	tx, err := u.repo.Mulai(u.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = g.UbahRate(u.ctx, tx, models.Rate{ID: "8997", IDUsedBy: "101", Gender: "M", Contract: "9", Age: "50", Rate: "7"})
+	_ = tx.Rollback()
+	if !errors.Is(err, repository.ErrTidakAda) {
+		t.Errorf("UbahRate rate ringkasan lain: mau ErrTidakAda, dapat %v", err)
+	}
+	h, err := l.Hapus(u.ctx, penuhDB, "101")
+	if err != nil || h.RateTerhapus != 0 {
+		t.Errorf("Delete ringkasan 101 %+v %v", h, err)
+	}
+	if n := u.cacah(t, utuh) + u.cacah(t, `SELECT COUNT(*) FROM {s}.M_RATE_LIFE WHERE IDUSEDBY = '100'`); n != 3 {
+		t.Errorf("rate milik 100 berubah / terhapus (%d)", n)
+	}
+}
+
+// RALAT R7: rincian ditulis ke kolom M_RATE_LIFE (nol JSONDATA): sisip menulis kolom, TYPE NULL, nilai kosong = NULL;
+// Edit rate = UPDATE kolom (kosong = NULL) dan hanya untuk ringkasannya sendiri; Edit nama memperbarui USEDBY.
+// Gabung dev 11-10-2026: diadaptasi ke fixture remote (929/930 via rincianFlat); ringkasan uji 190 agar tak bertabrakan
+// dengan baris seed 8997/8998 milik 100.
+func TestDBRateKolomFlatTulis(t *testing.T) {
+	u := pasang(t)
+	u.satuTabel(t)
+	u.rincianFlat(t)
 	g := repository.Baru(u.repo)
 	tx, err := u.repo.Mulai(u.ctx)
 	if err != nil {
@@ -273,36 +387,36 @@ func TestDBRateKolomFlat(t *testing.T) {
 	}
 	defer func() { _ = tx.Rollback() }()
 	for _, r := range []models.Rate{
-		{ID: "9401", IDUsedBy: "100", UsedBy: "UJI RATE A 2", Gender: "U", Contract: "1", Age: "30", Rate: "0,5"},
-		{ID: "9402", IDUsedBy: "100", UsedBy: "UJI RATE A 2", Gender: "", Contract: "2", Age: "", Rate: "1,25"},
+		{ID: "9401", IDUsedBy: "190", UsedBy: "UJI RATE A 2", Gender: "U", Contract: "1", Age: "30", Rate: "0,5"},
+		{ID: "9402", IDUsedBy: "190", UsedBy: "UJI RATE A 2", Gender: "", Contract: "2", Age: "", Rate: "1,25"},
 	} {
 		if err := g.SisipRate(u.ctx, tx, r); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := g.UbahRate(u.ctx, tx, models.Rate{ID: "9401", IDUsedBy: "100", Gender: "M", Contract: "3", Age: "", Rate: "0,75"}); err != nil {
+	if err := g.UbahRate(u.ctx, tx, models.Rate{ID: "9401", IDUsedBy: "190", Gender: "M", Contract: "3", Age: "", Rate: "0,75"}); err != nil {
 		t.Fatal(err)
 	}
 	if err := g.UbahRate(u.ctx, tx, models.Rate{ID: "9401", IDUsedBy: "101", Gender: "F", Contract: "1", Rate: "9"}); !errors.Is(err, repository.ErrTidakAda) {
 		t.Errorf("Edit rate ringkasan lain: %v", err)
 	}
-	if n, err := g.UbahNamaRate(u.ctx, tx, "100", "UJI RATE A 9"); err != nil || n != 2 {
+	if n, err := g.UbahNamaRate(u.ctx, tx, "190", "UJI RATE A 9"); err != nil || n != 2 {
 		t.Fatalf("Edit nama %d %v", n, err)
 	}
 	if err := tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
 	for q, mau := range map[string]int{
-		`SELECT COUNT(*) FROM {s}.M_RATE_LIFE WHERE ID = '9401' AND IDUSEDBY = '100' AND GENDER = 'M' AND CONTRACT = '3' AND AGE IS NULL AND RATE = '0,75' AND TYPE IS NULL`: 1,
+		`SELECT COUNT(*) FROM {s}.M_RATE_LIFE WHERE ID = '9401' AND IDUSEDBY = '190' AND GENDER = 'M' AND CONTRACT = '3' AND AGE IS NULL AND RATE = '0,75' AND TYPE IS NULL`: 1,
 		`SELECT COUNT(*) FROM {s}.M_RATE_LIFE WHERE ID = '9402' AND GENDER IS NULL AND AGE IS NULL AND CONTRACT = '2' AND RATE = '1,25' AND TYPE IS NULL`:                    1,
-		`SELECT COUNT(*) FROM {s}.M_RATE_LIFE WHERE IDUSEDBY = '100' AND USEDBY = 'UJI RATE A 9'`:                                                                            2,
+		`SELECT COUNT(*) FROM {s}.M_RATE_LIFE WHERE IDUSEDBY = '190' AND USEDBY = 'UJI RATE A 9'`:                                                                            2,
 		`SELECT COUNT(*) FROM SYS.ALL_TAB_COLUMNS WHERE OWNER = UPPER('{s}') AND TABLE_NAME = 'M_RATE_LIFE' AND COLUMN_NAME = 'JSONDATA'`:                                    0,
 	} {
 		if n := u.cacah(t, q); n != mau {
 			t.Errorf("%d, mau %d: %s", n, mau, q)
 		}
 	}
-	if n, err := g.JumlahRate(u.ctx, nil, "100"); err != nil || n != 2 {
+	if n, err := g.JumlahRate(u.ctx, nil, "190"); err != nil || n != 2 {
 		t.Errorf("jumlah %d %v", n, err)
 	}
 }

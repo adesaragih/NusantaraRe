@@ -1,0 +1,730 @@
+/* Gaya modul Cause Of Loss Life - SETIAP pemilih di bawah akar .causeoflosslife (gaya.test.ts). Fondasi tema
+   (token terang/gelap, isian, tombol, tabel, kolom aksi menempel, tampilan View) disalin dari modul Bordereaux supaya
+   tampilannya seragam; nol pemilih global, nol properti yang memerangkap Modal. */
+
+.causeoflosslife {
+  display: contents;
+}
+
+.causeoflosslife .causeoflosslife__akar {
+  --rc-latar: #eef1f6;
+  --rc-seri-0: #4f46e5;
+  --rc-seri-1: #0d9488;
+  --rc-seri-2: #f59e0b;
+  --rc-seri-3: #64748b;
+  --rc-lintasan: #e8ecf4;
+  --rc-latar-tepi: #cfd7e5;
+  --rc-latar-atas: #f9fafd;
+  --rc-latar-bawah: #e4e9f3;
+  --rc-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --rc-lembut: #e9edf3;
+  --rc-lembut-tepi: #dde3ec;
+  --rc-teks: #101828;
+  --rc-teks-redup: #4f586b;
+  --rc-aksen: var(--primary-tanda);
+  --rc-aksen-teks: #2339a3;
+  --rc-aksen-lembut: #e3e8f6;
+  --rc-aksen-garis: #b9c5ee;
+  --rc-kepala-tabel: #dde4f2;
+  --rc-kepala-teks: #22326b;
+  --rc-kepala-garis: #c3cde2;
+  --rc-isi: #ffffff;
+  --rc-baris-hover: #e6ecfa;
+  --rc-garis: #e1e6ef;
+  --rc-tepi: #c8d1e1;
+  --rc-tombol: #d63a42;
+  --rc-tombol-ujung: #bf2f37;
+  --rc-tombol-hover: #c2333b;
+  --rc-tombol-hover-ujung: #a9282f;
+  --rc-terang: rgba(255, 255, 255, 0.92);
+  --rc-gelap: rgba(163, 177, 198, 0.55);
+  --rc-kilau: rgba(255, 255, 255, 0.7);
+  --rc-timbul: 8px 8px 18px var(--rc-gelap), -8px -8px 18px var(--rc-terang);
+  --rc-timbul-kecil: 4px 4px 9px var(--rc-gelap), -4px -4px 9px var(--rc-terang);
+  --rc-cekung-kecil: inset 2px 2px 4px var(--rc-gelap), inset -2px -2px 4px var(--rc-terang);
+  --rc-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --rc-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--rc-terang);
+  --rc-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --rc-sukses-latar: #e6f7ee;
+  --rc-sukses-tepi: #b7e8cc;
+  --rc-sukses-teks: #067647;
+  --rc-netral-latar: #e9edf3;
+  --rc-netral-tepi: #d5dce7;
+  --rc-netral-teks: #475467;
+  --rc-waspada-latar: #fbf3df;
+  --rc-waspada-tepi: #f1d58a;
+  --rc-waspada-teks: #a3410a;
+  --text-3: var(--rc-teks-redup);
+  color: var(--rc-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--rc-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--rc-latar-atas) 0%, var(--rc-latar-bawah) 100%);
+  box-shadow: var(--rc-bayang-akar);
+}
+
+:root[data-theme="dark"] .causeoflosslife .causeoflosslife__akar {
+  --rc-latar: #1b2130;
+  --rc-seri-0: #818cf8;
+  --rc-seri-1: #2dd4bf;
+  --rc-seri-2: #fbbf24;
+  --rc-seri-3: #94a3b8;
+  --rc-lintasan: #252d40;
+  --rc-latar-tepi: #323b50;
+  --rc-latar-atas: #222a3b;
+  --rc-latar-bawah: #161b27;
+  --rc-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --rc-lembut: #181d2a;
+  --rc-lembut-tepi: #242b3a;
+  --rc-teks: #eef0f6;
+  --rc-teks-redup: #aab2c4;
+  --rc-aksen-teks: #aebcff;
+  --rc-aksen-lembut: #222b45;
+  --rc-aksen-garis: #3a4b8f;
+  --rc-kepala-tabel: #273152;
+  --rc-kepala-teks: #dbe2ff;
+  --rc-kepala-garis: #3a4670;
+  --rc-isi: #1f2638;
+  --rc-baris-hover: #2b3554;
+  --rc-garis: #2c3447;
+  --rc-tepi: #3a4459;
+  --rc-terang: rgba(255, 255, 255, 0.045);
+  --rc-gelap: rgba(0, 0, 0, 0.55);
+  --rc-kilau: rgba(255, 255, 255, 0.04);
+  --rc-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --rc-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--rc-terang);
+  --rc-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --rc-sukses-latar: #0d2a1f;
+  --rc-sukses-tepi: #1d5c40;
+  --rc-sukses-teks: #75e0a7;
+  --rc-netral-latar: #1f2533;
+  --rc-netral-tepi: #333c4f;
+  --rc-netral-teks: #c3cad8;
+  --rc-waspada-latar: #2b2112;
+  --rc-waspada-tepi: #6b4d17;
+  --rc-waspada-teks: #fec84b;
+}
+
+/* Judul dan teks redup. */
+.causeoflosslife .inbox__judul,
+.causeoflosslife .modal__title {
+  color: var(--rc-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.causeoflosslife .muted {
+  color: var(--rc-teks-redup);
+}
+
+.causeoflosslife :focus-visible {
+  outline: 2px solid var(--rc-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.causeoflosslife .field__input {
+  background: var(--rc-isi);
+  border: 1px solid var(--rc-tepi);
+  border-radius: 12px;
+  box-shadow: var(--rc-cekung-kecil);
+  color: var(--rc-teks);
+}
+
+.causeoflosslife .field__input:hover:not(:disabled) {
+  border-color: var(--rc-aksen-garis);
+}
+
+.causeoflosslife .field__input:focus {
+  border-color: var(--rc-aksen);
+  box-shadow: var(--rc-cekung-kecil), var(--rc-cincin);
+  outline: none;
+}
+
+.causeoflosslife .field__input--readonly,
+.causeoflosslife .field__input--readonly:hover {
+  background: var(--rc-lembut);
+  border-color: var(--rc-lembut-tepi);
+  color: var(--rc-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.causeoflosslife .btn {
+  border-radius: 999px;
+}
+
+.causeoflosslife .btn--primary {
+  background: linear-gradient(180deg, var(--rc-tombol), var(--rc-tombol-ujung));
+  border-color: var(--rc-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--rc-bayang-tombol);
+}
+
+.causeoflosslife .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--rc-tombol-hover), var(--rc-tombol-hover-ujung));
+  border-color: var(--rc-tombol-hover-ujung);
+}
+
+.causeoflosslife .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.causeoflosslife .btn--ghost {
+  background: var(--rc-isi);
+  border: 1px solid var(--rc-tepi);
+  color: var(--rc-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--rc-timbul-kecil);
+}
+
+.causeoflosslife .btn--ghost:hover:not(:disabled) {
+  background: var(--rc-aksen-lembut);
+  border-color: var(--rc-aksen-garis);
+  color: var(--rc-aksen-teks);
+}
+
+.causeoflosslife .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--rc-cekung-kecil);
+}
+
+.causeoflosslife .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.causeoflosslife .modal {
+  background: var(--rc-latar);
+  border: 1px solid var(--rc-kilau);
+  border-radius: 22px;
+  box-shadow: var(--rc-bayang-popup);
+}
+
+.causeoflosslife .modal__head,
+.causeoflosslife .modal__actions {
+  border-color: var(--rc-garis);
+}
+
+.causeoflosslife .alert {
+  border-radius: 12px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.causeoflosslife .causeoflosslife__tabel {
+  background: var(--rc-isi);
+  border: 1px solid var(--rc-tepi);
+  border-radius: 18px;
+  box-shadow: var(--rc-timbul);
+}
+
+.causeoflosslife .causeoflosslife__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.causeoflosslife .causeoflosslife__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.causeoflosslife .causeoflosslife__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.causeoflosslife .causeoflosslife__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.causeoflosslife .causeoflosslife__tabel thead th {
+  background: var(--rc-kepala-tabel);
+  color: var(--rc-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--rc-kepala-garis);
+}
+
+.causeoflosslife .causeoflosslife__tabel td {
+  color: var(--rc-teks);
+  background: var(--rc-isi);
+  border-bottom-color: var(--rc-garis);
+}
+
+.causeoflosslife .causeoflosslife__tabel tbody tr:nth-child(even),
+.causeoflosslife .causeoflosslife__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.causeoflosslife .causeoflosslife__tabel tbody tr:nth-child(even) > td {
+  background: var(--rc-lembut);
+}
+
+.causeoflosslife .causeoflosslife__tabel tbody tr:hover > td {
+  background: var(--rc-baris-hover);
+}
+
+/* Tombol aksi SEBARIS ke samping (permintaan work owner 03-10-2026 "buat ke samping aja"): tidak turun ke bawah;
+   tabel yang lebih lebar dari layar menggulir di dalam akar. */
+.causeoflosslife .causeoflosslife__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.causeoflosslife .causeoflosslife__tabel td.table__actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.causeoflosslife .causeoflosslife__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.causeoflosslife .causeoflosslife__hapus {
+  color: var(--rc-tombol);
+}
+
+.causeoflosslife .causeoflosslife__halaman {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  white-space: nowrap;
+}
+
+.causeoflosslife .causeoflosslife__badge {
+  margin-left: 10px;
+  background: var(--rc-aksen-lembut);
+  color: var(--rc-aksen-teks);
+}
+
+/* Kartu: form header, tab, riwayat. */
+.causeoflosslife .causeoflosslife__kartu {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--rc-isi);
+  border: 1px solid var(--rc-tepi);
+  border-radius: 18px;
+  box-shadow: var(--rc-timbul);
+}
+
+.causeoflosslife .causeoflosslife__judul-kartu {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--rc-teks);
+}
+
+/* View: nilai saja, kisi label di atas nilai. */
+.causeoflosslife .causeoflosslife__ringkas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+
+.causeoflosslife .causeoflosslife__ringkas dt,
+.causeoflosslife .causeoflosslife__treaty-isi dt {
+  font-size: 12px;
+  color: var(--rc-teks-redup);
+}
+
+.causeoflosslife .causeoflosslife__ringkas dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Kolom tombol baris MENEMPEL di kanan saat tabel digulir (pola Treaty Contract Out, permintaan work owner
+   04-10-2026 "tidak perlu scroll ke kanan buat aksesnya"). */
+.causeoflosslife .causeoflosslife__tabel th.table__actions,
+.causeoflosslife .causeoflosslife__tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -8px 0 10px -8px rgba(16, 24, 40, 0.25);
+}
+
+.causeoflosslife .causeoflosslife__tabel {
+  width: max-content;
+  min-width: 100%;
+}
+
+.causeoflosslife .causeoflosslife__tabel th.table__actions,
+.causeoflosslife .causeoflosslife__tabel td.table__actions {
+  padding-right: 16px;
+  padding-left: 14px;
+}
+
+.causeoflosslife .causeoflosslife__tabel td {
+  white-space: nowrap;
+}
+
+/* Daftar menggulir di dalam kotaknya; kolom Action menempel di kanan. */
+.causeoflosslife .causeoflosslife__gulir {
+  overflow: auto;
+  max-height: 68vh;
+}
+
+/* Toolbar daftar: cari, saringan status, tombol Add. */
+.causeoflosslife .causeoflosslife__alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 12px;
+}
+
+.causeoflosslife .causeoflosslife__cari {
+  width: min(340px, 100%);
+}
+
+/* Saringan status Active / Inactive / All: tombol segmen. */
+.causeoflosslife .causeoflosslife__segmen {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--rc-tepi);
+  border-radius: 999px;
+  background: var(--rc-lembut);
+}
+
+.causeoflosslife .causeoflosslife__segmen-butir {
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--rc-teks-redup);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.causeoflosslife .causeoflosslife__segmen-butir--aktif {
+  background: var(--rc-isi);
+  color: var(--rc-teks);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.14);
+}
+
+/* Status baris. */
+.causeoflosslife .causeoflosslife__status {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid var(--rc-sukses-tepi);
+  border-radius: 999px;
+  background: var(--rc-sukses-latar);
+  color: var(--rc-sukses-teks);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.causeoflosslife .causeoflosslife__status--nonaktif {
+  border-color: var(--rc-netral-tepi);
+  background: var(--rc-netral-latar);
+  color: var(--rc-netral-teks);
+}
+
+/* Kolom Status: ruang di kanan supaya badge tidak tertutup kolom Action yang menempel. */
+.causeoflosslife .causeoflosslife__tabel .causeoflosslife__kolom-status {
+  min-width: 96px;
+  padding-right: 22px;
+}
+
+.causeoflosslife .causeoflosslife__baris--nonaktif > td {
+  color: var(--rc-teks-redup);
+}
+
+/* Teks panjang (alamat) boleh turun baris di tabel. */
+.causeoflosslife .causeoflosslife__alamat {
+  min-width: 220px;
+  max-width: 360px;
+  white-space: normal;
+}
+
+/* Form Add / Edit di popup. */
+.causeoflosslife .causeoflosslife__form {
+  display: grid;
+  gap: 14px;
+}
+
+.causeoflosslife .causeoflosslife__form textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.causeoflosslife .causeoflosslife__catatan {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Saringan Type dan Flag di toolbar daftar. */
+.causeoflosslife .causeoflosslife__saring {
+  width: min(200px, 100%);
+}
+
+/* Form: dua kolom (Type / Flag, Code / No Urut) yang turun satu kolom di layar sempit. */
+.causeoflosslife .causeoflosslife__baris {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .causeoflosslife .causeoflosslife__baris {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* View (permintaan work owner 05-10-2026 "rapihin"): kepala nama + lencana, kartu rincian, jejak di kaki. */
+.causeoflosslife .causeoflosslife__lihat {
+  display: grid;
+  gap: 16px;
+}
+
+.causeoflosslife .causeoflosslife__lihat-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1px solid var(--rc-aksen-garis);
+  border-radius: 16px;
+  background: var(--rc-aksen-lembut);
+}
+
+.causeoflosslife .causeoflosslife__lihat-mata {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.causeoflosslife .causeoflosslife__lihat-kode {
+  margin: 0;
+  color: var(--rc-aksen-teks);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.causeoflosslife .causeoflosslife__lihat-nama {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+}
+
+.causeoflosslife .causeoflosslife__lencana {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid var(--rc-tepi);
+  border-radius: 999px;
+  background: var(--rc-isi);
+  color: var(--rc-teks);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.causeoflosslife .causeoflosslife__lihat-kartu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.causeoflosslife .causeoflosslife__lihat-kartu .causeoflosslife__kartu {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .causeoflosslife .causeoflosslife__lihat-kartu {
+    grid-template-columns: 1fr;
+  }
+}
+
+.causeoflosslife .causeoflosslife__pasangan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.causeoflosslife .causeoflosslife__pasangan dt {
+  color: var(--rc-teks-redup);
+  font-size: 12px;
+}
+
+.causeoflosslife .causeoflosslife__pasangan dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.causeoflosslife .causeoflosslife__nilai-besar {
+  font-size: 19px;
+}
+
+.causeoflosslife .causeoflosslife__jejak {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Lencana Flag: active hijau, inactive abu, nilai warisan lain netral. */
+.causeoflosslife .causeoflosslife__lencana--aktif {
+  border-color: var(--rc-sukses-tepi);
+  background: var(--rc-sukses-latar);
+  color: var(--rc-sukses-teks);
+}
+
+.causeoflosslife .causeoflosslife__lencana--nonaktif {
+  border-color: var(--rc-netral-tepi);
+  background: var(--rc-netral-latar);
+  color: var(--rc-netral-teks);
+}
+
+.causeoflosslife .causeoflosslife__baris--nonaktif > td {
+  color: var(--rc-teks-redup);
+}
+
+/* View: label kecil SOA Name di kepala, ubin Code / No Urut / Group Type (hanya yang terisi). */
+.causeoflosslife .causeoflosslife__label-kecil {
+  margin-right: 8px;
+  color: var(--rc-teks-redup);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.causeoflosslife .causeoflosslife__lihat-nama {
+  color: var(--rc-teks);
+  font-weight: 600;
+}
+
+.causeoflosslife .causeoflosslife__ubin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.causeoflosslife .causeoflosslife__ubin > div {
+  padding: 12px 16px;
+  border: 1px solid var(--rc-tepi);
+  border-radius: 14px;
+  background: var(--rc-isi);
+  box-shadow: var(--rc-timbul-kecil);
+}
+
+.causeoflosslife .causeoflosslife__ubin dt {
+  color: var(--rc-teks-redup);
+  font-size: 12px;
+}
+
+.causeoflosslife .causeoflosslife__ubin dd {
+  margin: 4px 0 0;
+  color: var(--rc-teks);
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Kepala kolom grid yang dapat diurutkan (filter + sort `BrowseRIRiskSummary`). */
+.causeoflosslife .causeoflosslife__urut {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Pesan galat per baris View Upload: boleh turun baris. */
+.causeoflosslife .causeoflosslife__tabel td.causeoflosslife__galat {
+  min-width: 260px;
+  white-space: normal;
+  color: var(--rc-waspada-teks);
+}
+
+/* Form R/I RISK DETAIL (section InboxRIRisk) - ringkas seperti form detail riratelife: satu baris medan rapat (ID,
+   R/I RISK NAME, CONTRACT, YEAR, RISK), input 32px, tombol kecil sebaris kanan; layar sempit turun ke dua kolom.
+   Baris grid yang sedang di-Edit ditandai. */
+.causeoflosslife .causeoflosslife__form--rapat {
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.causeoflosslife .causeoflosslife__subjudul {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.causeoflosslife .causeoflosslife__rincian {
+  display: grid;
+  grid-template-columns: 110px minmax(150px, 1.6fr) 96px 84px minmax(110px, 1fr);
+  gap: 10px;
+  align-items: end;
+}
+
+@media (max-width: 860px) {
+  .causeoflosslife .causeoflosslife__rincian {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.causeoflosslife .causeoflosslife__form--rapat .field {
+  gap: 4px;
+  margin: 0;
+}
+
+.causeoflosslife .causeoflosslife__form--rapat .field__label {
+  font-size: 11px;
+}
+
+.causeoflosslife .causeoflosslife__form--rapat .field__input {
+  height: 32px;
+  padding: 0 8px;
+  font-size: 13px;
+}
+
+.causeoflosslife .causeoflosslife__form--rapat .btn {
+  padding: 5px 14px;
+  font-size: 13px;
+}
+
+.causeoflosslife .causeoflosslife__form--rapat .causeoflosslife__aksi {
+  justify-content: flex-end;
+}
+
+.causeoflosslife .causeoflosslife__baris--pilih td {
+  background: var(--rc-aksen-lembut);
+}
+
+/* Form InboxCauseofLossLife: "ID" (disabled b872, lebar 200px b865) di samping "Cause of Loss" (pxTextInput b1029, lebar
+   200px b1039). */
+.causeoflosslife .causeoflosslife__form .causeoflosslife__baris {
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+}
+
+@media (max-width: 640px) {
+  .causeoflosslife .causeoflosslife__form .causeoflosslife__baris {
+    grid-template-columns: 1fr;
+  }
+}
+
+.causeoflosslife .causeoflosslife__nomor,
+.causeoflosslife .causeoflosslife__isian {
+  min-width: 0;
+}
+
+/* Kolom Cause of Loss grid: teks panjang dibungkus (nilai bebas sampai 200 byte). */
+.causeoflosslife .causeoflosslife__nama {
+  white-space: normal;
+  word-break: break-word;
+}

@@ -1,0 +1,286 @@
+/* Gaya modul Endorsment Fac In - setiap pemilih di bawah akar .endorsmentfacin (penjaga cssmodul: gaya modul tidak
+   menumpang di inti). Komponen bersama (btn, panel, field, inbox, alert) tetap milik inti.
+
+   Tema = SALINAN tema NB FacIn (`modul/nbfacin/frontend/nbfacin.css` blok "Tema Kelola User", yang sendiri salinan
+   `.kelola-user` inti) - work owner 11-10-2026: "TEMPLATE NYA JUGA SAMAIN KAYA NB FACIN". Token sendiri (--edt-*),
+   kelas sendiri (edmf-*); light-dark() karena inti memasang color-scheme dark pada :root[data-theme="dark"]. */
+
+.endorsmentfacin {
+  display: contents;
+  --edt-latar-tepi: light-dark(#cfd7e5, #323b50);
+  --edt-latar-atas: light-dark(#f9fafd, #222a3b);
+  --edt-latar-bawah: light-dark(#e4e9f3, #161b27);
+  --edt-bayang-a: light-dark(rgba(30, 45, 90, 0.08), rgba(0, 0, 0, 0.45));
+  --edt-bayang-b: light-dark(rgba(30, 45, 90, 0.24), rgba(0, 0, 0, 0.75));
+  --edt-lembut: light-dark(#e9edf3, #181d2a);
+  --edt-teks: light-dark(#101828, #eef0f6);
+  --edt-teks-redup: light-dark(#4f586b, #aab2c4);
+  --edt-aksen: var(--primary-tanda);
+  --edt-aksen-teks: light-dark(#2339a3, #aebcff);
+  --edt-aksen-lembut: light-dark(#e3e8f6, #222b45);
+  --edt-aksen-garis: light-dark(#b9c5ee, #3a4b8f);
+  --edt-isi: light-dark(#ffffff, #1f2638);
+  --edt-garis: light-dark(#e1e6ef, #2c3447);
+  --edt-tepi: light-dark(#c8d1e1, #3a4459);
+  --edt-tombol: #d63a42;
+  --edt-tombol-ujung: #bf2f37;
+  --edt-tombol-hover: #c2333b;
+  --edt-tombol-hover-ujung: #a9282f;
+  --edt-terang: light-dark(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.045));
+  --edt-gelap: light-dark(rgba(163, 177, 198, 0.55), rgba(0, 0, 0, 0.55));
+  --edt-merah-bayang: light-dark(rgba(214, 58, 66, 0.35), rgba(0, 0, 0, 0.5));
+  --edt-cincin-warna: light-dark(rgba(43, 68, 176, 0.18), rgba(142, 162, 245, 0.25));
+  --edt-timbul-kecil: 4px 4px 9px var(--edt-gelap), -4px -4px 9px var(--edt-terang);
+  --edt-cekung-kecil: inset 2px 2px 4px var(--edt-gelap), inset -2px -2px 4px var(--edt-terang);
+  --edt-cincin: 0 0 0 3px var(--edt-cincin-warna);
+  --edt-bayang-tombol: 4px 4px 10px var(--edt-merah-bayang), -4px -4px 10px var(--edt-terang);
+}
+
+/* Akar kartu halaman (portal, form). */
+.endorsmentfacin .edmf-tema {
+  color: var(--edt-teks);
+  padding: 24px;
+  border: 1px solid var(--edt-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--edt-latar-atas) 0%, var(--edt-latar-bawah) 100%);
+  box-shadow: 0 2px 6px var(--edt-bayang-a), 0 16px 40px -12px var(--edt-bayang-b);
+}
+.endorsmentfacin .edmf-tema__judul {
+  color: var(--edt-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.endorsmentfacin :focus-visible {
+  outline: 2px solid var(--edt-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: CEKUNG, putih bertepi jelas; fokus biru navy bercincin. */
+.endorsmentfacin input:not([type="radio"]):not([type="checkbox"]):not([type="file"]),
+.endorsmentfacin select,
+.endorsmentfacin textarea {
+  background: var(--edt-isi);
+  border: 1px solid var(--edt-tepi);
+  border-radius: 12px;
+  box-shadow: var(--edt-cekung-kecil);
+  color: var(--edt-teks);
+}
+.endorsmentfacin input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):hover:not(:disabled),
+.endorsmentfacin select:hover:not(:disabled),
+.endorsmentfacin textarea:hover:not(:disabled) {
+  border-color: var(--edt-aksen-garis);
+}
+.endorsmentfacin input:not([type="radio"]):not([type="checkbox"]):not([type="file"]):focus,
+.endorsmentfacin select:focus,
+.endorsmentfacin textarea:focus {
+  border-color: var(--edt-aksen);
+  box-shadow: var(--edt-cekung-kecil), var(--edt-cincin);
+  outline: none;
+}
+.endorsmentfacin select {
+  width: 100%;
+  text-overflow: ellipsis;
+}
+
+/* Tombol kapsul TIMBUL; ditekan: CEKUNG. Utama: merah bergradasi halus. */
+.endorsmentfacin .edmf-tombol {
+  border-radius: 999px;
+  background: var(--edt-isi);
+  border: 1px solid var(--edt-tepi);
+  color: var(--edt-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--edt-timbul-kecil);
+}
+.endorsmentfacin .edmf-tombol:hover:not(:disabled) {
+  background: var(--edt-aksen-lembut);
+  border-color: var(--edt-aksen-garis);
+}
+.endorsmentfacin .edmf-tombol:active:not(:disabled) {
+  box-shadow: var(--edt-cekung-kecil);
+}
+.endorsmentfacin .edmf-tombol:disabled {
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.endorsmentfacin .edmf-tombol--utama {
+  background: linear-gradient(180deg, var(--edt-tombol), var(--edt-tombol-ujung));
+  border-color: var(--edt-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--edt-bayang-tombol);
+  min-width: 96px;
+}
+.endorsmentfacin .edmf-tombol--utama:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--edt-tombol-hover), var(--edt-tombol-hover-ujung));
+  border-color: var(--edt-tombol-hover-ujung);
+  color: var(--on-primary);
+}
+.endorsmentfacin .edmf-tombol--utama:disabled {
+  opacity: 0.5;
+}
+
+/* Portal. */
+.endorsmentfacin .edmf-portal__kepala {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.endorsmentfacin .edmf-portal__pesan {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Form Create Addendum - pola FormOpportunity NB FacIn: kepala (judul + tombol), dua kolom bertumpuk. */
+.endorsmentfacin .edmf-form {
+  max-width: 1100px;
+}
+.endorsmentfacin .edmf-form__kepala {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.endorsmentfacin .edmf-form__aksi {
+  display: flex;
+  gap: 10px;
+}
+.endorsmentfacin .edmf-form__alasan {
+  margin: 4px 0 12px;
+  color: var(--edt-teks-redup);
+  font-size: 0.9rem;
+}
+.endorsmentfacin .edmf-form__panel {
+  padding: 18px 22px;
+}
+.endorsmentfacin .edmf-form__kolom {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 40px;
+  align-items: start;
+}
+.endorsmentfacin .edmf-form__tumpuk {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+/* Judul bagian: kecil, huruf besar, bergaris bawah - pemisah kolom. */
+.endorsmentfacin .edmf-form__bagian {
+  margin: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--edt-garis);
+  color: var(--edt-teks-redup);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.endorsmentfacin .edmf-form textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+/* Kelompok radio / centang di bawah label medan (pola nbf-inward__radio). */
+.endorsmentfacin .edmf-pilihan {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 32px;
+  padding: 6px 0;
+}
+.endorsmentfacin .edmf-pilihan__butir {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+/* Tanggal dd/mm/yyyy + tombol kalender (pola nbf-tanggal). */
+.endorsmentfacin .edmf-tanggal {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.endorsmentfacin .edmf-tanggal__pemilih {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Hasil pemeriksaan. */
+.endorsmentfacin .edmf-periksa {
+  margin-top: 16px;
+  padding: 16px 22px;
+}
+.endorsmentfacin .edmf-periksa__kosong {
+  margin: 10px 0 0;
+  color: var(--edt-teks-redup);
+}
+.endorsmentfacin .edmf-periksa__daftar {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.endorsmentfacin .edmf-periksa__butir {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--edt-garis);
+}
+.endorsmentfacin .edmf-periksa__butir:last-child {
+  border-bottom: 0;
+}
+.endorsmentfacin .edmf-periksa__nama {
+  flex: 1 1 260px;
+}
+.endorsmentfacin .edmf-periksa__catatan {
+  flex-basis: 100%;
+  font-size: 0.85rem;
+  color: var(--edt-teks-redup);
+}
+/* Chip hasil: hijau lolos, merah tolak, kuning belum diperiksa, biru klep, abu dilewati. */
+.endorsmentfacin .edmf-chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--edt-lembut);
+  color: var(--edt-teks-redup);
+}
+.endorsmentfacin .edmf-chip--lolos {
+  background: light-dark(#dcfae6, #12372a);
+  color: light-dark(#067647, #75e0a7);
+}
+.endorsmentfacin .edmf-chip--tolak {
+  background: light-dark(#fee4e2, #4a1a17);
+  color: light-dark(#b42318, #fda29b);
+}
+.endorsmentfacin .edmf-chip--belum-diperiksa {
+  background: light-dark(#fef0c7, #4a3410);
+  color: light-dark(#b54708, #fec84b);
+}
+.endorsmentfacin .edmf-chip--diklep {
+  background: var(--edt-aksen-lembut);
+  color: var(--edt-aksen-teks);
+}
+
+/* Layar sempit: satu kolom. */
+@media (max-width: 860px) {
+  .endorsmentfacin .edmf-form__kolom {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .endorsmentfacin .edmf-form__kepala {
+    flex-wrap: wrap;
+  }
+}

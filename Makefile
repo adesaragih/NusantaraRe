@@ -23,7 +23,7 @@ BIN     := bin/api
 ORACLE_SCHEMA ?=
 ORACLE_DEV_CONTAINER ?= nusantarare-oracle
 
-.PHONY: help check generate typecheck run-api run-web build build-api build-web test test-db db-up db-down migrate
+.PHONY: help check generate typecheck run-api run-web build build-api build-web test test-db test-db-treatyin db-up db-down migrate
 
 help:
 	@echo "run-api    - jalankan backend Go"
@@ -83,10 +83,32 @@ check:
 # Ditandai build tag `db` supaya `make test` tetap lulus tanpa instance.
 # ⛔ MENGHAPUS tabel di skema yang ditunjuk ORACLE_SCHEMA. Menuntut pengakuan
 # sadar lewat ORACLE_SKEMA_UJI=true, dan menolak POOLDATA.
+# Uji db yang MENUNTUT skema uji buangan (uji/skemauji memasang lalu MEMBONGKAR
+# tabel tiruan). Pagarnya menolak POOLDATA, dan penolakan itu BENAR: daftar
+# bongkarnya memuat OS_AKSEPTASI_KLAIM_LIFE dan empat tabel warisan lain.
 test-db:
 	$(GO) test -tags=db ./modul/claimlife/backend/repository/...
-	$(GO) test -tags=db ./modul/treatyin/backend/repository/...
-	$(GO) test -tags=db ./modul/treatyinadjustment/backend/...
+
+# Uji db Treaty In - berjalan di SKEMA APLIKASI (POOLDATA), sebab ke-37
+# tabelnya berdiri di sana (keputusan pemilik proses 03-10-2026). Ia TIDAK
+# memakai uji/skemauji: nol pemasangan, nol pembongkaran. Tiap test satu
+# transaksi yang diakhiri Rollback, jadi nol baris menetap.
+#
+# Dipisah dari `test-db` dengan sengaja: menjalankan keduanya dalam satu
+# ORACLE_SCHEMA tidak mungkin - yang satu menuntut skema buangan, yang lain
+# menuntut skema aplikasi.
+# ⛔ GAGAL KERAS bila ORACLE_DSN kosong, dan itu bukan kerewelan.
+# `siapkan(t)` memanggil `t.Skip` ketika DSN kosong, dan `go test` mencetak
+# `ok` untuk paket yang SELURUH testnya dilewati. Tanpa pagar di bawah,
+# `make test-db-treatyin` berhasil tanpa menyentuh Oracle sama sekali - dan
+# `ok ... 1.6s` tidak dapat dibedakan dari lulus sungguhan tanpa `-v`.
+# Ditemukan 3 Oktober 2026: target ini memang berperilaku begitu.
+#
+# `config.Load()` membaca os.Getenv, BUKAN .env - jadi env-nya harus sudah
+# termuat di shell pemanggil:  set -a && . ./.env && set +a && make test-db-treatyin
+test-db-treatyin:
+	@if [ -z "$$ORACLE_DSN" ]; then 		echo "ORACLE_DSN kosong - uji db akan DILEWATI seluruhnya dan mencetak 'ok'."; 		echo "Muat env lebih dulu:  set -a && . ./.env && set +a"; 		exit 1; 	fi
+	$(GO) test -tags=db -count=1 -v ./modul/treatyin/backend/repository/... | grep -Ev '^(=== RUN|=== PAUSE|=== CONT)'
 
 # [usulan] gvenzl/oracle-free. Kata sandi datang dari env, tidak pernah
 # ditanam di berkas ini. Tidak pernah menunjuk instance produksi.

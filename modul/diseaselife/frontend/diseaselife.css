@@ -1,0 +1,738 @@
+/* Gaya modul Disease Life - SETIAP pemilih di bawah akar .diseaselife (gaya.test.ts). Fondasi tema
+   (token terang/gelap, isian, tombol, tabel, kolom aksi menempel, tampilan View) disalin dari modul Bordereaux supaya
+   tampilannya seragam; nol pemilih global, nol properti yang memerangkap Modal. */
+
+.diseaselife {
+  display: contents;
+}
+
+.diseaselife .diseaselife__akar {
+  --rc-latar: #eef1f6;
+  --rc-seri-0: #4f46e5;
+  --rc-seri-1: #0d9488;
+  --rc-seri-2: #f59e0b;
+  --rc-seri-3: #64748b;
+  --rc-lintasan: #e8ecf4;
+  --rc-latar-tepi: #cfd7e5;
+  --rc-latar-atas: #f9fafd;
+  --rc-latar-bawah: #e4e9f3;
+  --rc-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --rc-lembut: #e9edf3;
+  --rc-lembut-tepi: #dde3ec;
+  --rc-teks: #101828;
+  --rc-teks-redup: #4f586b;
+  --rc-aksen: var(--primary-tanda);
+  --rc-aksen-teks: #2339a3;
+  --rc-aksen-lembut: #e3e8f6;
+  --rc-aksen-garis: #b9c5ee;
+  --rc-kepala-tabel: #dde4f2;
+  --rc-kepala-teks: #22326b;
+  --rc-kepala-garis: #c3cde2;
+  --rc-isi: #ffffff;
+  --rc-baris-hover: #e6ecfa;
+  --rc-garis: #e1e6ef;
+  --rc-tepi: #c8d1e1;
+  --rc-tombol: #d63a42;
+  --rc-tombol-ujung: #bf2f37;
+  --rc-tombol-hover: #c2333b;
+  --rc-tombol-hover-ujung: #a9282f;
+  --rc-terang: rgba(255, 255, 255, 0.92);
+  --rc-gelap: rgba(163, 177, 198, 0.55);
+  --rc-kilau: rgba(255, 255, 255, 0.7);
+  --rc-timbul: 8px 8px 18px var(--rc-gelap), -8px -8px 18px var(--rc-terang);
+  --rc-timbul-kecil: 4px 4px 9px var(--rc-gelap), -4px -4px 9px var(--rc-terang);
+  --rc-cekung-kecil: inset 2px 2px 4px var(--rc-gelap), inset -2px -2px 4px var(--rc-terang);
+  --rc-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --rc-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--rc-terang);
+  --rc-bayang-popup: 0 24px 64px -24px rgba(16, 24, 40, 0.4);
+  --rc-sukses-latar: #e6f7ee;
+  --rc-sukses-tepi: #b7e8cc;
+  --rc-sukses-teks: #067647;
+  --rc-netral-latar: #e9edf3;
+  --rc-netral-tepi: #d5dce7;
+  --rc-netral-teks: #475467;
+  --rc-waspada-latar: #fbf3df;
+  --rc-waspada-tepi: #f1d58a;
+  --rc-waspada-teks: #a3410a;
+  --text-3: var(--rc-teks-redup);
+  color: var(--rc-teks);
+  padding: 24px;
+  /* Tabel lebih lebar dari layar menggulir DI DALAM kotak ini; `overflow` tidak mengurung popup. */
+  overflow-x: auto;
+  border: 1px solid var(--rc-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--rc-latar-atas) 0%, var(--rc-latar-bawah) 100%);
+  box-shadow: var(--rc-bayang-akar);
+}
+
+:root[data-theme="dark"] .diseaselife .diseaselife__akar {
+  --rc-latar: #1b2130;
+  --rc-seri-0: #818cf8;
+  --rc-seri-1: #2dd4bf;
+  --rc-seri-2: #fbbf24;
+  --rc-seri-3: #94a3b8;
+  --rc-lintasan: #252d40;
+  --rc-latar-tepi: #323b50;
+  --rc-latar-atas: #222a3b;
+  --rc-latar-bawah: #161b27;
+  --rc-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --rc-lembut: #181d2a;
+  --rc-lembut-tepi: #242b3a;
+  --rc-teks: #eef0f6;
+  --rc-teks-redup: #aab2c4;
+  --rc-aksen-teks: #aebcff;
+  --rc-aksen-lembut: #222b45;
+  --rc-aksen-garis: #3a4b8f;
+  --rc-kepala-tabel: #273152;
+  --rc-kepala-teks: #dbe2ff;
+  --rc-kepala-garis: #3a4670;
+  --rc-isi: #1f2638;
+  --rc-baris-hover: #2b3554;
+  --rc-garis: #2c3447;
+  --rc-tepi: #3a4459;
+  --rc-terang: rgba(255, 255, 255, 0.045);
+  --rc-gelap: rgba(0, 0, 0, 0.55);
+  --rc-kilau: rgba(255, 255, 255, 0.04);
+  --rc-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --rc-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--rc-terang);
+  --rc-bayang-popup: 0 24px 64px -24px rgba(0, 0, 0, 0.75);
+  --rc-sukses-latar: #0d2a1f;
+  --rc-sukses-tepi: #1d5c40;
+  --rc-sukses-teks: #75e0a7;
+  --rc-netral-latar: #1f2533;
+  --rc-netral-tepi: #333c4f;
+  --rc-netral-teks: #c3cad8;
+  --rc-waspada-latar: #2b2112;
+  --rc-waspada-tepi: #6b4d17;
+  --rc-waspada-teks: #fec84b;
+}
+
+/* Judul dan teks redup. */
+.diseaselife .inbox__judul,
+.diseaselife .modal__title {
+  color: var(--rc-teks);
+  font-family: "Poppins", var(--font);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.diseaselife .muted {
+  color: var(--rc-teks-redup);
+}
+
+.diseaselife :focus-visible {
+  outline: 2px solid var(--rc-aksen);
+  outline-offset: 2px;
+}
+
+/* Isian: TIMBUL KE DALAM, putih bertepi jelas; fokus navy bercincin lembut. */
+.diseaselife .field__input {
+  background: var(--rc-isi);
+  border: 1px solid var(--rc-tepi);
+  border-radius: 12px;
+  box-shadow: var(--rc-cekung-kecil);
+  color: var(--rc-teks);
+}
+
+.diseaselife .field__input:hover:not(:disabled) {
+  border-color: var(--rc-aksen-garis);
+}
+
+.diseaselife .field__input:focus {
+  border-color: var(--rc-aksen);
+  box-shadow: var(--rc-cekung-kecil), var(--rc-cincin);
+  outline: none;
+}
+
+.diseaselife .field__input--readonly,
+.diseaselife .field__input--readonly:hover {
+  background: var(--rc-lembut);
+  border-color: var(--rc-lembut-tepi);
+  color: var(--rc-teks-redup);
+  box-shadow: none;
+}
+
+/* Tombol kapsul TIMBUL KELUAR; ditekan TIMBUL KE DALAM. Utama: merah bergradasi halus. */
+.diseaselife .btn {
+  border-radius: 999px;
+}
+
+.diseaselife .btn--primary {
+  background: linear-gradient(180deg, var(--rc-tombol), var(--rc-tombol-ujung));
+  border-color: var(--rc-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--rc-bayang-tombol);
+}
+
+.diseaselife .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--rc-tombol-hover), var(--rc-tombol-hover-ujung));
+  border-color: var(--rc-tombol-hover-ujung);
+}
+
+.diseaselife .btn--primary:active:not(:disabled) {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+}
+
+.diseaselife .btn--ghost {
+  background: var(--rc-isi);
+  border: 1px solid var(--rc-tepi);
+  color: var(--rc-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--rc-timbul-kecil);
+}
+
+.diseaselife .btn--ghost:hover:not(:disabled) {
+  background: var(--rc-aksen-lembut);
+  border-color: var(--rc-aksen-garis);
+  color: var(--rc-aksen-teks);
+}
+
+.diseaselife .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--rc-cekung-kecil);
+}
+
+.diseaselife .btn:disabled {
+  box-shadow: none;
+}
+
+/* Popup: kartu alas bersudut lembut. */
+.diseaselife .modal {
+  background: var(--rc-latar);
+  border: 1px solid var(--rc-kilau);
+  border-radius: 22px;
+  box-shadow: var(--rc-bayang-popup);
+}
+
+.diseaselife .modal__head,
+.diseaselife .modal__actions {
+  border-color: var(--rc-garis);
+}
+
+.diseaselife .alert {
+  border-radius: 12px;
+}
+
+/* Tabel: SATU kartu TIMBUL KELUAR - isi putih, kepala navy muda, zebra, sorot biru muda. */
+.diseaselife .diseaselife__tabel {
+  background: var(--rc-isi);
+  border: 1px solid var(--rc-tepi);
+  border-radius: 18px;
+  box-shadow: var(--rc-timbul);
+}
+
+.diseaselife .diseaselife__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.diseaselife .diseaselife__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.diseaselife .diseaselife__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.diseaselife .diseaselife__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.diseaselife .diseaselife__tabel thead th {
+  background: var(--rc-kepala-tabel);
+  color: var(--rc-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--rc-kepala-garis);
+}
+
+.diseaselife .diseaselife__tabel td {
+  color: var(--rc-teks);
+  background: var(--rc-isi);
+  border-bottom-color: var(--rc-garis);
+}
+
+.diseaselife .diseaselife__tabel tbody tr:nth-child(even),
+.diseaselife .diseaselife__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.diseaselife .diseaselife__tabel tbody tr:nth-child(even) > td {
+  background: var(--rc-lembut);
+}
+
+.diseaselife .diseaselife__tabel tbody tr:hover > td {
+  background: var(--rc-baris-hover);
+}
+
+/* Tombol aksi SEBARIS ke samping (permintaan work owner 03-10-2026 "buat ke samping aja"): tidak turun ke bawah;
+   tabel yang lebih lebar dari layar menggulir di dalam akar. */
+.diseaselife .diseaselife__aksi {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.diseaselife .diseaselife__tabel td.table__actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.diseaselife .diseaselife__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.diseaselife .diseaselife__hapus {
+  color: var(--rc-tombol);
+}
+
+.diseaselife .diseaselife__halaman {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  white-space: nowrap;
+}
+
+.diseaselife .diseaselife__badge {
+  margin-left: 10px;
+  background: var(--rc-aksen-lembut);
+  color: var(--rc-aksen-teks);
+}
+
+/* Kartu: form header, tab, riwayat. */
+.diseaselife .diseaselife__kartu {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--rc-isi);
+  border: 1px solid var(--rc-tepi);
+  border-radius: 18px;
+  box-shadow: var(--rc-timbul);
+}
+
+.diseaselife .diseaselife__judul-kartu {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--rc-teks);
+}
+
+/* View: nilai saja, kisi label di atas nilai. */
+.diseaselife .diseaselife__ringkas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 24px;
+  margin: 0;
+}
+
+.diseaselife .diseaselife__ringkas dt,
+.diseaselife .diseaselife__treaty-isi dt {
+  font-size: 12px;
+  color: var(--rc-teks-redup);
+}
+
+.diseaselife .diseaselife__ringkas dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Kolom tombol baris MENEMPEL di kanan saat tabel digulir (pola Treaty Contract Out, permintaan work owner
+   04-10-2026 "tidak perlu scroll ke kanan buat aksesnya"). */
+.diseaselife .diseaselife__tabel th.table__actions,
+.diseaselife .diseaselife__tabel td.table__actions {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  box-shadow: -8px 0 10px -8px rgba(16, 24, 40, 0.25);
+}
+
+.diseaselife .diseaselife__tabel {
+  width: max-content;
+  min-width: 100%;
+}
+
+.diseaselife .diseaselife__tabel th.table__actions,
+.diseaselife .diseaselife__tabel td.table__actions {
+  padding-right: 16px;
+  padding-left: 14px;
+}
+
+.diseaselife .diseaselife__tabel td {
+  white-space: nowrap;
+}
+
+/* Daftar menggulir di dalam kotaknya; kolom Action menempel di kanan. */
+.diseaselife .diseaselife__gulir {
+  overflow: auto;
+  max-height: 68vh;
+}
+
+/* Toolbar daftar: cari, saringan status, tombol Add. */
+.diseaselife .diseaselife__alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 12px;
+}
+
+.diseaselife .diseaselife__cari {
+  width: min(340px, 100%);
+}
+
+/* Saringan status Active / Inactive / All: tombol segmen. */
+.diseaselife .diseaselife__segmen {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--rc-tepi);
+  border-radius: 999px;
+  background: var(--rc-lembut);
+}
+
+.diseaselife .diseaselife__segmen-butir {
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--rc-teks-redup);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.diseaselife .diseaselife__segmen-butir--aktif {
+  background: var(--rc-isi);
+  color: var(--rc-teks);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.14);
+}
+
+/* Status baris. */
+.diseaselife .diseaselife__status {
+  display: inline-block;
+  padding: 2px 10px;
+  border: 1px solid var(--rc-sukses-tepi);
+  border-radius: 999px;
+  background: var(--rc-sukses-latar);
+  color: var(--rc-sukses-teks);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.diseaselife .diseaselife__status--nonaktif {
+  border-color: var(--rc-netral-tepi);
+  background: var(--rc-netral-latar);
+  color: var(--rc-netral-teks);
+}
+
+/* Kolom Status: ruang di kanan supaya badge tidak tertutup kolom Action yang menempel. */
+.diseaselife .diseaselife__tabel .diseaselife__kolom-status {
+  min-width: 96px;
+  padding-right: 22px;
+}
+
+.diseaselife .diseaselife__baris--nonaktif > td {
+  color: var(--rc-teks-redup);
+}
+
+/* Teks panjang (alamat) boleh turun baris di tabel. */
+.diseaselife .diseaselife__alamat {
+  min-width: 220px;
+  max-width: 360px;
+  white-space: normal;
+}
+
+/* Form Add / Edit di popup. */
+.diseaselife .diseaselife__form {
+  display: grid;
+  gap: 14px;
+}
+
+.diseaselife .diseaselife__form textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.diseaselife .diseaselife__catatan {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Saringan Type dan Flag di toolbar daftar. */
+.diseaselife .diseaselife__saring {
+  width: min(200px, 100%);
+}
+
+/* Form: dua kolom (Type / Flag, Code / No Urut) yang turun satu kolom di layar sempit. */
+.diseaselife .diseaselife__baris {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .diseaselife .diseaselife__baris {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* View (permintaan work owner 05-10-2026 "rapihin"): kepala nama + lencana, kartu rincian, jejak di kaki. */
+.diseaselife .diseaselife__lihat {
+  display: grid;
+  gap: 16px;
+}
+
+.diseaselife .diseaselife__lihat-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border: 1px solid var(--rc-aksen-garis);
+  border-radius: 16px;
+  background: var(--rc-aksen-lembut);
+}
+
+.diseaselife .diseaselife__lihat-mata {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.diseaselife .diseaselife__lihat-kode {
+  margin: 0;
+  color: var(--rc-aksen-teks);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.diseaselife .diseaselife__lihat-nama {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+}
+
+.diseaselife .diseaselife__lencana {
+  display: inline-block;
+  padding: 4px 12px;
+  border: 1px solid var(--rc-tepi);
+  border-radius: 999px;
+  background: var(--rc-isi);
+  color: var(--rc-teks);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.diseaselife .diseaselife__lihat-kartu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.diseaselife .diseaselife__lihat-kartu .diseaselife__kartu {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .diseaselife .diseaselife__lihat-kartu {
+    grid-template-columns: 1fr;
+  }
+}
+
+.diseaselife .diseaselife__pasangan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+
+.diseaselife .diseaselife__pasangan dt {
+  color: var(--rc-teks-redup);
+  font-size: 12px;
+}
+
+.diseaselife .diseaselife__pasangan dd {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.diseaselife .diseaselife__nilai-besar {
+  font-size: 19px;
+}
+
+.diseaselife .diseaselife__jejak {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Lencana Flag: active hijau, inactive abu, nilai warisan lain netral. */
+.diseaselife .diseaselife__lencana--aktif {
+  border-color: var(--rc-sukses-tepi);
+  background: var(--rc-sukses-latar);
+  color: var(--rc-sukses-teks);
+}
+
+.diseaselife .diseaselife__lencana--nonaktif {
+  border-color: var(--rc-netral-tepi);
+  background: var(--rc-netral-latar);
+  color: var(--rc-netral-teks);
+}
+
+.diseaselife .diseaselife__baris--nonaktif > td {
+  color: var(--rc-teks-redup);
+}
+
+/* View: label kecil SOA Name di kepala, ubin Code / No Urut / Group Type (hanya yang terisi). */
+.diseaselife .diseaselife__label-kecil {
+  margin-right: 8px;
+  color: var(--rc-teks-redup);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.diseaselife .diseaselife__lihat-nama {
+  color: var(--rc-teks);
+  font-weight: 600;
+}
+
+.diseaselife .diseaselife__ubin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.diseaselife .diseaselife__ubin > div {
+  padding: 12px 16px;
+  border: 1px solid var(--rc-tepi);
+  border-radius: 14px;
+  background: var(--rc-isi);
+  box-shadow: var(--rc-timbul-kecil);
+}
+
+.diseaselife .diseaselife__ubin dt {
+  color: var(--rc-teks-redup);
+  font-size: 12px;
+}
+
+.diseaselife .diseaselife__ubin dd {
+  margin: 4px 0 0;
+  color: var(--rc-teks);
+  font-size: 18px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Kepala kolom grid yang dapat diurutkan (filter + sort `BrowseRIRiskSummary`). */
+.diseaselife .diseaselife__urut {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Pesan galat per baris View Upload: boleh turun baris. */
+.diseaselife .diseaselife__tabel td.diseaselife__galat {
+  min-width: 260px;
+  white-space: normal;
+  color: var(--rc-waspada-teks);
+}
+
+/* Form R/I RISK DETAIL (section InboxRIRisk) - ringkas seperti form detail riratelife: satu baris medan rapat (ID,
+   R/I RISK NAME, CONTRACT, YEAR, RISK), input 32px, tombol kecil sebaris kanan; layar sempit turun ke dua kolom.
+   Baris grid yang sedang di-Edit ditandai. */
+.diseaselife .diseaselife__form--rapat {
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.diseaselife .diseaselife__subjudul {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.diseaselife .diseaselife__rincian {
+  display: grid;
+  grid-template-columns: 110px minmax(150px, 1.6fr) 96px 84px minmax(110px, 1fr);
+  gap: 10px;
+  align-items: end;
+}
+
+@media (max-width: 860px) {
+  .diseaselife .diseaselife__rincian {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.diseaselife .diseaselife__form--rapat .field {
+  gap: 4px;
+  margin: 0;
+}
+
+.diseaselife .diseaselife__form--rapat .field__label {
+  font-size: 11px;
+}
+
+.diseaselife .diseaselife__form--rapat .field__input {
+  height: 32px;
+  padding: 0 8px;
+  font-size: 13px;
+}
+
+.diseaselife .diseaselife__form--rapat .btn {
+  padding: 5px 14px;
+  font-size: 13px;
+}
+
+.diseaselife .diseaselife__form--rapat .diseaselife__aksi {
+  justify-content: flex-end;
+}
+
+.diseaselife .diseaselife__baris--pilih td {
+  background: var(--rc-aksen-lembut);
+}
+
+/* Form InboxDisease: "Number / ID" (disabled b1070, lebar 105px b1063), "ICD Code" (pxTextInput b1232, lebar 105px
+   b1239) dan "Disease" (pxTextArea b1502, tinggi minimal 3 baris b1510) sebaris; layar sempit turun satu kolom. */
+.diseaselife .diseaselife__form .diseaselife__baris {
+  grid-template-columns: minmax(0, 160px) minmax(0, 200px) minmax(0, 1fr);
+}
+
+@media (max-width: 640px) {
+  .diseaselife .diseaselife__form .diseaselife__baris {
+    grid-template-columns: 1fr;
+  }
+}
+
+.diseaselife .diseaselife__nomor,
+.diseaselife .diseaselife__isian {
+  min-width: 0;
+}
+
+/* Textarea Disease: tiga baris, tumbuh ke bawah; huruf besar ditulis aplikasi (SetUpperCase_DT), bukan CSS. */
+.diseaselife .diseaselife__teks {
+  min-height: 72px;
+  resize: vertical;
+  text-transform: none;
+}
+
+/* Kolom Disease grid: teks panjang dibungkus (pyWrap true b4564; nilai sampai 1000 byte). */
+.diseaselife .diseaselife__nama {
+  white-space: normal;
+  word-break: break-word;
+  min-width: 260px;
+}

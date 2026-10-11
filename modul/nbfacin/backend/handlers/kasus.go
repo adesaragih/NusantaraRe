@@ -40,6 +40,99 @@ type kasusKabel struct {
 	Opportunity isianOpportunity `json:"opportunity"`
 	InsuredName string           `json:"insuredName"`
 	General     generalKabel     `json:"general"`
+	// RiskScoring - tiket 54: `{finalScore, noteFinalScore}` tersimpan; "" bila belum ada.
+	RiskScoring riskScoringKabel `json:"riskScoring"`
+	// AksesLossRecord - tiket 55: akun login ber-JOB_POSITION "IT" (lunak: galat baca = false).
+	AksesLossRecord bool `json:"aksesLossRecord"`
+	// AksesKorespondensi - tiket 56: aturan sama dengan AksesLossRecord (satu pembacaan JOB_POSITION).
+	AksesKorespondensi bool `json:"aksesKorespondensi"`
+	// BolehUbah / AlasanBacaSaja - case baca-saja sesudah keluar dari tahap marketing (aturan bersama Submit, bacasaja.go).
+	BolehUbah      bool   `json:"bolehUbah"`
+	AlasanBacaSaja string `json:"alasanBacaSaja"`
+	// BolehUbahSpreading / UbahBarisSpreading - tiket 59: tab Spreading dapat diubah (marketing / Team Leader seperti
+	// bolehUbah, ATAU tahap uw = When IsUWSpread + workbasket posisi); grid baris spreading (Add / Delete / Treaty Type /
+	// % Share, Copy Spreading) HANYA tahap uw.
+	BolehUbahSpreading bool `json:"bolehUbahSpreading"`
+	UbahBarisSpreading bool `json:"ubahBarisSpreading"`
+	// UbahAkumulasi - tiket 60: Accumulation Code / Address coverage dapat diubah (PUT …/akumulasi) - tahap uw (When
+	// IsUWSpread, K60-2) + workbasket posisi.
+	UbahAkumulasi bool `json:"ubahAkumulasi"`
+	// KunciPeriode - tiket 64d K1: Begin / End date terkunci (tahap Binding).
+	KunciPeriode bool `json:"kunciPeriode"`
+	// BolehFollowing - tiket 70 (A70-4): tombol Search Following Policy (boleh ubah + ConfirmBinding != 1).
+	BolehFollowing bool `json:"bolehFollowing"`
+	// BusinessType / Lini - tiket 73 P0: BusinessType_DeT atas BUSINESS GROUPPANEL + OLDID dan predikat When korpus
+	// (gerbang tab menurut Class of Business, bukan groupBusiness).
+	BusinessType string    `json:"businessType"`
+	Lini         liniKabel `json:"lini"`
+	// TampilanAneka - tiket 73 P1: kontainer form objek Aneka + sakelar (services.TampilanAneka).
+	TampilanAneka tampilanAnekaKabel `json:"tampilanAneka"`
+	// JumlahLokasi - tiket 75 F3: jumlah lokasi objek FIRE (layar memilih tab Object per halaman); null bila tak terbaca.
+	JumlahLokasi *int `json:"jumlahLokasi"`
+	// JenisCsv - tiket 73 P6: template CSV objek ('fire' | 'cargo' | 'aneka' | 'marinehull' | 'cpm' | ''), services.LiniKasus.
+	JenisCsv string `json:"jenisCsv"`
+}
+
+// tampilanAnekaKabel - services.TampilanAneka; kontainer selalu larik ("C1".."C9", [] di luar gerbang tab Object Aneka).
+type tampilanAnekaKabel struct {
+	Kontainer        []string `json:"kontainer"`
+	KolomTahunJumlah bool     `json:"kolomTahunJumlah"`
+	HE               bool     `json:"he"`
+	Golf             bool     `json:"golf"`
+	TanamanHasil     bool     `json:"tanamanHasil"`
+	Engineering      bool     `json:"engineering"`
+	Bonding          bool     `json:"bonding"`
+	Briguna          bool     `json:"briguna"`
+	TopRisk          bool     `json:"topRisk"`
+	SectionLol       bool     `json:"sectionLol"`
+	JumlahSatuan     bool     `json:"jumlahSatuan"`
+	// Tiket 73 P2 - form coverage Aneka.
+	CurrencyCoverage bool `json:"currencyCoverage"`
+	MBD              bool `json:"mbd"`
+}
+
+// liniKabel - hasil predikat When per lini (services.LiniKasus).
+type liniKabel struct {
+	Fire            bool `json:"fire"`
+	Aneka           bool `json:"aneka"`
+	AnekaNotBonding bool `json:"anekaNotBonding"`
+	Liability       bool `json:"liability"`
+	Bonding         bool `json:"bonding"`
+	Golf            bool `json:"golf"`
+	MarineCargo     bool `json:"marineCargo"` // tiket 74 P0
+}
+
+// denganAksesTab - aksesLossRecord / aksesKorespondensi dari satu pembacaan lunak JOB_POSITION; bolehUbah / alasanBacaSaja
+// dari tahap kasus (lunak).
+func denganAksesTab(out kasusKabel, svc *services.Service, r *http.Request, stubPelaku bool) kasusKabel {
+	pelaku := inti.PelakuDari(r, stubPelaku)
+	akses := svc.AksesTabIT(r.Context(), pelaku)
+	out.AksesLossRecord, out.AksesKorespondensi = akses, akses
+	out.BolehUbah, out.AlasanBacaSaja = svc.AksesUbahKasus(r.Context(), pelaku, r.PathValue("caseId"))
+	out.BolehUbahSpreading, out.UbahBarisSpreading = svc.AksesSpreading(r.Context(), pelaku, r.PathValue("caseId"))
+	out.UbahAkumulasi = svc.AksesAkumulasi(r.Context(), pelaku, r.PathValue("caseId"))
+	out.KunciPeriode = svc.KunciPeriode(r.Context(), r.PathValue("caseId"))
+	out.BolehFollowing = svc.AksesFollowing(r.Context(), pelaku, r.PathValue("caseId"))
+	l := svc.LiniKasus(r.Context(), r.PathValue("caseId"))
+	out.BusinessType = l.BusinessType
+	out.Lini = liniKabel{Fire: l.Fire, Aneka: l.Aneka, AnekaNotBonding: l.AnekaNotBonding, Liability: l.Liability, Bonding: l.Bonding,
+		Golf: l.Golf, MarineCargo: l.MarineCargo}
+	a := l.TampilanAneka
+	if a.Kontainer == nil {
+		a.Kontainer = []string{}
+	}
+	out.TampilanAneka = tampilanAnekaKabel{Kontainer: a.Kontainer, KolomTahunJumlah: a.KolomTahunJumlah, HE: a.HE, Golf: a.Golf,
+		TanamanHasil: a.TanamanHasil, Engineering: a.Engineering, Bonding: a.Bonding, Briguna: a.Briguna, TopRisk: a.TopRisk,
+		SectionLol: a.SectionLol, JumlahSatuan: a.JumlahSatuan,
+		CurrencyCoverage: a.CurrencyCoverage, MBD: a.MBD}
+	out.JumlahLokasi = svc.JumlahLokasi(r.Context(), r.PathValue("caseId"))
+	out.JenisCsv = l.JenisCsv
+	return out
+}
+
+type riskScoringKabel struct {
+	FinalScore     string `json:"finalScore"`
+	NoteFinalScore string `json:"noteFinalScore"`
 }
 
 // isianGeneral - badan PUT .../general (sepuluh medan; tanpa medan tampil-saja).
@@ -71,6 +164,7 @@ const batasBadanGeneral = 16 << 10
 func keKasusKabel(k services.KasusKabel) kasusKabel {
 	o, g := k.Opportunity, k.General
 	return kasusKabel{CaseID: k.CaseID, Position: k.Position, StatusWork: k.StatusWork, InsuredName: k.InsuredName,
+		RiskScoring: riskScoringKabel{teks(k.RiskScoring.FinalScore), k.RiskScoring.NoteFinalScore},
 		Opportunity: isianOpportunity{EstimatedClosingDate: o.EstimatedClosingDate, BusinessProspectName: o.BusinessProspectName,
 			AccountID: o.AccountID, InsuredID: o.InsuredID, GroupBusinessID: o.GroupBusinessID, GroupBusiness: o.GroupBusiness,
 			ClassOfBusiness: o.ClassOfBusiness, TypeOfInward: o.TypeOfInward, TypeOfFacultative: o.TypeOfFacultative,
@@ -84,14 +178,14 @@ func keKasusKabel(k services.KasusKabel) kasusKabel {
 }
 
 // bacaKasus - GET /api/nbfacin/kasus/{caseId}.
-func bacaKasus(svc *services.Service) http.HandlerFunc {
+func bacaKasus(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		k, err := svc.BacaKasus(r.Context(), r.PathValue("caseId"))
 		if err != nil {
 			tulisGalat(w, err)
 			return
 		}
-		galat.TulisJSON(w, keKasusKabel(k))
+		galat.TulisJSON(w, denganAksesTab(keKasusKabel(k), svc, r, stubPelaku))
 	}
 }
 
@@ -112,7 +206,7 @@ func simpanGeneral(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			tulisGalat(w, err)
 			return
 		}
-		galat.TulisJSON(w, keKasusKabel(k))
+		galat.TulisJSON(w, denganAksesTab(keKasusKabel(k), svc, r, stubPelaku))
 	}
 }
 

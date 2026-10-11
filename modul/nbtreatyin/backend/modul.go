@@ -14,6 +14,7 @@ import (
 	"net/http"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/dokumenpolis"
 	"nusantarare/modul/nbtreatyin/backend/handlers"
 	"nusantarare/modul/nbtreatyin/backend/services"
 )
@@ -35,7 +36,10 @@ func Pendaftaran() inti.Pendaftaran {
 		Nama:    Nama,
 		Migrasi: berkasMigrasi,
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
-			return Baru(services.DariDasar(p.Dasar()), p.Config().AuthStub), nil
+			m := Baru(services.DariDasar(p.Dasar()), p.Config().AuthStub)
+			// Lampiran "Reas" (keputusan work owner 08-10-2026) - penyimpanan bersama, garam token dari config.
+			m.lampiran = dokumenpolis.Oracle(p.Dasar(), p.Config().StorageTokenSalt)
+			return m, nil
 		},
 	}
 }
@@ -44,6 +48,8 @@ func Pendaftaran() inti.Pendaftaran {
 type Modul struct {
 	svc        *services.Layanan
 	stubPelaku bool
+	// lampiran - lampiran "Reas" kasus (`inti/backend/dokumenpolis`); nil = rutenya tidak dipasang.
+	lampiran *dokumenpolis.Layanan
 }
 
 // Baru merakit modul di atas layanan yang sudah disambung.
@@ -55,7 +61,12 @@ func Baru(svc *services.Layanan, stubPelaku bool) Modul {
 func (Modul) Nama() string { return Nama }
 
 // DaftarkanRute mendaftarkan seluruh rute modul ini ke mux bersama.
-func (m Modul) DaftarkanRute(mux *http.ServeMux) { handlers.DaftarkanRute(mux, m.svc, m.stubPelaku) }
+func (m Modul) DaftarkanRute(mux *http.ServeMux) {
+	handlers.DaftarkanRute(mux, m.svc, m.stubPelaku)
+	if m.lampiran != nil {
+		handlers.DaftarkanLampiran(mux, m.svc, m.lampiran, m.stubPelaku)
+	}
+}
 
 // JalankanPekerja - modul ini tidak punya pekerja latar.
 func (Modul) JalankanPekerja(context.Context) inti.Pekerja { return inti.TanpaPekerja() }

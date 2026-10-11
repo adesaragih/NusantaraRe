@@ -223,3 +223,37 @@ func TestGerbangLiniLewatRegistry(t *testing.T) {
 		t.Error("RNML tanpa BusinessOldId life lolos")
 	}
 }
+
+// TestRISlipMengubahGerbangPembayaran - CountPaymentEdm_Act langkah 5: EDM RI
+// slip menyetel Type 0 sebelum gerbang, sehingga Adj TSI (Type 2) menjadi
+// Adj Ref No (Type 0).
+func TestRISlipMengubahGerbangPembayaran(t *testing.T) {
+	k := predikat.KasusEDM{Properti: map[string]string{
+		"pyWorkPage.OfferFacIn.QuotationData.StatusBusiness": "3",
+		"pyWorkPage.OfferFacIn.QuotationData.EdmType":        "4",
+		services.JalurTypeEDM:                                "2",
+	}, JenisBisnisLama: ptrTeks("Fire")}
+	nilai := func(edmTypeNew string) services.PredikatPembayaran {
+		t.Helper()
+		ks, err := services.KasusSesudahRISlip(k, edmTypeNew)
+		if err != nil {
+			t.Fatal(err)
+		}
+		p, err := services.PredikatPembayaranDari(ks)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return p
+	}
+	if p := nilai("1"); !p.IsEdmAdjTSI || p.IsEdmAdjRefNo {
+		t.Errorf("bukan RI slip: %+v", p)
+	}
+	if p := nilai("4"); p.IsEdmAdjTSI || !p.IsEdmAdjRefNo {
+		t.Errorf("RI slip: %+v", p)
+	}
+	if k.Properti[services.JalurTypeEDM] != "2" {
+		t.Error("masukan termutasi")
+	}
+}
+
+func ptrTeks(s string) *string { return &s }

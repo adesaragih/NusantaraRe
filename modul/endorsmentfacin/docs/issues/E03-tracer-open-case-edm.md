@@ -21,6 +21,12 @@ dibedakan.
 **Blocked by:** `..\08-registry-rules-eval.md` · E01
 ⛔ Tiket NB itu **belum dikerjakan** — lihat §0 indeks.
 
+**Pembaruan 11-10-2026 (irisan I3, W-EDM-08…12):** `OpenCase` kini dipanggil dari layar lewat `POST
+/api/endorsmentfacin/kasus` (`backend/services/kasus.go`, `repository/kasus.go`): periksa ulang → OpenCase →
+satu transaksi `SEQ_WORK_POLIS_EDM` (260) + `T_WORK_POLIS` (LINI `FACEDM`, POSITION `ReasFacInMarketing`,
+`Pending-Policy`, flag `1`) + `T_EDM_FACIN_KASUS` (262). Pengecualian langkah 5 dari tabel 261 `JENIS='BATAL'`.
+Tautan `DataToEDM` tidak ditulis (A43). Keputusan agent A42–A49: `../LAPORAN-IMPLEMENTASI-EDM-11-10-2026.md` §5.
+
 **Status:** sebagian — 01-10-2026, `backend/services/bukakasus.go` (`OpenCase`, `TautanAssignment`); test
 `bukakasus_test.go`. Penghalang NB-08 gugur; E01 **tidak** diperlukan: `[terverifikasi]` langkah 1-13
 `SetValueToEDMWork` dan `DataToEDM` tidak memanggil rule `When`. Daftar pengecualian langkah 5 (dua

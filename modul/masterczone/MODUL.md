@@ -38,7 +38,7 @@ inti 916.
 
 ## Tabel
 
-Menulis `CZONE` (dibuat `masterprovince` 880). Group Of merujuk `CZONE.CODE` tabel yang sama.
+Menulis `CZONE` (dibuat `masterprovince` 215). Group Of merujuk `CZONE.CODE` tabel yang sama.
 
 ## Rute
 

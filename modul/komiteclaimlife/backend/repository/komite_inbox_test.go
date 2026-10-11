@@ -29,13 +29,13 @@ func penandaBerurut(q string) []string {
 // `:tutup` - dan inbox diam-diam kosong.
 func TestInboxKomitePenandaBerurutSesuaiArgumen(t *testing.T) {
 	baris := penandaBerurut(sqlInboxKomite("G", "W", "L", "C", "A"))
-	mau := []string{"akun", "menunggu", "menunggu", "tutup", "setuju", "offset", "ukuran"}
+	mau := []string{"akun", "menunggu", "menunggu", "tutup", "setuju", "lini", "offset", "ukuran"}
 	if !reflect.DeepEqual(baris, mau) {
 		t.Errorf("penanda inbox %v, mau %v", baris, mau)
 	}
 	cacah := penandaBerurut(sqlCacahInboxKomite("G", "W", "L", "C", "A"))
-	if !reflect.DeepEqual(cacah, mau[:5]) {
-		t.Errorf("penanda cacah %v, mau %v", cacah, mau[:5])
+	if !reflect.DeepEqual(cacah, mau[:6]) {
+		t.Errorf("penanda cacah %v, mau %v", cacah, mau[:6])
 	}
 }
 
@@ -48,6 +48,8 @@ func TestInboxKomiteHanyaAnggotaBerjalan(t *testing.T) {
 		"l.KOMITE_URUT = (SELECT MIN(l2.KOMITE_URUT)",
 		"l2.KOMITE_APPROVAL = :menunggu",
 		"w.STATUS_WORK <> :tutup",
+		// kasus komite lini lain (TKMT- Claim Prop) tidak berdiri di inbox Komite Life - keputusan work owner 07-10-2026
+		"(w.LINI = :lini OR w.LINI IS NULL)",
 	} {
 		if !strings.Contains(q, s) {
 			t.Errorf("inbox komite kehilangan %q:\n%s", s, q)
@@ -125,6 +127,15 @@ func TestKasusKomiteMembacaPesertaDanNomorDiperiksa(t *testing.T) {
 	}
 	if !strings.Contains(sqlNomorAksepDiAdjustment("A"), "WHERE ACCEPTED_NO = :1") {
 		t.Error("pemeriksa keunikan nomor akseptasi tidak menyaring ACCEPTED_NO")
+	}
+}
+
+// TestKasusKomiteHanyaLiniLife - kasus komite lini lain (TKMT- Claim Prop) tidak terbaca lewat ID: membuka, memutuskan,
+// dan riwayat Komite Life semuanya lewat `Kasus` (keputusan work owner 07-10-2026).
+func TestKasusKomiteHanyaLiniLife(t *testing.T) {
+	q := sqlKasusKomite("G", "W", "L", "C", "A")
+	if !strings.Contains(q, "WHERE g.ID = :2\n\t   AND (w.LINI = :3 OR w.LINI IS NULL)") {
+		t.Errorf("kasus komite tanpa saringan LINI sesudah ID:\n%s", q)
 	}
 }
 

@@ -21,7 +21,7 @@ func TestSqlBahanHitungQR(t *testing.T) {
 		"produk": {sqlParamProdukQR("S.M_PRODUCTNAME_LIFE"), "RIRISKID FROM S.M_PRODUCTNAME_LIFE WHERE ID = :1"},
 		"plan":   {sqlPlanProdukQR("S.P"), "SELECT NAME, RIRATEID FROM S.P WHERE PRODUCTID = :1 ORDER BY URUT"},
 		"rate":   {sqlRateHitungQR("S.M_RATE_LIFE"), "SELECT ID, GENDER, AGE, CONTRACT, RATE FROM S.M_RATE_LIFE WHERE IDUSEDBY = :1"},
-		"risk":   {sqlRiskHitungQR("S.RIRISK_LIFE"), "SELECT ID, YEAR, CONTRACT, RISK FROM S.RIRISK_LIFE WHERE IDUSEDBY = :1"},
+		"risk":   {sqlRiskHitungQR("S.RIRISK_LIFE"), "SELECT ID, YEAR, CONTRACT, TO_CHAR(RISK, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''') FROM S.RIRISK_LIFE WHERE IDUSEDBY = :1"},
 	} {
 		if err := db.PeriksaSQL(k.q); err != nil {
 			t.Fatal(err)

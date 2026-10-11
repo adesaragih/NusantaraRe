@@ -189,6 +189,55 @@ export function ambilAcuan(): Promise<Acuan> {
   return minta<Acuan>(`${PREFIX_EDMTREATYIN}/acuan`)
 }
 
+// ------------------------------------------------------------------ Copy Old (perintah work owner 07-10-2026)
+
+/** Hak layar portal akun - `services.Hak`. `copyOld` = superadmin (Kelola User) dengan menu EDM ber-hak penuh. */
+export interface HakPortal {
+  copyOld: boolean
+}
+
+/** Satu baris popup Copy Old - `models.DokumenLama`; `alasan` menyebut sebab, tidak pernah nilai dokumen. */
+export interface DokumenLama {
+  id: string
+  noPolis: string
+  edmNo: string
+  prodKe: number
+  edmType: string
+  sobName: string
+  cedingCoName: string
+  tglProd: string
+  bolehDisalin: boolean
+  alasan: string[]
+}
+
+export type StatusSalinLama = 'disalin' | 'sudahAda' | 'ditolak' | 'gagal'
+
+/** Hasil satu ID sesudah `Process Copy` - `models.HasilSalinLama`. */
+export interface HasilSalinLama {
+  id: string
+  status: StatusSalinLama
+  pesan: string[]
+}
+
+export interface JawabanSalinLama {
+  hasil: HasilSalinLama[]
+  disalin: number
+}
+
+export function ambilHak(): Promise<HakPortal> {
+  return minta<HakPortal>(`${PREFIX_EDMTREATYIN}/hak`)
+}
+
+/** Isi popup Copy Old: dokumen endorsemen JSON_POLIS lama yang belum ada di tabel flat, urut generasi. */
+export function ambilDokumenLama(): Promise<DokumenLama[]> {
+  return minta<DokumenLama[]>(`${PREFIX_EDMTREATYIN}/lama`)
+}
+
+/** `Process Copy`: salin ID yang dicentang - satu transaksi per dokumen, urut generasi, hasil per ID. */
+export function salinDokumenLama(ids: string[]): Promise<JawabanSalinLama> {
+  return minta<JawabanSalinLama>(`${PREFIX_EDMTREATYIN}/lama/salin`, { metode: 'POST', badan: { ids } })
+}
+
 // ------------------------------------------------------------------ halaman
 
 /** Awalan jalur halaman polis - `models.HalamanPolis` + ".". */

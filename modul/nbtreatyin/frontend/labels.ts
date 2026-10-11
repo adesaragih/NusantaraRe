@@ -62,7 +62,8 @@ export const KOLOM_PORTAL = {
   id: 'Offer No',
   // keputusan work owner 06-10-2026 - bukan kolom GetListOpportunity
   jenis: 'Type',
-  bisnis: 'Group Business',
+  // perintah work owner 10-10-2026 "ganti yang di inbox group bisnis jadi treaty bisnis" (dulu "Group Business")
+  bisnis: 'Treaty Business',
   tertanggung: 'Insured Name',
   marketing: 'Marketing',
   status: 'Status',
@@ -82,7 +83,7 @@ export const KOLOM_BERANDA = {
   id: 'Offer No',
   jenis: 'Type',
   tertanggung: 'Insured Name',
-  bisnis: 'Group Business',
+  bisnis: 'Treaty Business', // perintah work owner 10-10-2026 (dulu "Group Business")
   ceding: 'Ceding Company',
   mulai: 'Inception Date',
   marketing: 'Marketing',
@@ -97,7 +98,8 @@ export const PORTAL = {
   judul: 'Opportunity',
   /** `.FilterTermForOpportunity` pyLabelFor (nama aksesibel) dan pyPlaceholder. */
   filter: 'Filter Term for Opportunity',
-  placeholder: 'NB-1234 or Name',
+  // menyimpang dari pyPlaceholder XML ("NB-1234 or Name"): menyebut kolom yang dicari (perintah work owner 07-10-2026)
+  placeholder: 'Search NB no, master ID, policy no, insured, business, ceding, marketing...',
   /** Nama aksesibel ikon pengosong C[1.2] (pxIcon `pyImage webwb/pyiconclearfield.png`,
    *  `pyIncludeLabel=false` - tanpa teks tampil). */
   bersihkan: 'Clear field',
@@ -267,6 +269,37 @@ export const PESAN = {
   terkirim: 'Berkas dikirim.',
   /** `.DateofSurvey` wajib (`Section/InputHistoricalSurveyReportDtl`). */
   surveiTanpaTanggal: 'Date of Survey wajib diisi pada baris',
-  opsiTerbuka:
-    'Pilihan medan ini didefinisikan di rule Property yang tidak ada di korpus; nilai diketik apa adanya.',
+  opsiTerbuka: 'Pilihan medan ini didefinisikan di rule Property yang tidak ada di korpus; nilai diketik apa adanya.',
+} as const
+
+/** `[tidak ada di korpus]` - tombol Copy Old di samping Create dan popupnya (perintah work owner 07-10-2026: "nb
+ *  ttreatyin tobol copy untuk data lama mana?" -> "langsung anda kerjakan!"); teks sama dengan Copy Old EDM Treaty In. */
+export const COPY_OLD = {
+  tombol: 'Copy Old',
+  keterangan:
+    'Old NB Treaty In policies (JSON) that are not in the new tables yet. Tick the ones to copy, then press Process Copy.',
+  prosesCopy: 'Process Copy',
+  tutup: 'Close',
+  cari: 'Search',
+  pilihSemua: 'Select all',
+  pilihBaris: 'Select',
+  dipilih: 'selected',
+  kosong: 'All old NB Treaty In policies are already in the new tables.',
+  kolom: {
+    id: 'NB Number',
+    noOffer: 'Master ID',
+    noPolis: 'Policy Number',
+    insured: 'Insured Name',
+    bisnis: 'Group Business',
+    sob: 'SOB',
+    ceding: 'Ceding',
+    tglProd: 'Production Date',
+    catatan: 'Notes',
+  },
+  status: {
+    disalin: 'Copied',
+    sudahAda: 'Already in the new tables',
+    ditolak: 'Cannot be copied',
+    gagal: 'Failed',
+  },
 } as const

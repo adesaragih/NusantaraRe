@@ -15,10 +15,12 @@ import {
   KODE_MENU_TEMPLATE_MANAGER,
   modulDipasang,
   modulUntukAkun,
+  tambahModulDipinjam,
   type KeadaanMenuTabel,
 } from '../inti/frontend/lib/daftarMenu'
 import { bolehMasukStub, PERISTIWA_SESI_BERAKHIR, pelakuStub, sesiDariProfil, type Sesi } from '../inti/frontend/store/sesi'
 import { HAK_PENUH, KonteksHakMenu, type HakMenu } from '../inti/frontend/lib/hakMenu'
+import { Modal } from '../inti/frontend/components/ui/dasar'
 import { ENTRI_MENU, halamanAktif, MODUL_FRONTEND, type Halaman } from './daftar'
 
 // App = identitas + Shell.
@@ -30,6 +32,18 @@ import { ENTRI_MENU, halamanAktif, MODUL_FRONTEND, type Halaman } from './daftar
 //
 // Mode stub (`VITE_AUTH_STUB=true`) tetap: identitas dari env, tanpa layar
 // login - untuk pengembangan.
+
+// Modul tanpa menu sendiri yang dipasang bagi pemegang menu modul LAIN (modul -> peminjam) - padanan `ruteDipinjam`
+// cmd/api (rute API-nya dipinjam modul yang sama). Komite Claim Prop: menu dibuang, kasus komite dibuka dari inbox
+// Claim Prop (keputusan work owner 09-10-2026); Komite Claim Non Prop dan Komite Claim Life: pola yang sama atas inbox
+// klaimnya. Keempat modul komite TANPA menu (perintah work owner 09-10-2026, `layar.ts`) - hanya terpasang lewat sini.
+const MODUL_DIPINJAM: Readonly<Record<string, readonly string[]>> = {
+  komiteclaimprop: ['claimprop'],
+  komiteclaimnonprop: ['claimnonprop'],
+  komiteclaimlife: ['claimlife'],
+  komiteclaimfacin: ['claimfacin'],
+}
+
 export default function App() {
   const stub = bolehMasukStub()
   // `undefined` = sedang diperiksa; `null` = belum login; selebihnya profil.
@@ -66,6 +80,8 @@ export default function App() {
   const [ketukMenu, setKetukMenu] = useState(0)
   // Permintaan membuka satu berkas dari daftar kotak masuk Beranda - `PropsRute.bukaKasus` (06-10-2026).
   const [bukaKasus, setBukaKasus] = useState<{ modul: string; id: string; ketuk: number } | null>(null)
+  // Halaman pemanggil berkas yang dibuka DI TEMPAT (`PropsRute.onBukaModul`): Back berkas itu kembali ke sana.
+  const [asalBuka, setAsalBuka] = useState<Halaman | null>(null)
   // Pilihan panel kotak masuk Beranda (workbasket, jenis, filter). Beranda dibongkar selama layar kasus tampil, jadi
   // disimpan di sini supaya Back mengembalikannya (perintah work owner 06-10-2026: "saat di back, ini jangan ilang").
   // Milik SATU akun: akun lain yang masuk mulai dari panel tertutup.
@@ -79,6 +95,7 @@ export default function App() {
   )
   const pilihDariMenu = useCallback((h: Halaman) => {
     setHalaman(h)
+    setAsalBuka(null)
     setKetukMenu((k) => k + 1)
   }, [])
   // Modul yang dipasang backend (MODUL_AKTIF, refactor bentuk B). `null` =
@@ -139,10 +156,10 @@ export default function App() {
   // tanpa saringan akun - juga bila backend (versi lama) tidak mengirim medan
   // `menu`: backend itu memang belum menyaring per akun.
   const menuAkun = !stub && profil && Array.isArray(profil.menu) ? profil.menu : null
-  const modulBoleh = useMemo(
-    () => modulUntukAkun(modulAktif, menuAkun, MODUL_FRONTEND.map((m) => m.nama)),
-    [modulAktif, menuAkun],
-  )
+  const modulBoleh = useMemo(() => {
+    const menuDipegang = modulUntukAkun(modulAktif, menuAkun, MODUL_FRONTEND.map((m) => m.nama))
+    return tambahModulDipinjam(menuDipegang, modulAktif, MODUL_DIPINJAM)
+  }, [modulAktif, menuAkun])
   const bolehKelola = menuAkun !== null && menuAkun.includes(KODE_MENU_KELOLA_USER)
   // Template Manager (04-10-2026): sama dengan Kelola User - hanya bagi pemegang menunya.
   const bolehTemplat = menuAkun !== null && menuAkun.includes(KODE_MENU_TEMPLATE_MANAGER)
@@ -159,6 +176,55 @@ export default function App() {
     })
     setVersiMenu((v) => v + 1)
   }, [])
+  // Jendela berkas (tombol View polis Claim Prop -> berkas NB / EDM Treaty In, perintah work owner 08-10-2026 "jangan
+  // tab baru ... biarkan di layar utama", "hanya tampilan polisnya aja, ga usah sampe menu menunya ikut kebuka"): satu
+  // berkas modul lain tampil di modal selebar layar di atas halaman yang sedang dibuka - `PropsRute.onLihatBerkas`.
+  // Rute modulnya dipasang lagi di dalam modal (salinan kedua, keadaannya sendiri) dan berkasnya dibuka lewat jalur
+  // kotak masuk Beranda (`bukaKasus`); tombol Back berkas itu (`onBeranda`) dan tombol X menutup jendelanya.
+  // `id` null = isi MENU modul itu (`PropsRute.onBukaMenu`, 10-10-2026) - tanpa `bukaKasus`, bukan tampilan saja; `baru` =
+  // langsung form tambah modul itu (`PropsRute.mulaiBaru`).
+  const [jendela, setJendela] = useState<{ modul: string; id: string | null; halaman: string; ketuk: number; baru?: boolean } | null>(
+    null,
+  )
+  const lihatBerkas = useCallback(
+    (modul: string, id: string) => {
+      const m = MODUL_FRONTEND.find((x) => x.nama === modul)
+      if (m === undefined || !modulDipasang(m.nama, modulBoleh)) return false
+      setJendela((lama) => ({ modul: m.nama, id, halaman: m.halamanAwal, ketuk: (lama?.ketuk ?? 0) + 1 }))
+      return true
+    },
+    [modulBoleh],
+  )
+  const bukaMenu = useCallback(
+    (modul: string, opsi?: { baru?: boolean }) => {
+      const m = MODUL_FRONTEND.find((x) => x.nama === modul)
+      if (m === undefined || !modulDipasang(m.nama, modulBoleh)) return false
+      setJendela((lama) => ({
+        modul: m.nama,
+        id: null,
+        halaman: m.halamanAwal,
+        ketuk: (lama?.ketuk ?? 0) + 1,
+        baru: opsi?.baru === true,
+      }))
+      return true
+    },
+    [modulBoleh],
+  )
+  // Berkas modul lain dibuka DI TEMPAT (`PropsRute.onBukaModul`, tabel komite inbox Claim Prop - keputusan work owner
+  // 09-10-2026 "jangan pop up, langsung buka komitenya"): halaman pindah ke modul itu lewat jalur `bukaKasus`, dan
+  // Back berkasnya (`onBeranda`) kembali ke halaman pemanggil (`asalBuka`), bukan ke Beranda.
+  const bukaModul = useCallback(
+    (modul: string, id: string) => {
+      const m = MODUL_FRONTEND.find((x) => x.nama === modul)
+      if (m === undefined || !modulDipasang(m.nama, modulBoleh)) return false
+      setAsalBuka(halaman)
+      setBukaKasus((lama) => ({ modul: m.nama, id, ketuk: (lama?.ketuk ?? 0) + 1 }))
+      setHalaman(m.halamanAwal)
+      return true
+    },
+    [modulBoleh, halaman],
+  )
+  const modulJendela = jendela === null ? undefined : MODUL_FRONTEND.find((m) => m.nama === jendela.modul)
   // Daftar modul aktif tiba SESUDAH pemakai sempat membuka halaman modul yang
   // ternyata nonaktif (semua menu tampil selama daftarnya `null`): rute modul
   // itu dilepas, jadi halamannya kembali ke Beranda alih-alih layar kosong
@@ -261,6 +327,7 @@ export default function App() {
           masuk={masuk}
           onBuka={setHalaman}
           onBukaKasus={(m, id) => {
+            setAsalBuka(null)
             setBukaKasus((lama) => ({ modul: m.nama, id, ketuk: (lama?.ketuk ?? 0) + 1 }))
             setHalaman(m.halamanAwal)
           }}
@@ -289,9 +356,48 @@ export default function App() {
             bukaKasus={bukaKasus?.modul === m.nama ? { id: bukaKasus.id, ketuk: bukaKasus.ketuk } : undefined}
             onBeranda={() => {
               setHalaman('beranda')
+              // berkas yang dibuka di tempat (`onBukaModul`): kembali ke halaman pemanggilnya, bukan Beranda
+              if (asalBuka !== null) setHalaman(asalBuka)
+              setAsalBuka(null)
             }}
+            onLihatBerkas={lihatBerkas}
+            onBukaModul={bukaModul}
+            onBukaMenu={bukaMenu}
           />
         ))}
+        {/*
+          Form tambah yang sudah berupa jendela sendiri (`MenuModul.formBaruBerjendela`, mis. popup Add account): tanpa
+          bingkai jendela Shell - work owner 10-10-2026 "HANYA MUNCULIN INI SAJA, MENU UTAMA ACCOUNT NYA TIDAK USAH".
+        */}
+        {jendela !== null && modulJendela !== undefined && jendela.baru === true && modulJendela.formBaruBerjendela === true && (
+          <modulJendela.Rute
+            key={jendela.ketuk}
+            halaman={jendela.halaman}
+            masuk={masuk}
+            onPindah={() => undefined}
+            mulaiBaru
+            onBeranda={() => {
+              setJendela(null)
+            }}
+          />
+        )}
+        {jendela !== null && modulJendela !== undefined && !(jendela.baru === true && modulJendela.formBaruBerjendela === true) && (
+          <Modal judul={modulJendela.kelompok} onTutup={() => setJendela(null)} labelBatal="Close" penuh>
+            <modulJendela.Rute
+              key={jendela.ketuk}
+              halaman={jendela.halaman}
+              masuk={masuk}
+              onPindah={(h) => {
+                setJendela((j) => (j === null ? j : { ...j, halaman: h }))
+              }}
+              bukaKasus={jendela.id === null ? undefined : { id: jendela.id, ketuk: jendela.ketuk, hanyaLihat: true }}
+              mulaiBaru={jendela.baru === true}
+              onBeranda={() => {
+                setJendela(null)
+              }}
+            />
+          </Modal>
+        )}
       </KonteksHakMenu.Provider>
     </Shell>
   )

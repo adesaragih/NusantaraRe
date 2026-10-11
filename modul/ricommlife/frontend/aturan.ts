@@ -1,5 +1,5 @@
 // Aturan layar R/I Comm Life - fungsi murni, diuji tanpa DOM. Aturan sebenarnya dijaga backend (`backend/services`,
-// `backend/models`): nama wajib dan tidak kembar, angka muat kolom flat, kembar (CONTRACT, YEAR), hak View only.
+// `backend/models`): nama wajib dan tidak kembar, angka muat kolom M_RICOMM_LIFE, kembar (CONTRACT, YEAR), hak View only.
 
 import type { IsianKomisi, Komisi, Saringan } from './api'
 import { RC } from './labels'

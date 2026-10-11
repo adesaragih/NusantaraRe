@@ -13,7 +13,6 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/inti/backend/db"
 	"nusantarare/modul/nbfacin/backend/models"
 )
 
@@ -101,8 +100,12 @@ func mataUangBaca(s string) string {
 }
 
 // bacaDeductible - deductible case `id` per T_COVERAGELIST.ID (teks).
-func (r *ObjekOracle) bacaDeductible(ctx context.Context, t tabelObjek, id string) (map[string][]models.Deductible, error) {
-	baris, err := r.db.QueryContext(ctx, sqlBacaDeductible(t), id)
+func (r *ObjekOracle) bacaDeductible(ctx context.Context, t tabelObjek, b lingkupBaca) (map[string][]models.Deductible, error) {
+	q, arg, err := b.kueri(sqlBacaDeductible(t))
+	if err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca deductible: %w", err)
 	}
@@ -129,22 +132,18 @@ func (r *ObjekOracle) bacaDeductible(ctx context.Context, t tabelObjek, id strin
 }
 
 // sisipDeductible - deductible satu coverage (SEQ_NO 1..n).
-func (r *ObjekOracle) sisipDeductible(ctx context.Context, tx *db.Tx, t tabelObjek, idCov string, ded []models.Deductible) error {
+func (w *tulisObjek) sisipDeductible(ctx context.Context, idCov string, ded []models.Deductible) error {
 	for k, d := range ded {
-		idDed, err := r.db.NomorBerikut(ctx, tx, sequenceDeductibleList)
+		idDed, err := w.p.nomor(ctx, sequenceDeductibleList)
 		if err != nil {
 			return err
 		}
-		uid, err := uidAcak()
+		uid, err := w.uid()
 		if err != nil {
 			return err
 		}
 		arg := append([]any{idDed, idCov, indukDeductible, jalurDeductible, k + 1, uid}, argDeductible(d)...)
-		h, err := jalankan(ctx, tx, sqlSisipDeductible(t.ded, adaMataUang(d)), "menyisipkan "+TabelDeductibleList, arg...)
-		if err != nil {
-			return err
-		}
-		if err := db.PastikanSatuBaris(h, TabelDeductibleList); err != nil {
+		if err := w.p.sisip(ctx, sqlSisipDeductible(w.t.ded, adaMataUang(d)), TabelDeductibleList, arg); err != nil {
 			return err
 		}
 	}

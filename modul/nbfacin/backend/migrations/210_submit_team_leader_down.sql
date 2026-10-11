@@ -1,0 +1,3 @@
+-- Jalur mundur 210 - kolom Deductible Acceptance dan tanggal ke UW T_GENERAL_POLIS.
+ALTER TABLE {skema}.T_GENERAL_POLIS DROP (IS_DEDUCTIBLE_ACCEPTANCE, COMMENT_DEDUCTIBLE, DATE_TO_UW, SUBMIT_TO_UW)
+/

@@ -1,6 +1,8 @@
 # 12: Lampiran di tahun treaty — **FITUR BARU**
 
-**Status:** selesai (29-09-2026)
+**Status:** DIBATALKAN 08-10-2026 - fitur lampiran Treaty Contract Out DIBUANG dari aplikasi (keputusan work owner: "hapus fitur upload attachment pada Treaty Contract Out"). Panel, rute, pekerja latar, penyimpanan, dan saklar `PELAKSANA_STORAGE` / `TCO_PEKERJA_LAMPIRAN_INTERVAL` dicabut. Yang tersisa: `M_ATTACHMENTTREATY_2` tetap DIHITUNG sebagai anak tahun treaty (`repository.JumlahAnak`) supaya lampiran lama Pega tidak terputus. Isi di bawah adalah catatan sejarah.
+
+~~**Status:** selesai (29-09-2026)~~
 
 **Blocked by:** 03 (tahun treaty sebagai induk lampiran)
 

@@ -13,7 +13,6 @@ import (
 
 	"github.com/cockroachdb/apd/v3"
 
-	"nusantarare/inti/backend/db"
 	"nusantarare/modul/nbfacin/backend/models"
 )
 
@@ -32,7 +31,7 @@ const syaratIndukCoverage = "v.PARENT_TABLE = '" + indukCoverage + "'"
 // kolomCoverage - satu kolom data T_COVERAGELIST (kolomdata.go).
 type kolomCoverage = kolomData[models.CoverageObjek]
 
-// kolomCoverageData - 28 kolom data (25 migrasi 193 + 3 migrasi 195) sesudah kolom sistem; CURRENCY_CODE ditambahkan terpisah.
+// kolomCoverageData - 30 kolom data (25 migrasi 193 + 3 migrasi 195 + 2 migrasi 203) sesudah kolom sistem; CURRENCY_CODE ditambahkan terpisah.
 var kolomCoverageData = []kolomCoverage{
 	kt("COVERAGE", func(c *models.CoverageObjek) *string { return &c.Coverage }),
 	kt("OLDID", func(c *models.CoverageObjek) *string { return &c.OldID }),
@@ -63,6 +62,9 @@ var kolomCoverageData = []kolomCoverage{
 	kt("UNIT", func(c *models.CoverageObjek) *string { return &c.Unit }),
 	kt("ACCUMULATION_CODE", func(c *models.CoverageObjek) *string { return &c.AccumulationCode }),
 	kt("ACCUMULATION_DESCRIPTION", func(c *models.CoverageObjek) *string { return &c.AccumulationDescription }),
+	// tiket 52 (migrasi 203)
+	kt("ZONE", func(c *models.CoverageObjek) *string { return &c.Zone }),
+	kt("CONSTRUCTION_EARTHQUAKE", func(c *models.CoverageObjek) *string { return &c.ConstructionEarthquake }),
 }
 
 // kolomBacaCoverage - kunci induk, kunci coverage (untuk deductible, tiket 45), lalu kolom data.
@@ -102,8 +104,12 @@ func argCoverage(c models.CoverageObjek, mataUang string) []any {
 }
 
 // bacaCoverage - coverage case `id` per T_PROPERTYITEMLIST.ID (teks), deductible terpasang (tiket 45).
-func (r *ObjekOracle) bacaCoverage(ctx context.Context, t tabelObjek, id string) (map[string][]models.CoverageObjek, error) {
-	baris, err := r.db.QueryContext(ctx, sqlBacaCoverage(t), id)
+func (r *ObjekOracle) bacaCoverage(ctx context.Context, t tabelObjek, b lingkupBaca) (map[string][]models.CoverageObjek, error) {
+	q, arg, err := b.kueri(sqlBacaCoverage(t))
+	if err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca coverage: %w", err)
 	}
@@ -135,7 +141,7 @@ func (r *ObjekOracle) bacaCoverage(ctx context.Context, t tabelObjek, id string)
 		return nil, fmt.Errorf("repository: coverage: %w", err)
 	}
 	baris.Close()
-	ded, err := r.bacaDeductible(ctx, t, id)
+	ded, err := r.bacaDeductible(ctx, t, b)
 	if err != nil {
 		return nil, err
 	}
@@ -148,25 +154,21 @@ func (r *ObjekOracle) bacaCoverage(ctx context.Context, t tabelObjek, id string)
 }
 
 // sisipCoverage - coverage satu item (SEQ_NO 1..n); CURRENCY_CODE = mata uang item (K-069/K-012).
-func (r *ObjekOracle) sisipCoverage(ctx context.Context, tx *db.Tx, t tabelObjek, idItem, mataUang string, cov []models.CoverageObjek) error {
+func (w *tulisObjek) sisipCoverage(ctx context.Context, idItem, mataUang string, cov []models.CoverageObjek) error {
 	for k, c := range cov {
-		idCov, err := r.db.NomorBerikut(ctx, tx, sequenceCoverageList)
+		idCov, err := w.p.nomor(ctx, sequenceCoverageList)
 		if err != nil {
 			return err
 		}
-		uid, err := uidAcak()
+		uid, err := w.uid()
 		if err != nil {
 			return err
 		}
 		arg := append([]any{idCov, idItem, indukCoverage, jalurCoverage, k + 1, uid}, argCoverage(c, mataUang)...)
-		h, err := jalankan(ctx, tx, sqlSisipCoverage(t.cov), "menyisipkan "+TabelCoverageList, arg...)
-		if err != nil {
+		if err := w.p.sisip(ctx, sqlSisipCoverage(w.t.cov), TabelCoverageList, arg); err != nil {
 			return err
 		}
-		if err := db.PastikanSatuBaris(h, TabelCoverageList); err != nil {
-			return err
-		}
-		if err := r.sisipDeductible(ctx, tx, t, idCov, c.Deductibles); err != nil {
+		if err := w.sisipDeductible(ctx, idCov, c.Deductibles); err != nil {
 			return err
 		}
 	}

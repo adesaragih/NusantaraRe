@@ -1,6 +1,6 @@
 # 09: Deductible — satu rumus, satu makna
 
-**Status:** ready-for-agent
+**Status:** dibangun 07-10-2026 — RALAT 07-10-2026 (semula `ready-for-agent`)
 **Blocked by:** 00 (PREFACTOR) · 05 (Insured Interest / TSI) · 08 (baris adjustment)
 **Menutup:** AC 50 · 51 · 52 · 53 *(4 AC)* — US 33–35
 

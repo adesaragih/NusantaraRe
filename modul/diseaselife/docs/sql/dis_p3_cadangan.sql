@@ -1,0 +1,28 @@
+-- LANGKAH-WO-DISEASELIFE.md (a) P3 - BACA-SAJA. CADANGAN WAJIB SEBELUM D2 (hapus baris uji) DAN SEBELUM -migrate 080-081
+-- / 951, ke folder kerja SQL*Plus yang dibuat lebih dulu: D:\NUSARE DEV\NUSARE\cadangan-diseaselife-<tanggal>\ (mis.
+-- cadangan-diseaselife-20261008). Tidak ada cadangan = TIDAK BOLEH D2 dan TIDAK BOLEH -migrate. Dijalankan sebagai
+-- BERKAS (@...) supaya TERMOUT OFF berlaku. SQL*Plus 12.2+ atau SQLcl (MARKUP CSV).
+-- ⛔ JSONDATA M_DISEASE_LIFE dapat memuat kunci px* (identitas operator): simpan di tempat cadangan DBA, jangan disalin
+-- ke dokumen / tiket.
+--   DISEASE_LIFE_LENGKAP.csv     - SELURUH DISEASE_LIFE (ID, ICD_CODE, DISEASE), pembanding 97.586 baris (termasuk
+--                                  kedua baris ID 102051)
+--   M_DISEASE_LIFE_LENGKAP.csv   - tabel JSON lama M_DISEASE_LIFE (ID + JSONDATA), pembanding 3 baris (tidak disentuh,
+--                                  dicadangkan saja)
+--   M_DISEASE_LIFE_SEQ.txt       - nilai sequence Pega M_DISEASE_LIFE_SEQ (LAST_NUMBER; pembanding 2052; tidak disentuh)
+SET MARKUP CSV ON QUOTE ON
+SET FEEDBACK OFF TERMOUT OFF PAGESIZE 0 LONG 2000000 LONGCHUNKSIZE 32767 LINESIZE 32767 TRIMSPOOL ON
+SPOOL DISEASE_LIFE_LENGKAP.csv
+SELECT ID, ICD_CODE, DISEASE FROM POOLDATA.DISEASE_LIFE ORDER BY ID, ICD_CODE;
+SPOOL OFF
+SPOOL M_DISEASE_LIFE_LENGKAP.csv
+SELECT ID, JSONDATA FROM POOLDATA.M_DISEASE_LIFE ORDER BY ID;
+SPOOL OFF
+SET MARKUP CSV OFF
+SPOOL M_DISEASE_LIFE_SEQ.txt
+SELECT SEQUENCE_NAME, LAST_NUMBER, INCREMENT_BY, CACHE_SIZE, MIN_VALUE, MAX_VALUE, CYCLE_FLAG FROM SYS.ALL_SEQUENCES
+ WHERE SEQUENCE_OWNER = 'POOLDATA' AND SEQUENCE_NAME = 'M_DISEASE_LIFE_SEQ';
+SPOOL OFF
+SET TERMOUT ON FEEDBACK ON PAGESIZE 100 LINESIZE 200
+PROMPT cadangan selesai: DISEASE_LIFE_LENGKAP.csv (pembanding 97.586), M_DISEASE_LIFE_LENGKAP.csv (3), M_DISEASE_LIFE_SEQ.txt (2052) - periksa ketiganya terbuka dan berisi
+SELECT COUNT(*) AS N_DISEASE_LIFE FROM POOLDATA.DISEASE_LIFE;
+SELECT COUNT(*) AS N_M_DISEASE_LIFE FROM POOLDATA.M_DISEASE_LIFE;

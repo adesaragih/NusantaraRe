@@ -19,7 +19,8 @@
   "selisih": "TreatyDifference/TreatyXOLDifferenceList - selisih endorsemen, nol baris di NB (rancangan 4ter.2)",
   "f3_tanpa_pembaca": "F3 (WO 04-10-2026) - medan dokumen lama tanpa kolom, nol dibaca rule NB terjangkau: dibuang, nilainya hanya di arsip CSV pemuat (bukti per medan: medan_abaikan_lama.json bagian pola)",
   "f3_keadaan_baris": "F3 (WO 04-10-2026) - pyExpanded: keadaan bentang baris grid layar, nol dibaca rule NB: dibuang (bukti per medan: medan_abaikan_lama.json bagian pola)",
-  "f3_salinan_generasi": "F3 (WO 04-10-2026) - EDMNo/ProdKe: turunan/salinan kunci generasi (NOPOLIS, PRODKE json_polis), nol dibaca rule NB: dibuang (bukti per medan: medan_abaikan_lama.json bagian pola)"
+  "f3_salinan_generasi": "F3 (WO 04-10-2026) - EDMNo/ProdKe: turunan/salinan kunci generasi (NOPOLIS, PRODKE json_polis), nol dibaca rule NB: dibuang (bukti per medan: medan_abaikan_lama.json bagian pola)",
+  "keputusan_wo": "medan dokumen lama yang DIBACA rule tetapi tidak disimpan atas keputusan work owner (perintah dan bukti per medan: bagian pola); nilainya hanya di arsip CSV pemuat"
  },
  "simpul": {
   "Show": "keadaan_layar",
@@ -130,6 +131,98 @@
   "TreatyXOLList().pyExpanded": {
    "alasan": "f3_keadaan_baris",
    "bukti": "nol penulis dan nol pembaca TreatyXOLList().pyExpanded di korpus NB - keadaan bentang baris grid yang diisi mesin layar Pega"
+  },
+  "QuotationData.CopyFrom": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "nol rujukan properti; 'CopyFrom' di korpus hanya nama parameter langkah Page-Copy (mis. Activity/AgentSourceBizTreatyIn_Act, CreateEDMT); keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.EdmDate": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "nol rujukan QuotationData.EdmDate; Report Definition InboxEDM_RD2 membaca .Quotation.EdmDate (halaman lain); keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.FrontingStatus": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "nol rujukan di seluruh korpus; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.InputQuoDate": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "nol rujukan di seluruh korpus; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.IsGroup": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "hanya dibaca sebagai pyWorkPage.OfferFacIn.QuotationData.IsGroup / pyWorkPage.Quotation.IsGroup (CheckSpreadingProtect*_ACT, GetTreatyName, ProtectShareCedant_Act, SumTSIPremiSpreadedRNM_Act) - halaman Fac In / Quotation, bukan PolicyTreatyIn; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.IsProposal": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "rujukan korpus hanya di modul Fac In (NB FacIn, Endorsment Fac In, RNW Fac In); nol di korpus NB / EDM Treaty In; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.IsTemplate": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "rujukan korpus hanya di modul Fac In (NB FacIn, Endorsment Fac In, RNW Fac In); nol di korpus NB / EDM Treaty In; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.OfferingDate": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "rujukan korpus hanya di modul Fac In (NB FacIn, Endorsment Fac In, RNW Fac In, Claim Fac In); nol di korpus NB / EDM Treaty In; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.RNWDate": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "rujukan korpus hanya di modul Fac In (RNW Fac In); nol di korpus NB / EDM Treaty In; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.btnQuotation": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "keadaan tombol layar; dibaca hanya sebagai pyWorkPage.Quotation.btnQuotation / OfferTreatyIn.QuotationData.btnQuotation (Section SOB, SourceHierarki, DT btnSOB_DT / btnCedingCO_DT, Activity/AgentSourceBizTreatyIn_Act); keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.Comment": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "nol rujukan QuotationData.Comment di seluruh korpus; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.IsTBA": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "hanya dibaca sebagai .OfferFacIn.QuotationData.IsTBA (Activity/GetDateValidity_ACT) - halaman Fac In; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.QuotationList().NoOfferSlip": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "dibaca Activity/ConcatSlipOfferNo_Act (digabung ke Quotation.NoOfferSlip); hasil gabungannya tersimpan di T_POLIS_QUOTATION.NO_OFFER_SLIP; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.CedingCoList().pxCreateDateTime": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "stempel audit Pega baris daftar; nol rujukan baris CedingCoList().pxCreate* di korpus NB / EDM Treaty In; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.CedingCoList().pxCreateOpName": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "stempel audit Pega baris daftar; nol rujukan baris CedingCoList().pxCreate* di korpus NB / EDM Treaty In; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.CedingCoList().pxCreateOperator": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "stempel audit Pega baris daftar; nol rujukan baris CedingCoList().pxCreate* di korpus NB / EDM Treaty In; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.CedingCoList().pxCreateSystemID": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "stempel audit Pega baris daftar; nol rujukan baris CedingCoList().pxCreate* di korpus NB / EDM Treaty In; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.QuotationList().pxCreateDateTime": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "stempel audit Pega baris daftar; nol rujukan baris QuotationList().pxCreate* di korpus NB / EDM Treaty In; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.QuotationList().pxCreateOpName": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "stempel audit Pega baris daftar; nol rujukan baris QuotationList().pxCreate* di korpus NB / EDM Treaty In; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.QuotationList().pxCreateOperator": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "stempel audit Pega baris daftar; nol rujukan baris QuotationList().pxCreate* di korpus NB / EDM Treaty In; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "QuotationData.QuotationList().pxCreateSystemID": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "stempel audit Pega baris daftar; nol rujukan baris QuotationList().pxCreate* di korpus NB / EDM Treaty In; keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "RNMShare": {
+   "alasan": "f3_tanpa_pembaca",
+   "bukti": "nol pembaca di korpus NB; satu-satunya pembaca PolicyTreatyIn.RNMShare: Activity/CountSpreading_Act korpus EDM. Hitungan NB memakai TreatyIn.RNMShare (master); keputusan WO 08-10-2026 (cek Copy Old, usul dibuang disetujui; GuaranteeFund + IsSOAUpload berkolom)"
+  },
+  "GuaranteeFund": {
+   "alasan": "keputusan_wo",
+   "bukti": "dibaca Activity/InsetTreatyInProd_Act (InputTreaty.CARI54 -> TREATYINPRODUCTION.GUARANTEE_FUND, produksi.go); nol penulis di korpus; nilai DEV selalu \"0\" (28 dokumen); WO 08-10-2026 \"GUARANTEE_FUND NUMBER(38,10), buang!\""
   }
  }
 }
