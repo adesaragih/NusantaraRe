@@ -21,7 +21,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -29,6 +28,7 @@ import (
 	"nusantarare/inti/backend/galat"
 	"nusantarare/inti/backend/kontrak"
 	"nusantarare/inti/backend/unggah"
+	"nusantarare/modul/claimlife/backend/models"
 	"nusantarare/modul/claimlife/backend/services"
 )
 
@@ -92,29 +92,45 @@ func isiDokumen(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		if !ok {
 			return
 		}
-		dok, jalur, err := svc.Dokumen().UnduhLewatPengenal(r.Context(), pelaku, id)
+		dok, isi, err := svc.Dokumen().DenganKategori(services.KategoriWajibOracle(svc)).BukaDokumenLewatPengenal(r.Context(), pelaku, id)
 		if jawabGalatDokumen(w, err) {
 			return
 		}
-		f, err := os.Open(jalur)
-		if err != nil {
-			// ⛔ 404, bukan 500. Baris ada tetapi berkasnya tidak: itu
-			// keadaan yang pemakai dapat laporkan dengan jelas, dan 500
-			// membuatnya terbaca sebagai kerusakan server.
-			galat.Tulis(w, http.StatusNotFound, "berkas dokumen tidak ditemukan di penyimpanan")
+		kirimIsiDokumen(w, dok, isi)
+	}
+}
+
+// isiDokumenKlaim melayani GET /api/klaim-life/{id}/dokumen/{dokId}/isi - "View" berbatas klaim (11-10-2026).
+func isiDokumenKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		pelaku := inti.PelakuDari(r, stubPelaku)
+		if jawabGalatDokumen(w, inti.WajibIdentitas(pelaku)) {
 			return
 		}
-		defer func() { _ = f.Close() }()
-
-		w.Header().Set("Content-Type", dok.Mime)
-		// ⛔ `attachment`, bukan `inline`. Berkas yang dirender di dalam
-		// halaman kita berjalan di asal kita - dan isi berkas itu datang
-		// dari pengunggah.
-		w.Header().Set("Content-Disposition",
-			"attachment; filename="+strconv.Quote(dok.NamaFile))
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		_, _ = io.Copy(w, f)
+		if !svc.PunyaDatabase() {
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		id, ok := pengenalDokumen(w, r)
+		if !ok {
+			return
+		}
+		dok, isi, err := svc.Dokumen().BukaDokumen(r.Context(), pelaku, r.PathValue("id"), id)
+		if jawabGalatDokumen(w, err) {
+			return
+		}
+		kirimIsiDokumen(w, dok, isi)
 	}
+}
+
+// kirimIsiDokumen mengalirkan isi dokumen (Google Storage atau salinan lokal) sebagai lampiran unduhan.
+func kirimIsiDokumen(w http.ResponseWriter, dok models.Dokumen, isi io.ReadCloser) {
+	defer func() { _ = isi.Close() }()
+	w.Header().Set("Content-Type", dok.Mime)
+	// ⛔ `attachment`, bukan `inline`: isi berkas datang dari pengunggah.
+	w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(dok.NamaFile))
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	_, _ = io.Copy(w, isi)
 }
 
 // hapusDokumen melayani DELETE - `Delete` b4288.
@@ -175,6 +191,19 @@ func jawabGalatDokumen(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusRequestEntityTooLarge, err.Error())
 	case errors.Is(err, unggah.ErrBerkasKosong):
 		galat.Tulis(w, http.StatusBadRequest, "berkas kosong")
+	case errors.Is(err, services.ErrStorageBelumSiap):
+		// 503: "Storage is not configured" + apa yang kurang (tanpa alamat/token/garam).
+		galat.Tulis(w, http.StatusServiceUnavailable, services.PesanStorage(err))
+	case errors.Is(err, services.ErrBerkasTidakDiStorage):
+		galat.Tulis(w, http.StatusConflict, services.PesanStorage(err))
+	case errors.Is(err, services.ErrStorageGagal):
+		galat.Tulis(w, http.StatusBadGateway, services.PesanStorage(err))
+	case errors.Is(err, services.ErrBerkasDokumenTidakAda):
+		galat.Tulis(w, http.StatusNotFound, "berkas dokumen tidak ditemukan di penyimpanan")
+	case errors.Is(err, services.ErrKategoriDokumenTerlaluPanjang):
+		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
+	case errors.Is(err, services.ErrKlaimTidakAda):
+		galat.Tulis(w, http.StatusNotFound, "klaim tidak ada")
 	case errors.Is(err, services.ErrKategoriDokumenTidakDikenal):
 		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, services.ErrDokumenBelumTerunggah):
@@ -190,4 +219,30 @@ func jawabGalatDokumen(w http.ResponseWriter, err error) bool {
 		galat.Tulis(w, http.StatusInternalServerError, "gagal memproses dokumen")
 	}
 	return true
+}
+
+// kategoriDokumen melayani GET /api/klaim-life/{id}/dokumen/kategori - daftar kategori lampiran (CATEGORY_ATTACH_CLAIMLIFE,
+// butir ar1) untuk dropdown "Category" (11-10-2026: dulu isian teks bebas, sehingga hampir setiap unggahan ditolak 422
+// "kategori tidak dikenal"). Sumbernya SAMA dengan pemeriksa Unggah, jadi pilihan dropdown pasti diterima.
+func kategoriDokumen(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if jawabGalatDokumen(w, inti.WajibIdentitas(inti.PelakuDari(r, stubPelaku))) {
+			return
+		}
+		if !svc.PunyaDatabase() {
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		daftar, err := services.KategoriWajibOracle(svc).KategoriWajib(r.Context(), r.PathValue("id"))
+		if jawabGalatDokumen(w, err) {
+			return
+		}
+		if daftar == nil {
+			daftar = []string{}
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(struct {
+			Kategori []string `json:"kategori"`
+		}{daftar})
+	}
 }

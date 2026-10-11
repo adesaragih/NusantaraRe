@@ -23,20 +23,15 @@ const (
 	SumberWarisan JenisSumber = "warisan"
 )
 
-// Versi adalah versi BERJALAN sebuah polis - `PRODKE` terbesar di kedua sumber.
+// Versi adalah versi BERJALAN sebuah polis - `PRODKE` terbesar di ketiga jalur.
 type Versi struct {
 	Jenis JenisSumber
 	// ID - `T_PREMIUM_LIST.ID` (aplikasi) atau `JSON_POLIS.IDPEGA` (warisan).
 	ID string
-	// ProdKe - `PROD_KE`/`PRODKE`; kosong dibaca 1 (E1, RALAT R23). Urutan VERSI.
+	// ProdKe - `PROD_KE`/`PRODKE` = berapa kali PL Number diubah lewat endorsement (keputusan work owner
+	// 08-10-2026): new business 0, endorsement ke-n = n; kosong dibaca 0. SATU hitungan untuk VERSI dan
+	// NOMOR endorsement (penghitung terpisah `UrutanPega` K3 dihapus, migrasi 485).
 	ProdKe int
-	// UrutanPega - `PRODKE` versi ini menurut penomoran PEGA, dasar NOMOR endorsement berikutnya
-	// (K3 keputusan work owner 01-10-2026, OQ-EDM-008): `JSON_POLIS.PRODKE` mentah, kosong = 0
-	// (`GenerateNoEDM_Life` `Local.Prodke` bertipe int b278); new business sistem baru = 0; endorsement
-	// sistem baru = akhiran nomornya (Pega menulis `PRODKE = InputData.CARI4` - `InsertJsonPolisEDM` b101 -
-	// angka yang sama dengan akhiran nomor). ⛔ Hanya untuk nomor; urutan versi tetap ProdKe.
-	// UrutanPegaTakDiketahui bila akhiran nomor versi itu tak terurai.
-	UrutanPega int
 	// EdmType - maksud endorsement versi itu; kosong pada new business.
 	// Gerbang 4: memuat `3` = polis sudah pernah Batal (`GetEdmTypeLife`).
 	EdmType string
@@ -70,35 +65,51 @@ type KolomKepala struct {
 	// untuk sumber warisan.
 	Properti string
 	Tanggal  bool
+	// Angka - kolom NUMBER: dibaca `TO_CHAR(…,'TM9')`, ditulis koefisien + skala (kebal NLS).
+	Angka bool
 }
 
 // KolomKepalaSalin - 24 properti langkah 9 (yang ke-25, `PL_NUMBER` b2184,
 // adalah nomor polis itu sendiri). VERBATIM urutan korpus.
 var KolomKepalaSalin = []KolomKepala{
-	{"TYPE", "Type", false},                                 // b1717
-	{"TYPE_CEDING", "TypeCeding", false},                    // b1764
-	{"BUSINESS_CODE", "BusinessCode", false},                // b1785
-	{"SOB_NAME", "SobName", false},                          // b1806
-	{"POLICY_HOLDER_NAME", "PolicyHolderName", false},       // b1827
-	{"CEDING_CO_NAME", "CedingCoName", false},               // b1848
-	{"MARKETING_NAME", "MarketingName", false},              // b1869
-	{"PRO_RATE_TYPE", "ProRateType", false},                 // b1890
-	{"BUSINESS_NAME", "BusinessName", false},                // b1911
-	{"POLICY_HOLDER", "PolicyHolder", false},                // b1932
-	{"SOB", "SourceOfBusiness", false},                      // b1953
-	{"CEDING_CO", "CedingCo", false},                        // b1974
-	{"MO_ID", "MOID", false},                                // b1995
-	{"MARKETING_CODE", "MarketingCode", false},              // b2016
-	{"DATE_RECEIVED", "DateReceived", true},                 // b2037
-	{"NO_OFFER", "NoOffer", false},                          // b2058
-	{"RETRO_ID", "RetroID", false},                          // b2079
-	{"RETRO_NAME", "RetroName", false},                      // b2100
-	{"SECURITY_REINSURER_ID", "SecurityReinsurerID", false}, // b2121
-	{"SECURITY_REINSURER", "SecurityReinsurer", false},      // b2142
-	{"RI_SLIP_RNM", "PremiumListSummary.RISLIPRNM", false},  // b2163
-	{"PRODUCT_NAME", "ProductName", false},                  // b2205 (R09)
-	{"PRODUCT_NAME_ID", "ProductNameID", false},             // b2226 (R09)
-	{"WPC", "WPC", true},                                    // b2247 (R09)
+	{"TYPE", "Type", false, false},                                 // b1717
+	{"TYPE_CEDING", "TypeCeding", false, false},                    // b1764
+	{"BUSINESS_CODE", "BusinessCode", false, false},                // b1785
+	{"SOB_NAME", "SobName", false, false},                          // b1806
+	{"POLICY_HOLDER_NAME", "PolicyHolderName", false, false},       // b1827
+	{"CEDING_CO_NAME", "CedingCoName", false, false},               // b1848
+	{"MARKETING_NAME", "MarketingName", false, false},              // b1869
+	{"PRO_RATE_TYPE", "ProRateType", false, false},                 // b1890
+	{"BUSINESS_NAME", "BusinessName", false, false},                // b1911
+	{"POLICY_HOLDER", "PolicyHolder", false, false},                // b1932
+	{"SOB", "SourceOfBusiness", false, false},                      // b1953
+	{"CEDING_CO", "CedingCo", false, false},                        // b1974
+	{"MO_ID", "MOID", false, false},                                // b1995
+	{"MARKETING_CODE", "MarketingCode", false, false},              // b2016
+	{"DATE_RECEIVED", "DateReceived", true, false},                 // b2037
+	{"NO_OFFER", "NoOffer", false, false},                          // b2058
+	{"RETRO_ID", "RetroID", false, false},                          // b2079
+	{"RETRO_NAME", "RetroName", false, false},                      // b2100
+	{"SECURITY_REINSURER_ID", "SecurityReinsurerID", false, false}, // b2121
+	{"SECURITY_REINSURER", "SecurityReinsurer", false, false},      // b2142
+	{"RI_SLIP_RNM", "PremiumListSummary.RISLIPRNM", false, false},  // b2163
+	{"PRODUCT_NAME", "ProductName", false, false},                  // b2205 (R09)
+	{"PRODUCT_NAME_ID", "ProductNameID", false, false},             // b2226 (R09)
+	{"WPC", "WPC", true, false},                                    // b2247 (R09)
+}
+
+// KolomKepalaTambahan - kolom kepala di LUAR korpus `MappingEDMLife` 9 yang JUGA disalin saat Create
+// Addendum (keputusan work owner 09-10-2026) untuk `LIFEINPRODUCTION` jalur Confirm: `ANNUITY_INTEREST` dan
+// `PREMIUM_REFUND_FACTOR` (`T_PREMIUM_LIST` NUMBER(38,8), migrasi PremiumList 051); properti `DATA_JSON`
+// `.AnnuityInterest` / `.PremiumRefundFactor` (pxNumber, CARI28/CARI29 `InsertJsonPolisLife_Act`).
+var KolomKepalaTambahan = []KolomKepala{
+	{"ANNUITY_INTEREST", "AnnuityInterest", false, true},
+	{"PREMIUM_REFUND_FACTOR", "PremiumRefundFactor", false, true},
+}
+
+// KolomKepalaKasus - seluruh kolom kepala yang disalin ke dan dibaca dari kasus: korpus lalu tambahan.
+func KolomKepalaKasus() []KolomKepala {
+	return append(append([]KolomKepala{}, KolomKepalaSalin...), KolomKepalaTambahan...)
 }
 
 // KasusBaru adalah isian `EndorsmentLife_Section` yang membuat kasus.
@@ -132,6 +143,8 @@ type Kasus struct {
 	SudahSimpan bool `json:"sudahSimpan"`
 	// CSVTerkunci - `EditInput1` (`SaveCSVEDMLife` 5 b2899): ada peserta `New`.
 	CSVTerkunci bool `json:"csvTerkunci"`
+	// KolomWajibCSV - daftar kolom wajib CSV Type kasus untuk modal Upload CSV (`DaftarKolomWajibCSV`, 10-10-2026).
+	KolomWajibCSV []string `json:"kolomWajibCSV"`
 	// Cacah - jumlah peserta per `EDM_STATUS`.
 	Cacah map[string]int `json:"cacah"`
 	// Rekap - rekap mata uang kasus (`T_PREMIUM_LIST_SUMMARY`), kunci kolom

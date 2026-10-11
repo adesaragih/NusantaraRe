@@ -33,9 +33,9 @@ func minta(t *testing.T, h http.Handler, metode, jalur, badan string, beridentit
 
 func gudangSatuKasus() *tiruan.Gudang {
 	g := tiruan.Baru()
-	g.Polis["EDMLF-1"] = &tiruan.Polis{ID: "EDMLF-1", OldPolicyNo: "UJI-PL-1", EdmType: "1", TglInput: "2026-10-01 09:00:00",
+	g.Polis["EDML-1"] = &tiruan.Polis{ID: "EDML-1", OldPolicyNo: "UJI-PL-1", EdmType: "1", TglInput: "2026-10-01 09:00:00",
 		Kepala: map[string]string{"TYPE": "QR"}}
-	g.Peserta = append(g.Peserta, &tiruan.Peserta{ID: "UJI-D1", PolisID: "EDMLF-1", PLNumber: "UJI-PL-1",
+	g.Peserta = append(g.Peserta, &tiruan.Peserta{ID: "UJI-D1", PolisID: "EDML-1", PLNumber: "UJI-PL-1",
 		EdmStatus: models.StatusOld, Nilai: map[string]string{"CERTIFICATE_NO": "UJI-C1"}})
 	return g
 }
@@ -50,14 +50,14 @@ func TestRuteBacaMenjawab(t *testing.T) {
 		Baris []map[string]any `json:"baris"`
 		Total int              `json:"total"`
 	}
-	if err := json.Unmarshal(w.Body.Bytes(), &inbox); err != nil || inbox.Total != 1 || inbox.Baris[0]["caseId"] != "EDMLF-1" {
+	if err := json.Unmarshal(w.Body.Bytes(), &inbox); err != nil || inbox.Total != 1 || inbox.Baris[0]["caseId"] != "EDML-1" {
 		t.Fatalf("inbox = %s (%v)", w.Body, err)
 	}
-	w = minta(t, h, "GET", handlers.Prefix+"/kasus/EDMLF-1", "", true)
+	w = minta(t, h, "GET", handlers.Prefix+"/kasus/EDML-1", "", true)
 	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"policyNo":"UJI-PL-1"`) {
 		t.Fatalf("kasus %d %s", w.Code, w.Body)
 	}
-	w = minta(t, h, "GET", handlers.Prefix+"/kasus/EDMLF-1/peserta?halaman=1", "", true)
+	w = minta(t, h, "GET", handlers.Prefix+"/kasus/EDML-1/peserta?halaman=1", "", true)
 	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"CERTIFICATE_NO":"UJI-C1"`) {
 		t.Fatalf("peserta %d %s", w.Code, w.Body)
 	}
@@ -71,9 +71,9 @@ func TestRuteBacaMenolak(t *testing.T) {
 		kode  int
 	}{
 		{"/inbox", false, http.StatusUnauthorized},
-		{"/kasus/EDMLF-1", false, http.StatusUnauthorized},
+		{"/kasus/EDML-1", false, http.StatusUnauthorized},
 		{"/kasus/NBLF-1", true, http.StatusNotFound},
-		{"/kasus/EDMLF-9/peserta", true, http.StatusNotFound},
+		{"/kasus/EDML-9/peserta", true, http.StatusNotFound},
 	} {
 		if w := minta(t, h, "GET", handlers.Prefix+k.jalur, "", k.ident); w.Code != k.kode || !strings.Contains(w.Body.String(), `"galat"`) {
 			t.Errorf("%s ident=%v: %d %s, mau %d", k.jalur, k.ident, w.Code, w.Body, k.kode)

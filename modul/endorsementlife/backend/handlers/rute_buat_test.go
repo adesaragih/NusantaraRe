@@ -24,7 +24,7 @@ func routerBuat(g *tiruan.Gudang) http.Handler {
 
 func gudangNB() *tiruan.Gudang {
 	g := tiruan.Baru()
-	g.Polis["NBLF-1"] = &tiruan.Polis{ID: "NBLF-1", ProdKe: 1, Kepala: map[string]string{"TYPE": "QP"}}
+	g.Polis["NBLF-1"] = &tiruan.Polis{ID: "NBLF-1", ProdKe: 0, Kepala: map[string]string{"TYPE": "QP"}}
 	g.Peserta = append(g.Peserta, &tiruan.Peserta{ID: "UJI-D1", PolisID: "NBLF-1", PLNumber: "UJI-PL-1",
 		Nilai: map[string]string{"CERTIFICATE_NO": "UJI-C1"}})
 	return g
@@ -43,10 +43,10 @@ func TestRuteKelayakanDanBuatKasus(t *testing.T) {
 		t.Fatalf("kelayakan sah %d %s", w.Code, w.Body)
 	}
 	w = minta(t, h, "POST", handlers.Prefix+"/kasus", `{"policyNo":"UJI-PL-1","edmType":"1","edmDate":"2026-10-01","description":"UJI","edmTypePerubahanData":"Perubahan data (No Polis)"}`, true)
-	if w.Code != http.StatusCreated || w.Header().Get("Location") != handlers.Prefix+"/kasus/EDMLF-1" || !strings.Contains(w.Body.String(), `"peserta":1`) {
+	if w.Code != http.StatusCreated || w.Header().Get("Location") != handlers.Prefix+"/kasus/EDML-1" || !strings.Contains(w.Body.String(), `"peserta":1`) {
 		t.Fatalf("buat %d %s %v", w.Code, w.Body, w.Header())
 	}
-	if k := g.Polis["EDMLF-1"]; k.EdmTypePerubahanData != "Perubahan data (No Polis)" || k.EdmTypeBatal != "" {
+	if k := g.Polis["EDML-1"]; k.EdmTypePerubahanData != "Perubahan data (No Polis)" || k.EdmTypeBatal != "" {
 		t.Fatalf("sub-jenis EDM Type tidak tertulis: %+v", k)
 	}
 	// Sub-jenis EDM Type wajib (07-10-2026): 422 berpesan, sebelum gerbang.
@@ -59,11 +59,11 @@ func TestRuteKelayakanDanBuatKasus(t *testing.T) {
 	if w.Code != http.StatusUnprocessableEntity || !strings.Contains(w.Body.String(), "There's EDM with this policy no that haven't finish yet!") {
 		t.Fatalf("buat kedua %d %s", w.Code, w.Body)
 	}
-	w = minta(t, h, "GET", handlers.Prefix+"/kasus/EDMLF-1/polis-lama", "", true)
+	w = minta(t, h, "GET", handlers.Prefix+"/kasus/EDML-1/polis-lama", "", true)
 	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"sumber":"aplikasi"`) || !strings.Contains(w.Body.String(), `"type":"QP"`) {
 		t.Fatalf("polis lama %d %s", w.Code, w.Body)
 	}
-	w = minta(t, h, "GET", handlers.Prefix+"/kasus/EDMLF-1/peserta/UJI-TIDAK-ADA", "", true)
+	w = minta(t, h, "GET", handlers.Prefix+"/kasus/EDML-1/peserta/UJI-TIDAK-ADA", "", true)
 	if w.Code != http.StatusNotFound {
 		t.Fatalf("rincian tak ada %d %s", w.Code, w.Body)
 	}

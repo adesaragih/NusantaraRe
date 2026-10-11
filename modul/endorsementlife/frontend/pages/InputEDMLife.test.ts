@@ -3,8 +3,10 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { BUAT_EDM, KASUS_EDM, POLIS_LAMA_EDM, SIMPAN_EDM, UMUM_EDM, UNGGAH_EDM } from '../labels'
+import { BUAT_EDM, GRID_EDM, KASUS_EDM, POLIS_LAMA_EDM, SIMPAN_EDM, UMUM_EDM, UNGGAH_EDM } from '../labels'
+import { RINCI_PESERTA } from '../kolomKorpus'
 import { bagianKepalaKasus, labelMetodePremi } from '../tampilan'
+import { KOLOM_GRID_DI_RINCIAN, kolomGrid } from './InputEDMLife'
 
 // Layar "Endorsement Life Detail" dirapikan - keputusan work owner 07-10-2026 (tampilan saja).
 
@@ -80,19 +82,23 @@ describe('kepala kasus tiga bagian berjudul', () => {
       expect(kepala).toContain(t)
     }
     expect(kepala).toContain('{denganCentang && terbukaKasus && (')
-    expect(kepala).toContain('disabled={kasus.csvTerkunci} onClick={() => setJendelaCSV(\'unggah\')}')
-    expect(kepala).toContain('disabled={kasus.csvTerkunci || berkasCSV === null || menambah}')
+    expect(kepala).toContain('disabled={kasus.csvTerkunci || kasus.sudahSimpan}')
+    expect(kepala).toContain("onClick={() => setJendelaCSV('unggah')}")
+    expect(kepala).toContain('disabled={kasus.csvTerkunci || kasus.sudahSimpan || berkasCSV === null || menambah}')
     expect(KASUS_EDM.peserta).toBe('Participants')
     expect(UNGGAH_EDM.uploadCsv).toBe('Upload CSV')
   })
 
-  it('tombol kanan atas tetap: View Old Policy, Save (utama), Back', () => {
+  it('header kanan hanya View Old Policy - Save pindah ke bawah, Back dihapus (08-10-2026)', () => {
     const kepala = SUMBER.slice(SUMBER.indexOf('<header className="inbox__kepala edm-kasus__kepala">'), SUMBER.indexOf('</header>'))
-    expect(kepala.indexOf('POLIS_LAMA_EDM.viewOldPolicy')).toBeLessThan(kepala.indexOf('SIMPAN_EDM.save'))
-    expect(kepala.indexOf('SIMPAN_EDM.save')).toBeLessThan(kepala.indexOf('UMUM_EDM.kembali'))
-    expect(kepala).toContain('className="btn btn--primary btn--sm" disabled={kasus.sudahSimpan || menyimpan}')
+    expect(kepala).toContain('POLIS_LAMA_EDM.viewOldPolicy')
+    expect(kepala.match(/<button/g)?.length).toBe(1)
+    expect(kepala).not.toContain('UMUM_EDM.kembali')
+    expect(kepala).not.toContain('onTutup')
+    expect(kepala).not.toContain('simpan()')
+    expect(kepala).not.toContain('PROSES_EDM')
     expect(POLIS_LAMA_EDM.viewOldPolicy).toBe('View Old Policy')
-    expect(SIMPAN_EDM.save).toBeTruthy()
+    expect(SIMPAN_EDM.deleteAll).toBe('DELETE ALL')
   })
 })
 
@@ -104,5 +110,47 @@ describe('Premium Method bernama', () => {
     expect(labelMetodePremi(' 2 ')).toBe('Annually')
     expect(labelMetodePremi('9')).toBe('9')
     expect(labelMetodePremi('')).toBe('—')
+  })
+})
+
+describe('grid Participants ringkas (keputusan work owner 08-10-2026)', () => {
+  it('kolom yang tetap, urut: POLICY NO, CERTIFICATE NO, NAME OF INSURED, DATE OF BIRTH (SEX ke popup)', () => {
+    expect(kolomGrid().map(([l]) => l)).toEqual([
+      GRID_EDM.policyNo, GRID_EDM.certificateNo, GRID_EDM.nameOfInsured, GRID_EDM.dateOfBirth,
+    ])
+    for (const k of KOLOM_GRID_DI_RINCIAN) {
+      expect(kolomGrid().map(([, kol]) => kol)).not.toContain(k)
+    }
+    expect(KOLOM_GRID_DI_RINCIAN).toContain('SEX')
+  })
+
+  it('popup Details memuat SEX di keempat tipe, sesudah Entry Age, label sama dengan grid', () => {
+    for (const t of ['QR', 'QP', 'TP', 'TR'] as const) {
+      const kol = RINCI_PESERTA[t].map((k) => k.kolom)
+      const i = kol.indexOf('SEX')
+      expect(i, t).toBeGreaterThan(0)
+      expect(kol[i - 1], t).toBe('ENTRY_AGE')
+      const sex = RINCI_PESERTA[t][i]
+      expect(sex?.label).toBe(GRID_EDM.sex)
+      expect(sex?.jenis).toBe('t')
+    }
+  })
+
+  it('kotak centang + DELETE ALL di depan, Details di belakang; th dan td dari daftar yang sama', () => {
+    const kepala = SUMBER.slice(SUMBER.indexOf('<thead>'), SUMBER.indexOf('</thead>'))
+    expect(kepala.indexOf('SIMPAN_EDM.deleteAll')).toBeLessThan(kepala.indexOf('kolom.map(([label]) =>'))
+    expect(kepala.indexOf('kolom.map(([label]) =>')).toBeLessThan(kepala.indexOf('aria-label={UMUM_EDM.rinci}'))
+    expect(SUMBER).toContain('const kolom = kolomGrid()')
+    // Baris memakai `kolom` yang sama dengan kepala → jumlah th = jumlah td.
+    expect(SUMBER).toContain('kolom={kolom}')
+  })
+
+  it('keenam kolom tersembunyi ADA di popup Details setiap tipe (data tidak hilang dari layar)', () => {
+    for (const t of ['QR', 'QP', 'TP', 'TR'] as const) {
+      const ada = RINCI_PESERTA[t].map((k) => k.kolom)
+      for (const k of KOLOM_GRID_DI_RINCIAN) {
+        expect(ada, `${t} ${k}`).toContain(k)
+      }
+    }
   })
 })

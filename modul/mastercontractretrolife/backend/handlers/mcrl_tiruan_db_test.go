@@ -48,13 +48,12 @@ var ddlTiruan = map[string]string{
 	repository.MasterJenisReasuransi: `ID VARCHAR2(100), NOTE VARCHAR2(1000), FLAG VARCHAR2(100)`,
 	repository.MasterReinsurer:       `ID VARCHAR2(100), CLIENTNAME VARCHAR2(1000), STATUSACTIVE VARCHAR2(10)`,
 	repository.MasterBusiness:        `ID VARCHAR2(100), NOTE VARCHAR2(1000), OLDID VARCHAR2(100)`,
-	// Ringkasan rate (tabel `M_RATE_LIFE_SUMMARY`, keputusan work owner 07-10-2026) dan view `RATE_LIFE` (K1 01-10-2026)
-	// ditiru sebagai TABEL berkolom RD; `RATE_LIFE` bertipe katalog Claim
-	// Life (`ID VARCHAR2(10)`, sisanya VARCHAR2(4000)). Tidak ditulis modul - hanya fixture uji.
+	// Ringkasan rate (tabel `M_RATE_LIFE_SUMMARY`, keputusan work owner 07-10-2026) dan tabel flat `M_RATE_LIFE`
+	// (ALL_TAB_COLUMNS DEV 10-10-2026; view `RATE_LIFE` dibuang) ditiru berkolom RD. Tidak ditulis modul - hanya fixture uji.
 	repository.MasterRingkasanRate: `ID VARCHAR2(10), USEDBY VARCHAR2(4000), OPERATORID VARCHAR2(4000),
 		MODIFIEDDATE VARCHAR2(4000), TYPE VARCHAR2(4000)`,
-	repository.MasterRate: `ID VARCHAR2(10), IDUSEDBY VARCHAR2(4000), USEDBY VARCHAR2(4000), TYPE VARCHAR2(4000),
-		GENDER VARCHAR2(4000), CONTRACT VARCHAR2(4000), AGE VARCHAR2(4000), RATE VARCHAR2(4000)`,
+	repository.MasterRate: `ID VARCHAR2(10) NOT NULL, IDUSEDBY VARCHAR2(10), USEDBY VARCHAR2(500), TYPE VARCHAR2(100),
+		GENDER VARCHAR2(10), CONTRACT VARCHAR2(10), AGE VARCHAR2(10), RATE VARCHAR2(50)`,
 }
 
 // sequenceTiruan - lima sequence yang ditiru penulis modul (K3).

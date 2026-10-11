@@ -353,3 +353,44 @@ func TestTotalPesertaMenyeberangDiJSONPeserta(t *testing.T) {
 		t.Errorf("jumlah uang tidak dikirim sebagai teks: %s", mentah)
 	}
 }
+
+// RALAT 10-10-2026 - uji DEV CLMLF-000012: "bermata uang beragam: "IDR" dan "10026"". CURRENCY berisi KODE, CURRENCY_ID
+// berisi PENGENAL tabel CURRENCY (10026 = IDR, diisi lengkapiPengenalMataUang saat baca). Keduanya tidak boleh
+// dibandingkan satu sama lain; mata uang yang benar-benar berbeda tetap ditolak.
+func TestKodeDanPengenalMataUangTidakDibandingkan(t *testing.T) {
+	baris := func(kode, id string) BarisAdjustment {
+		b := barisUji(t, "", kontrak.KodeOutstanding)
+		b.JumlahKlaim.Currency = kode
+		b.CurrencyID = id
+		return b
+	}
+	t.Run("reproduksi: peserta IDR, baris CURRENCY IDR + CURRENCY_ID 10026 - sukses", func(t *testing.T) {
+		total, err := HitungTotalPeserta([]BarisAdjustment{baris("IDR", "10026"), baris("IDR", "10026")}, "IDR")
+		if err != nil {
+			t.Fatalf("HitungTotalPeserta: %v", err)
+		}
+		if got := total.JumlahKlaim.String(); got != "12 IDR" {
+			t.Errorf("JumlahKlaim = %q, mau 12 IDR", got)
+		}
+	})
+	t.Run("baris pertama tanpa pengenal, baris kedua berpengenal - sukses", func(t *testing.T) {
+		if _, err := HitungTotalPeserta([]BarisAdjustment{baris("IDR", ""), baris("IDR", "10026")}, "IDR"); err != nil {
+			t.Fatalf("HitungTotalPeserta: %v", err)
+		}
+	})
+	for _, c := range []struct {
+		nama string
+		b    []BarisAdjustment
+		kurs string
+	}{
+		{"kode baris USD vs peserta IDR", []BarisAdjustment{baris("USD", "10026")}, "IDR"},
+		{"kode antar baris IDR vs USD", []BarisAdjustment{baris("IDR", ""), baris("USD", "")}, ""},
+		{"pengenal antar baris 10026 vs 10001", []BarisAdjustment{baris("IDR", "10026"), baris("IDR", "10001")}, "IDR"},
+	} {
+		t.Run("tetap ditolak: "+c.nama, func(t *testing.T) {
+			if _, err := HitungTotalPeserta(c.b, c.kurs); !errors.Is(err, ErrTotalMataUangBeragam) {
+				t.Errorf("galat = %v, mau ErrTotalMataUangBeragam", err)
+			}
+		})
+	}
+}

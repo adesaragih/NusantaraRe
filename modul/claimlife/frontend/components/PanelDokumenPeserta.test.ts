@@ -83,8 +83,8 @@ describe('barisDokumen', () => {
     ])
   })
 
-  it('kalimat penanda pranala disebut apa adanya', () => {
-    expect(PRANALA_MENUNGGU).toContain('menunggu')
+  it('kalimat penanda baris yang belum selesai disimpan (Inggris, 11-10-2026)', () => {
+    expect(PRANALA_MENUNGGU).toBe('Processing — waiting for storage')
   })
 })
 
@@ -109,7 +109,7 @@ describe('dokumen lewat outbox', () => {
     // identitas, dan setiap unduhan dijawab 401. Jalur, teks pengenal 17
     // angka, dan headernya diuji perilakunya di `services/unduhdokumen.test.ts`.
     const sumber = readFileSync(join(__dirname, 'PanelDokumenPeserta.tsx'), 'utf8')
-    expect(sumber).toMatch(/simpanBlob\(\s*await ambilIsiDokumen\(/)
+    expect(sumber).toMatch(/simpanBlob\(\s*await ambilIsiDokumenKlaim\(/)
     expect(sumber).not.toMatch(/<a\s[^>]*href/)
   })
 

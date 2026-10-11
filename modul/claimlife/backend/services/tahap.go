@@ -176,6 +176,44 @@ func (tl *TahapLayanan) Pindah(ctx context.Context, pelaku inti.Pelaku,
 	if !models.SerahTerimaSah(asal, ke) {
 		return fmt.Errorf("%w: %s -> %s", ErrPerpindahanTidakSah, asal, ke)
 	}
+	// ⛔ 10-10-2026 - gerbang tombol bawah layar Outstanding, ditegakkan di SERVER (layar hanya menyembunyikan /
+	// menonaktifkan): Send to Medical Check menunggu CLAIM_NO (b21832) dan hanya Type QP/QR (b22123); Send Back to
+	// Register hanya sebelum CLAIM_NO (b21699). Menutup risiko Komite: klaim tanpa Save to RNM tidak punya baris datar.
+	if asal == models.TahapOutstanding {
+		hdr, err := baca.AmbilHeader(ctx, klaimID)
+		if err != nil {
+			return err
+		}
+		if hdr == nil {
+			return ErrKlaimTidakAda
+		}
+		if err := PeriksaPindahDariOutstanding(asal, ke, hdr.NomorKlaim, hdr.Type); err != nil {
+			return err
+		}
+		if ke == models.TahapMedicalCheck {
+			// 11-10-2026 (keputusan work owner): "sukses Save to RNM" = CLAIM_NO terisi (di atas) DAN baris sudah
+			// Outstanding (SudahSaveRNM) - klaim bernomor yang transaksi utamanya gagal belum boleh pindah.
+			sudah, err := baca.SudahSaveRNM(ctx, klaimID)
+			if err != nil {
+				return err
+			}
+			if !sudah {
+				return ErrPindahMenungguNomorKlaim
+			}
+			// Setiap peserta aktif yang di-Accept punya >= 1 dokumen (satu kueri berkelompok); SEMUA kekurangan dikembalikan.
+			klaim, err := tl.svc.KlaimLife().Ambil(ctx, klaimID)
+			if err != nil {
+				return err
+			}
+			cacah, err := baca.CacahDokumenPesertaAccept(ctx, klaimID)
+			if err != nil {
+				return err
+			}
+			if err := PeriksaDokumenAcceptMedis(klaim.Peserta, cacah); err != nil {
+				return err
+			}
+		}
+	}
 	keAdmin, keMedical := models.JalurBalikTahap(asal, ke)
 	admin, medical := JalurBalik{KeAdmin: keAdmin, KeMedical: keMedical}.NilaiSendto()
 	return tl.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {

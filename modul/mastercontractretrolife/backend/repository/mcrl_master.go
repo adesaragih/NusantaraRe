@@ -12,15 +12,14 @@ package repository
 //	                `.USEDBY Contains param.idusedby` b809 - autocomplete b4534/b4542 mengirim keduanya
 //	                KOSONG, jadi kedua saringan gugur; kata yang diketik dicari di `.USEDBY` (medan cari
 //	                b4494, pola autocomplete modul ini); urut `.ID ASC` b692; isi `RIRATEID ← .ID` b4527
-//	Rate List       `BrowseRateLife_RD` (view `RATE_LIFE`) `.IDUSEDBY = Param.idusedby` b860/b868
+//	Rate List       `BrowseRateLife_RD` (tabel `M_RATE_LIFE`) `.IDUSEDBY = Param.idusedby` b860/b868
 //	                (`ViewRate.xml` b1055 `ParamID.RIRATEID`); urut `.ID DESC` b747, `.RATE ASC` b784;
 //	                `pyMaxRecords` 500 b729
 //
 // ⛔ K1 (keputusan work owner 01-10-2026, OQ-MCRL-13 + OQ-MCRL-05): kedua view rate dibaca SAJA, kolom
 // yang dibaca RD XML saja - autocomplete `ID`, `USEDBY`; Rate List enam kolom yang ditampilkan grid
-// `ViewRate`. Nol `SELECT *`, nol `JSONDATA`. Kolom `RATE_LIFE` VARCHAR2(4000) (katalog Claim Life
-// `KATALOG-TABEL-PESERTA-DAN-TREATY.md`): dibaca teks apa adanya. Rate List berkunci `IDUSEDBY` (view
-// atas CLOB tanpa index) - `IDUSEDBY` kosong ditolak layanan, nol pembacaan tanpa kunci.
+// `ViewRate`. Nol `SELECT *`, nol `JSONDATA`. Kolom `M_RATE_LIFE` teks (VARCHAR2, ALL_TAB_COLUMNS DEV
+// 10-10-2026): dibaca teks apa adanya. Rate List berkunci `IDUSEDBY` (dulu view atas CLOB tanpa index) - `IDUSEDBY` kosong ditolak layanan, nol pembacaan tanpa kunci.
 //
 // ⛔ Kolom fisik AGENT (`ID`, `CLIENTNAME`, `STATUSACTIVE`) dan BUSINESS
 // (`ID`, `NOTE`) sama dengan yang dibaca Treaty Contract Out; `OLDID` dari

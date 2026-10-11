@@ -51,16 +51,8 @@ func saat(t *testing.T, s string) time.Time {
 
 // TestBatasJendelaTiapType menguji KEEMPAT batas untuk tiap Type.
 //
-// Dua asumsi pustaka Pega menentukan seluruh tabel ini, dan keduanya `[dugaan]`
-// yang ditulis sebagai konstanta bernama di dol.go:
-//
-//	(i)  @CompareDates(a,b) benar bila a SESUDAH b (ketat)
-//	(ii) argumen keempat @addCalendar adalah JAM
-//
-// Akibatnya jendelanya ASIMETRIS - QP/QR terbuka di awal dan tertutup di
-// akhir, TP/TR sebaliknya. Daftar LENGKAP kasus yang berbalik bila salah satu
-// asumsi diputuskan lain ada di bab "Pembacaan ulang XML" tiket 06; ia ditulis
-// di SATU tempat supaya tiga salinan tidak berjalan sendiri-sendiri.
+// Keputusan work owner 11-10-2026 (menyimpang sadar dari Pega): jendela [BEGIN, EXPIRED] INKLUSIF di kedua ujung,
+// tanpa pergeseran retro b698, per tanggal kalender - aturan yang SAMA dengan Save to RNM 11.7-11.8 (DOLDalamJendela).
 func TestBatasJendelaTiapType(t *testing.T) {
 	p := pesertaDOL(t)
 	kasus := []struct {
@@ -69,43 +61,28 @@ func TestBatasJendelaTiapType(t *testing.T) {
 		sah  bool
 		apa  string
 	}{
-		// QP/QR - jendela gross, tanpa pergeseran. Keempat batas, kedua Type.
-		{"QR", grossMulai, false, "tepat di tanggal mulai: DOL tidak SESUDAH mulai"},
-		{"QR", "2025-03-01 01:00:00", true, "satu jam sesudah mulai"},
-		{"QR", "2025-08-31 23:00:00", true, "satu jam sebelum berakhir"},
-		{"QR", grossSelesai, true, "tepat di tanggal berakhir: belum melewatinya"},
-		{"QR", "2025-09-01 01:00:00", false, "satu jam sesudah berakhir"},
-		{"QP", grossMulai, false, "tepat di tanggal mulai"},
-		{"QP", "2025-03-01 01:00:00", true, "satu jam sesudah mulai"},
-		{"QP", "2025-08-31 23:00:00", true, "satu jam sebelum berakhir"},
-		{"QP", grossSelesai, true, "tepat di tanggal berakhir"},
-		{"QP", "2025-09-01 01:00:00", false, "satu jam sesudah berakhir"},
-
-		// TP/TR - jendela retro, DOL digeser SATU HARI sebelum dibandingkan.
-		//
-		// ⛔ RALAT A0: kasus-kasus ini semula memakai pergeseran satu JAM, dan
-		// batas-batasnya ikut berubah ketika bacaan korpus diralat. Inilah
-		// "daftar kasus yang berbalik" yang komentar tiket 06 janjikan.
-		//
-		// Dengan geser +1 hari, DOL d dibandingkan sebagai d+1hari:
-		//   mulai retro 2025-04-01, berakhir 2025-10-01.
-		{"TR", "2025-03-30 00:00:00", false, "dua hari sebelum mulai: d+1 masih sebelum mulai"},
-		{"TR", "2025-03-31 12:00:00", true, "sehari sebelum mulai: d+1 melewati mulai"},
-		{"TR", retroMulai, true, "tepat di tanggal mulai: pergeseran membuatnya masuk"},
-		{"TR", "2025-09-29 00:00:00", true, "dua hari sebelum berakhir: d+1 masih di dalam"},
-		{"TR", "2025-09-30 12:00:00", false, "sehari sebelum berakhir: d+1 melewati akhir"},
-		{"TR", retroSelesai, false, "tepat di tanggal berakhir: pergeseran melewatinya"},
-		{"TP", "2025-03-30 00:00:00", false, "dua hari sebelum mulai"},
-		{"TP", retroMulai, true, "tepat di tanggal mulai"},
-		{"TP", "2025-09-29 00:00:00", true, "dua hari sebelum berakhir"},
-		{"TP", retroSelesai, false, "tepat di tanggal berakhir"},
-
-		// Cabang yang benar-benar terpisah: tanggal yang sah di satu jendela
-		// dan TIDAK sah di jendela yang lain.
-		{"QR", "2025-09-15 00:00:00", false, "sesudah gross berakhir, tetapi masih di dalam retro"},
-		{"TR", "2025-09-15 00:00:00", true, "sesudah gross berakhir, tetapi masih di dalam retro"},
-		{"QR", "2025-03-15 00:00:00", true, "di dalam gross, tetapi sebelum retro mulai"},
-		{"TR", "2025-03-15 00:00:00", false, "di dalam gross, tetapi sebelum retro mulai"},
+		{"QR", "2025-02-28 00:00:00", false, "BEGIN-1"},
+		{"QR", grossMulai, true, "tepat BEGIN: termasuk"},
+		{"QR", grossSelesai, true, "tepat EXPIRED: termasuk"},
+		{"QR", "2025-09-01 23:00:00", true, "hari EXPIRED, jam diabaikan"},
+		{"QR", "2025-09-02 00:00:00", false, "EXPIRED+1"},
+		{"QP", "2025-02-28 00:00:00", false, "BEGIN-1"},
+		{"QP", grossMulai, true, "tepat BEGIN"},
+		{"QP", grossSelesai, true, "tepat EXPIRED"},
+		{"QP", "2025-09-02 00:00:00", false, "EXPIRED+1"},
+		{"TR", "2025-03-31 00:00:00", false, "BEGIN-1 (dulu lolos karena geser +1 hari)"},
+		{"TR", retroMulai, true, "tepat BEGIN"},
+		{"TR", retroSelesai, true, "tepat EXPIRED (dulu ditolak karena geser)"},
+		{"TR", "2025-10-02 00:00:00", false, "EXPIRED+1"},
+		{"TP", "2025-03-31 00:00:00", false, "BEGIN-1"},
+		{"TP", retroMulai, true, "tepat BEGIN"},
+		{"TP", retroSelesai, true, "tepat EXPIRED"},
+		{"TP", "2025-10-02 00:00:00", false, "EXPIRED+1"},
+		// Cabang terpisah: sah di satu jendela, tidak di jendela lain.
+		{"QR", "2025-09-15 00:00:00", false, "sesudah gross berakhir, di dalam retro"},
+		{"TR", "2025-09-15 00:00:00", true, "sesudah gross berakhir, di dalam retro"},
+		{"QR", "2025-03-15 00:00:00", true, "di dalam gross, sebelum retro mulai"},
+		{"TR", "2025-03-15 00:00:00", false, "di dalam gross, sebelum retro mulai"},
 	}
 	for _, k := range kasus {
 		err := services.ValidasiDOL(k.tipe, saat(t, k.dol), p)
@@ -122,9 +99,9 @@ func TestBatasJendelaTiapType(t *testing.T) {
 // yang ditambahkan. Peserta mana yang bermasalah diketahui pemanggilnya, sebab
 // ia menyerahkan pesertanya satu per satu.
 func TestPesanDOLPersisSepertiXML(t *testing.T) {
-	err := services.ValidasiDOL("QR", saat(t, grossMulai), pesertaDOL(t))
+	err := services.ValidasiDOL("QR", saat(t, "2025-02-28 00:00:00"), pesertaDOL(t))
 	if err == nil {
-		t.Fatal("tanggal di batas mulai lolos")
+		t.Fatal("tanggal sebelum BEGIN lolos")
 	}
 	const mau = "Invalid DOL"
 	if err.Error() != mau {
@@ -242,7 +219,7 @@ func TestDOLKosongDibedakanDariDOLDiLuarJendela(t *testing.T) {
 // TestGalatDOLMembawaPesertaDiMedanSendiri - kalimatnya persis XML, dan
 // pengenal pesertanya tetap dapat diambil pemanggil.
 func TestGalatDOLMembawaPesertaDiMedanSendiri(t *testing.T) {
-	err := services.ValidasiDOL("QR", saat(t, grossMulai), pesertaDOL(t))
+	err := services.ValidasiDOL("QR", saat(t, "2025-02-28 00:00:00"), pesertaDOL(t))
 	var g services.GalatDOL
 	if !errors.As(err, &g) {
 		t.Fatalf("galat = %v, mau services.GalatDOL", err)
@@ -331,12 +308,12 @@ func TestSetTanggalKejadianHanyaAdmin(t *testing.T) {
 // menggeser DOL **satu HARI**, bukan satu jam seperti dugaan ronde pertama -
 // yang menaruh jam di posisi keempat atas dasar kecocokan cacah argumen saja.
 func TestPergeseranDOLSatuHariBukanSatuJam(t *testing.T) {
-	const seharusnya = 24 * time.Hour
-	if services.PergeseranDOLRetro() != seharusnya {
-		t.Errorf("pergeseran = %v, mau %v (satu hari). Jangkarnya angka 7 = WIB "+
-			"di LoadDataPeserta_Act, yang menetapkan posisi kelima sebagai jam "+
-			"dan posisi keempat sebagai hari",
-			services.PergeseranDOLRetro(), seharusnya)
+	// Keputusan work owner 11-10-2026: pergeseran retro b698 DIBUANG - DOL = RETRO BEGIN lolos, sehari sebelumnya ditolak.
+	if err := services.ValidasiDOL("TR", saat(t, retroMulai), pesertaDOL(t)); err != nil {
+		t.Errorf("RETRO BEGIN ditolak: %v", err)
+	}
+	if err := services.ValidasiDOL("TR", saat(t, "2025-03-31 00:00:00"), pesertaDOL(t)); !errors.Is(err, services.ErrDOLTidakSah) {
+		t.Errorf("RETRO BEGIN-1 lolos: %v (pergeseran masih ada?)", err)
 	}
 }
 
@@ -402,5 +379,31 @@ func TestGerbangDialogTanggalMemakaiPenandaSaveRNM(t *testing.T) {
 	}
 	if strings.Count(s, "gerbangTahapDialogTanggal(ctx, baca, klaimID)") != 2 {
 		t.Error("kedua rute (DOL dan tiga tanggal) harus melewati gerbang yang sama")
+	}
+}
+
+// Keputusan work owner 11-10-2026: DOL di luar jendela ditampilkan dengan kalimat jelas berisi rentang valuasi jendela
+// yang dipakai (gross QR/QP, retro TR/TP) dan nomor peserta; "Invalid DOL" tetap kode (Error()).
+func TestKalimatDOLMenyebutRentangDanPeserta(t *testing.T) {
+	for _, u := range []struct{ tipe, dol, rentang string }{
+		{"QR", "2025-09-02 00:00:00", "01/03/2025 – 01/09/2025"},
+		{"TP", "2025-03-31 00:00:00", "01/04/2025 – 01/10/2025"},
+	} {
+		err := services.BeriNomorDOL(services.ValidasiDOL(u.tipe, saat(t, u.dol), pesertaDOL(t)), 2)
+		var g services.GalatDOL
+		if !errors.As(err, &g) {
+			t.Fatalf("%s: %v", u.tipe, err)
+		}
+		mau := "Insured number 2: Date of Loss must be within the valuation period (" + u.rentang + ")."
+		if g.Kalimat() != mau || g.Error() != "Invalid DOL" || !errors.Is(err, services.ErrDOLTidakSah) {
+			t.Errorf("%s: kalimat %q kode %q", u.tipe, g.Kalimat(), g.Error())
+		}
+	}
+	if services.KalimatDOLDiLuar("18/03/2025", "18/03/2026") != "Date of Loss must be within the valuation period (18/03/2025 – 18/03/2026)." {
+		t.Error("kalimat dasar berubah")
+	}
+	// Galat lain tidak diubah BeriNomorDOL.
+	if err := services.BeriNomorDOL(services.ErrDOLKosong, 1); !errors.Is(err, services.ErrDOLKosong) {
+		t.Errorf("galat lain: %v", err)
 	}
 }

@@ -7,7 +7,7 @@
 // ⛔ Nol tabel baru (spec §16, AC 55): endorsement adalah VERSI baru di tabel
 // PremiumList Life (`T_PREMIUM_LIST` + anak-anaknya). Migrasinya: 480
 // (`PROD_KE DEFAULT 1` + index pencari versi, tiket 00), 481 (sequence kasus
-// `EDMLF-<n>`), dan slot menu 976.
+// `EDML-<n>`), dan slot menu 976.
 package backend
 
 import (

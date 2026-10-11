@@ -154,7 +154,7 @@ func putuskanPenawaran(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 	}
 }
 
-// ringkasPolis melayani GET /api/polis-life/ringkas?nomorPolis=...
+// ringkasPolis melayani GET /api/polis-life/ringkas?nomorPolis=... dan ?idpega=... (10-10-2026).
 //
 // ⛔ BERKUNCI NOMOR POLIS, bukan id kasus. Claim Life mengenal polis lewat
 // NOMORNYA - itu yang diketik pemakai di `Choose Policy No` - dan ia tidak
@@ -171,8 +171,18 @@ func ringkasPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		hasil, err := svc.RingkasPolis().Ambil(r.Context(),
-			inti.PelakuDari(r, stubPelaku), r.URL.Query().Get("nomorPolis"))
+		// ?idpega= (Claim Life, keputusan work owner 10-10-2026): header dari IDPEGA peserta; selain itu ?nomorPolis=
+		// seperti semula.
+		var (
+			hasil services.PolicyDataLife
+			err   error
+		)
+		if idPega := r.URL.Query().Get("idpega"); idPega != "" {
+			hasil, err = svc.RingkasPolis().AmbilDariIdPega(r.Context(), inti.PelakuDari(r, stubPelaku), idPega)
+		} else {
+			hasil, err = svc.RingkasPolis().Ambil(r.Context(),
+				inti.PelakuDari(r, stubPelaku), r.URL.Query().Get("nomorPolis"))
+		}
 		if jawabGalatPolis(w, err) {
 			return
 		}

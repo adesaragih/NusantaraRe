@@ -64,13 +64,16 @@ describe('butir aw — dua tombol perpindahan', () => {
   it('klaim yang gagal dimuat dinyatakan, bukan ditelan', () => {
     // ⛔ Dulu satu `catch` menelan galat klaim DAN polis: layar kosong tanpa sebab.
     expect(SUMBER).toContain('setGalatMuat(e)')
-    expect(SUMBER).toContain('<Gagal galat={galatMuat} />')
+    expect(SUMBER).toContain('<PitaGalat galat={galatMuat} />')
   })
 
   it('tombol hanya bagi kasus yang SEBENARNYA di Outstanding Claim', () => {
-    // ⛔ Kotak masuk membuka layar ini untuk tahap mana pun (App.tsx).
-    expect(SUMBER).toContain('setTahapKasus(k.tahap)')
-    expect(SUMBER.match(/tahapKasus === TAHAP\.outstandingClaim &&/g) ?? []).toHaveLength(2)
+    // ⛔ Kotak masuk membuka layar ini untuk tahap mana pun. Sejak 10-10-2026 tahapnya dibaca dari klaim yang dimuat:
+    // tombol bawah hanya untuk tahap Outstanding, isian hanya lewat bolehIsianOutstanding.
+    const satu = SUMBER.replace(/\r\n/g, '\n')
+    // 11-10-2026: tombol bawah hanya di tab Claim Details (kaki tab).
+    expect(satu).toContain('{klaim.tahap === TAHAP.outstandingClaim && (\n                <div className="os__kaki-tab">\n                  <TombolBawahOutstanding')
+    expect(satu).toContain('const boleh = bolehIsianOutstanding(klaim)')
   })
 
   it('Save to RNM memanggil simpanKeRNM', () => {
@@ -101,7 +104,8 @@ describe('panel polis TIDAK disalin', () => {
   it('Outstanding memakai PanelDataPolis yang sama dengan Register', () => {
     // Menyalinnya berarti dua bentuk yang harus berubah bersama, dan tidak
     // ada yang memaksanya.
-    expect(SUMBER).toContain("import { PanelDataPolis }")
-    expect(SUMBER).toContain('<PanelDataPolis')
+    // 11-10-2026: varian tiga kolom DI BERKAS YANG SAMA (components/PanelDataPolis.tsx), bukan salinan.
+    expect(SUMBER).toContain("import { PanelPolisOutstanding, tanggalTampil } from '../components/PanelDataPolis'")
+    expect(SUMBER).toContain('<PanelPolisOutstanding')
   })
 })

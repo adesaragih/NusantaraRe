@@ -11,6 +11,9 @@ package services
 //	Lalu rekap mata uang dihitung ulang (6 b4574 `AppendCurrencySummary_DT`)
 //	dan kasus berstatus "sudah simpan" (8 b5600 `.IsJsonPolis = 1`).
 //
+// ⛔ Perubahan Data tanpa perubahan ditolak 422 (`ErrTanpaPerubahan`, keputusan
+// work owner 08-10-2026 - bukan korpus).
+//
 // ⛔ Simpan kedua ditolak 409 - tombolnya mati di Pega sesudah simpan pertama
 // (b37200), dan server tidak boleh hanya bergantung pada layar.
 
@@ -31,6 +34,10 @@ var ErrKasusTertutup = errors.New("services: the endorsement case is already dec
 
 // ErrSudahDisimpan - `Save` sudah ditekan (`IsJsonPolis = 1`, b37200).
 var ErrSudahDisimpan = errors.New("services: the endorsement is already saved; Save is disabled once the summary exists")
+
+// ErrTanpaPerubahan - Perubahan Data tanpa peserta ditandai Delete dan tanpa
+// peserta `New` (keputusan work owner 08-10-2026, `models.AdaPerubahan`).
+var ErrTanpaPerubahan = errors.New("services: " + models.PesanTanpaPerubahan)
 
 // ErrTanpaPeserta - kasus tanpa peserta tidak dapat disimpan (rekap kosong).
 var ErrTanpaPeserta = errors.New("services: the endorsement case has no participants to save")
@@ -81,6 +88,14 @@ func (l *Layanan) Simpan(ctx context.Context, p inti.Pelaku, id string, pilihan 
 		if jumlah == 0 {
 			return ErrTanpaPeserta
 		}
+		// Proteksi tanpa perubahan (08-10-2026) - SEBELUM tulisan apa pun: tanpa pilihan
+		// dan tanpa peserta `New` ditolak di sini; pilihan yang ternyata menandai NOL
+		// baris (ID bukan `Old`, DELETE ALL dengan semua dikecualikan) ditolak sesudah
+		// `Tandai` - nol baris berubah, rekap dan jejak belum ditulis.
+		baru := cacah[models.StatusNew]
+		if k.EdmType == models.EdmTypePerubahanData && !pilihan.AdaPilihan() && !models.AdaPerubahan(k.EdmType, 0, baru) {
+			return ErrTanpaPerubahan
+		}
 		switch k.EdmType {
 		case models.EdmTypeBatal:
 			// 2.3: seluruh peserta - pilihan layar tidak berlaku (grid Batal b17500 tanpa kotak centang).
@@ -99,6 +114,9 @@ func (l *Layanan) Simpan(ctx context.Context, p inti.Pelaku, id string, pilihan 
 		}
 		if err != nil {
 			return err
+		}
+		if !models.AdaPerubahan(k.EdmType, hasil.Ditandai, baru) {
+			return ErrTanpaPerubahan
 		}
 		if _, err := l.gudang.HitungRekap(ctx, tx, id, k.Kepala["TYPE"]); err != nil {
 			return err

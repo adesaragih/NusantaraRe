@@ -167,6 +167,48 @@ export const REGISTER = {
 } as const
 
 /**
+ * Teks layar Register untuk pendaftaran BANYAK premium list sekaligus - keputusan work owner 10-10-2026 (satu case
+ * per PL number + mata uang). ⛔ BUKAN korpus: Pega mendaftarkan satu polis per register, jadi teks ini tidak punya
+ * baris XML; sengaja di luar REGISTER yang cacahnya dikunci ke korpus.
+ */
+export const REGISTER_BANYAK = {
+  /** Tampilan Register (keputusan work owner 10-10-2026 "rapihkan tampilan"): label layar seragam bahasa Inggris. */
+  judulHalaman: 'Register Claim Life',
+  labelPL: 'Premium List No',
+  kolomPilih: 'Select',
+  kolomSertifikat: 'Certificate No',
+  kolomNama: 'Name of Insured',
+  /** Kolom DOB menggantikan "Policy No" ceding (keputusan work owner 10-10-2026). */
+  kolomTanggalLahir: 'Date of Birth',
+  kolomNo: 'No',
+  daftarkan: 'Register Claim',
+  kosongTerpilih: 'No insured selected yet.',
+  /** Modal konfirmasi Register Claim (10-10-2026). */
+  judulKonfirmasi: 'Register Claim',
+  kalimatKonfirmasi: '{n} claim case(s) will be created:',
+  lanjutkan: 'Continue?',
+  batal: 'Cancel',
+  mendaftarkan: 'Registering…',
+  /** Pemberitahuan inbox sesudah Register berhasil (10-10-2026): {n} jumlah case, {ids} Case ID dipisah koma. */
+  terdaftar: '{n} claim case(s) registered: {ids}',
+  tutup: 'Close',
+  terpilih: 'Selected insured',
+  /** {n} = jumlah case (PL + mata uang). */
+  jumlahCase: '{n} claim case(s) will be created',
+  /** Judul kelompok: "PL {pl}" + chip mata uang + "{n} insured". */
+  judulKelompokPL: 'PL {pl}',
+  jumlahPesertaKelompok: '{n} insured',
+  hapus: 'Remove',
+  kosongkan: 'Clear selection',
+  hasil: 'Claim cases created',
+  /** Hasil Register: Case ID (CLMLF-) - nomor klaim lahir di Save to RNM (10-10-2026). */
+  kolomNomor: 'Case ID',
+  kolomPL: 'PL Number',
+  kolomUang: 'Currency',
+  kolomJumlah: 'Insured',
+} as const
+
+/**
  * Label layar Outstanding — VERBATIM `Section/InputOSClaimLife.xml`.
  *
  * ⚠️ Kesebelas medan datanya SAMA dengan layar Register dan terikat
@@ -199,6 +241,117 @@ export const OUTSTANDING = {
   statusDiperbarui: 'Updated Status',
   /** b12468 */
   tanggalRealisasi: 'Realization Date',
+} as const
+
+/**
+ * Layar Outstanding mengikuti Pega (10-10-2026) — `Section/InputOSClaimLife.xml` korpus
+ * `kelvin/InboxClaimLife (Done)`, nomor baris berkas itu.
+ */
+export const OS_PEGA = {
+  /** Judul kasus Pega "Claim Life (<Case ID>)". */
+  judulKasus: 'Claim Life',
+  /** Tab b1956 / b5909 / b14576 `pyTitle`. */
+  tabRegister: 'Register Claim',
+  tabPolis: 'Policy Details',
+  tabKlaim: 'Claim Details',
+  /** b15524 `pyTitle`. */
+  pesertaDetail: 'Participant Details',
+  /** b3054 */
+  plNumber: 'PL Number',
+  /** b3475 */
+  katastrofe: 'Catastrophe',
+  /** b3781 */
+  isKpr: 'Is KPR',
+  /** b4726 */
+  stnc: 'STNC Treaty',
+  /** b4905 */
+  catatanKatastrofe: 'Catastrophe Note',
+  /** Kepala kolom grid b16101 / b16256 / b16406. */
+  kolomPL: 'PL NUMBER',
+  kolomNama: 'NAME OF INSURED',
+  kolomLahir: 'DATE OF BIRTH',
+  /** b17597 `pyCheckboxCaption`. */
+  accept: 'Accept',
+  /** b16609 `pyLabel` - tombol kepala kolom Accept. */
+  pilihSemua: 'SELECT ALL',
+  /** b16839 / b17865 */
+  hapus: 'DELETE',
+  /** b19413 */
+  simpan: 'Save',
+  /** DetailPolisLife b631 `pyLabel` (11-10-2026). */
+  viewDetail: 'View Detail',
+  /** Kepala kolom grid DetailPolisLife b4700–b6082. */
+  kolomPolis: ['No.', 'POLICY NO', 'CERTIFICATE NO', 'NAME OF INSURED', 'SEX', 'DATE OF BIRTH', 'AGE', 'PLAN', 'BEGIN DATE', 'EFFECTIVE DATE', 'EXPIRED DATE'],
+  /** Rincian peserta `ClaimLifeDetailGCNM.xml` (11-10-2026), label VERBATIM dengan barisnya. */
+  rincian: {
+    sertifikat: 'CERTIFICATE NO', // b1395
+    polis: 'POLICY NO', // b1574
+    plan: 'PLAN', // b1753
+    umur: 'AGE', // b1932
+    sex: 'SEX', // b2111
+    // Kelompok rincian peserta (11-10-2026, "tidak perlu ikuti pega 100%, hanya jadikan referensi").
+    kelompokTertanggung: 'Insured',
+    kelompokPertanggungan: 'Coverage',
+    kelompokTanggalKlaim: 'Claim Dates',
+    lokasiKematian: 'LOCATION OF DEATH', // screenshot 11-10-2026 - TIDAK ada di korpus
+    tempatKematian: 'Place of Death',
+    negara: 'COUNTRY',
+    provinsi: 'Province',
+    kota: 'CITY',
+    catatanAdmin: 'ADMIN NOTES', // b2588
+    dob: 'DOB', // b8691
+    mulai: 'BEGIN DATE', // b8877
+    expired: 'EXPIRED DATE', // b9063
+    efektif: 'EFFECTIVE DATE', // b9249
+    valuasiMulai: 'VALUATION BEGIN DATE', // b9435
+    valuasiSelesai: 'VALUATION EXPIRED DATE', // b9623
+    terima: 'RECEIVED DATE', // b10187
+    stncTreaty: 'STNC TREATY', // b10373
+    dol: 'DATE OF LOSS', // b11099
+    terimaKlaim: 'CLAIM RECEIVED DATE', // b11383
+    maksKadaluarsa: 'MAX EXPIRED CLAIM', // b11921
+    maksTerima: 'MAX CLAIM RECEIVED', // b12102
+    dokumenLengkap: 'DOCUMENT COMPLETE DATE', // b12663
+    stncData: 'STNC DATA', // b12902
+    maksData: 'MAX DATA RECEIVED', // b13381
+    konfirmasi: 'CONFIRMATION DATE', // b13803
+    editDate: 'Edit Date', // b14115
+    analis: 'CLAIM ANALYST', // b15194
+    medis: 'MEDICAL ADVISOR', // kotak diagnosa + Recommendation (b4908/b6401 pyPosition MedicalAdvisor; judul 11-10-2026)
+    rekomendasi: 'RECOMMENDATION', // b7316 `.RECOMMENDATION` b7323
+    tabAdjustment: 'Adjustment', // b16543
+    tabDokumen: 'Document', // b23293
+    kolomAdjustment: ['Status', 'OutStanding Date', 'Acceptation No', 'Acceptation Date'], // grid .AdjustmentList
+  },
+  /** Dialog AdjustmentDetail_Section (11-10-2026), label VERBATIM. */
+  adjustment: {
+    mataUang: 'Currency', // b1484
+    persen: 'Percent Claim (%)', // b1649
+    dibayar: 'Claim Paid', // b1972
+    shareRnm: 'Share Nusantara Re', // b2679
+    retensi: 'Ceding Retention', // b2843
+    klaimRnm: 'Claim RNM', // b3005
+    sumReasured: 'Sum Reasured', // b4133
+    sumInsured: 'Sum Insured', // b4296
+    shareRetro: 'Share Retro', // b4459
+    retroShare: 'Retroceded Share', // b4649
+    simpan: 'Save to Outstanding', // b16169
+    payableTo: 'Payable To', // b5922
+    namaBank: 'Name of Bank', // b6116
+    cabangBank: 'Branch of Bank', // b6863
+    nomorRekening: 'Account No', // b7042
+    // Bagian Spreading (11-10-2026, bentuk tab Spreading PremiumList Life — PANEL_SPREADING premiumlistlife/labels.ts).
+    spreading: 'Spreading',
+    kolomSpreading: ['Reins Type', 'Retroceded Share', 'Reinsurer', '% Share', 'Amount', 'Rate', 'Commision %', 'Ovr Comm %', 'Gross', 'Net'],
+    kolomSpreadingAngka: [false, true, false, true, true, true, true, true, true, true],
+    kolomRekap: ['Reinsurer', 'Currency', 'Premium Spreaded Gross', 'Premium Spreaded Net'],
+    // Subjudul (keputusan work owner 11-10-2026 "tambahkan yang di bawahnya sebagai summary spreading").
+    spreadingDetail: 'Spreading Detail',
+    spreadingSummary: 'Spreading Summary',
+    total: 'TOTAL',
+  },
+  /** Konfirmasi Delete — TAMBAHAN aplikasi (Pega tanpa konfirmasi, b18021; permintaan 10-10-2026). */
+  konfirmasiHapus: 'Remove this insured from the claim?',
 } as const
 
 /**

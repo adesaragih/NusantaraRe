@@ -20,38 +20,42 @@ func layananUji(g *tiruan.Gudang) *services.Layanan {
 // gudangBerkasus - satu kasus terbuka atas polis NB sistem baru, tiga peserta.
 func gudangBerkasus() *tiruan.Gudang {
 	g := tiruan.Baru()
-	g.Polis["NBLF-1"] = &tiruan.Polis{ID: "NBLF-1", ProdKe: 1, Kepala: map[string]string{"TYPE": "QR"}}
-	g.Polis["EDMLF-1"] = &tiruan.Polis{
-		ID: "EDMLF-1", OldPolicyNo: "UJI-PL-1", EdmType: "1", TglInput: "2026-10-01 09:00:00", Pembuat: "UJI-AKUN-1",
+	g.Polis["NBLF-1"] = &tiruan.Polis{ID: "NBLF-1", ProdKe: 0, Kepala: map[string]string{"TYPE": "QR"}}
+	g.Polis["EDML-1"] = &tiruan.Polis{
+		ID: "EDML-1", OldPolicyNo: "UJI-PL-1", EdmType: "1", TglInput: "2026-10-01 09:00:00", Pembuat: "UJI-AKUN-1",
 		Kepala: map[string]string{"TYPE": "QR", "CEDING_CO_NAME": "UJI-CEDING"},
 	}
-	g.Polis["EDMLF-2"] = &tiruan.Polis{ID: "EDMLF-2", OldPolicyNo: "UJI-PL-2", EdmType: "3", TglInput: "2026-10-01 10:00:00",
+	g.Polis["EDML-2"] = &tiruan.Polis{ID: "EDML-2", OldPolicyNo: "UJI-PL-2", EdmType: "3", TglInput: "2026-10-01 10:00:00",
 		NoEndors: "UJI-PL-2/02"}
-	g.Polis["EDMLF-3"] = &tiruan.Polis{ID: "EDMLF-3", OldPolicyNo: "UJI-PL-3", EdmType: "1", TglInput: "2026-10-01 11:00:00",
+	g.Polis["EDML-3"] = &tiruan.Polis{ID: "EDML-3", OldPolicyNo: "UJI-PL-3", EdmType: "1", TglInput: "2026-10-01 11:00:00",
 		Status: models.StatusKasusDitolak}
 	for i, s := range []string{models.StatusOld, models.StatusOld, models.StatusNew} {
 		g.Peserta = append(g.Peserta, &tiruan.Peserta{
-			ID: "UJI-D" + string(rune('1'+i)), PolisID: "EDMLF-1", PLNumber: "UJI-PL-1", EdmStatus: s,
+			ID: "UJI-D" + string(rune('1'+i)), PolisID: "EDML-1", PLNumber: "UJI-PL-1", EdmStatus: s,
 			Nilai: map[string]string{"CERTIFICATE_NO": "UJI-C" + string(rune('3'-i)), "NAME_OF_INSURED": "UJI-PESERTA"},
 		})
 	}
 	return g
 }
 
-func TestInboxHanyaKasusTerbukaTerbaruDahulu(t *testing.T) {
+// Kasus tertutup ikut terdaftar (keputusan work owner 09-10-2026) - layar yang menandai dan tidak membukanya.
+func TestInboxSemuaKasusTerbaruDahulu(t *testing.T) {
 	h, err := layananUji(gudangBerkasus()).Inbox(context.Background(), pelakuUji, 1, 20)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if h.Total != 2 || len(h.Baris) != 2 || h.Baris[0].CaseID != "EDMLF-2" || h.Baris[1].CaseID != "EDMLF-1" {
+	if h.Total != 3 || len(h.Baris) != 3 || h.Baris[0].CaseID != "EDML-3" || h.Baris[1].CaseID != "EDML-2" || h.Baris[2].CaseID != "EDML-1" {
 		t.Fatalf("kotak masuk = %+v", h)
 	}
-	// Endorsement No = NO_ENDORS (07-10-2026): kosong bila belum terbit; Policy No = OLD_POLICY_NO.
-	if h.Baris[1].EndorsementNo != "" || h.Baris[1].PolicyNo != "UJI-PL-1" || h.Baris[1].Ceding != "UJI-CEDING" {
-		t.Errorf("baris kotak masuk = %+v", h.Baris[1])
+	if h.Baris[0].Status != models.StatusKasusDitolak || h.Baris[2].Status != "" {
+		t.Errorf("status kasus tertutup/terbuka: %+v", h.Baris)
 	}
-	if h.Baris[0].EndorsementNo != "UJI-PL-2/02" || h.Baris[0].PolicyNo != "UJI-PL-2" {
-		t.Errorf("Endorsement No bukan NO_ENDORS: %+v", h.Baris[0])
+	// Endorsement No = NO_ENDORS (07-10-2026): kosong bila belum terbit; Policy No = OLD_POLICY_NO.
+	if h.Baris[2].EndorsementNo != "" || h.Baris[2].PolicyNo != "UJI-PL-1" || h.Baris[2].Ceding != "UJI-CEDING" {
+		t.Errorf("baris kotak masuk = %+v", h.Baris[2])
+	}
+	if h.Baris[1].EndorsementNo != "UJI-PL-2/02" || h.Baris[1].PolicyNo != "UJI-PL-2" {
+		t.Errorf("Endorsement No bukan NO_ENDORS: %+v", h.Baris[1])
 	}
 	for _, b := range h.Baris {
 		if !models.KasusEDM(b.CaseID) {
@@ -63,7 +67,7 @@ func TestInboxHanyaKasusTerbukaTerbaruDahulu(t *testing.T) {
 func TestInboxBerhalamanDanMenuntutIdentitas(t *testing.T) {
 	l := layananUji(gudangBerkasus())
 	h, err := l.Inbox(context.Background(), pelakuUji, 2, 1)
-	if err != nil || len(h.Baris) != 1 || h.Baris[0].CaseID != "EDMLF-1" || h.Total != 2 {
+	if err != nil || len(h.Baris) != 1 || h.Baris[0].CaseID != "EDML-2" || h.Total != 3 {
 		t.Fatalf("halaman 2 = %+v, %v", h, err)
 	}
 	h, _ = l.Inbox(context.Background(), pelakuUji, 0, 0)
@@ -78,7 +82,7 @@ func TestInboxBerhalamanDanMenuntutIdentitas(t *testing.T) {
 func TestBacaKasusMenyalakanTandaLayar(t *testing.T) {
 	g := gudangBerkasus()
 	l := layananUji(g)
-	k, err := l.BacaKasus(context.Background(), pelakuUji, "EDMLF-1")
+	k, err := l.BacaKasus(context.Background(), pelakuUji, "EDML-1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,15 +92,15 @@ func TestBacaKasusMenyalakanTandaLayar(t *testing.T) {
 	if k.Cacah[models.StatusOld] != 2 || k.Cacah[models.StatusNew] != 1 || !k.CSVTerkunci || k.SudahSimpan {
 		t.Errorf("tanda layar = cacah %v, csvTerkunci %v, sudahSimpan %v", k.Cacah, k.CSVTerkunci, k.SudahSimpan)
 	}
-	g.Rekap["EDMLF-1"] = 1
-	if k, _ = l.BacaKasus(context.Background(), pelakuUji, "EDMLF-1"); !k.SudahSimpan {
+	g.Rekap["EDML-1"] = 1
+	if k, _ = l.BacaKasus(context.Background(), pelakuUji, "EDML-1"); !k.SudahSimpan {
 		t.Error("IsJsonPolis tidak menyala sesudah rekap ada")
 	}
 }
 
 func TestBacaKasusMenolakBukanKasusEDM(t *testing.T) {
 	l := layananUji(gudangBerkasus())
-	for _, id := range []string{"NBLF-1", "EDMLF-99", "", "EDMLF-"} {
+	for _, id := range []string{"NBLF-1", "EDML-99", "", "EDML-"} {
 		if _, err := l.BacaKasus(context.Background(), pelakuUji, id); !errors.Is(err, services.ErrKasusTidakAda) {
 			t.Errorf("%q: %v", id, err)
 		}
@@ -104,7 +108,7 @@ func TestBacaKasusMenolakBukanKasusEDM(t *testing.T) {
 }
 
 func TestDaftarPesertaBerurutanDanBercacah(t *testing.T) {
-	h, err := layananUji(gudangBerkasus()).DaftarPeserta(context.Background(), pelakuUji, "EDMLF-1", 1, 2)
+	h, err := layananUji(gudangBerkasus()).DaftarPeserta(context.Background(), pelakuUji, "EDML-1", 1, 2)
 	if err != nil {
 		t.Fatal(err)
 	}

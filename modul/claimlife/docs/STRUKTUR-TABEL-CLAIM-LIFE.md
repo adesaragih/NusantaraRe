@@ -140,9 +140,9 @@ Header klaim Life. Satu baris mewakili **satu klaim**. `ID`-nya **sama persis** 
 | `ID` | teks | tidak | PK | keputusan tiket 14 — shared PK = `T_WORK_CLAIM.ID` baris klaim |
 | `CLAIM_NO` | teks | ya | | korpus `NO_CLAIM` — UpdOS, InsOS |
 | `PY_ID` | teks | ya | | keputusan tiket 14 |
-| `STS_KATASTROFE` | teks | ya | | keputusan tiket 14 |
+| `STS_KATASTROFE` | teks | ya | | keputusan tiket 14; **VARCHAR2(20) sejak migrasi 029** (11-10-2026, dulu 8 -> ORA-12899): "Non-Catastrophe" 15 byte (InputOSClaimLife b3728 pyDefaultValue), "Catastrophe" 11 |
 | `KATASTROFE_NOTE` | teks | ya | | keputusan tiket 14 |
-| `IS_KPR` | teks | ya | | keputusan tiket 14 |
+| `IS_KPR` | teks | ya | | keputusan tiket 14; **VARCHAR2(20) sejak migrasi 029**: "KPR" 3 / "Non-KPR" 7 byte (keputusan work owner 11-10-2026) |
 | `STNC_CLAIM` | teks | ya | | keputusan tiket 14 |
 | `ACCEPTED_NO` | teks | ya | | korpus `NO_ACCEPTATION` — UpdOS |
 | `STS_REJECT` | teks | ya | | korpus `STS_REJECT` — UpdOS, InsOS |
@@ -213,10 +213,14 @@ Peserta yang diklaim. Satu baris mewakili **satu peserta di dalam satu klaim**.
 | `WPC` | DATE | ya | | korpus `WPC` — SaveLPD, UpdOS; ⚠️ **ralat 26-09-2026**, lihat bawah |
 | `STNC_TREATY` | teks | ya | | keputusan tiket 14; korpus `STNC` — SaveLPD |
 | `IS_CHECK` | teks | ya | | keputusan tiket 14 — penanda peserta dipilih untuk diklaim |
+| `MAX_DATA_RECEIVED` | DATE | ya | | migrasi 028 (keputusan work owner 11-10-2026) — MAX DATA RECEIVED ClaimLifeDetailGCNM b13381 (`.MAXDATARECEIVED`; di Pega dihitung ValidasiSTNC_Act b577, kini diisi pemakai sebelum Save to RNM) |
+| `ADMIN_NOTES` | teks | ya | | migrasi 027 (keputusan work owner 11-10-2026) — `.ADMIN_NOTES` ClaimLifeDetailGCNM b2588 (ADMIN NOTES); dibekukan bila STS_REJECT peserta 1/2 (b2628); VARCHAR2(1000) seperti NOTES |
+| `IS_ACCEPT` | teks | ya | | migrasi 026 (keputusan work owner 10-10-2026) — checkbox Accept grid Participant Details layar Outstanding (`.IsAccept` InputOSClaimLife b17582, Select All b16633); dibaca gerbang dokumen Save to RNM langkah 3; `true`/`false`/NULL; BUKAN IS_CHECK |
 | `STATUS` | teks | ya | | korpus `STATUS` — SaveLPD, UpdOS |
 | `RECOMMENDATION` | teks | ya | | keputusan tiket 14 |
 | `STS_REJECT` | teks | ya | | korpus `STS_REJECT` — UpdOS, InsOS |
 | `SOURCE_ID` | teks | ya | | keputusan tiket 14 |
+| `IDPEGA` | teks | ya | | keputusan work owner 10-10-2026, migrasi 025 — `M_LIFE_PREMIUM_DETAIL.IDPEGA` baris sumber (VARCHAR2(50)); kunci header data polis (baris utama `T_PREMIUM_LIST` ber-`ID = ID_PEGA`); diisi Register, baris lama diisi ulang 025 lewat `SOURCE_ID` |
 | `CONFIRMATION_DATE` | DATE | ya | | korpus `CONFIRMATION_DATE` — UpdOS, InsOS |
 | `COMPLETE_DATE` | DATE | ya | | korpus `COMPLETE_DATE` — UpdOS, InsOS |
 | `CLAIM_RECEIVED_DATE` | DATE | ya | | korpus `CLAIM_RECEIVED_DATE` — UpdOS, InsOS |
@@ -231,6 +235,10 @@ Peserta yang diklaim. Satu baris mewakili **satu peserta di dalam satu klaim**.
 - anaknya `T_CLAIMLF_DOCUMENT` lewat `PREMIUM_LIST_DETAIL_ID` · 1:N · ON DELETE **di Go**
 
 ---
+
+**Indeks** (selain PK): `IX_PLD_CLAIM_ID (CLAIM_ID)` (migrasi 003); `IX_PLD_TRIM_PL_SERT (TRIM(PL_NUMBER), TRIM(CERTIFICATE_NO))` -
+indeks FUNGSI, migrasi 024 (keputusan work owner 10-10-2026), dipakai pemeriksa peserta aktif di klaim lain saat Register
+(`repository/pesertainapp.go`); ekspresinya dikunci sama dengan kueri oleh `TestIndeksPesertaAktifCocokDenganKueri`.
 
 ## T_CLAIMLF_ADJUSTMENT
 

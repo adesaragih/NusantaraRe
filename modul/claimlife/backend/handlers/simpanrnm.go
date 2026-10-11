@@ -31,10 +31,16 @@ func jawabGalatSimpanRNM(w http.ResponseWriter, err error) bool {
 		// ⭐ Kalimat XML apa adanya, dan langkah asalnya di medan sendiri.
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusUnprocessableEntity)
+		// 11-10-2026: seluruh kekurangan kolom wajib ikut sebagai daftar terstruktur (layar mengelompokkan per peserta).
+		kurang := tolak.Kekurangan
+		if kurang == nil {
+			kurang = []services.KekuranganRNM{}
+		}
 		_ = json.NewEncoder(w).Encode(struct {
-			Galat   string `json:"galat"`
-			Langkah string `json:"langkah"`
-		}{tolak.Pesan, tolak.Langkah})
+			Galat      string                   `json:"galat"`
+			Langkah    string                   `json:"langkah"`
+			Kekurangan []services.KekuranganRNM `json:"kekurangan"`
+		}{tolak.Pesan, tolak.Langkah, kurang})
 	case errors.Is(err, inti.ErrTanpaIdentitas):
 		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
 	case errors.Is(err, inti.ErrTanpaWewenang):

@@ -290,11 +290,12 @@ func galatAmbilVersi(q string) []string {
 	galat = append(galat, galatJendela(q)...)
 	galat = append(galat, galatPenampung(q, 2)...)
 	// Daftar pilih luar = kolomSalin (posisi dikunci salinKePeserta); subkueri membawa kolom mentahnya, bukan `*`.
+	// IDPEGA di ekor kolomSalin sejak 10-10-2026 (kunci header data polis).
 	if !strings.HasPrefix(q, "SELECT ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY, TO_CHAR(STNC,") {
 		galat = append(galat, "daftar pilih kolomSalin berubah:\n"+q)
 	}
 	if !strings.Contains(q, "FROM (SELECT ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY, STNC, ") ||
-		!strings.Contains(q, ", CLAIM_AMOUNT, EDMSTATUS, ROW_NUMBER()") {
+		!strings.Contains(q, ", CLAIM_AMOUNT, IDPEGA, EDMSTATUS, ROW_NUMBER()") {
 		galat = append(galat, "(kolom) subkueri tidak membawa kolom mentah kolomSalin + EDMSTATUS:\n"+q)
 	}
 	if strings.Contains(q, "*") {

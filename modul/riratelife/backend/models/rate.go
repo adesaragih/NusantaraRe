@@ -1,7 +1,7 @@
 // Package models memuat bentuk data modul R/I Rate Life (`riratelife`) - section Pega `InboxSummaryRIRate` (kelas
 // `ASM-FW-GISFW-Int-RATE_LIFE_SUMMARY`, judul "R/I RATE SUMMARY" b382): ringkasan rate reasuransi life
-// (kolom `M_RATE_LIFE_SUMMARY`, migrasi inti 927/928 - RALAT R6) dan rincian rate-nya (`M_RATE_LIFE`, view
-// `RATE_LIFE`). Perintah work owner 05-10-2026: "Buat Menu baru Namanya R/I Rate Life pada Master Treaty, menu ini
+// (kolom `M_RATE_LIFE_SUMMARY`, migrasi inti 927/928 - RALAT R6) dan rincian rate-nya (kolom tabel flat
+// `M_RATE_LIFE` - RALAT R7 10-10-2026, view `RATE_LIFE` dibuang). Perintah work owner 05-10-2026: "Buat Menu baru Namanya R/I Rate Life pada Master Treaty, menu ini
 // bisa CRUD untuk simpan data ke tabel RATE_LIFE_SUMMARY, panduannya xml yang saya berikan".
 package models
 
@@ -18,7 +18,7 @@ type Ringkasan struct {
 	ModifiedDate string `json:"modifiedDate"`
 	// Diubah - tampilan tanggal WIB `DD-MM-YYYY` dari ModifiedDate; bentuk lain apa adanya.
 	Diubah string `json:"diubah"`
-	// JumlahRate - baris `RATE_LIFE` ber-IDUSEDBY = ID (hanya diisi Buka, untuk dialog Delete).
+	// JumlahRate - baris `M_RATE_LIFE` ber-IDUSEDBY = ID (hanya diisi Buka, untuk dialog Delete).
 	JumlahRate *int `json:"jumlahRate,omitempty"`
 }
 
@@ -27,7 +27,7 @@ type Isian struct {
 	UsedBy string `json:"usedby"`
 }
 
-// Rate - satu baris view `RATE_LIFE` (atas `M_RATE_LIFE.JSONDATA`). Seluruhnya teks, seperti view-nya.
+// Rate - satu baris tabel flat `M_RATE_LIFE` (RALAT R7). Seluruhnya teks, seperti kolomnya.
 type Rate struct {
 	ID       string `json:"id"`
 	IDUsedBy string `json:"idUsedBy"`
@@ -81,7 +81,8 @@ type HasilHapus struct {
 	RateTerhapus int    `json:"rateTerhapus"`
 }
 
-// BatasNama - panjang R/I RATE NAME (byte). ASUMSI: kolom JSON tanpa batas; 200 cukup untuk nama DEV.
+// BatasNama - panjang R/I RATE NAME (byte). ASUMSI 200 cukup untuk nama DEV; muat di M_RATE_LIFE.USEDBY VARCHAR2(500)
+// dan M_RATE_LIFE_SUMMARY.USEDBY (500).
 const BatasNama = 200
 
 // BatasID - `M_RATE_LIFE_SUMMARY.ID` dan `M_RATE_LIFE.ID` VARCHAR2(10).

@@ -43,6 +43,7 @@ import { useState } from 'react'
 import { DETAIL } from '../labels'
 import { cariPenyakit, UKURAN_HALAMAN_PENYAKIT, type Penyakit } from '../api'
 import { pesanGalat } from '../../../../inti/frontend/klien'
+import { Modal } from '../../../../inti/frontend/components/ui/dasar'
 
 /**
  * Label VERBATIM dari korpus.
@@ -68,11 +69,11 @@ export const LABEL_CARI_DIAGNOSA = {
  * menyimpulkan diagnosanya tidak ada.
  */
 export function ringkasanHasil(jumlah: number, batas: number): string {
-  if (jumlah === 0) return 'Tidak ada diagnosa yang cocok.'
+  if (jumlah === 0) return 'No matching disease.'
   if (jumlah >= batas) {
-    return `${jumlah} diagnosa ditampilkan — daftarnya TERPOTONG pada batas ${batas}. Persempit kata kuncinya.`
+    return `Showing the first ${jumlah} results (limit ${batas}). Narrow the search.`
   }
-  return `${jumlah} diagnosa ditemukan.`
+  return `${jumlah} result(s).`
 }
 
 export function CariDiagnosa({
@@ -115,26 +116,25 @@ export function CariDiagnosa({
       setHasil(await cariPenyakit(kodeIcd, nama, batas))
     } catch (e) {
       setHasil(null)
-      setGalat(pesanGalat(e) ?? 'Pencarian diagnosa gagal.')
+      setGalat(pesanGalat(e) ?? 'The disease search failed.')
     } finally {
       setSibuk(false)
     }
   }
 
-  if (!terbuka) {
-    return (
-      <p className="diagnosa">
-        <button type="button" onClick={() => setTerbuka(true)}>
-          {LABEL_CARI_DIAGNOSA.buka}
-        </button>
-      </p>
-    )
-  }
+  const tombol = (
+    <button type="button" className="btn btn--ghost btn--sm" disabled={sibukLuar} onClick={() => setTerbuka(true)}>
+      {LABEL_CARI_DIAGNOSA.buka}
+    </button>
+  )
+  if (!terbuka) return tombol
 
+  // 11-10-2026: pencarian dibuka dalam Modal inti (padanan `showHarness` b5081), bukan formulir di dalam sel grid.
   return (
+    <>
+      {tombol}
+      <Modal judul={LABEL_CARI_DIAGNOSA.buka} lebar onTutup={() => setTerbuka(false)} labelBatal="Close">
     <section className="diagnosa">
-      <h4 className="diagnosa__judul">{LABEL_CARI_DIAGNOSA.buka}</h4>
-
       <p className="diagnosa__kotak">
         <label>
           ICD Code{' '}
@@ -148,17 +148,8 @@ export function CariDiagnosa({
           Disease{' '}
           <input type="text" value={nama} onChange={(e) => setNama(e.target.value)} />
         </label>{' '}
-        <button type="button" disabled={sibuk} onClick={() => void cari()}>
-          {sibuk ? 'Mencari…' : 'Cari'}
-        </button>{' '}
-        <button
-          type="button"
-          disabled={sibuk}
-          onClick={() => {
-            setTerbuka(false)
-          }}
-        >
-          Tutup
+        <button type="button" className="btn btn--primary btn--sm" disabled={sibuk} onClick={() => void cari()}>
+          {sibuk ? 'Searching…' : 'Search'}
         </button>
       </p>
 
@@ -168,7 +159,8 @@ export function CariDiagnosa({
         <>
           <p role="status">{ringkasanHasil(hasil.length, batas)}</p>
           {hasil.length > 0 && (
-            <table className="diagnosa__tabel">
+            <div className="inbox__gulir">{/* gulir horizontal, bukan terpotong (11-10-2026) */}
+<table className="diagnosa__tabel">
               <thead>
                 <tr>
                   <th scope="col">ID</th>
@@ -203,9 +195,12 @@ export function CariDiagnosa({
                 ))}
               </tbody>
             </table>
+</div>
           )}
         </>
       )}
     </section>
+      </Modal>
+    </>
   )
 }

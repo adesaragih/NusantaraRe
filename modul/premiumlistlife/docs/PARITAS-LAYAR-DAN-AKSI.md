@@ -88,7 +88,7 @@ Type QP/TP/TR tidak dihitung: seluruh kolom peserta tetap dari CSV.
 
 **Sumber:** parameter produk dari tabel flat Master Product Name Life `M_PRODUCTNAME_LIFE`
 (`CEDINGRETENTIONNUM`, `CEDINGLIMIT`, `RNMSHARE`, `RICOMM`, `BROKERAGE`, `RIRISKID`), plan
-`M_PRODUCTNAME_LIFE_PLAN` (`NAME` = Class of Business polis → `RIRATEID`), view `RATE_LIFE` dan
+`M_PRODUCTNAME_LIFE_PLAN` (`NAME` = Class of Business polis → `RIRATEID`), tabel `M_RATE_LIFE` dan
 `RIRISK_LIFE` dibaca **utuh** per `IDUSEDBY` (tanpa batas 500 baris milik tampilan) — bukan view lama
 `PRODUCTINWARD_LIFE`/`PRODUCT_LIFE` seperti XML.
 
@@ -196,14 +196,42 @@ Ditiru dengan **SQL langsung** di transaksi **Save Offer** (`FormPenawaran.Simpa
 - Lebar kolom diperiksa di Go (`LENGTHB` baris utama) sebelum menulis: melebihi (mis. `STATUS`/`BUSINESSCODE`
   VARCHAR2(10)) → **400** berpesan, bukan ORA-12899. Gagal tulis apa pun → seluruh Save Offer batal.
 
+## Save Offer Status `Bind` / `Closed` menutup kasus (keputusan work owner 08-10-2026)
+
+⚠️ **Menyimpang dari Pega, bukan korpus.** Hanya kasus tombol "Input Offer" (bendera `"0"`, `FlagPolisPenawaran`);
+kasus "Input Premium" (bendera `"1"`, radio EmailTypePL) tidak berubah.
+
+- `Accept` / `Pending` / `Decline` → Save Offer seperti sebelumnya (baris utama + baris status + `T_VIEW_SUGGEST` +
+  `JSON_OFFER_LIFE`); kasus tetap terbuka.
+- `Bind` → simpan seperti di atas, lalu **ditutup Resolved-Completed** = akibat `Confirm` jalur Offer (Decision3
+  "Offer" → END52). **Tanpa** `SimpanPolis`: nomor PL, `LIFEINPRODUCTION`, `JSON_POLIS`, `M_LIFE_PREMIUM_*` tidak
+  terbit (jalur Offer tidak melewati `Utility1`), dan tanpa efek keluar. Gerbang Confirm tahap penawaran (isian wajib)
+  berlaku atas isian yang sedang disimpan.
+- `Closed` → simpan, lalu **ditutup Resolved-Rejected** = akibat `Decline` (End1).
+- Aturannya `models.AkibatStatusOffer` (diturunkan dari `TransisiPenawaran` + `PenggolongOtomatis`); penutupan memakai
+  `Penawaran.terapkanDalam` — jalur Confirm/Decline yang SAMA (`TutupKasus` + jejak `T_CLAIMLF_JEJAK`, sebab
+  `Save Offer Bind -> Confirm -> Offer` / `Save Offer Closed -> Decline`) — di transaksi Save Offer: gagal menutup =
+  seluruh Save Offer batal. Kasus tertutup / bukan tahap penawaran → 409 sebelum tulisan apa pun (gerbang lama Save Offer).
+- Layar: Bind/Closed → popup konfirmasi ("Save the offer and close the case as Resolved-Completed?" /
+  "…Resolved-Rejected?", Cancel / Yes); sesudah tutup kalimat "Case closed — <status>." lalu kembali ke kotak masuk.
+  ~~Tombol Confirm/Decline tidak berubah~~ — **sejak 08-10-2026 (keputusan work owner) tombol `Confirm` TIDAK dirender di
+  tahap penawaran untuk kasus bendera `"0"`** (`InputOffer.tsx` `confirmTampil`; bendera dari data penawaran) — yang tersisa
+  di panel Decision hanya `Decline`. Server menolak `Confirm` tahap penawaran bendera `"0"` dengan **409** "Confirm is not
+  available for offer cases. Choose Status Bind and press Save Offer." (`models.ConfirmPenawaranTersedia`,
+  `ErrConfirmPenawaranTidakTersedia`) sebelum gerbang lain dan nol tulisan; Save Offer Bind tidak lewat jalur itu. Bendera
+  `"1"` dan tahap Input Premium Detail tidak berubah.
+
 ## `InsertJsonPolisLife_Act` langkah 10 — `JSON_POLIS` (keputusan work owner 06-10-2026)
 
 Ditiru dengan **SQL langsung** di transaksi Confirm (`simpanDalam` langkah 7, sesudah PL Number dan `LIFEINPRODUCTION`)
 — `repository/polis_jsonpolis.go`. Prosedur `INSERTJSONPOLISLIFE` **tidak** dipanggil.
 
 - Diisi HANYA `IDPEGA` (= `LIFEINPRODUCTION`), `NOPOLIS` = PL Number, `TGL_PROD`, `USERNAME` ← `CREATE_OP_NAME`
-  (= `CREATEOPNAME`), `TGL_INPUT` = `SYSDATE`. ⚠️ **`DATA_JSON` NULL**; `NOENDORS`, `PRODKE`, `ERR_NOTE`,
-  `TGL_KONVERSI`, `STS_KONVERSI`, `TGL_KONVERSI_RETRO`, `STS_KONVERSI_RETRO`, `OLDNOPOLIS` NULL (layanan hilir).
+  (= `CREATEOPNAME`), `TGL_INPUT` = `SYSDATE`, dan **`PRODKE` = `'0'`** (teks, VARCHAR2(5) — keputusan work owner
+  08-10-2026; sebelumnya NULL). ⚠️ **`DATA_JSON` NULL**; `NOENDORS`, `ERR_NOTE`, `TGL_KONVERSI`, `STS_KONVERSI`,
+  `TGL_KONVERSI_RETRO`, `STS_KONVERSI_RETRO`, `OLDNOPOLIS` NULL (layanan hilir).
+- Dampak `PRODKE '0'` ke Endorsement Life (pembaca `JSON_POLIS`, kodenya tidak diubah): versi warisan `NVL(PRODKE, 1)`
+  = 0 < versi aplikasi 1 (baris aplikasi tetap menang); nomor endorsement memperlakukan kosong = 0, jadi `'0'` sama hasilnya.
 - `TGL_PROD` (`models.TanggalProduksi`) — aturan periode PL Number (`penomor.HitungPeriodeNomor`, TANGGAL_CLOSING), bukan
   ambang 25 Pega: periode = bulan transaksi (Jakarta) → tanggal transaksi; periode bergeser → tanggal 1 bulan periode.
   Nomor yang sudah terbit sebelumnya: TGL_PROD lama dipertahankan, bila tidak ada dihitung ulang pada saat Confirm.

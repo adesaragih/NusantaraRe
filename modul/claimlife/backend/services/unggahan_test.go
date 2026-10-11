@@ -25,7 +25,7 @@ import (
 // kategoriUji menggantikan daftar kategori yang belum ada di korpus.
 type kategoriUji []string
 
-func (k kategoriUji) KategoriWajib(context.Context) ([]string, error) {
+func (k kategoriUji) KategoriWajib(context.Context, string) ([]string, error) {
 	return []string(k), nil
 }
 
@@ -108,18 +108,18 @@ func TestKategoriDiperiksaTerhadapDaftarYangSama(t *testing.T) {
 	// (gerbang kelengkapan Save ke Outstanding ter-remark, butir bl).
 	u := New(nil).Dokumen().DenganKategori(kategoriUji{"KTP", "Surat Kematian"})
 	ctx := context.Background()
-	if err := u.periksaKategori(ctx, "KTP"); err != nil {
+	if err := u.periksaKategori(ctx, "K-1", "KTP"); err != nil {
 		t.Errorf("kategori sah ditolak: %v", err)
 	}
 	// Huruf besar-kecil tidak membedakan: kategori datang dari layar.
-	if err := u.periksaKategori(ctx, "ktp"); err != nil {
+	if err := u.periksaKategori(ctx, "K-1", "ktp"); err != nil {
 		t.Errorf("kategori sah beda huruf ditolak: %v", err)
 	}
-	if err := u.periksaKategori(ctx, "Karangan"); !errors.Is(err,
+	if err := u.periksaKategori(ctx, "K-1", "Karangan"); !errors.Is(err,
 		ErrKategoriDokumenTidakDikenal) {
 		t.Errorf("kategori karangan: %v, mau ErrKategoriDokumenTidakDikenal", err)
 	}
-	if err := u.periksaKategori(ctx, "  "); !errors.Is(err, galat.ErrPermintaanTidakSah) {
+	if err := u.periksaKategori(ctx, "K-1", "  "); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("kategori kosong: %v, mau ErrPermintaanTidakSah", err)
 	}
 }
@@ -128,7 +128,7 @@ func TestKategoriBelumDiketahuiTidakDiamDiam(t *testing.T) {
 	// ⛔ Sumber bawaan GAGAL, dan galatnya menyebut apa yang ditunggu.
 	// Menerima kategori apa pun selama daftarnya belum ada berarti gerbang
 	// itu tidak pernah ada.
-	err := New(nil).Dokumen().periksaKategori(context.Background(), "apa saja")
+	err := New(nil).Dokumen().periksaKategori(context.Background(), "K-1", "apa saja")
 	if !errors.Is(err, ErrKategoriWajibBelumDiketahui) {
 		t.Errorf("galat = %v, mau ErrKategoriWajibBelumDiketahui", err)
 	}
@@ -219,5 +219,35 @@ func TestBatasUkuranAdalahAngkaYangDinyatakan(t *testing.T) {
 	}
 	if got := u.DenganBatas(-1).batas; got != unggah.BatasUkuranUnggahan {
 		t.Errorf("DenganBatas(-1) = %d, mau tetap %d", got, unggah.BatasUkuranUnggahan)
+	}
+}
+
+// 11-10-2026: nama Document Claim produk yang melebihi KATEGORI_2 VARCHAR2(64) ditolak terang (422), tidak dipotong;
+// sumber kategori = Document Claim produk (bukan CATEGORY_ATTACH_CLAIMLIFE); unggahan langsung dikirim (pola master).
+func TestKategoriProdukDanKirimSegera(t *testing.T) {
+	panjang := strings.Repeat("x", LebarKategoriDokumen+1)
+	u := New(nil).Dokumen().DenganKategori(kategoriUji{"Sertifikat peserta", panjang})
+	if err := u.periksaKategori(context.Background(), "K-1", panjang); !errors.Is(err, ErrKategoriDokumenTerlaluPanjang) {
+		t.Errorf("kategori > 64 byte: %v", err)
+	}
+	if err := u.periksaKategori(context.Background(), "K-1", "Sertifikat peserta"); err != nil {
+		t.Errorf("kategori produk ditolak: %v", err)
+	}
+	isi, err := os.ReadFile("dokumen.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(isi)
+	if strings.Contains(s, "AmbilKategoriWajib(") || !strings.Contains(s, "DokumenKlaimProduk(ctx, strings.TrimSpace(polis.ProductNameID))") {
+		t.Error("sumber kategori harus Document Claim produk polis klaim")
+	}
+	un, err := os.ReadFile("unggahan.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fn := string(un)[strings.Index(string(un), "func (u *Unggahan) Unggah("):]
+	fn = fn[:strings.Index(fn, "\n}\n")]
+	if a, b := strings.Index(fn, "u.svc.DalamTransaksi("), strings.Index(fn, "u.kirimSegera(ctx, idTeks, saat)"); a < 0 || b < a {
+		t.Errorf("kirim segera harus SESUDAH transaksi rekam (%d, %d)", a, b)
 	}
 }

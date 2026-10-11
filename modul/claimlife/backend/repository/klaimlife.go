@@ -43,7 +43,7 @@ func (r *KlaimLife) AmbilHeader(ctx context.Context, id string) (*models.Klaim, 
 	// (ADR-U-0003, ADR-U-0016). CURRENCY menyertainya sejak butir z1.
 	q := fmt.Sprintf(
 		`SELECT ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT, CURRENCY, `+db.FmtDesimal+
-			` FROM %s WHERE ID = :1`, "CLAIM_RETRO", tabel)
+			`, TYPE, STS_KATASTROFE, IS_KPR, STNC_CLAIM, KATASTROFE_NOTE FROM %s WHERE ID = :1`, "CLAIM_RETRO", tabel)
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
@@ -52,9 +52,12 @@ func (r *KlaimLife) AmbilHeader(ctx context.Context, id string) (*models.Klaim, 
 		kID                              string
 		nomorKlaim, nomorPolis, bisnis   sql.NullString
 		kodeStatus, mataUang, claimRetro sql.NullString
+		// Type dan empat medan tab Register Claim layar Outstanding (10-10-2026).
+		tipe, katastrofe, kpr, stnc, catatanKatastrofe sql.NullString
 	)
 	err = r.db.QueryRowContext(ctx, q, id).
-		Scan(&kID, &nomorKlaim, &nomorPolis, &bisnis, &kodeStatus, &mataUang, &claimRetro)
+		Scan(&kID, &nomorKlaim, &nomorPolis, &bisnis, &kodeStatus, &mataUang, &claimRetro,
+			&tipe, &katastrofe, &kpr, &stnc, &catatanKatastrofe)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -69,12 +72,17 @@ func (r *KlaimLife) AmbilHeader(ctx context.Context, id string) (*models.Klaim, 
 		return nil, err
 	}
 	return &models.Klaim{
-		ID:         kID,
-		NomorKlaim: nomorKlaim.String,
-		NomorPolis: nomorPolis.String,
-		NamaBisnis: bisnis.String,
-		KodeStatus: kodeStatus.String,
-		ClaimRetro: retro,
+		ID:             kID,
+		NomorKlaim:     nomorKlaim.String,
+		NomorPolis:     nomorPolis.String,
+		NamaBisnis:     bisnis.String,
+		KodeStatus:     kodeStatus.String,
+		ClaimRetro:     retro,
+		Type:           tipe.String,
+		StsKatastrofe:  katastrofe.String,
+		IsKPR:          kpr.String,
+		STNCClaim:      stnc.String,
+		KatastrofeNote: catatanKatastrofe.String,
 	}, nil
 }
 
@@ -134,6 +142,10 @@ func (r *KlaimLife) AmbilBaris(ctx context.Context, klaimID string) (map[string]
 	if err != nil {
 		return nil, err
 	}
+	jejakT, err := r.db.Qualify("T_CLAIMLF_JEJAK")
+	if err != nil {
+		return nil, err
+	}
 	// Kedelapan kolom warisan ikut dibaca sejak 26-09-2026: menulisnya tanpa
 	// membacanya membuat separuh pewarisan mati tanpa satu pun test gagal -
 	// cacat yang persis sama sudah terjadi pada CLAIM_RETRO di tiket 14.
@@ -141,14 +153,17 @@ func (r *KlaimLife) AmbilBaris(ctx context.Context, klaimID string) (map[string]
 		`SELECT a.PREMIUM_LIST_DETAIL_ID, a.ID, `+db.FmtDesimal+`, a.CURRENCY,
 		        a.STS_REJECT, a.ACCEPTED_NO, a.ACCEPTATION_DATE, a.KOMITE_ID,
 		        `+db.FmtDesimal+`, `+db.FmtDesimal+`, `+db.FmtDesimal+`, `+db.FmtDesimal+`,
-		        `+db.FmtDesimal+`, `+db.FmtDesimal+`, a.CURRENCY_ID
+		        `+db.FmtDesimal+`, `+db.FmtDesimal+`, a.CURRENCY_ID,
+		        TO_CHAR((SELECT MIN(j.WAKTU) FROM %s j
+		                  WHERE j.ADJUSTMENT_ID = a.ID AND j.KE = '0' AND j.DARI IS NULL), 'YYYY-MM-DD HH24:MI:SS'),
+		        a.PAYABLE_TO, a.NAME_OF_BANK, a.ID_BANK, a.BRANCH_OF_BANK, a.ACCOUNT_NO
 		   FROM %s a JOIN %s p ON p.ID = a.PREMIUM_LIST_DETAIL_ID
 		  WHERE p.CLAIM_ID = :1 AND p.STS_HAPUS IS NULL
 		  ORDER BY a.PREMIUM_LIST_DETAIL_ID, a.ID`,
 		"a.CLAIM_AMOUNT",
 		"a.SHARE_NUSANTARA_RE", "a.CEDING_RETENTION", "a.SUM_REASURED",
 		"a.SUM_INSURED", "a.SHARE_RETRO", "a.RETROCEDED_SHARE",
-		adj, pes)
+		jejakT, adj, pes)
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, err
 	}
@@ -164,11 +179,14 @@ func (r *KlaimLife) AmbilBaris(ctx context.Context, klaimID string) (map[string]
 		var jumlah, mataUang, kodeStatus, nomorAksep, komiteID sql.NullString
 		var tglAksep sql.NullTime
 		var warisan [6]sql.NullString
-		var mataUangID sql.NullString
+		var mataUangID, tglOutstanding sql.NullString
+		// Data bank dialog AdjustmentDetail (11-10-2026): Payable To b5929, Name of Bank b6122, Branch b6870, Account b7049.
+		var bank [5]sql.NullString
 		if err := rows.Scan(&pesertaID, &id, &jumlah, &mataUang,
 			&kodeStatus, &nomorAksep, &tglAksep, &komiteID,
 			&warisan[0], &warisan[1], &warisan[2], &warisan[3],
-			&warisan[4], &warisan[5], &mataUangID); err != nil {
+			&warisan[4], &warisan[5], &mataUangID, &tglOutstanding,
+			&bank[0], &bank[1], &bank[2], &bank[3], &bank[4]); err != nil {
 			return nil, fmt.Errorf("repository: membaca satu baris adjustment: %w", err)
 		}
 
@@ -182,6 +200,14 @@ func (r *KlaimLife) AmbilBaris(ctx context.Context, klaimID string) (map[string]
 			// menghilangkan fakta yang tersimpan.
 			JumlahKlaim: uang.Money{Currency: mataUang.String},
 			CurrencyID:  mataUangID.String,
+			// OutStanding Date (`.ADJUSTMENT_DATE` grid b17126; Pega menulisnya SaveOutStandingLife_Act b10403) - TANPA
+			// kolom: diturunkan dari jejak transisi '' -> '0' yang direkam Save to RNM (11-10-2026). Kosong sebelumnya.
+			TanggalOutstanding: tglOutstanding.String,
+			PayableTo:          bank[0].String,
+			NamaBank:           bank[1].String,
+			IDBank:             bank[2].String,
+			CabangBank:         bank[3].String,
+			NomorRekening:      bank[4].String,
 		}
 		// Urutan tujuan mengikuti urutan kolom di SELECT di atas, persis.
 		tujuanWarisan := []*uang.Money{
@@ -744,6 +770,28 @@ func (r *KlaimLife) PerbaruiTahap(ctx context.Context, tx *db.Tx,
 func (r *KlaimLife) TahapKlaim(ctx context.Context, klaimID string) (string, error) {
 	_, peran, err := r.TahapDanPeran(ctx, klaimID)
 	return peran, err
+}
+
+// NamaPembuatKlaim membaca `T_WORK_CLAIM.CREATE_OP_NAME` - kolom `CREATEOPNAME` baris datar yang Save to RNM tulis
+// (10-10-2026). Baris work yang tidak ada = ErrWorkTidakAda.
+func (r *KlaimLife) NamaPembuatKlaim(ctx context.Context, klaimID string) (string, error) {
+	tabel, err := r.db.Qualify("T_WORK_CLAIM")
+	if err != nil {
+		return "", err
+	}
+	q := fmt.Sprintf(`SELECT CREATE_OP_NAME FROM %s WHERE ID = :1`, tabel)
+	if err := db.PeriksaSQL(q); err != nil {
+		return "", err
+	}
+	var nama sql.NullString
+	err = r.db.QueryRowContext(ctx, q, klaimID).Scan(&nama)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrWorkTidakAda
+	}
+	if err != nil {
+		return "", fmt.Errorf("repository: membaca pembuat klaim: %w", err)
+	}
+	return nama.String, nil
 }
 
 // TahapDanPeran membaca TAHAP dan POSITION sebuah kasus sekaligus.

@@ -5,7 +5,7 @@ import { minta } from '../../../inti/frontend/klien'
 
 export const PREFIX_RR = '/api/ri-rate-life'
 
-/** Batas waktu baca view RATE_LIFE (CLOB tanpa indeks) dan simpan unggahan sampai 10.000 baris. */
+/** Batas waktu baca rate M_RATE_LIFE (dulu view RATE_LIFE atas CLOB, dibuang 10-10-2026) dan simpan unggahan sampai 10.000 baris. */
 const BATAS_BERAT_MS = 180_000
 
 /** Satu ringkasan - `models.Ringkasan`. */

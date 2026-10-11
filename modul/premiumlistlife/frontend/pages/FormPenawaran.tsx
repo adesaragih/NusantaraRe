@@ -29,7 +29,7 @@ import {
   type PenawaranPolis,
   type PilihanKode,
 } from '../api'
-import { KOLOM_RIWAYAT_PENAWARAN, LABEL_PENAWARAN, TEKS_PILIH } from '../labels'
+import { KOLOM_RIWAYAT_PENAWARAN, LABEL_PENAWARAN, TEKS_PILIH, TUTUP_STATUS_OFFER } from '../labels'
 import AreaTeks from '../components/AreaTeks'
 import IsianTanggal from '../components/IsianTanggal'
 import { tanggalJamTampil } from '../tanggal'
@@ -62,7 +62,33 @@ export function tanggalRiwayat(iso: string): string {
   return tanggalJamTampil(iso) || '—'
 }
 
-export default function FormPenawaran({ polisID }: { polisID: string }) {
+/**
+ * Kalimat konfirmasi bila Save Offer akan MENUTUP kasus (keputusan work owner 08-10-2026): hanya kasus Input
+ * Offer (bendera '0') dengan Status Bind / Closed; `null` = simpan biasa tanpa konfirmasi.
+ */
+export function kalimatTutupOffer(flag: string, status: string): string | null {
+  if (flag !== '0') return null
+  if (status === TUTUP_STATUS_OFFER.kodeBind) return TUTUP_STATUS_OFFER.bind
+  if (status === TUTUP_STATUS_OFFER.kodeClosed) return TUTUP_STATUS_OFFER.closed
+  return null
+}
+
+/** Kalimat hasil penutupan - sama dengan keputusan Confirm/Decline (`ringkasanAkibat`). */
+export function kalimatKasusDitutup(statusWork: string): string {
+  return `Case closed — ${statusWork}.`
+}
+
+export default function FormPenawaran({
+  polisID,
+  onDitutup,
+  onFlag,
+}: {
+  polisID: string
+  /** Save Offer Bind/Closed menutup kasus - kembali ke kotak masuk seperti sesudah Confirm/Decline. */
+  onDitutup?: () => void
+  /** Bendera kasus (`FlagOnGoingPolicy`) begitu data penawaran termuat - layar keputusan memakainya. */
+  onFlag?: (flag: string) => void
+}) {
   const [data, setData] = useState<PenawaranPolis | null>(null)
   const [isi, setIsi] = useState<IsiPenawaranPolis | null>(null)
   const [galatMuat, setGalatMuat] = useState<unknown>(null)
@@ -70,11 +96,18 @@ export default function FormPenawaran({ polisID }: { polisID: string }) {
   const [sibuk, setSibuk] = useState(false)
   const [tersimpan, setTersimpan] = useState(false)
   const [popup, setPopup] = useState<JenisPopupPenawaran | null>(null)
+  // Konfirmasi Save Offer yang menutup kasus (Bind/Closed, 08-10-2026) - kalimatnya, atau null.
+  const [tanyaTutup, setTanyaTutup] = useState<string | null>(null)
+  const [ditutup, setDitutup] = useState('')
 
-  const terima = useCallback((p: PenawaranPolis) => {
-    setData(p)
-    setIsi(isiDariPenawaran(p))
-  }, [])
+  const terima = useCallback(
+    (p: PenawaranPolis) => {
+      setData(p)
+      setIsi(isiDariPenawaran(p))
+      onFlag?.(p.flag)
+    },
+    [onFlag],
+  )
 
   useEffect(() => {
     let hidup = true
@@ -97,7 +130,14 @@ export default function FormPenawaran({ polisID }: { polisID: string }) {
     setGalatSimpan(null)
     setTersimpan(false)
     try {
-      terima(await simpanPenawaranPolis(polisID, isi))
+      const hasil = await simpanPenawaranPolis(polisID, isi)
+      terima(hasil)
+      // Bind/Closed: kasus TERTUTUP - kalimat hasil lalu kembali ke kotak masuk (seperti Confirm/Decline).
+      if ((hasil.statusTutup ?? '') !== '') {
+        setDitutup(kalimatKasusDitutup(hasil.statusTutup ?? ''))
+        onDitutup?.()
+        return
+      }
       setTersimpan(true)
     } catch (e) {
       setGalatSimpan(e)
@@ -341,7 +381,12 @@ export default function FormPenawaran({ polisID }: { polisID: string }) {
             type="button"
             className="btn btn--primary"
             disabled={sibuk || kurang.length > 0}
-            onClick={() => { void simpan() }}
+            onClick={() => {
+              // Bind/Closed (bendera '0') menutup kasus: tanya dulu (08-10-2026); status lain langsung simpan.
+              const kalimat = kalimatTutupOffer(data.flag, isi.status)
+              if (kalimat !== null) setTanyaTutup(kalimat)
+              else void simpan()
+            }}
           >
             {LABEL_PENAWARAN.simpan}
           </button>
@@ -355,7 +400,37 @@ export default function FormPenawaran({ polisID }: { polisID: string }) {
               Offer saved.
             </span>
           )}
+          {ditutup !== '' && (
+            <span className="pl-offer__tersimpan" role="status">
+              {ditutup}
+            </span>
+          )}
         </div>
+      )}
+
+      {tanyaTutup !== null && (
+        <Modal
+          judul={TUTUP_STATUS_OFFER.judul}
+          labelBatal={TUTUP_STATUS_OFFER.batal}
+          onTutup={() => {
+            setTanyaTutup(null)
+          }}
+          aksi={
+            <button
+              type="button"
+              className="btn btn--primary"
+              disabled={sibuk}
+              onClick={() => {
+                setTanyaTutup(null)
+                void simpan()
+              }}
+            >
+              {TUTUP_STATUS_OFFER.ya}
+            </button>
+          }
+        >
+          <p>{tanyaTutup}</p>
+        </Modal>
       )}
 
       <div className="pl-offer__riwayat">

@@ -43,8 +43,8 @@ export function namaBerkasUnduh(kini: Date): string {
   return `DetailUpload_${tgl}_${d(kini.getHours())}${d(kini.getMinutes())}${d(kini.getSeconds())}.csv`
 }
 
-/** RFC 4180: kutip ganda, koma/baris baru di dalam kutip, CRLF atau LF; BOM di depan dibuang. */
-export function uraiCSV(teks: string): string[][] {
+/** RFC 4180: kutip ganda, pemisah/baris baru di dalam kutip, CRLF atau LF; BOM di depan dibuang. */
+export function uraiCSV(teks: string, pemisah = ','): string[][] {
   const s = teks.charCodeAt(0) === 0xfeff ? teks.slice(1) : teks
   const hasil: string[][] = []
   let baris: string[] = []
@@ -67,7 +67,7 @@ export function uraiCSV(teks: string): string[][] {
     if (c === '"') {
       kutip = true
       ada = true
-    } else if (c === ',') {
+    } else if (c === pemisah) {
       baris.push(medan)
       medan = ''
       ada = true
@@ -90,9 +90,20 @@ export function uraiCSV(teks: string): string[][] {
   return hasil
 }
 
+/**
+ * Pemisah unggahan - aturan yang SAMA dengan server `pemisahCSV` (keputusan work owner 10-10-2026, opsi a): baris
+ * judul (BOM diabaikan) memuat ";" dan tidak memuat "," → ";", selain itu ",". Baris "sep=" tidak didukung.
+ */
+export function pemisahJudul(teks: string): string {
+  const s = teks.charCodeAt(0) === 0xfeff ? teks.slice(1) : teks
+  const ujung = s.indexOf('\n')
+  const judul = ujung < 0 ? s : s.slice(0, ujung)
+  return judul.includes(';') && !judul.includes(',') ? ';' : ','
+}
+
 /** Baris data berkunci judul huruf besar (seperti server); baris yang seluruhnya kosong dilewati. */
 export function barisUnggahan(teks: string): Array<Record<string, string>> {
-  const [judul, ...isi] = uraiCSV(teks)
+  const [judul, ...isi] = uraiCSV(teks, pemisahJudul(teks))
   if (judul === undefined) return []
   const kunci = judul.map((j) => j.trim().toUpperCase())
   return isi

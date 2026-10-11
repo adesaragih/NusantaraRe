@@ -16,10 +16,16 @@ package repository
 //	TGL_PROD ← P_TGL_PROD CARI36 - `models.TanggalProduksi` (aturan periode PL Number)
 //	USERNAME ← P_USERNAME CARI13 = CREATE_OP_NAME (SAMA dengan CREATEOPNAME LIFEINPRODUCTION)
 //	TGL_INPUT ← SYSDATE
+//	PRODKE ← '0' (VARCHAR2(5), teks) - keputusan work owner 08-10-2026; dulu NULL
 //
-// ⛔ DATA_JSON (P_JSONDATA) TIDAK diisi (NULL). NOENDORS, PRODKE, ERR_NOTE,
-// TGL_KONVERSI, STS_KONVERSI, TGL_KONVERSI_RETRO, STS_KONVERSI_RETRO, OLDNOPOLIS:
-// NULL - diisi layanan hilir.
+// ⚠️ Dampak PRODKE '0' ke Endorsement Life (dibaca, kode endorsement TIDAK diubah):
+// `sqlVersiWarisan` memakai NVL(PRODKE, 1) untuk VERSI → versi warisan 0 < versi
+// aplikasi 1, sehingga baris aplikasi tetap menang; PRODKE mentah untuk NOMOR
+// endorsement memperlakukan kosong = 0 → '0' memberi nomor yang sama dengan kosong.
+//
+// ⛔ DATA_JSON (P_JSONDATA) TIDAK diisi (NULL). NOENDORS, ERR_NOTE, TGL_KONVERSI,
+// STS_KONVERSI, TGL_KONVERSI_RETRO, STS_KONVERSI_RETRO, OLDNOPOLIS: NULL - diisi
+// layanan hilir.
 // ⛔ Sekali per kasus: DELETE lalu INSERT - Confirm ulang tidak menggandakan.
 
 import (
@@ -37,7 +43,7 @@ import (
 const TabelJSONPolis = "JSON_POLIS"
 
 // KolomJSONPolis - kolom yang DIISI, urut penampung.
-var KolomJSONPolis = []string{"IDPEGA", "NOPOLIS", "TGL_PROD", "USERNAME", "TGL_INPUT"}
+var KolomJSONPolis = []string{"IDPEGA", "NOPOLIS", "TGL_PROD", "USERNAME", "TGL_INPUT", "PRODKE"}
 
 func sqlTglProdLama(tujuan string) string {
 	return fmt.Sprintf(`SELECT MAX(TGL_PROD) FROM %s WHERE IDPEGA = :1`, tujuan)
@@ -48,8 +54,9 @@ func sqlHapusJSONPolis(tujuan string) string {
 }
 
 // sqlSisipJSONPolis - :1 IDPEGA, :2 NOPOLIS, :3 TGL_PROD, :4 kasus (baris utama).
+// PRODKE literal teks '0' (08-10-2026) - tetap, bukan penampung.
 func sqlSisipJSONPolis(tujuan, polis string) string {
-	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT :1, :2, :3, p.CREATE_OP_NAME, SYSDATE FROM %s p
+	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT :1, :2, :3, p.CREATE_OP_NAME, SYSDATE, '0' FROM %s p
 	  WHERE p.ID = :4 AND p.ID = p.ID_PEGA`, tujuan, strings.Join(KolomJSONPolis, ", "), polis)
 }
 

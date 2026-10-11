@@ -123,6 +123,7 @@ func TestPagariDiagnosaMemeriksaKetigaGerbang(t *testing.T) {
 		"WajibIdentitas(pelaku)",
 		"PastikanKasusTerbuka(ctx, klaimID)",
 		"models.TahapBergridPeserta(tahap)",
+		"tahap != models.TahapMedicalCheck",
 		"WajibPeran(pelaku, peranTahap)",
 		"models.DiagnosaTerkunci(k.peserta.KodeStatus)",
 	} {

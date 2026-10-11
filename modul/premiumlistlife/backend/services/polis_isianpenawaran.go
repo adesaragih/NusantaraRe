@@ -31,6 +31,7 @@ import (
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/jejak"
 	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/premiumlistlife/backend/models"
 	"nusantarare/modul/premiumlistlife/backend/repository"
@@ -46,13 +47,26 @@ var (
 )
 
 // FormPenawaran melayani layar Input Offer.
-type FormPenawaran struct{ svc *Service }
+type FormPenawaran struct {
+	svc *Service
+	// jejak - dipakai bila Save Offer Bind/Closed menutup kasus (08-10-2026).
+	jejak jejak.Jejak
+}
 
 // FormPenawaran menyusun layanannya.
 // ErrPenawaranMelebihiKolom - isian tidak muat di kolom JSON_OFFER_LIFE (400, berpesan).
 var ErrPenawaranMelebihiKolom = errors.New("services: isian penawaran melebihi lebar kolom")
 
-func (s *Service) FormPenawaran() *FormPenawaran { return &FormPenawaran{svc: s} }
+func (s *Service) FormPenawaran() *FormPenawaran {
+	return &FormPenawaran{svc: s, jejak: jejak.JejakBelumDiputuskan{}}
+}
+
+// DenganJejak mengganti perekam jejak penutupan Bind/Closed.
+func (f *FormPenawaran) DenganJejak(j jejak.Jejak) *FormPenawaran {
+	salin := *f
+	salin.jejak = j
+	return &salin
+}
 
 // PilihanPenawaran - pilihan tertutup layar, dikirim BERSAMA isiannya supaya
 // layar tidak menyimpan salinan kedua daftar itu.
@@ -106,6 +120,9 @@ type JawabanPenawaran struct {
 	Status  string                `json:"status"`
 	Riwayat []models.BarisSuggest `json:"riwayat"`
 	Pilihan PilihanPenawaran      `json:"pilihan"`
+	// StatusTutup - status kerja bila Save Offer ini MENUTUP kasus (Bind/Closed,
+	// keputusan work owner 08-10-2026); kosong selain itu.
+	StatusTutup string `json:"statusTutup"`
 }
 
 // pagari - identitas, bentuk permintaan, database, lalu keberadaan kasus.
@@ -181,40 +198,69 @@ func (f *FormPenawaran) Baca(ctx context.Context, pelaku inti.Pelaku, polisID st
 
 // Simpan menyimpan isian penawaran dan menambah satu baris riwayat.
 //
+// ⭐ Keputusan work owner 08-10-2026: kasus bendera "0" dengan Status `Bind` /
+// `Closed` sesudah tersimpan juga DITUTUP (Resolved-Completed / Resolved-
+// Rejected) lewat `Penawaran.terapkanDalam` - jalur tutup yang SAMA dengan
+// Confirm/Decline, di transaksi yang SAMA: gagal menutup = Save Offer batal.
+// Bind menjalankan gerbang Confirm tahap penawaran (isian wajib lengkap) atas
+// isian yang SEDANG disimpan. Akibatnya dikembalikan; kosong = tetap terbuka.
+//
 // ⛔ Gerbang tahap: layar ini milik `Assignment2` saja. Kasus yang sudah
 // maju atau tertutup tidak dapat ditulisi penawarannya - isian yang berubah
 // sesudah Premium List Detail berjalan akan membuat rekap tidak lagi cocok
 // dengan penawaran yang melahirkannya.
 func (f *FormPenawaran) Simpan(ctx context.Context, pelaku inti.Pelaku, polisID string,
-	isi models.IsianPenawaran, saat time.Time) error {
+	isi models.IsianPenawaran, saat time.Time) (models.AkibatKeputusan, error) {
 
 	if err := f.pagari(pelaku, polisID); err != nil {
-		return err
+		return models.AkibatKeputusan{}, err
 	}
 	kerja := repository.NewWorkPolis(f.svc.DB())
 	keadaan, err := kerja.Keadaan(ctx, polisID)
 	if errors.Is(err, repository.ErrWorkPolisTidakAda) {
-		return fmt.Errorf("%w: %s", ErrPolisTakDitemukan, polisID)
+		return models.AkibatKeputusan{}, fmt.Errorf("%w: %s", ErrPolisTakDitemukan, polisID)
 	}
 	if err != nil {
-		return err
+		return models.AkibatKeputusan{}, err
 	}
 	if models.KasusPolisTertutup(keadaan.Status) {
-		return fmt.Errorf("%w: polis %q berstatus %q", ErrKasusPolisTertutup, polisID, keadaan.Status)
+		return models.AkibatKeputusan{}, fmt.Errorf("%w: polis %q berstatus %q", ErrKasusPolisTertutup, polisID, keadaan.Status)
 	}
 	if keadaan.Status != models.TahapPolisPenawaran {
-		return fmt.Errorf("%w: polis %q di tahap %q", ErrPenawaranBukanTahapnya, polisID, keadaan.Status)
+		return models.AkibatKeputusan{}, fmt.Errorf("%w: polis %q di tahap %q", ErrPenawaranBukanTahapnya, polisID, keadaan.Status)
 	}
 	flag, err := kerja.Bendera(ctx, polisID)
 	if err != nil {
-		return err
+		return models.AkibatKeputusan{}, err
 	}
 	siap, err := models.SusunPenawaran(flag, isi)
 	if err != nil {
-		return fmt.Errorf("%w: %w", galat.ErrPermintaanTidakSah, err)
+		return models.AkibatKeputusan{}, fmt.Errorf("%w: %w", galat.ErrPermintaanTidakSah, err)
+	}
+	// Bind/Closed (bendera "0") menutup kasus - keputusan work owner 08-10-2026.
+	akibat, keputusan, sebab, tutup, err := models.AkibatStatusOffer(flag, siap.Status)
+	if err != nil {
+		return models.AkibatKeputusan{}, fmt.Errorf("polis %q: %w", polisID, err)
+	}
+	if tutup && akibat.SimpanPolis {
+		// Jalur Offer tidak pernah melewati Utility1 - nomor PL, LIFEINPRODUCTION,
+		// JSON_POLIS, M_LIFE_PREMIUM_* TIDAK boleh terbit dari Save Offer.
+		return models.AkibatKeputusan{}, fmt.Errorf("%w: Save Offer %q tidak boleh menyimpan polis",
+			galat.ErrPermintaanTidakSah, siap.Status)
+	}
+	// Gerbang Confirm tahap penawaran (periksaPenawaranLengkap) atas isian yang SEDANG
+	// disimpan - nilai tersimpan baru terlihat di dalam transaksi ini. Decline tidak digerbangi.
+	if tutup && keputusan == models.KeputusanConfirm {
+		if kurang := models.KekuranganPenawaran(models.WajibPenawaran{
+			CedingCoName: siap.CedingCoName, PolicyHolderName: siap.PolicyHolderName,
+			TypeCeding: siap.TypeCeding, BusinessCode: siap.BusinessCode, Description: siap.Description,
+			DateReceived: siap.DateReceived,
+		}); len(kurang) > 0 {
+			return models.AkibatKeputusan{}, fmt.Errorf("%w: %s", ErrPenawaranBelumLengkap, models.GabungPesanPenawaran(kurang))
+		}
 	}
 	repo := repository.NewPenawaran(f.svc.DB())
-	return f.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
+	err = f.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		// Migrasi 062 - satu baris per status (repository/polis_barisstatus.go):
 		// kunci baris utama, pindahkan isian status lama ke barisnya sendiri
 		// bila statusnya berganti, BARU timpa baris utama dengan status baru.
@@ -237,10 +283,25 @@ func (f *FormPenawaran) Simpan(ctx context.Context, pelaku inti.Pelaku, polisID 
 			}
 			return err
 		}
-		_, err = repo.SisipSuggest(ctx, tx, polisID,
-			models.SuggestBaru(flag, siap.Status, siap.Description, pelaku.AkunID, saat))
+		if _, err := repo.SisipSuggest(ctx, tx, polisID,
+			models.SuggestBaru(flag, siap.Status, siap.Description, pelaku.AkunID, saat)); err != nil {
+			return err
+		}
+		if !tutup {
+			return nil
+		}
+		// Penutupan Bind/Closed: jalur Confirm/Decline yang sama (TutupKasus + jejak),
+		// SESUDAH penawaran tersimpan, di transaksi ini.
+		_, err = f.svc.Penawaran().DenganJejak(f.jejak).terapkanDalam(ctx, tx, pelaku, keadaan, akibat, sebab, saat)
 		return err
 	})
+	if err != nil {
+		return models.AkibatKeputusan{}, err
+	}
+	if !tutup {
+		return models.AkibatKeputusan{}, nil
+	}
+	return akibat, nil
 }
 
 // CariCeding - popup `Choose Ceding Name`.

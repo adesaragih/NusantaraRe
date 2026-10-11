@@ -56,28 +56,32 @@ func TestSqlTulisRingkasan(t *testing.T) {
 	}
 	memuat(t, "maks ringkasan", SqlMaksID("S.M_RATE_LIFE_SUMMARY"), "NVL(MAX(TO_NUMBER(REGEXP_SUBSTR(ID, '^[0-9]+$'))), 0)) FROM S.M_RATE_LIFE_SUMMARY")
 	memuat(t, "ada ringkasan", SqlAdaID("S.M_RATE_LIFE_SUMMARY"), "SELECT COUNT(*) FROM S.M_RATE_LIFE_SUMMARY WHERE ID = :1")
-	memuat(t, "baca json rate", SqlBacaJSON("S.M_RATE_LIFE"), "SELECT JSONDATA FROM S.M_RATE_LIFE WHERE ID = :1 FOR UPDATE")
-	memuat(t, "tulis json", SqlTulisJSON("S.M_RATE_LIFE"), "UPDATE S.M_RATE_LIFE SET JSONDATA = :1 WHERE ID = :2")
-	memuat(t, "rate milik", SqlIDRateMilik("S.RATE_LIFE"), "SELECT ID FROM S.RATE_LIFE WHERE IDUSEDBY = :1")
-	memuat(t, "hapus rate", SqlHapusRate("S.M_RATE_LIFE", "S.RATE_LIFE"),
-		"DELETE FROM S.M_RATE_LIFE WHERE ID IN (SELECT ID FROM S.RATE_LIFE WHERE IDUSEDBY = :1)")
+	memuat(t, "hapus rate", SqlHapusRate("S.M_RATE_LIFE"), "DELETE FROM S.M_RATE_LIFE WHERE IDUSEDBY = :1")
 	memuat(t, "id baru", SqlIDBaru("S.SEQ_M_RATE_LIFE_SUMMARY"), "SELECT TO_CHAR(S.SEQ_M_RATE_LIFE_SUMMARY.NEXTVAL) FROM DUAL")
 	memuat(t, "maks", SqlMaksID("S.M_RATE_LIFE"), "NVL(MAX(TO_NUMBER(REGEXP_SUBSTR(ID, '^[0-9]+$'))), 0)")
 }
 
-// Rate: TYPE tidak pernah ditulis; CONTRACT kosong = kunci tidak ditulis (ABSENT ON NULL); kunci kembar sekali baca.
+// Rate (RALAT R7, 10-10-2026): tabel flat M_RATE_LIFE - INSERT/UPDATE kolom biasa, nol JSONDATA / JSON_OBJECT, TYPE tidak
+// pernah ditulis; Edit nama = UPDATE USEDBY berkunci IDUSEDBY; kunci kembar sekali baca.
 func TestSqlRate(t *testing.T) {
-	s := satuBaris(SqlSisipRate("S.M_RATE_LIFE"))
-	memuat(t, "sisip rate", s, "JSON_OBJECT('IDUSEDBY' VALUE :2, 'USEDBY' VALUE :3, 'GENDER' VALUE :4, 'CONTRACT' VALUE :5, 'AGE' VALUE :6, 'RATE' VALUE :7 ABSENT ON NULL)")
-	if strings.Contains(s, "'TYPE'") {
-		t.Error("TYPE tidak boleh ditulis")
+	memuat(t, "sisip rate", SqlSisipRate("S.M_RATE_LIFE"),
+		"INSERT INTO S.M_RATE_LIFE (ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE) VALUES (:1, :2, :3, :4, :5, :6, :7)")
+	memuat(t, "ubah rate", SqlUbahRate("S.M_RATE_LIFE"),
+		"UPDATE S.M_RATE_LIFE SET GENDER = :1, CONTRACT = :2, AGE = :3, RATE = :4 WHERE ID = :5 AND TRIM(IDUSEDBY) = :6")
+	memuat(t, "ubah nama", SqlUbahNamaRate("S.M_RATE_LIFE"), "UPDATE S.M_RATE_LIFE SET USEDBY = :1 WHERE IDUSEDBY = :2")
+	for _, x := range []string{SqlSisipRate("T"), SqlUbahRate("T"), SqlUbahNamaRate("T"), SqlHapusRate("T"), SqlDaftarRate("T"),
+		SqlRateDari("T", 2), SqlJumlahRate("T"), kolomRate} {
+		if strings.Contains(strings.ToUpper(x), "JSON") || strings.Contains(x, "TYPE") || strings.Contains(x, "RATE_LIFE") {
+			t.Errorf("SQL rate memakai JSON / TYPE / view RATE_LIFE: %s", x)
+		}
 	}
-	memuat(t, "detail", SqlDaftarRate("S.RATE_LIFE"), "SELECT ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE FROM S.RATE_LIFE WHERE IDUSEDBY = :1",
+	memuat(t, "detail", SqlDaftarRate("S.M_RATE_LIFE"), "SELECT ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE FROM S.M_RATE_LIFE WHERE IDUSEDBY = :1",
 		"ORDER BY TO_NUMBER(REGEXP_SUBSTR(ID, '^[0-9]+$')) DESC NULLS LAST, ID DESC OFFSET :2 ROWS FETCH NEXT :3 ROWS ONLY")
-	memuat(t, "kunci", SqlRateDari("S.RATE_LIFE", 3), "WHERE IDUSEDBY IN (:1, :2, :3)")
+	memuat(t, "jumlah", SqlJumlahRate("S.M_RATE_LIFE"), "SELECT COUNT(*) FROM S.M_RATE_LIFE WHERE IDUSEDBY = :1")
+	memuat(t, "kunci", SqlRateDari("S.M_RATE_LIFE", 3), "FROM S.M_RATE_LIFE WHERE IDUSEDBY IN (:1, :2, :3)")
 }
 
-// Lapis penjaga: tulis hanya ke M_RATE_LIFE_SUMMARY (kolom ringkasan) dan M_RATE_LIFE; view rate dibaca saja.
+// Lapis penjaga: tulis hanya ke M_RATE_LIFE_SUMMARY dan M_RATE_LIFE (keduanya juga dibaca); nol objek baca-saja sejak RALAT R7.
 func TestPeriksaTulis(t *testing.T) {
 	for _, objek := range DaftarDibacaSaja {
 		if err := PeriksaTulis(objek, "DELETE FROM X"); !errors.Is(err, ErrBacaSaja) {
@@ -87,11 +91,16 @@ func TestPeriksaTulis(t *testing.T) {
 	if err := PeriksaTulis("RATE_LIFE_SUMMARY", "DELETE FROM X"); !errors.Is(err, ErrBacaSaja) {
 		t.Errorf("tabel flat 926 (dibuang 928) ditulis: %v", err)
 	}
-	if err := PeriksaTulis(TabelRate, SqlTulisJSON("X.M_RATE_LIFE")); err != nil {
-		t.Errorf("ubah rate: %v", err)
+	for _, x := range []string{SqlSisipRate("X"), SqlUbahRate("X"), SqlUbahNamaRate("X"), SqlHapusRate("X")} {
+		if err := PeriksaTulis(TabelRate, x); err != nil {
+			t.Errorf("tulis rate: %v", err)
+		}
 	}
-	if err := PeriksaTulis(ViewRate, SqlDaftarRate("V")); err != nil {
-		t.Errorf("SELECT view: %v", err)
+	if err := PeriksaTulis("RATE_LIFE", SqlUbahNamaRate("X")); !errors.Is(err, ErrBacaSaja) {
+		t.Errorf("view RATE_LIFE (dibuang) ditulis: %v", err)
+	}
+	if err := PeriksaTulis("RATE_LIFE", SqlDaftarRate("V")); err != nil {
+		t.Errorf("SELECT: %v", err)
 	}
 	for _, objek := range DaftarTabelDitulis {
 		if err := PeriksaTulis(objek, "DELETE FROM X"); err != nil {
@@ -101,7 +110,7 @@ func TestPeriksaTulis(t *testing.T) {
 	if len(DaftarTabelDitulis) != 2 || DaftarTabelDitulis[0] != "M_RATE_LIFE_SUMMARY" || DaftarTabelDitulis[1] != "M_RATE_LIFE" {
 		t.Errorf("tabel ditulis %v", DaftarTabelDitulis)
 	}
-	if len(DaftarDibacaSaja) != 1 || DaftarDibacaSaja[0] != "RATE_LIFE" {
-		t.Errorf("dibaca saja %v", DaftarDibacaSaja)
+	if len(DaftarDibacaSaja) != 0 {
+		t.Errorf("dibaca saja %v (view RATE_LIFE dibuang 10-10-2026)", DaftarDibacaSaja)
 	}
 }

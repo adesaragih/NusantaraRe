@@ -9,7 +9,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"nusantarare/inti/backend/db"
@@ -32,7 +31,7 @@ func (g *Gudang) pakai(tx *db.Tx) penanya {
 	return g.db
 }
 
-// polaPengenalKasus - `LIKE` atas PK, kasus modul ini saja (`EDMLF-%`).
+// polaPengenalKasus - `LIKE` atas PK, kasus modul ini saja (`EDML-%`).
 const polaPengenalKasus = models.AwalanKasus + "%"
 
 // ekspresiBaca membaca satu kolom sebagai teks: tanggal `YYYY-MM-DD`, angka
@@ -80,31 +79,34 @@ func pindaiNilai(kolom []models.KolomPeserta, mentah []sql.NullString) (map[stri
 
 // --- kotak masuk ----------------------------------------------------------
 
-// sqlInbox - `ReportDefinition/InboxEDMLife.xml`: bukan `Resolved-Completed`
-// (b659) dan bukan `Resolved-Rejected` (b673) = `STATUSS` kosong; urut
-// `pxCreateDateTime` `DESC` (b1040) + pemutus seri `ID`.
+// sqlInbox - `ReportDefinition/InboxEDMLife.xml`: urut `pxCreateDateTime` `DESC` (b1040) + pemutus seri `ID`.
+//
+// ⚠️ Menyimpang (keputusan work owner 09-10-2026, seperti kotak masuk PremiumList Life): kasus TERTUTUP
+// (`Resolved-Completed` / `Resolved-Rejected`) ikut terdaftar - saringan Pega b659/b673 (`STATUSS` kosong)
+// tidak lagi dipakai di sini; layar menandai kasus tertutup dan tidak membukanya. Aturan lain yang memakai
+// "`STATUSS IS NULL` = terbuka" (index `UX_PL_EDM_TERBUKA`, gerbang 3, Tolak, Resmikan) TIDAK berubah.
 //
 // ⚠️ Kolom `Endorsement No` (`InboxEndorsementLife.xml` b8556): di Pega `A.PremiumListSummary.PL_NUMBER`
 // (b10516) = nomor polis yang di-endorse (`MappingEDMLife` 9 b2184, RALAT R25). KINI `NO_ENDORS` - nomor
 // endorsement yang terbit saat kasus diresmikan (`sqlResmikanKepala`) - keputusan work owner 07-10-2026
-// (penyimpangan sadar). ⚠️ `NO_ENDORS` ditulis BERSAMA `STATUSS` (Confirm), sedangkan kotak masuk hanya
-// memuat kasus `STATUSS IS NULL`: sel ini kosong untuk setiap kasus terbuka. `Policy No` tetap `OLD_POLICY_NO`.
+// (penyimpangan sadar). `NO_ENDORS` ditulis BERSAMA `STATUSS` (Confirm): kosong untuk kasus terbuka, terisi
+// untuk kasus Resolved-Completed yang kini ikut terdaftar. `Policy No` tetap `OLD_POLICY_NO`.
 // Kolom SOB, Policy Holder, Marketing Name, EDM Type Batal tidak lagi dibaca (dihapus dari kotak masuk,
 // 07-10-2026); `EDM_TYPE_BATAL` tetap tersimpan dan tampil di layar kasus.
 func sqlInbox(polis string) string {
 	return fmt.Sprintf(`SELECT p.ID, p.NO_ENDORS, p.OLD_POLICY_NO, p.TYPE, p.EDM_TYPE, p.CEDING_CO_NAME,
 	        TO_CHAR(p.TGL_INPUT, 'YYYY-MM-DD HH24:MI:SS'), p.CREATE_OP_NAME, p.STATUSS
 	   FROM %s p
-	  WHERE p.ID LIKE :1 AND p.STATUSS IS NULL
+	  WHERE p.ID LIKE :1
 	  ORDER BY p.TGL_INPUT DESC, p.ID
 	 OFFSET :2 ROWS FETCH NEXT :3 ROWS ONLY`, polis)
 }
 
 func sqlCacahInbox(polis string) string {
-	return fmt.Sprintf(`SELECT COUNT(*) FROM %s p WHERE p.ID LIKE :1 AND p.STATUSS IS NULL`, polis)
+	return fmt.Sprintf(`SELECT COUNT(*) FROM %s p WHERE p.ID LIKE :1`, polis)
 }
 
-// Inbox membaca satu halaman kasus terbuka beserta cacah seluruhnya.
+// Inbox membaca satu halaman kasus (terbuka dan tertutup, 09-10-2026) beserta cacah seluruhnya.
 func (g *Gudang) Inbox(ctx context.Context, halaman, ukuran int) ([]models.BarisInbox, int, error) {
 	n, err := g.nama(tabelPolis)
 	if err != nil {
@@ -152,7 +154,7 @@ func (g *Gudang) Inbox(ctx context.Context, halaman, ukuran int) ([]models.Baris
 // --- kepala kasus -----------------------------------------------------------
 
 // kolomKasus - kolom tetap kepala kasus, sebelum `KolomKepalaSalin`.
-const kolomKasus = `p.ID, p.OLD_POLICY_NO, p.PL_NUMBER_EDM, NVL(p.PROD_KE, 1), p.EDM_TYPE, p.EDM_NOTE,
+const kolomKasus = `p.ID, p.OLD_POLICY_NO, p.PL_NUMBER_EDM, NVL(p.PROD_KE, 0), p.EDM_TYPE, p.EDM_NOTE,
 	        TO_CHAR(p.EDM_DATE, 'YYYY-MM-DD'), p.STATUSS, TO_CHAR(p.TGL_INPUT, 'YYYY-MM-DD HH24:MI:SS'),
 	        p.CREATE_OP_NAME, p.EDM_TYPE_PERUBAHAN_DATA, p.EDM_TYPE_BATAL`
 
@@ -165,13 +167,8 @@ const jumlahKolomKasus = 12
 func sqlKasus(polis string, kunci bool) string {
 	var b strings.Builder
 	b.WriteString("SELECT " + kolomKasus)
-	for _, k := range models.KolomKepalaSalin {
-		b.WriteString(", ")
-		if k.Tanggal {
-			b.WriteString("TO_CHAR(p." + k.Kolom + ", 'YYYY-MM-DD')")
-		} else {
-			b.WriteString("p." + k.Kolom)
-		}
+	for _, k := range models.KolomKepalaKasus() {
+		b.WriteString(", " + bacaKepala(k))
 	}
 	fmt.Fprintf(&b, " FROM %s p WHERE p.ID = :1 AND p.ID LIKE :2", polis)
 	if kunci {
@@ -190,7 +187,8 @@ func (g *Gudang) AmbilKasus(ctx context.Context, tx *db.Tx, id string, kunci boo
 	if err := db.PeriksaSQL(q); err != nil {
 		return models.Kasus{}, err
 	}
-	v := make([]sql.NullString, jumlahKolomKasus+len(models.KolomKepalaSalin))
+	kolomKepala := models.KolomKepalaKasus()
+	v := make([]sql.NullString, jumlahKolomKasus+len(kolomKepala))
 	var prodKe int
 	ptr := make([]any, len(v))
 	for i := range v {
@@ -209,9 +207,9 @@ func (g *Gudang) AmbilKasus(ctx context.Context, tx *db.Tx, id string, kunci boo
 		ProdKe: prodKe, EdmType: v[4].String, EdmNote: v[5].String, EdmDate: v[6].String,
 		Status: v[7].String, TglInput: v[8].String, Pembuat: v[9].String,
 		EdmTypePerubahanData: v[10].String, EdmTypeBatal: v[11].String,
-		Kepala: make(map[string]string, len(models.KolomKepalaSalin)),
+		Kepala: make(map[string]string, len(kolomKepala)),
 	}
-	for i, kol := range models.KolomKepalaSalin {
+	for i, kol := range kolomKepala {
 		k.Kepala[kol.Kolom] = strings.TrimSpace(v[jumlahKolomKasus+i].String)
 	}
 	return k, nil
@@ -329,56 +327,66 @@ func (g *Gudang) AdaRekap(ctx context.Context, tx *db.Tx, kasusID string) (bool,
 
 // --- versi polis lama -------------------------------------------------------
 
+// PRODKE 0-based, SATU hitungan (keputusan work owner 08-10-2026, migrasi 485): new business 0,
+// endorsement ke-n = n, kosong = 0. Versi berjalan = PRODKE terbesar di ketiga jalur; seri → sumber aplikasi
+// (`models.LebihBaru`). Nomor endorsement berikutnya = PRODKE itu + 1 (`models.NomorEndorsement`).
+
 // sqlVersiEDM - versi endorsement RESMI sistem baru: `NO_POLIS` diisi saat
 // Confirm (`IDX_PL_NOPOLIS_PRODKE`, migrasi 480). `PROD_KE DESC` - satu urutan
 // (penyimpangan sadar 1, RALAT R19). `sebelum` > 0 membatasi ke versi lebih tua.
-// Kolom ke-4 = nomornya (`PL_NUMBER_EDM`): akhirannya urutan Pega versi itu (K3, `models.UrutanDariNomor`).
 func sqlVersiEDM(polis string, sebelum bool) string {
 	syarat := ""
 	if sebelum {
-		syarat = " AND NVL(p.PROD_KE, 1) < :3"
+		syarat = " AND NVL(p.PROD_KE, 0) < :3"
 	}
-	return fmt.Sprintf(`SELECT p.ID, NVL(p.PROD_KE, 1), p.EDM_TYPE, p.PL_NUMBER_EDM FROM %s p
+	return fmt.Sprintf(`SELECT p.ID, NVL(p.PROD_KE, 0), p.EDM_TYPE FROM %s p
 	  WHERE p.NO_POLIS = :1 AND p.STATUSS = :2%s
-	  ORDER BY NVL(p.PROD_KE, 1) DESC, p.ID FETCH FIRST 1 ROWS ONLY`, polis, syarat)
+	  ORDER BY NVL(p.PROD_KE, 0) DESC, p.ID FETCH FIRST 1 ROWS ONLY`, polis, syarat)
 }
 
 // sqlVersiNB - versi new business sistem baru: kepala tanpa `EDM_TYPE` yang
 // pesertanya ber-`PL_NUMBER` = nomor polis (`IDX_PLD_PL_NUMBER`, migrasi 480;
-// nomor polis = `PL_NUMBER`, RALAT R01). Kolom ke-4 = urutan Pega new business: 0 (NB tanpa `PRODKE`,
-// RALAT R23 - `PROD_KE` 1 di sini hanya bawaan migrasi 480 untuk VERSI).
+// nomor polis = `PL_NUMBER`, RALAT R01). PROD_KE new business = 0 (migrasi 485).
 func sqlVersiNB(polis, peserta string, sebelum bool) string {
 	syarat := ""
 	if sebelum {
-		syarat = " AND NVL(p.PROD_KE, 1) < :2"
+		syarat = " AND NVL(p.PROD_KE, 0) < :2"
 	}
 	// ⛔ Penampung muncul URUT (`:1` lalu `:2`): godror mengikat menurut urutan
 	// kemunculan, bukan menurut angkanya.
-	return fmt.Sprintf(`SELECT p.ID, NVL(p.PROD_KE, 1), p.EDM_TYPE, '0' FROM %s p
+	return fmt.Sprintf(`SELECT p.ID, NVL(p.PROD_KE, 0), p.EDM_TYPE FROM %s p
 	  WHERE p.ID IN (SELECT d.PREMIUM_LIST_ID FROM %s d WHERE d.PL_NUMBER = :1)
 	    AND p.EDM_TYPE IS NULL%s
-	  ORDER BY NVL(p.PROD_KE, 1) DESC, p.ID FETCH FIRST 1 ROWS ONLY`, polis, peserta, syarat)
+	  ORDER BY NVL(p.PROD_KE, 0) DESC, p.ID FETCH FIRST 1 ROWS ONLY`, polis, peserta, syarat)
 }
 
+// prodKeWarisan - `JSON_POLIS.PRODKE` (VARCHAR2(5)) sebagai BILANGAN: urut teks salah ("9" > "10");
+// kosong / bukan angka = 0 (Oracle 12.2+, DEV 12.2.0.1).
+const prodKeWarisan = "NVL(TO_NUMBER(TRIM(j.PRODKE) DEFAULT NULL ON CONVERSION ERROR), 0)"
+
+// polaIDPegaAplikasi - `JSON_POLIS.IDPEGA` baris yang ditulis SISTEM BARU (08-10-2026): new business
+// PremiumList Life (`NBLF-<n>`, PRODKE '0') dan endorsement modul ini (`EDML-<n>`). Versinya sudah dibaca
+// jalur aplikasi (sqlVersiNB / sqlVersiEDM) dengan peserta di tabel aplikasi; jalur warisan hanya untuk baris
+// Pega (`IDPEGA` berkelas, mis. `ASM-FW-GISFW-WORK NBLF-<n>`) yang pesertanya di `M_LIFE_PREMIUM_DETAIL`.
+var polaIDPegaAplikasi = []string{"NBLF-%", models.AwalanKasus + "%"}
+
 // sqlVersiWarisan - versi sistem lama: `GetProdkeNopolis` b84 (`IDPEGA … ORDER BY
-// PRODKE DESC`) dan `GetEdmTypeLife` b84 (`A.DATA_JSON.EdmType`). `PRODKE`
-// kosong dibaca 1 (E1, OQ-EDM-008) untuk VERSI; kolom ke-4 = `PRODKE` mentah, kosong = 0, untuk NOMOR
-// (K3: `GenerateNoEDM_Life` `Local.Prodke` int b278). `JSON_VALUE` dipakai sebagai ganti notasi
-// titik Pega, yang menuntut constraint `IS JSON` pada kolomnya.
+// PRODKE DESC`) dan `GetEdmTypeLife` b84 (`A.DATA_JSON.EdmType`). Baris sistem baru dikecualikan
+// (`polaIDPegaAplikasi`). `JSON_VALUE` dipakai sebagai ganti notasi titik Pega, yang menuntut constraint
+// `IS JSON` pada kolomnya. Penampung urut: :1 nomor polis, :2 :3 pola aplikasi, (:4 sebelum).
 func sqlVersiWarisan(jsonPolis string, sebelum bool) string {
 	syarat := ""
 	if sebelum {
-		syarat = " AND NVL(j.PRODKE, 1) < :2"
+		syarat = " AND " + prodKeWarisan + " < :4"
 	}
-	return fmt.Sprintf(`SELECT j.IDPEGA, NVL(j.PRODKE, 1), JSON_VALUE(j.DATA_JSON, '$.EdmType' NULL ON ERROR),
-	       TO_CHAR(NVL(j.PRODKE, 0))
-	   FROM %s j WHERE j.NOPOLIS = :1%s
-	  ORDER BY NVL(j.PRODKE, 1) DESC, j.TGL_INPUT DESC FETCH FIRST 1 ROWS ONLY`, jsonPolis, syarat)
+	return fmt.Sprintf(`SELECT j.IDPEGA, %s, JSON_VALUE(j.DATA_JSON, '$.EdmType' NULL ON ERROR)
+	   FROM %s j WHERE j.NOPOLIS = :1 AND j.IDPEGA NOT LIKE :2 AND j.IDPEGA NOT LIKE :3%s
+	  ORDER BY %s DESC, j.TGL_INPUT DESC FETCH FIRST 1 ROWS ONLY`, prodKeWarisan, jsonPolis, syarat, prodKeWarisan)
 }
 
 // VersiBerjalan membaca versi berjalan sebuah polis - `PRODKE` terbesar di
 // ketiga jalur. `sebelumProdKe` > 0: versi terbesar di bawah nilai itu (polis
-// lama sebuah kasus yang sudah diresmikan). `ada` false = polis tidak dikenal.
+// lama sebuah kasus yang sudah diresmikan - PRODKE-nya selalu >= 1). `ada` false = polis tidak dikenal.
 func (g *Gudang) VersiBerjalan(ctx context.Context, tx *db.Tx, nomorPolis string, sebelumProdKe int) (models.Versi, bool, error) {
 	n, err := g.nama(tabelPolis, tabelPeserta, tabelPolisWarisan)
 	if err != nil {
@@ -389,46 +397,36 @@ func (g *Gudang) VersiBerjalan(ctx context.Context, tx *db.Tx, nomorPolis string
 		jenis models.JenisSumber
 		q     string
 		args  []any
-		// dariNomor - kolom ke-4 adalah nomor endorsement (urutan = akhirannya), bukan angka.
-		dariNomor bool
 	}
 	argsEDM := []any{nomorPolis, models.StatusKasusSelesai}
-	argsLain := []any{nomorPolis}
+	argsNB := []any{nomorPolis}
+	argsWarisan := []any{nomorPolis, polaIDPegaAplikasi[0], polaIDPegaAplikasi[1]}
 	if sebelum {
 		argsEDM = append(argsEDM, sebelumProdKe)
-		argsLain = append(argsLain, sebelumProdKe)
+		argsNB = append(argsNB, sebelumProdKe)
+		argsWarisan = append(argsWarisan, sebelumProdKe)
 	}
 	daftar := []jalur{
-		{models.SumberAplikasi, sqlVersiEDM(n[0], sebelum), argsEDM, true},
-		{models.SumberAplikasi, sqlVersiNB(n[0], n[1], sebelum), argsLain, false},
-		{models.SumberWarisan, sqlVersiWarisan(n[2], sebelum), argsLain, false},
+		{models.SumberAplikasi, sqlVersiEDM(n[0], sebelum), argsEDM},
+		{models.SumberAplikasi, sqlVersiNB(n[0], n[1], sebelum), argsNB},
+		{models.SumberWarisan, sqlVersiWarisan(n[2], sebelum), argsWarisan},
 	}
 	var terbaik models.Versi
 	for _, j := range daftar {
 		if err := db.PeriksaSQL(j.q); err != nil {
 			return models.Versi{}, false, err
 		}
-		var id, edm, urutan sql.NullString
+		var id, edm sql.NullString
 		var prodKe int
-		err := g.pakai(tx).QueryRowContext(ctx, j.q, j.args...).Scan(&id, &prodKe, &edm, &urutan)
+		err := g.pakai(tx).QueryRowContext(ctx, j.q, j.args...).Scan(&id, &prodKe, &edm)
 		if err == sql.ErrNoRows {
 			continue
 		}
 		if err != nil {
 			return models.Versi{}, false, fmt.Errorf("repository: membaca versi %s polis %q: %w", j.jenis, nomorPolis, err)
 		}
-		// Urutan Pega hanya bahan NOMOR (K3): yang tak terurai = -1 (tidak diketahui), BUKAN galat - gerbang,
-		// pembuatan kasus, dan popup polis lama tetap berjalan; `models.NomorEndorsement` yang menolaknya.
-		up := models.UrutanPegaTakDiketahui
-		if j.dariNomor {
-			if n, e := models.UrutanDariNomor(urutan.String); e == nil {
-				up = n
-			}
-		} else if n, e := strconv.Atoi(strings.TrimSpace(urutan.String)); e == nil {
-			up = n
-		}
 		terbaik = models.LebihBaru(terbaik, models.Versi{
-			Jenis: j.jenis, ID: id.String, ProdKe: prodKe, EdmType: strings.TrimSpace(edm.String), UrutanPega: up,
+			Jenis: j.jenis, ID: id.String, ProdKe: prodKe, EdmType: strings.TrimSpace(edm.String),
 		})
 	}
 	return terbaik, terbaik.ID != "", nil

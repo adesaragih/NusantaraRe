@@ -28,6 +28,7 @@ package handlers
 // Dibaca sesudah: inbox.go.
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -77,27 +78,50 @@ func pindahTahap(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			Pindah(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("id"),
 				tujuan, time.Now())
 
-		switch {
-		case err == nil:
-			w.WriteHeader(http.StatusNoContent)
-		case errors.Is(err, inti.ErrTanpaIdentitas):
-			galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
-		case errors.Is(err, inti.ErrTanpaWewenang):
-			// ⛔ Orang memindahkan pekerjaan yang SEDANG IA PEGANG.
-			galat.Tulis(w, http.StatusForbidden,
-				"hanya pemegang tahap asal yang dapat memindahkan kasus ini")
-		case errors.Is(err, services.ErrPerpindahanTidakSah):
-			// ⛔ 409, bukan 400: permintaannya berbentuk benar, keadaan
-			// kasusnya yang tidak mengizinkan. Tangga yang setiap anaknya
-			// dapat dilompati bukan tangga.
-			galat.Tulis(w, http.StatusConflict,
-				"perpindahan itu tidak ada di tangga kerja klaim")
-		case errors.Is(err, kontrak.ErrKasusSudahTertutup):
-			galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
-		case errors.Is(err, services.ErrTahapTidakDikenal):
-			galat.Tulis(w, http.StatusConflict, "tahap kasus ini tidak dikenal")
-		default:
-			galat.Tulis(w, http.StatusInternalServerError, "gagal memindahkan tahap klaim")
-		}
+		jawabGalatPindah(w, err)
+	}
+}
+
+// jawabGalatPindah - satu terjemahan hasil perpindahan tahap (nil = 204).
+func jawabGalatPindah(w http.ResponseWriter, err error) {
+	var kurang *services.PelanggaranPindah
+	switch {
+	case err == nil:
+		w.WriteHeader(http.StatusNoContent)
+	case errors.Is(err, inti.ErrTanpaIdentitas):
+		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+	case errors.Is(err, inti.ErrTanpaWewenang):
+		// ⛔ Orang memindahkan pekerjaan yang SEDANG IA PEGANG.
+		galat.Tulis(w, http.StatusForbidden,
+			"hanya pemegang tahap asal yang dapat memindahkan kasus ini")
+	case errors.Is(err, services.ErrPerpindahanTidakSah):
+		// ⛔ 409, bukan 400: permintaannya berbentuk benar, keadaan
+		// kasusnya yang tidak mengizinkan. Tangga yang setiap anaknya
+		// dapat dilompati bukan tangga.
+		galat.Tulis(w, http.StatusConflict,
+			"perpindahan itu tidak ada di tangga kerja klaim")
+	case errors.As(err, &kurang):
+		// 11-10-2026: peserta Accept tanpa dokumen - 422 berdaftar (pola kekurangan Save to RNM): permintaannya sah,
+		// datanya belum lengkap; SELURUH kekurangan sekaligus.
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		_ = json.NewEncoder(w).Encode(struct {
+			Galat      string                   `json:"galat"`
+			Langkah    string                   `json:"langkah"`
+			Kekurangan []services.KekuranganRNM `json:"kekurangan"`
+		}{kurang.Pesan, kurang.Langkah, kurang.Kekurangan})
+	case errors.Is(err, services.ErrPindahMenungguNomorKlaim),
+		errors.Is(err, services.ErrPindahTypeTanpaMedis),
+		errors.Is(err, services.ErrPindahSudahBernomor):
+		// 10-10-2026 - gerbang tombol bawah layar Outstanding (InputOSClaimLife b21699, b21832, b22123).
+		galat.Tulis(w, http.StatusConflict, err.Error())
+	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
+		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+	case errors.Is(err, services.ErrTahapTidakDikenal):
+		galat.Tulis(w, http.StatusConflict, "tahap kasus ini tidak dikenal")
+	case errors.Is(err, services.ErrKlaimTidakAda):
+		galat.Tulis(w, http.StatusNotFound, "klaim tidak ada")
+	default:
+		galat.Tulis(w, http.StatusInternalServerError, "gagal memindahkan tahap klaim")
 	}
 }

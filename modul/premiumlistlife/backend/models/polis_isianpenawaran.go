@@ -117,6 +117,13 @@ const NamaBusinessTakDikenal = "UNKNOWN"
 // (`Decline`/`Bind`/`Closed`) di InputOfferLife.xml, `SetStatusAkseptasi`
 // (`Bind`, `Decline`, `Closed`), dan `InputOfferLife_ACT` langkah 1 (`//`,
 // `Decline`/`Closed`). Urutannya urutan kemunculan itu.
+//
+// ⭐ Keputusan work owner 08-10-2026 (BUKAN korpus): untuk kasus bendera "0"
+// `Save Offer` dengan Status `Bind` atau `Closed` MENYIMPAN lalu MENUTUP
+// kasus lewat mesin keputusan yang sama (`AkibatStatusOffer`): Bind = akibat
+// `Confirm` jalur Offer (Decision3 "Offer" -> END52 Resolved-Completed, TANPA
+// SimpanPolis), Closed = akibat `Decline` (End1 Resolved-Rejected). Accept,
+// Pending, Decline hanya menyimpan; kasus tetap terbuka.
 var PilihanStatusOffer = []Pilihan{
 	{Kode: "Accept", Nama: "Accept"},
 	{Kode: "Pending", Nama: "Pending"},
@@ -430,4 +437,63 @@ func tandaTanggal(t *time.Time) string {
 		return ""
 	}
 	return "ada"
+}
+
+// Kode Status penawaran yang menutup kasus (keputusan work owner 08-10-2026).
+const (
+	StatusOfferBind   = "Bind"
+	StatusOfferClosed = "Closed"
+)
+
+// AkibatStatusOffer menjawab apakah `Save Offer` dengan Status ini juga
+// menutup kasus, dan akibatnya - keputusan work owner 08-10-2026.
+//
+// Hanya bendera "0" (`FlagPolisPenawaran`); bendera "1" (radio EmailTypePL)
+// tidak pernah menutup. Akibatnya DITURUNKAN dari `TransisiPenawaran` dan
+// `PenggolongOtomatis` - satu tabel keputusan, bukan salinan kedua:
+//
+//	Bind   -> keputusan Confirm di tahap penawaran -> Decision3 "Offer"
+//	          -> END52 Resolved-Completed (SimpanPolis false)
+//	Closed -> keputusan Decline -> End1 Resolved-Rejected
+//
+// `keputusan` dikembalikan supaya pemanggil menjalankan gerbang keputusan
+// itu (Confirm: isian wajib lengkap); `sebab` untuk jejak.
+func AkibatStatusOffer(flag, status string) (akibat AkibatKeputusan, keputusan, sebab string, tutup bool, err error) {
+	if flag != FlagPolisPenawaran {
+		return AkibatKeputusan{}, "", "", false, nil
+	}
+	switch strings.TrimSpace(status) {
+	case StatusOfferBind:
+		keputusan = KeputusanConfirm
+	case StatusOfferClosed:
+		keputusan = KeputusanDecline
+	default:
+		return AkibatKeputusan{}, "", "", false, nil
+	}
+	akibat, err = TransisiPenawaran(TahapPolisPenawaran, keputusan)
+	if err != nil {
+		return AkibatKeputusan{}, "", "", false, err
+	}
+	sebab = "Save Offer " + strings.TrimSpace(status) + " -> " + keputusan
+	if akibat.KeDecision3 {
+		if akibat, err = PenggolongOtomatis(flag); err != nil {
+			return AkibatKeputusan{}, "", "", false, err
+		}
+		sebab += " -> " + HasilIsFlagOnGoingPolicy(flag)
+	}
+	return akibat, keputusan, sebab, true, nil
+}
+
+// PesanConfirmPenawaranTidakTersedia - pesan layar/server (sama persis di labels.ts).
+const PesanConfirmPenawaranTidakTersedia = "Confirm is not available for offer cases. Choose Status Bind and press Save Offer."
+
+// ConfirmPenawaranTersedia - tombol keputusan `Confirm` di tahap penawaran
+// HANYA untuk kasus bendera "1" (keputusan work owner 08-10-2026): kasus
+// bendera "0" ditutup lewat Status Bind/Closed + Save Offer
+// (`AkibatStatusOffer`). Tahap lain tidak terdampak.
+func ConfirmPenawaranTersedia(tahap, keputusan, flag string) bool {
+	if strings.TrimSpace(tahap) != TahapPolisPenawaran || strings.TrimSpace(keputusan) != KeputusanConfirm {
+		return true
+	}
+	return flag != FlagPolisPenawaran
 }

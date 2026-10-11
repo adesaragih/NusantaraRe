@@ -134,20 +134,25 @@ func TestSqlJSONPolis(t *testing.T) {
 	}
 	q := sqlSisipJSONPolis(tujuan, polis)
 	for _, k := range []string{
-		"INSERT INTO SKEMAUJI.JSON_POLIS (IDPEGA, NOPOLIS, TGL_PROD, USERNAME, TGL_INPUT)",
-		"SELECT :1, :2, :3, p.CREATE_OP_NAME, SYSDATE FROM SKEMAUJI.T_PREMIUM_LIST p",
+		// PRODKE '0' (teks, VARCHAR2(5)) - keputusan work owner 08-10-2026.
+		"INSERT INTO SKEMAUJI.JSON_POLIS (IDPEGA, NOPOLIS, TGL_PROD, USERNAME, TGL_INPUT, PRODKE)",
+		"SELECT :1, :2, :3, p.CREATE_OP_NAME, SYSDATE, '0' FROM SKEMAUJI.T_PREMIUM_LIST p",
 		"WHERE p.ID = :4 AND p.ID = p.ID_PEGA",
 	} {
 		if !strings.Contains(q, k) {
 			t.Errorf("sisip tanpa %q:\n%s", k, q)
 		}
 	}
+	// Penampung tetap 4 (PRODKE literal, bukan argumen); hanya INSERT yang menyebut PRODKE.
+	if strings.Count(q, ":") != 4 || strings.Contains(sqlHapusJSONPolis(tujuan)+sqlTglProdLama(tujuan), "PRODKE") {
+		t.Errorf("penampung / PRODKE di luar INSERT: %s", q)
+	}
 	// USERNAME = CREATEOPNAME LIFEINPRODUCTION.
 	if nilaiProduksiLife["CREATEOPNAME"] != "p.CREATE_OP_NAME" {
 		t.Error("USERNAME JSON_POLIS harus sama dengan CREATEOPNAME LIFEINPRODUCTION")
 	}
 	for _, s := range []string{q, sqlHapusJSONPolis(tujuan), sqlTglProdLama(tujuan)} {
-		for _, larangan := range []string{"SELECT *", "COMMIT", "DATA_JSON", "INSERTJSONPOLISLIFE", "PRODKE",
+		for _, larangan := range []string{"SELECT *", "COMMIT", "DATA_JSON", "INSERTJSONPOLISLIFE",
 			"NOENDORS", "ERR_NOTE", "KONVERSI", "OLDNOPOLIS"} {
 			if strings.Contains(strings.ToUpper(s), larangan) {
 				t.Errorf("SQL memuat %q: %s", larangan, s)

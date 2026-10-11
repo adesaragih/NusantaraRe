@@ -109,6 +109,30 @@ func (r *RingkasPolis) Ambil(ctx context.Context, pelaku inti.Pelaku, nomorPolis
 	if err != nil {
 		return PolicyDataLife{}, err
 	}
+	return keDataPolis(p), nil
+}
+
+// AmbilDariIdPega membaca data polis dari IDPEGA peserta (keputusan work owner 10-10-2026 untuk Claim Life) - bentuk
+// jawaban sama dengan Ambil.
+func (r *RingkasPolis) AmbilDariIdPega(ctx context.Context, pelaku inti.Pelaku, idPega string) (PolicyDataLife, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
+		return PolicyDataLife{}, err
+	}
+	if r == nil || r.svc == nil || !r.svc.PunyaDatabase() {
+		return PolicyDataLife{}, db.ErrTanpaOracle
+	}
+	if idPega == "" {
+		return PolicyDataLife{}, fmt.Errorf("%w: IDPEGA kosong", galat.ErrPermintaanTidakSah)
+	}
+	p, err := repository.NewRingkasPolisLife(r.svc.DB()).RingkasDariIdPega(ctx, idPega)
+	if err != nil {
+		return PolicyDataLife{}, err
+	}
+	return keDataPolis(p), nil
+}
+
+// keDataPolis - kontrak.PolisRingkas ke bentuk layar PolicyDataLife.
+func keDataPolis(p kontrak.PolisRingkas) PolicyDataLife {
 	hasil := PolicyDataLife{
 		NomorPolis:       p.NomorPolis,
 		Type:             p.Type,
@@ -136,5 +160,5 @@ func (r *RingkasPolis) Ambil(ctx context.Context, pelaku inti.Pelaku, nomorPolis
 	if p.WPC != nil {
 		hasil.WPC = *p.WPC
 	}
-	return hasil, nil
+	return hasil
 }

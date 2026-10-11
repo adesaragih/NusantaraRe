@@ -51,6 +51,49 @@ export interface BarisAdjustment {
   nomorAkseptasi: string
   tanggalAkseptasi: string
   komiteId: string
+  /** Medan dialog AdjustmentDetail (11-10-2026). persenKlaim dan klaimDibayar DITURUNKAN server dari Claim RNM / Share RNM. */
+  shareNusantaraRe?: Uang
+  cedingRetention?: Uang
+  sumInsured?: Uang
+  sumReasured?: Uang
+  shareRetro?: Uang
+  retrocededShare?: Uang
+  persenKlaim?: string
+  klaimDibayar?: Uang
+  /** OutStanding Date — diturunkan server dari jejak transisi '' → '0' (Save to RNM); kosong sebelumnya. */
+  tanggalOutstanding?: string
+  /** Data bank (Payable To baca saja; tiga lainnya isian teks sebelum Save to RNM, 11-10-2026). */
+  payableTo?: string
+  namaBank?: string
+  cabangBank?: string
+  nomorRekening?: string
+}
+
+/** Rasio (persen/rate) dari server: teks desimal, tidak pernah Number. */
+export interface Rasio {
+  value: string
+  scale?: number
+}
+
+export interface SpreadingBaris {
+  lapisan: {
+    treatyTypeName: string
+    treatyYearLife: string
+    retrocededShare: Uang
+    reinsurer: {
+      nama: string
+      pctShare: Rasio
+      amount: Uang
+      rate: Rasio
+      komisi: Rasio
+      ovrComm: Rasio
+      gross: Uang
+      net: Uang
+    }[]
+  }[]
+  rekap: { reinsurer: string; currency: string; gross: Uang; net: Uang }[]
+  /** Baris TOTAL per mata uang di bawah Spreading Summary (11-10-2026), dijumlahkan server. */
+  total?: { currency: string; gross: Uang; net: Uang }[]
 }
 
 /**
@@ -143,11 +186,43 @@ export interface Dokumen {
 export interface Peserta extends TanggalKlaim {
   id: string
   nomorPremiList: string
+  /** IDPEGA baris sumber (diturunkan server lewat SOURCE_ID) - kunci data polis Outstanding (10-10-2026). */
+  idPega?: string
   nomorPolis: string
   nomorSertifikat: string
   mataUang: string
   /** Penanda DIPILIH untuk diklaim (`IS_CHECK`). Teks, bukan boolean. */
   isCheck: string
+  /**
+   * Checkbox Accept grid Participant Details layar Outstanding (`.IsAccept` InputOSClaimLife b17582, IS_ACCEPT migrasi
+   * 026): 'true' / 'false' / ''. ⛔ Bukan isCheck. Dibaca gerbang dokumen Save to RNM.
+   */
+  isAccept?: string
+  /** NAME OF INSURED / DATE OF BIRTH (YYYY-MM-DD) grid Participant Details - dibaca server dari baris sumber, tidak disimpan. */
+  namaTertanggung?: string
+  tanggalLahir?: string
+  /** Rincian peserta layar Outstanding (ClaimLifeDetailGCNM, screenshot Pega 11-10-2026). Tanggal teks apa adanya. */
+  jenisKelamin?: string
+  plan?: string
+  umur?: string
+  tanggalMulai?: string
+  tanggalEfektif?: string
+  tanggalExpired?: string
+  valuasiMulai?: string
+  valuasiSelesai?: string
+  /** Jendela RETRO (TR/TP) — validasi DOL langsung di layar (11-10-2026). */
+  valuasiRetroMulai?: string
+  valuasiRetroSelesai?: string
+  tanggalTerima?: string
+  stnc?: string
+  maksKlaimKadaluarsa?: string
+  /** ADMIN NOTES (migrasi 027) dan CLAIM ANALYST (NOTES). */
+  catatanAdmin?: string
+  catatanAnalis?: string
+  /** RECOMMENDATION (migrasi 003) — kotak MEDICAL ADVISOR, diisi Medical Advisor di tahap Medical Check (11-10-2026). */
+  rekomendasi?: string
+  /** MAX DATA RECEIVED (migrasi 028), diisi pemakai sebelum Save to RNM. */
+  tanggalMaksData?: string
   /**
    * `DATE_OF_LOSS` — tanggal kejadian, milik PESERTA dan bukan klaim.
    *
@@ -211,6 +286,13 @@ export interface Klaim {
    * ditulis adalah `STATUS_WORK_SELESAI`.
    */
   statusWork: string
+  /** `T_GENERAL_CLAIM.TYPE` (QP/QR/TP/TR) - tombol Send to Medical Check hanya QP/QR (InputOSClaimLife b22123). */
+  type?: string
+  /** Tab Register Claim layar Outstanding (10-10-2026): Catastrophe b3504, Is KPR b3810, STNC Treaty b4757, Note b4934. */
+  stsKatastrofe?: string
+  isKpr?: string
+  stncClaim?: string
+  katastrofeNote?: string
 }
 
 // ---------------------------------------------------------------------------
@@ -275,22 +357,41 @@ export interface CalonPeserta {
   namaTertanggung: string
   mataUang: string
   edmStatus: string
+  /** M_LIFE_PREMIUM_DETAIL.IDPEGA - kunci header data polis (10-10-2026). */
+  idPega: string
+  /** DOB teks ISO YYYY-MM-DD ("" = kosong) - kolom Date of Birth layar Register (10-10-2026). */
+  tanggalLahir: string
 }
 
-/** Isi satu pendaftaran klaim. */
-export interface PermintaanDaftar {
+/** Pilihan peserta satu premium list (10-10-2026). Mata uang hanya keterangan: server memakai mata uang sumber. */
+export interface KelompokDaftar {
   nomorPremiList: string
   nomorPolis: string
-  type: string
-  kodeBisnis: string
   mataUang: string
   sertifikat: string[]
 }
 
-/** Jawaban pendaftaran yang berhasil. */
-export interface HasilDaftar {
+/**
+ * Isi satu pendaftaran klaim - BANYAK premium list sekaligus (keputusan work owner 10-10-2026): server membuat satu
+ * case per PL number + mata uang, semua atau tidak sama sekali. Type dan kode bisnis TIDAK dikirim: server membacanya
+ * dari polis PL tiap case.
+ */
+export interface PermintaanDaftar {
+  kelompok: KelompokDaftar[]
+}
+
+/** Satu case yang terbentuk. */
+export interface KasusTerdaftar {
   id: string
   nomorKlaim: string
+  nomorPremiList: string
+  mataUang: string
+  jumlahPeserta: number
+}
+
+/** Jawaban pendaftaran yang berhasil: daftar case (satu per PL + mata uang). */
+export interface HasilDaftar {
+  kasus: KasusTerdaftar[]
 }
 
 /**
@@ -635,6 +736,10 @@ export interface BarisInbox {
   nomorPolis: string
   namaBisnis: string
   mataUang: string
+  /** "PL Number" (11-10-2026, pengganti Policy No) — PL peserta aktif klaim; kosong untuk klaim tanpa peserta. */
+  plNumber: string
+  /** "Update Operator Name" — akun pelaku jejak terakhir, cadangan pembuat (T_WORK_CLAIM tak punya kolomnya). */
+  updateOpName: string
 }
 
 export interface HalamanInbox {
@@ -703,10 +808,28 @@ export type TahapJalur = (typeof TAHAP_JALUR)[keyof typeof TAHAP_JALUR]
  *   409 perpindahan itu tidak ada di tangga kerja
  */
 export async function pindahTahap(klaimID: string, tujuan: TahapJalur): Promise<void> {
-  await minta<void>(
-    `/api/klaim-life/${encodeURIComponent(klaimID)}/tahap/${tujuan}`,
-    { metode: 'POST' },
-  )
+  // 11-10-2026: lewat fetch sendiri (pola simpanKeRNM) supaya 422 berdaftar (peserta Accept tanpa dokumen saat Send to
+  // Medical Check) membawa `kekurangan` — dilempar sebagai GagalSimpanRNM (penolakan berkekurangan yang sama bentuknya).
+  const kendali = new AbortController()
+  const jam = setTimeout(() => {
+    kendali.abort()
+  }, BATAS_WAKTU_MS)
+  try {
+    const jalur = `/api/klaim-life/${encodeURIComponent(klaimID)}/tahap/${tujuan}`
+    const jawab = await fetch(rakitURL(jalur), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headerIdentitas() },
+      signal: kendali.signal,
+    })
+    const teks = await jawab.text()
+    if (!jawab.ok) {
+      const dasar = kegagalanDari(jawab.status, teks)
+      const kurang = jawab.status === 422 ? kekuranganDari(teks) : []
+      throw kurang.length > 0 ? new GagalSimpanRNM(dasar, kurang) : dasar
+    }
+  } finally {
+    clearTimeout(jam)
+  }
 }
 
 /** Hasil `Save to RNM` yang berhasil — `services.HasilSimpanRNM`. */
@@ -734,14 +857,67 @@ export interface HasilSimpanRNM {
  *   401 tanpa identitas · 403 bukan pemegang tahap Outstanding
  *   409 bukan tahap Outstanding Claim, atau kasusnya sudah ditutup
  *   422 gerbang XML menolak — `galat` membawa kalimat XML apa adanya,
- *       `langkah` langkah asalnya; atau data untuk memeriksanya belum lengkap
+ *       `langkah` langkah asalnya; atau data untuk memeriksanya belum lengkap.
+ *       Sejak 11-10-2026 kolom wajib yang kosong dikumpulkan SEMUA di
+ *       `kekurangan` (dilempar sebagai GagalSimpanRNM)
  *   503 basis data belum dikonfigurasi
+ *
+ * ⚠️ Lewat `fetch` sendiri (pola ambilIsiDokumen), bukan `minta`: amplop
+ * `ApiFailure` inti hanya membawa `galat`/`penghalang`, dan `kekurangan`
+ * milik modul ini — inti tidak diubah.
  */
 export async function simpanKeRNM(klaimID: string): Promise<HasilSimpanRNM> {
-  return await minta<HasilSimpanRNM>(
-    `/api/klaim-life/${encodeURIComponent(klaimID)}/outstanding`,
-    { metode: 'POST' },
-  )
+  const kendali = new AbortController()
+  const jam = setTimeout(() => {
+    kendali.abort()
+  }, BATAS_WAKTU_MS)
+  try {
+    const jawab = await fetch(rakitURL(`/api/klaim-life/${encodeURIComponent(klaimID)}/outstanding`), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headerIdentitas() },
+      signal: kendali.signal,
+    })
+    const teks = await jawab.text()
+    if (!jawab.ok) {
+      const dasar = kegagalanDari(jawab.status, teks)
+      const kurang = jawab.status === 422 ? kekuranganDari(teks) : []
+      throw kurang.length > 0 ? new GagalSimpanRNM(dasar, kurang) : dasar
+    }
+    return JSON.parse(teks) as HasilSimpanRNM
+  } finally {
+    clearTimeout(jam)
+  }
+}
+
+/** Satu kolom wajib Save to RNM yang belum terisi — `services.KekuranganRNM`. nomorPeserta 0 = tingkat klaim (Is KPR). */
+export interface KekuranganRNM {
+  nomorPeserta: number
+  pesertaId: string
+  sertifikat: string
+  nama: string
+  kolom: string
+  pesan: string
+}
+
+/** Penolakan Save to RNM yang membawa SELURUH kekurangan kolom wajib (422, keputusan work owner 11-10-2026). */
+export class GagalSimpanRNM extends ApiFailure {
+  constructor(
+    dasar: ApiFailure,
+    readonly kekurangan: KekuranganRNM[],
+  ) {
+    super(dasar.status, dasar.detail)
+    this.name = 'GagalSimpanRNM'
+  }
+}
+
+/** Daftar `kekurangan` dari badan 422 Save to RNM; bentuk asing = []. */
+export function kekuranganDari(teks: string): KekuranganRNM[] {
+  try {
+    const o = JSON.parse(teks) as { kekurangan?: unknown }
+    return Array.isArray(o.kekurangan) ? (o.kekurangan as KekuranganRNM[]) : []
+  } catch {
+    return []
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1145,6 +1321,39 @@ export async function unggahDokumen(
 }
 
 /**
+ * "View" berbatas klaim (11-10-2026): GET /api/klaim-life/{id}/dokumen/{dokId}/isi — dokumen milik klaim lain ditolak 404;
+ * selama penyimpanan belum berjalan berkas dilayani dari salinan lokal server. Lewat fetch (identitas ikut), pola
+ * ambilIsiDokumen.
+ */
+export async function ambilIsiDokumenKlaim(klaimID: string, dokID: string): Promise<Blob> {
+  const kendali = new AbortController()
+  const jam = setTimeout(() => {
+    kendali.abort()
+  }, BATAS_WAKTU_MS)
+  try {
+    const jalur = `/api/klaim-life/${encodeURIComponent(klaimID)}/dokumen/${encodeURIComponent(dokID)}/isi`
+    const jawab = await fetch(rakitURL(jalur), {
+      method: 'GET',
+      headers: { ...headerIdentitas() },
+      signal: kendali.signal,
+    })
+    if (!jawab.ok) throw kegagalanDari(jawab.status, await jawab.text())
+    return await jawab.blob()
+  } finally {
+    clearTimeout(jam)
+  }
+}
+
+/**
+ * Daftar kategori dropdown "Category" (11-10-2026) = Document Claim produk polis klaim (Master Product Name Life), urutan
+ * master — sumber yang sama dengan pemeriksa unggahan.
+ */
+export async function ambilKategoriDokumen(klaimID: string): Promise<string[]> {
+  const data = await minta<{ kategori: string[] | null }>(`/api/klaim-life/${encodeURIComponent(klaimID)}/dokumen/kategori`)
+  return data.kategori ?? []
+}
+
+/**
  * `Delete` b4288 → `ConfirmDeleteAttachment` b4317.
  *
  * ⚠️ Barisnya hilang SEKETIKA; penghapusan di penyimpanan menyusul lewat
@@ -1260,5 +1469,172 @@ export interface PolicyDataLife {
 export async function ambilDataPolis(nomorPolis: string): Promise<PolicyDataLife> {
   return minta<PolicyDataLife>(
     `/api/polis-life/ringkas?nomorPolis=${encodeURIComponent(nomorPolis)}`,
+  )
+}
+
+/**
+ * Membaca header polis dari IDPEGA peserta — `GET /api/polis-life/ringkas?idpega=` (keputusan work owner 10-10-2026:
+ * "ambil ke tabel T_PREMIUM_LIST berdasarkan idpega peserta nya saja"). 404 = header tidak ditemukan.
+ */
+export async function ambilDataPolisIdPega(idPega: string): Promise<PolicyDataLife> {
+  return minta<PolicyDataLife>(`/api/polis-life/ringkas?idpega=${encodeURIComponent(idPega)}`)
+}
+
+// ---------------------------------------------------------------------------
+// LAYAR OUTSTANDING mengikuti Pega (10-10-2026) - `Section/InputOSClaimLife.xml` (korpus kelvin/InboxClaimLife (Done)).
+// ---------------------------------------------------------------------------
+
+/** Nilai radio Catastrophe - `[keputusan work owner]` claimprop grilling ronde 2 P12; bawaan Non-Catastrophe b3728. */
+export const PILIHAN_KATASTROFE = ['Catastrophe', 'Non-Catastrophe'] as const
+/** Nilai radio Is KPR - keputusan work owner 11-10-2026: teks disimpan persis (pola Catastrophe / Non-Catastrophe). */
+export const PILIHAN_KPR = ['KPR', 'Non-KPR'] as const
+
+/** Isi tombol `Save` layar Outstanding (b19413): medan tab Register Claim + Accept per peserta. */
+export interface IsianOutstanding {
+  stsKatastrofe: string
+  isKpr: string
+  katastrofeNote: string
+  /** Pengenal peserta -> 'true' / 'false'. */
+  accept: Record<string, string>
+  /** Pengenal peserta -> ADMIN NOTES (migrasi 027, 11-10-2026). */
+  catatanAdmin?: Record<string, string>
+  /** Pengenal peserta -> lima tanggal yang diisi pemakai sebelum Save to RNM (11-10-2026). */
+  tanggal?: Record<string, IsianTanggal>
+  /** Pengenal BARIS adjustment -> Claim RNM + data bank (11-10-2026: dilebur ke tombol Save grid). */
+  adjustment?: Record<string, IsianBarisAdjustment>
+}
+
+/** Lima tanggal peserta, teks YYYY-MM-DD ('' = kosong). DOL, Claim Received, Confirmation WAJIB sebelum Save to RNM. */
+export interface IsianTanggal {
+  kejadian: string
+  terimaKlaim: string
+  dokumenLengkap: string
+  maksData: string
+  konfirmasi: string
+}
+
+/** Tombol `Save` layar Outstanding - PUT /api/klaim-life/{id}/outstanding/isian. */
+export async function simpanIsianOutstanding(klaimID: string, isian: IsianOutstanding): Promise<void> {
+  await minta<void>(`/api/klaim-life/${encodeURIComponent(klaimID)}/outstanding/isian`, { metode: 'PUT', badan: isian })
+}
+
+/** Isian tombol Save layar Medical Check — Recommendation per pengenal peserta (11-10-2026). */
+export interface IsianMedis {
+  rekomendasi: Record<string, string>
+}
+
+/** Batas RECOMMENDATION VARCHAR2(1000) — server memeriksa byte, layar membatasi karakter. */
+export const BATAS_REKOMENDASI = 1000
+
+/** Tombol Save layar Medical Check (`MedicalCheckClaimLife`). Gerbang tahap / Medical Advisor / STS_REJECT di server. */
+export async function simpanMedis(klaimID: string, isian: IsianMedis): Promise<void> {
+  await minta<void>(`/api/klaim-life/${encodeURIComponent(klaimID)}/medis`, { metode: 'PUT', badan: isian })
+}
+
+/** Kasus ada di tahap Outstanding dan belum ditutup - isian dan tombol layar Outstanding hidup. */
+export function bolehIsianOutstanding(klaim: Klaim | null): boolean {
+  return klaim !== null && !kasusTertutup(klaim) && klaim.tahap === TAHAP.outstandingClaim
+}
+
+/** Klaim sudah bernomor (`CLAIM_NO != ''`) - nomornya lahir di Save to RNM. */
+export function bernomor(klaim: Klaim): boolean {
+  return klaim.nomorKlaim.trim() !== ''
+}
+
+/**
+ * Tombol bawah layar Outstanding - kondisi Pega, ditegakkan juga di server (409):
+ *   Save to RNM b21102: nonaktif sesudah tersimpan (`pyWorkPage.Save = 1` b21095; padanannya sudahSaveRNM, OQ-N1).
+ *   Send Back to Register b21404: tampil hanya bila CLAIM_NO kosong (b21699).
+ *   Send to Medical Check b21839: tampil bila Type QP/QR (b22123), nonaktif bila CLAIM_NO kosong (b21832).
+ */
+export function aturanTombolOutstanding(klaim: Klaim): {
+  simpanRNMAktif: boolean
+  kirimBalikTampil: boolean
+  kirimMedisTampil: boolean
+  kirimMedisAktif: boolean
+} {
+  const tipe = (klaim.type ?? '').trim().toUpperCase()
+  return {
+    simpanRNMAktif: !sudahSaveRNM(klaim),
+    kirimBalikTampil: !bernomor(klaim),
+    kirimMedisTampil: tipe === 'QP' || tipe === 'QR',
+    kirimMedisAktif: bernomor(klaim),
+  }
+}
+
+/** Tombol DELETE grid Participant Details: tampil hanya bila CLAIM_NO kosong (b18082) dan cabut diizinkan. */
+export function bolehDeletePeserta(klaim: Klaim | null): boolean {
+  return klaim !== null && !bernomor(klaim) && bolehCabutPeserta(klaim)
+}
+
+/** Satu baris grid View Detail peserta POLIS (DetailPolisLife b4537; 11-10-2026). Tanggal teks YYYY-MM-DD. */
+export interface BarisPesertaPolis {
+  urut: number
+  nomorPolis: string
+  nomorSertifikat: string
+  namaTertanggung: string
+  jenisKelamin: string
+  tanggalLahir: string
+  umur: string
+  plan: string
+  tanggalMulai: string
+  tanggalEfektif: string
+  tanggalExpired: string
+}
+
+/** Satu halaman View Detail - 500 baris per halaman (LoadDataPeserta_Act b572). */
+export interface HalamanPesertaPolis {
+  baris: BarisPesertaPolis[]
+  halaman: number
+  ukuran: number
+  total: number
+}
+
+/** View Detail tab Policy Details - GET /api/klaim-life/{id}/peserta-polis?halaman=N (baca saja). */
+export async function ambilPesertaPolis(klaimID: string, halaman: number): Promise<HalamanPesertaPolis> {
+  return minta<HalamanPesertaPolis>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}/peserta-polis?halaman=${encodeURIComponent(String(halaman))}`,
+  )
+}
+
+/** Isi dialog AdjustmentDetail yang dapat diisi sebelum Save to RNM (11-10-2026). */
+export interface IsianBarisAdjustment {
+  jumlah: string
+  /** Name of Bank — SATU-SATUNYA data bank yang dapat diisi ("semua read only kecuali name of bank", 11-10-2026). */
+  namaBank: string
+}
+
+/**
+ * Status baris sebagai teks grid adjustment. '' (belum Save to RNM) → '—'; '0' → 'OutStanding' (screenshot Pega
+ * 11-10-2026); '1' / '2' → 'Accepted' / 'Rejected' seperti status inbox. ⚠️ Daftar nilai Pega (`pyListSource associated`
+ * ClaimLifeDetailGCNM b18258) tidak ada di korpus.
+ */
+export function kataStatusBaris(kode: string): string {
+  switch (kode) {
+    case '':
+      return '—'
+    case '0':
+      return 'OutStanding'
+    case '1':
+      return 'Accepted'
+    case '2':
+      return 'Rejected'
+    default:
+      return kode
+  }
+}
+
+/** Claim RNM dapat diisi: klaim belum bernomor, baris belum berstatus, tahap Outstanding, kasus terbuka. */
+export function bolehSuntingClaimRNM(klaim: Klaim, b: BarisAdjustment): boolean {
+  return bolehIsianOutstanding(klaim) && !bernomor(klaim) && b.kodeStatus === ''
+}
+
+/**
+ * Spreading PremiumList Life satu peserta klaim — keputusan work owner 11-10-2026 ("ambil saja dari premium list, tidak perlu
+ * perhitungan lagi"). GET /api/klaim-life/{id}/peserta/{pesertaId}/spreading-polis, baca saja; lapisan kosong = tidak ada.
+ */
+export async function ambilSpreadingPolis(klaimID: string, pesertaID: string): Promise<SpreadingBaris> {
+  return minta<SpreadingBaris>(
+    `/api/klaim-life/${encodeURIComponent(klaimID)}/peserta/${encodeURIComponent(pesertaID)}/spreading-polis`,
   )
 }

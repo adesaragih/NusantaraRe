@@ -15,7 +15,7 @@ package services
 // Istilah:
 //   - treaty-year : satu tahun perjanjian retrosesi, dengan kapasitasnya.
 //   - kaskade     : sisa klaim yang mengalir ke treaty-year berikutnya.
-//   - per mil     : per seribu. Rate di RATE_LIFE dinyatakan per mil.
+//   - per mil     : per seribu. Rate di M_RATE_LIFE dinyatakan per mil.
 
 import (
 	"errors"
@@ -50,13 +50,13 @@ const (
 	desimalUang = 8
 )
 
-// pembagiPerMil: RATE_LIFE menyatakan rate per seribu, dan XML membaginya
+// pembagiPerMil: M_RATE_LIFE menyatakan rate per seribu, dan XML membaginya
 // seribu SESUDAH menyimpan nilai mentahnya.
 const pembagiPerMil = 1000
 
 // Galat yang dapat dikenali pemanggil dengan errors.Is.
 var (
-	// ErrRateTidakDitemukan: nol baris RATE_LIFE yang cocok. Pega memakai
+	// ErrRateTidakDitemukan: nol baris M_RATE_LIFE yang cocok. Pega memakai
 	// rate baris sebelumnya di keadaan ini - lihat komentar PilihRate.
 	ErrRateTidakDitemukan = errors.New("services: tidak ada baris rate yang cocok")
 	// ErrRateBerganda: beberapa baris cocok dengan nilai BERBEDA.
@@ -105,9 +105,10 @@ type BarisRetro struct {
 	OvrComm        uang.Ratio
 }
 
-// BarisRate adalah satu baris hasil `GetRateRetro` atas POOLDATA.RATE_LIFE.
+// BarisRate adalah satu baris hasil `GetRateRetro` atas POOLDATA.RATE_LIFE (korpus; sejak
+// 10-10-2026 tabel flat `M_RATE_LIFE`, view dibuang).
 //
-// Seluruh medannya tiba sebagai TEKS dari view ber-CLOB, dan Rate sudah
+// Seluruh medannya tiba sebagai TEKS, dan Rate sudah
 // melewati penggantian koma-ke-titik di repository - meniru langkah 8.2.1.9.1
 // `@toDecimal(@replaceAll(.CARI4,",","."))`.
 type BarisRate struct {
@@ -170,7 +171,7 @@ func TahunPolis(mulai, valuasiKotor time.Time) int {
 //	    membaginya seribu sekali lagi. Di sini keadaan itu menjadi GALAT.
 //	(2) Putaran Pega tidak berhenti pada yang pertama cocok, jadi yang menang
 //	    adalah yang TERAKHIR, sedangkan GetRateRetro tidak memakai ORDER BY.
-//	    Dengan 2.693 kombinasi ganda di RATE_LIFE `[data DBA]`, hasilnya tidak
+//	    Dengan 2.693 kombinasi ganda di M_RATE_LIFE `[data DBA]`, hasilnya tidak
 //	    tertentu. Di sini ambiguitas DILAPORKAN beserta ID barisnya.
 func PilihRate(baris []BarisRate, umur, jenisKel string) (uang.Ratio, error) {
 	var cocok []BarisRate

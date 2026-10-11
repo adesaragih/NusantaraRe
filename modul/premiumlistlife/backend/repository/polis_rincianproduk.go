@@ -317,12 +317,13 @@ func (r *Rujukan) gridRincian(ctx context.Context, g gridRincian, id string) (Gr
 // ——— View Rate: isi satu R/I Rate baris PLAN LIST (permintaan work owner 05-10-2026) ———
 //
 // Sama dengan dialog `View Rate` Master Product Name Life (`BrowseRateLife_RD`):
-// view `RATE_LIFE` berkunci `IDUSEDBY` = RIRATEID baris plan, enam kolom grid
+// tabel `M_RATE_LIFE` berkunci `IDUSEDBY` = RIRATEID baris plan, enam kolom grid
 // `ViewRate`, urut `ID DESC, RATE ASC`, paling banyak BatasRateProduk baris.
 // BACA-SAJA, nol `SELECT *`, nol `JSONDATA`.
 
-// ViewRateProduk - view rate yang dibaca.
-const ViewRateProduk = "RATE_LIFE"
+// ViewRateProduk - tabel rate yang dibaca. View `RATE_LIFE` dibuang di DEV (ORA-00942); sejak 10-10-2026 membaca
+// tabel flat `M_RATE_LIFE` (kolom sama) - keputusan work owner.
+const ViewRateProduk = "M_RATE_LIFE"
 
 // BatasRateProduk - `pyMaxRecords` `BrowseRateLife_RD`; lebih dari ini dinyatakan terpotong.
 const BatasRateProduk = 500

@@ -44,6 +44,7 @@ package models
 // Dibaca sesudah: tahap.go.
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -122,9 +123,9 @@ func PenandaBatasHari(dari, ke, batas string) (string, error) {
 		// mendarat di log, dan nama objek warisan tidak pernah masuk log
 		// atau artefak. Keterangan lengkapnya ada di komentar kepala
 		// berkas ini, tempat yang memang untuk itu.
-		return "", fmt.Errorf(
-			"models: ambang hari belum diketahui; sumbernya data produk, " +
-				"yang menunggu modul PremiumList Life")
+		// 11-10-2026: pesan lama ("menunggu modul PremiumList Life") usang - sumbernya kini Master Product Name Life.
+		// Teks ini untuk log / diagnosa; layar tidak merendernya (hanya "—").
+		return "", ErrAmbangHariKosong
 	}
 	ambang, err := strconv.Atoi(b)
 	if err != nil {
@@ -148,3 +149,7 @@ func PenandaBatasHari(dari, ke, batas string) (string, error) {
 	}
 	return t.Format(bentukPenanda), nil
 }
+
+// ErrAmbangHariKosong - ambang hari produk belum diisi di Master Product Name Life ("Max Notification Claim Expired" /
+// "Max Production Data Receive"). Bukan nol (ADR-U-0027).
+var ErrAmbangHariKosong = errors.New("models: ambang hari produk belum diisi di Master Product Name Life")

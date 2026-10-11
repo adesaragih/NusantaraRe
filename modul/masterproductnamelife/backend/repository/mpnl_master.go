@@ -11,7 +11,7 @@ package repository
 // terbaca di skema yang dikonfigurasi dijawab 503 yang MENYEBUT objeknya.
 //
 // ⛔ R/I Rate (`BrowseRateLifeSummary`, kelas `M_RATE_LIFE_SUMMARY`) dan `View Rate`
-// (`BrowseRateLife_RD`, kelas `M_RATE_LIFE` = view `RATE_LIFE`): K1 keputusan work owner 01-10-2026
+// (`BrowseRateLife_RD`, kelas `M_RATE_LIFE`): K1 keputusan work owner 01-10-2026
 // (OQ-MPNL-03) - kedua view rate dibaca SAJA, kolom RD saja, nol `SELECT *`, nol
 // `JSONDATA`, nol tulisan (`periksaBacaSaja`).
 // ⛔ "Contains" Pega = `LIKE '%…%'`; kata cari kosong = semua baris. Batas
@@ -36,9 +36,10 @@ const (
 	MasterCause     = "CAUSEOFLOSS_LIFE"    // BrowseCauseofLossLife_RD
 	MasterJenisPlan = "PRODUCT_TYPE_LIFE"   // BrowseProductTypeLife_RD (paket 6)
 	MasterRIRate    = "M_RATE_LIFE_SUMMARY" // BrowseRateLifeSummary b40 (pemilih `Choose R/I Rate`)
-	// MasterRate - view `RATE_LIFE` atas `M_RATE_LIFE.JSONDATA` (dialog `View Rate`, `BrowseRateLife_RD`
-	// b39); nama fisik kelasnya: `NB FacIn/RDBList/BrowseLifeRate_SQL.xml` b85 `… FROM RATE_LIFE …`.
-	MasterRate = "RATE_LIFE"
+	// MasterRate - tabel flat `M_RATE_LIFE` (dialog `View Rate`, `BrowseRateLife_RD` b39). Dulu view `RATE_LIFE` atas
+	// `M_RATE_LIFE.JSONDATA` (korpus `NB FacIn/RDBList/BrowseLifeRate_SQL.xml` b85 `… FROM RATE_LIFE …`); view itu dibuang
+	// di DEV (ORA-00942) dan tabelnya kini flat tanpa JSONDATA - keputusan work owner 10-10-2026, kolom sama.
+	MasterRate = "M_RATE_LIFE"
 )
 
 // DaftarMasterDibacaSaja - objek yang dibaca tetapi tidak pernah ditulis.
@@ -311,7 +312,7 @@ func (g *Gudang) AmbilPlan(ctx context.Context, id string) (models.JenisPlan, bo
 // dialog terpotong (Pega memotong diam-diam).
 const BatasRate = 500
 
-// KolomRate - kolom `RATE_LIFE` yang dibaca: enam kolom grid `ViewRate` (subset kolom RD b747–b791).
+// KolomRate - kolom `M_RATE_LIFE` yang dibaca: enam kolom grid `ViewRate` (subset kolom RD b747–b791).
 var KolomRate = []string{"ID", "USEDBY", "GENDER", "CONTRACT", "AGE", "RATE"}
 
 // sqlDaftarRate - `BrowseRateLife_RD`: `.IDUSEDBY = Param.idusedby` b859/b868, urut `.ID DESC` b748,

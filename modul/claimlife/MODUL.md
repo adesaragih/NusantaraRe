@@ -32,9 +32,16 @@ dipensiunkan 1 Oktober 2026.
 | `frontend/` | `pages/` `components/` `labels.ts` `api.ts` `menu.ts` `rute.tsx` dan berkas `*.test.ts` |
 | `docs/` | spec, tiket (`issues/`), grilling, PARITAS, LAPORAN, OQ — dulu `.scratch/claim-life/` |
 
+> **10-10-2026 (keputusan work owner: "view rate_life sudah tidak digunakan, sekarang gunakan tabel M_RATE_LIFE")**: view `RATE_LIFE` dibuang di DEV (ORA-00942). Pembaca rate retro `RateLife.Baca` (`repository/ratelife.go`, izin OQ-M7) membaca tabel flat `M_RATE_LIFE` - lima kolom dan izin tetap; penjaga `TestMasterViewTidakDisentuh` kini menjaga nama `M_RATE_LIFE`. Rujukan: `modul/riratelife/MODUL.md` RALAT R7.
+
+> **11-10-2026 (keputusan work owner: penyimpanan dokumen klaim "samakan dengan product name"; "iya" Google Storage dicatat di T_STORAGE_IMAGE)**: dokumen klaim baru DIRANCANG dikirim segera sesudah unggah ke Google Storage (⛔ transport HTTP BELUM dipasang: izin klien HTTP di penjaga inti TestNolAlamatLayananDiKode menunggu tim inti; sementara pelaksana lokal) (`ServiceGoogle` `upload`/`geturl`/`delete`; alamat `M_LINK_SERVICE` saat jalan; token `GCP_IMAGE` dipakai ulang, `STORAGE_TOKEN_SALT` untuk token baru) dan objeknya DITULIS ke tabel bersama `T_STORAGE_IMAGE` (dibaca `T_FOLDER_IMAGE`) - pola disalin dari `masterproductnamelife` (`services/penyimpanangoogle.go`, `repository/storageimage.go`), tanpa impor. `T_CLAIMLF_STORAGE` dipensiunkan untuk dokumen baru (dibaca/dihapus untuk dokumen lama). Gagal tertutup "Storage is not configured" bila alamat/APPNAME/token tidak tersedia; berkas lokal `UNGGAHAN_DIR` tetap.
+
+
 ## Migrasi
 
-Rentang `001-029`, terpakai `001–022`. Slot menu `950-951` tidak terpakai: baris
+Rentang `001-029`, terpakai `001–029` — **JATAH HABIS** (migrasi berikutnya butuh rentang baru dari tim inti) (023 seragam kolom T_WORK_CLAIM; 024 indeks fungsi pemeriksa peserta aktif; 025 kolom IDPEGA
+peserta + isi ulang; 026 kolom IS_ACCEPT peserta - checkbox Accept layar Outstanding; 027 kolom ADMIN_NOTES peserta - rincian Outstanding; 028 kolom MAX_DATA_RECEIVED peserta; 029 lebar STS_KATASTROFE / IS_KPR 8 -> 20 (ORA-12899, wajib sebelum kode Register/Save 11-10-2026);
+keputusan work owner 10-10-2026 - belum dijalankan, -migrate oleh work owner). Slot menu `950-951` tidak terpakai: baris
 modul ini sudah `DIMIGRASI = '1'` sejak 900, dan menu datar (30-09-2026) tidak punya butir — slot hanya
 menyalakan `DIMIGRASI` (`APP_RNM/PANDUAN-DEPLOY-DAN-GIT-PER-MODUL.md` bab 6). Nama berkas migrasi yang sudah ada tidak pernah diubah:
 `T_MIGRASI` mencatat nama.
@@ -107,8 +114,11 @@ menyertainya di berkas yang sama (`TestHandlerMenyuntikkanImplementasiNyata`).
 | `akseptasi.go` | `svc.Akseptasi()` | `DenganJejak(jejak.PerekamJejakOracle(svc))`, `DenganPenerbit(services.PenerbitAkseptasiOracle(svc))` |  |
 | `komite.go` | `svc.Komite()` | `DenganJejak(jejak.PerekamJejakOracle(svc))`, `DenganRoster(services.RosterKomiteOracle(svc))`, `DenganKasus(services.KasusKomiteOracle(svc))`, `DenganPenyalur(services.PenyalurClaimLifeOracle(svc))` |  |
 | `putaran.go` | `svc.Putaran()` | `DenganJejak(jejak.PerekamJejakOracle(svc))` |  |
-| `register.go` | `svc.Pendaftaran()` | `DenganPenomor(services.PenomorCounterOracle(svc))` |  |
 | `tolak.go` | `svc.Status()` | `DenganJejak(jejak.PerekamJejakOracle(svc))` |  |
+
+`register.go` / `svc.Pendaftaran()` DICABUT dari tabel ini 10-10-2026: Register tidak lagi menomori (keputusan work owner
+"claim no tidak generate saat register claim, tapi nanti setelah save to rnm"), jadi tidak ada stub penomor yang perlu
+disuntik; penomoran milik Save to RNM (`services.SimpanRNMOracle(svc)` menyusun `PenomorCounterOracle` sendiri).
 
 ## Brief acuan
 

@@ -66,6 +66,9 @@ func TestSaveRNMMenyetelCerminSehinggaKlaimGandaTertangkap(t *testing.T) {
 		}); err != nil {
 			t.Fatalf("mendaftar %s: %v", id, err)
 		}
+		// RALAT 10-10-2026: baris cermin lahir di Save to RNM, bukan di Register - ditulis lewat jalur yang sama
+		// (status NULL; SetelCerminOutstanding di bawah yang menyetel 0).
+		tulisCerminSepertiSaveRNM(t, ctx, db, id)
 		var adj string
 		if err := db.QueryRowContext(ctx, `SELECT ID FROM `+lama+` WHERE CASEID = :1`, id).Scan(&adj); err != nil {
 			t.Fatalf("baris cermin %s: %v", id, err)

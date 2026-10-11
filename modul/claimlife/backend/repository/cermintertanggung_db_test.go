@@ -77,7 +77,12 @@ func TestCerminMengisiTertanggungDariSumber(t *testing.T) {
 			_ = tx.Rollback()
 			return p, err
 		}
-		return p, tx.Commit()
+		if err := tx.Commit(); err != nil {
+			return p, err
+		}
+		// RALAT 10-10-2026: baris cermin lahir di Save to RNM, bukan di Simpan (Register).
+		_, err = cobaTulisCermin(ctx, db, id)
+		return p, err
 	}
 
 	if _, err := simpan("CLM-UJI1710", "UJI-SRC-1"); err != nil {
@@ -105,6 +110,6 @@ func TestCerminMengisiTertanggungDariSumber(t *testing.T) {
 
 	// Baris sumber yang tidak ada: GALAT, bukan cermin tanpa nama diam-diam.
 	if _, err := simpan("CLM-UJI1711", "UJI-SRC-TIADA"); err == nil {
-		t.Error("Simpan dengan baris sumber yang tidak ada tidak gagal")
+		t.Error("baris cermin (Save to RNM) dengan baris sumber yang tidak ada tidak gagal")
 	}
 }

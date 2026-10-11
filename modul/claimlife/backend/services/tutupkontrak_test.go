@@ -51,6 +51,10 @@ var layananPengubah = map[string][]string{
 	"statusbaris.go": {"ubah"},
 	// GILIRAN-17 (OQ-M6) - tombol `DELETE` `InputOSClaimLife` b17865.
 	"cabutpeserta.go": {"CabutPeserta"},
+	// 10-10-2026 - tombol Save layar Outstanding (InputOSClaimLife b19413).
+	"isianoutstanding.go": {"Simpan"},
+	// 11-10-2026 - tombol Save layar Medical Check (MedicalCheckClaimLife).
+	"medis.go": {"Simpan"},
 }
 
 // tubuhFungsi mengembalikan teks satu fungsi (atau metode) bernama, dari
@@ -131,7 +135,8 @@ func TestDaftarLayananPengubahMencakupSeluruhRutePengubah(t *testing.T) {
 		// Outbox dan pelaksana efek bekerja atas baris antrean, bukan atas
 		// kasus - dan efek yang sudah terlanjur diantre tetap harus selesai
 		// walau kasusnya kemudian ditutup.
-		"antrean.go": "menjalankan antrean efek, bukan mengubah kasus",
+		"antrean.go":           "menjalankan antrean efek, bukan mengubah kasus",
+		"penyimpanangoogle.go": "pelaksana efek penyimpanan dokumen; dipanggil dari unggahan.go (Unggah/Hapus) yang sudah memeriksa kasus terbuka",
 		// Tutup itu sendiri: ia yang MENUTUP, dan ia memeriksa dengan
 		// pembacaan status kerjanya sendiri.
 		"tutup.go": "layanan penutupnya sendiri",
@@ -204,6 +209,8 @@ var rutePengubah = map[string]string{
 	"POST /api/klaim-life/{id}/peserta/{pesertaId}/adjustment/{adjId}/komite": "komite.go",
 	"POST /api/klaim-life/{id}/tahap/{tujuan}":                                "tahap.go",
 	"POST /api/klaim-life/{id}/outstanding":                                   "simpanrnm.go",
+	"PUT /api/klaim-life/{id}/outstanding/isian":                              "isianoutstanding.go",
+	"PUT /api/klaim-life/{id}/medis":                                          "medis.go",
 	"POST /api/klaim-life/{id}/tutup":                                         "tutup.go",
 	"POST /api/klaim-life/{id}/adjustment/{adjId}/tolak":                      "statusbaris.go",
 	"PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian":           "dol.go",

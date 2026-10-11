@@ -28,7 +28,8 @@ func TestSQLKasusTerbukaDanSisipKasus(t *testing.T) {
 		t.Errorf("gerbang 3 bukan kasus EDM terbuka atas polis: %s", q)
 	}
 	s := sqlSisipKasus(uPolis)
-	if n := penampungUnik(t, "sqlSisipKasus", s); n != 10+len(models.KolomKepalaSalin) {
+	// Kolom angka kepala tambahan (09-10-2026) memakai dua penampung (koefisien + skala).
+	if n := penampungUnik(t, "sqlSisipKasus", s); n != 10+len(models.KolomKepalaKasus())+len(models.KolomKepalaTambahan) {
 		t.Fatalf("%d penampung", n)
 	}
 	for _, wajib := range []string{"OLD_POLICY_NO", "EDM_TYPE", "TO_DATE(:6, 'YYYY-MM-DD')", "PROD_KE", "CREATE_OP_NAME", "SYSDATE",
@@ -269,6 +270,44 @@ func TestKolomSalinanSamaDenganDDL(t *testing.T) {
 		}
 		if !found {
 			t.Errorf("kolom rincian %s bukan kolom nilai peserta", k.Nama)
+		}
+	}
+}
+
+// TestKepalaTambahanAnnuityRefund - ANNUITY_INTEREST / PREMIUM_REFUND_FACTOR disalin saat Create Addendum
+// (keputusan work owner 09-10-2026): dibaca TM9 dari aplikasi, JSON_VALUE dari warisan, ditulis kebal NLS.
+func TestKepalaTambahanAnnuityRefund(t *testing.T) {
+	if len(models.KolomKepalaSalin) != 24 || len(models.KolomKepalaKasus()) != 26 {
+		t.Fatalf("korpus 24 + tambahan 2: %d / %d", len(models.KolomKepalaSalin), len(models.KolomKepalaKasus()))
+	}
+	app := sqlKepalaAplikasi(uPolis)
+	w, err := sqlKepalaWarisan(uJSON)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := sqlSisipKasus(uPolis)
+	for _, k := range []struct{ kolom, properti string }{{"ANNUITY_INTEREST", "AnnuityInterest"}, {"PREMIUM_REFUND_FACTOR", "PremiumRefundFactor"}} {
+		if !strings.Contains(app, "TO_CHAR(p."+k.kolom+", 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')") {
+			t.Errorf("aplikasi %s: %s", k.kolom, app)
+		}
+		if !strings.Contains(w, "JSON_VALUE(j.DATA_JSON, '$."+k.properti+"' NULL ON ERROR)") {
+			t.Errorf("warisan %s", k.properti)
+		}
+		if !strings.Contains(sqlKasus(uPolis, false), "TO_CHAR(p."+k.kolom+", 'TM9'") {
+			t.Errorf("sqlKasus %s", k.kolom)
+		}
+	}
+	if !strings.HasSuffix(s, "(TO_NUMBER(:35) / POWER(10, :36)), (TO_NUMBER(:37) / POWER(10, :38)))") {
+		t.Errorf("sisip kasus angka: %.200s", s[len(s)-200:])
+	}
+	for _, k := range []struct {
+		masuk, mau string
+		ok         bool
+	}{
+		{"0.0500", "0.05", true}, {" 5 ", "5", true}, {"", "", true}, {"bukan-angka", "", false}, {"-1.25", "-1.25", true},
+	} {
+		if got, ok := AngkaPega(k.masuk); got != k.mau || ok != k.ok {
+			t.Errorf("AngkaPega(%q) = %q %v", k.masuk, got, ok)
 		}
 	}
 }

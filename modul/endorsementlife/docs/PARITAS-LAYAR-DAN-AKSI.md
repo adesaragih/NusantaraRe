@@ -46,7 +46,7 @@ Tabel `T_PREMIUM_LIST` (baris kasus EDM, R20). Rute `GET /inbox`. Komponen `page
 | tombol **`Create Case Endorsement`** b5879 `VIS=never` → `CreateCaseEMDL` b6067 | — | — | ➖ mati (R11) |
 | tombol **`Create Addendum`** b6620 → `showHarness` b6984 `EndorsmentLife_harnes` (`pyTarget=current`) | — | buka halaman `edm-buat` | ✅ |
 | grid b8284 `REPEATING`, RD `ReportDefinition/InboxEDMLife.xml` (`pyRDName` b12852): saring b659 `pyStatusWork != "Resolved-Completed"`, b673 `!= "Resolved-Rejected"`; urut b1040 `pxCreateDateTime` `DESC` | `STATUSS IS NULL`, `ORDER BY TGL_INPUT DESC, ID` (R27) | tabel berhalaman | ✅ |
-| kepala grid: `Case ID` b8418 · `Endorsement No` b8556 · `Type` b8692 · `EDM Type` b8828 · `Policy No` b8964 · `SOB` b9100 · `Ceding` b9236 · `Policy Holder` b9372 · `Marketing Name` b9508 · `Create Date` b9644 · `Create Operator` b9780 · `EDM Type Batal` b9916 · `Status` b10052 | sel: `A.pyID` b10202 → `ID` · `A.PremiumListSummary.PL_NUMBER` b10516 → `PL_NUMBER` versi (R25) · `A.Type` b10700 → `TYPE` · `A.EdmType` b10869 → `EDM_TYPE` · `A.PolicyNo` b11053 → `OLD_POLICY_NO` · `A.SobName` b11222 → `SOB_NAME` · `A.CedingCoName` b11391 → `CEDING_CO_NAME` · `A.PolicyHolderName` b11560 → `POLICY_HOLDER_NAME` · `A.MarketingName` b11729 → `MARKETING_NAME` · `A.pxCreateDateTime` b11897 → `TGL_INPUT` · `A.pxCreateOpName` b12080 → `CREATE_OP_NAME` · `A.EdmTypeBatal` b12243 (`VIS A.EdmType==3`) → `EDM_TYPE_BATAL` (483) · `A.pyStatusWork` b12457 → `STATUSS` | 13 kolom, label VERBATIM | ✅ — ⚠️ **tampilan menyimpang (keputusan work owner 07-10-2026)**: urutan `Case ID` · `Create Date` · `Endorsement No` · `Type` · `EDM Type` · `PL_NUMBER` · `Ceding` · `Create Operator` · `Work Status` (9 kolom; `Status` b10052 berganti nama `Work Status` seperti kotak masuk PremiumList Life, isi tetap `STATUSS`; `Policy No` b8964 berganti nama `PL_NUMBER` seperti kotak masuk PremiumList Life, isi tetap `OLD_POLICY_NO` (label `Policy No` layar lain tidak berubah); `Create Date` dipindah sesudah `Case ID`; `SOB`, `Policy Holder`, `Marketing Name`, `EDM Type Batal` dihapus — `EDM_TYPE_BATAL` tetap tersimpan dan tampil di layar kasus); `Endorsement No` = `NO_ENDORS` (bukan `PL_NUMBER` R25) — kosong selama kasus terbuka karena `NO_ENDORS` terbit saat Confirm |
+| kepala grid: `Case ID` b8418 · `Endorsement No` b8556 · `Type` b8692 · `EDM Type` b8828 · `Policy No` b8964 · `SOB` b9100 · `Ceding` b9236 · `Policy Holder` b9372 · `Marketing Name` b9508 · `Create Date` b9644 · `Create Operator` b9780 · `EDM Type Batal` b9916 · `Status` b10052 | sel: `A.pyID` b10202 → `ID` · `A.PremiumListSummary.PL_NUMBER` b10516 → `PL_NUMBER` versi (R25) · `A.Type` b10700 → `TYPE` · `A.EdmType` b10869 → `EDM_TYPE` · `A.PolicyNo` b11053 → `OLD_POLICY_NO` · `A.SobName` b11222 → `SOB_NAME` · `A.CedingCoName` b11391 → `CEDING_CO_NAME` · `A.PolicyHolderName` b11560 → `POLICY_HOLDER_NAME` · `A.MarketingName` b11729 → `MARKETING_NAME` · `A.pxCreateDateTime` b11897 → `TGL_INPUT` · `A.pxCreateOpName` b12080 → `CREATE_OP_NAME` · `A.EdmTypeBatal` b12243 (`VIS A.EdmType==3`) → `EDM_TYPE_BATAL` (483) · `A.pyStatusWork` b12457 → `STATUSS` | 13 kolom, label VERBATIM | ✅ — ⚠️ **tampilan menyimpang (keputusan work owner 07-10-2026)**: urutan `Case ID` · `Create Date` · `Endorsement No` · `Type` · `EDM Type` · `PL_NUMBER` · `Ceding` · `Create Operator` · `Work Status` (9 kolom; `Status` b10052 berganti nama `Work Status` seperti kotak masuk PremiumList Life, isi tetap `STATUSS` — sel kasus terbuka (`STATUSS` kosong) tampil `Input EDM Life` (08-10-2026, tampilan saja; database tetap kosong = terbuka); `Policy No` b8964 berganti nama `PL_NUMBER` seperti kotak masuk PremiumList Life, isi tetap `OLD_POLICY_NO` (label `Policy No` layar lain tidak berubah); `Create Date` dipindah sesudah `Case ID`; `SOB`, `Policy Holder`, `Marketing Name`, `EDM Type Batal` dihapus — `EDM_TYPE_BATAL` tetap tersimpan dan tampil di layar kasus); `Endorsement No` = `NO_ENDORS` (bukan `PL_NUMBER` R25) — kosong selama kasus terbuka karena `NO_ENDORS` terbit saat Confirm |
 | tautan `A.pyID` b10202 → `openAssignment` b10349 | — | buka halaman `edm-kasus` | ✅ |
 | wadah b729 `InData.CARI1==1`: `Policy No` b1502, `EDM Note` b1726, `Effective Date` b2477, `Edm Type` b2715, tombol **`Create`** b3780 (`CreateCaseEMDL` b3966, `openAssignment` b4025), tombol **`Cancel`** b4228 (`CancelCreateCaseEDML` b4318) | `InData.CARI1` tak pernah bernilai 1 (R11) | — | ➖ tak terjangkau |
 
@@ -81,12 +81,12 @@ Rute `POST /kelayakan`, `POST /kasus`. Komponen `pages/BuatEndorsement.tsx`.
 
 ### 3b. Buat kasus dan salin polis lama — `Activity/MappingEDMLife.xml` (14 langkah, nol `//`) + `Activity/CreateCaseEMDL.xml`
 
-Tabel tulis: `T_PREMIUM_LIST` (kasus = versi baru, `ID` `EDMLF-<n>`), `T_PREMIUM_LIST_DETAIL`, `T_PREMIUM_LIST_SPREADING`, `T_PREMIUM_LIST_SPREADING_RETRO`; jejak `T_CLAIMLF_JEJAK` (`inti/backend/jejak`).
+Tabel tulis: `T_PREMIUM_LIST` (kasus = versi baru, `ID` `EDML-<n>`), `T_PREMIUM_LIST_DETAIL`, `T_PREMIUM_LIST_SPREADING`, `T_PREMIUM_LIST_SPREADING_RETRO`; jejak `T_CLAIMLF_JEJAK` (`inti/backend/jejak`).
 
 | Langkah | Isi | Sistem baru |
 | --- | --- | --- |
 | 1 `·` b388 *"Jika ada edm blm resolve exit act"*, prakondisi b433 `@contains(OutData1.pxResults(1).CARI1,"3")` T=6, b456 `@LengthOfPageList(ListEdm.pxResults)>0` T=6 | keluar bila polis sudah Batal atau masih punya EDM terbuka | `POST /kasus` menjalankan **kelima** gerbang ulang di server, di dalam transaksi, dengan kunci baris versi berjalan (`FOR UPDATE`); ✅ |
-| 2 b496, 3 b689 `·` `svcAddWorkObject` (kelas b519 `ASM-FW-GISFW-Work-EndorsementLife`) | buat work object | baris `T_PREMIUM_LIST` baru, `ID = ID_PEGA = EDMLF-<n>` dari `SEQ_WORK_EDM_LIFE` (R20); ✅ |
+| 2 b496, 3 b689 `·` `svcAddWorkObject` (kelas b519 `ASM-FW-GISFW-Work-EndorsementLife`) | buat work object | baris `T_PREMIUM_LIST` baru, `ID = ID_PEGA = EDML-<n>` dari `SEQ_WORK_EDM_LIFE` (R20); ✅ |
 | 4 b837, 5 b971 `·` | catatan assignment `!InputEDMLife` (b864), buka kasus ber-kunci | — (kasus langsung di tahap `InputEDMLife`); ✅ |
 | 6 b1114 `·` `GetProdkeNopolis` (b1172) | `RDBList/GetProdkeNopolis.xml` b84 `IDPEGA … ORDER BY PRODKE DESC` | versi berjalan polis lama (RALAT bab 4); ✅ |
 | 7 b1291 `·` | `OldCaseID` b1313, `PolicyNo` b1361, `EdmType` b1382, `EdmTypePerubahanData` b1403, `EdmTypeBatal` b1424, `DesBatal` b1445, `EdmDate` b1466 | `OLD_POLICY_NO`, `EDM_TYPE`, `EDM_NOTE`, `EDM_DATE`; `EdmTypePerubahanData` b1403 → `EDM_TYPE_PERUBAHAN_DATA`, `EdmTypeBatal` b1424 → `EDM_TYPE_BATAL` (483, 07-10-2026); `DesBatal` b1445 tetap tanpa kolom sendiri (= Description → `EDM_NOTE`); ✅ |
@@ -108,7 +108,7 @@ Rute `GET /kasus/{id}`, `POST /kasus/{id}/simpan`, `POST /kasus/{id}/putuskan`. 
 
 | Korpus | Kolom | Keadaan |
 | --- | --- | --- |
-| judul b817 **`Endorsement Life Detail`** | — | ✅ |
+| judul b817 **`Endorsement Life Detail`** | — | ✅ — ⚠️ **tambahan tampilan (permintaan work owner 08-10-2026)**: chip Case ID (`EDML-…`) di bawah judul (`InputEDMLife.tsx` `JudulKasus`, pola kepala Premium List Detail); chip Endorsement No BELUM - `NO_ENDORS` tidak ada di respons BacaKasus |
 | `.PolicyNo` b3155 (label dari deskripsi properti — `pyLabelFieldValue` b3126 `Text Input`; `Section/EndorsmentLife_Section.xml` b1075 menamainya `Policy No`), `pyDisabledWhen` `.EditInput==1` b3166; ubah b3301 `SetErrorBatalEndorsement_Act` | `OLD_POLICY_NO` | ✅ terkunci + pesan penjelas (tiket 08) |
 | `Product Name` b3399 · `Product Name ID` b3589 | `PRODUCT_NAME`, `PRODUCT_NAME_ID` | ✅ |
 | `Type` b3812 · `Reinsurance System` b4143 · `Class of Business` b4473 · `SOB` b4658 (RD `BrowseCedingCoLife_RD` b4726) · `Policy Holder` b4897 (RD `BrowseClientNusaRe_RD` b4963) · `Premium Method` b5976 · `Ceding` b6339 (RD b6407) · `Marketing Officer` b6578 (RD `BrowseMarketingOfficer_RD` b6683) | `TYPE`, `TYPE_CEDING_NAME`, `BUSINESS_NAME`, `SOB_NAME`, `POLICY_HOLDER_NAME`, `PRO_RATE_TYPE`, `CEDING_CO_NAME`, `MARKETING_NAME` | ✅ baca-saja (`ro`); pemilih RD dan aksi ubahnya (`runDataTransform` b4016/b4347/b6197) tidak pernah jalan pada sel baca-saja ➖ |
@@ -129,12 +129,12 @@ Rute `GET /kasus/{id}`, `POST /kasus/{id}/simpan`, `POST /kasus/{id}/putuskan`. 
 
 | Korpus | Data | Sistem baru | Keadaan |
 | --- | --- | --- | --- |
-| wadah b11431 `pyWorkPage.EdmType=1 && .EditInput=1`; grid b11899 `.PremiumListSummary.PremiumListDetail` (`pyPageListProperty` b11860) | kepala `POLICY NO` b12035 · `POLICY HOLDER` b12177 · `CERTIFICATE NO` b12320 · `NAME OF INSURED` b12463 · `SEX` b12602 · `DATE OF BIRTH` b12738 · `ENTRY AGE` b12874 · `PLAN` b13010 · `BEGIN DATE` b13146 · `EFFECTIVE DATE` b13282 · `EXPIRED DATE` b13417; sel `.POLICY_NO` b13836 … `.EXPIRED_DATE` b15587 | `T_PREMIUM_LIST_DETAIL` versi kasus | ✅ |
+| wadah b11431 `pyWorkPage.EdmType=1 && .EditInput=1`; grid b11899 `.PremiumListSummary.PremiumListDetail` (`pyPageListProperty` b11860) | kepala `POLICY NO` b12035 · `POLICY HOLDER` b12177 · `CERTIFICATE NO` b12320 · `NAME OF INSURED` b12463 · `SEX` b12602 · `DATE OF BIRTH` b12738 · `ENTRY AGE` b12874 · `PLAN` b13010 · `BEGIN DATE` b13146 · `EFFECTIVE DATE` b13282 · `EXPIRED DATE` b13417; sel `.POLICY_NO` b13836 … `.EXPIRED_DATE` b15587 | `T_PREMIUM_LIST_DETAIL` versi kasus | ✅ — ⚠️ **tampilan menyimpang (keputusan work owner 08-10-2026)**: `POLICY HOLDER`, `SEX`, `ENTRY AGE`, `PLAN`, `BEGIN DATE`, `EFFECTIVE DATE`, `EXPIRED DATE` disembunyikan dari grid (tampil di popup Details `RincianPeserta`); `SEX` tidak ada di `PL_Detail_Sec` Pega - ditambahkan ke popup Details keempat tipe sesudah `Entry Age` (label kepala grid b12602), lalu disembunyikan (08-10-2026) |
 | kotak centang `.EdmBatal` b15753, `pyDisabledWhen` b15763 `.EditInput==1` | tanda hapus per peserta | centang dikirim bersama `Save`; hanya peserta `Old` yang dapat dicentang — baris `Delete`/`New` terkunci (R30, OQ-EDM-017); mati sesudah simpan | ✅ |
 | tombol **`DELETE ALL`** b13607 → `SelectAllEdmLife_act` b13688 | bab 6 | sakelar: seluruh peserta `Old` kasus tercentang (juga di halaman grid lain), centang yang lalu dilepas menjadi pengecualian | ✅ |
-| `pyEditAction` `PL_DetailAction` (`InputEDMLife.xml` b16187, b20938) → FlowAction `PL_DetailAction` b170 `PL_Detail_Sec` | rincian peserta per `Type` (wadah `pyWorkPage.Type = 'QR'` b320, `'QP'` b12819, `'TR'` b21495, `'TP'` b33772) + grid retro (`Treaty Type` b11001, `Retroceded Share` b11147) | `GET /kasus/{id}/peserta/{pesertaId}`, `components/RincianPeserta.tsx` | ✅ |
+| `pyEditAction` `PL_DetailAction` (`InputEDMLife.xml` b16187, b20938) → FlowAction `PL_DetailAction` b170 `PL_Detail_Sec` | rincian peserta per `Type` (wadah `pyWorkPage.Type = 'QR'` b320, `'QP'` b12819, `'TR'` b21495, `'TP'` b33772) + grid retro (`Treaty Type` b11001, `Retroceded Share` b11147) | `GET /kasus/{id}/peserta/{pesertaId}`, `components/RincianPeserta.tsx` | ✅ — ⚠️ **tampilan menyimpang (keputusan work owner 08-10-2026)**: medan dikelompokkan bagian berjudul Participant / Period / Coverage / Premium (`tampilan.ts` `BAGIAN_RINCI`, kisi dua kolom; tiap medan tetap tampil tepat sekali), lalu bagian Retro Spreading per lapisan (Treaty Type + Retroceded Share sebagai sub-judul, lalu tabel reinsurer); angka spreading/retro diformat `selAngka` dan rata kanan (`jenis: 'n'`). Certificate No / Policy Holder / Plan selebar bagian (`MEDAN_RINCI_LEBAR`), nilai panjang dibungkus. Label, data, dan endpoint tidak berubah |
 | `PL_Detail_Sec.xml` `pyEditAction` `RetroLife` (b11653, b32606, b44911) → FlowAction `RetroLife` b94 `RetroDetailLife` | `Reinsurer Name` b1333 · `Percent Share (%)` b1484 · `Total Share` b1637 · `Rate` b1790 · `Gross Premium` b1943 · `1st Year Discount (%)` b2096 · `RI Admin Fee (%)` b2249 · `Net Premium` b2402 | `T_PREMIUM_LIST_SPREADING` + `_SPREADING_RETRO` versi kasus | ✅ |
-| wadah b17034 `pyWorkPage.EdmType=3 && .EditInput=1`; grid b17500 | kepala `POLICY NO` b17636 · `CERTIFICATE NO` b17774 · `NAME OF INSURED` b17910 · `SEX` b18046 · `DATE OF BIRTH` b18182 · `ENTRY AGE` b18318 · `PLAN` b18454 · `BEGIN DATE` b18590 · `EFFECTIVE DATE` b18726 · `EXPIRED DATE` b18861 — **tanpa** kotak centang | seluruh peserta Batal | ✅ |
+| wadah b17034 `pyWorkPage.EdmType=3 && .EditInput=1`; grid b17500 | kepala `POLICY NO` b17636 · `CERTIFICATE NO` b17774 · `NAME OF INSURED` b17910 · `SEX` b18046 · `DATE OF BIRTH` b18182 · `ENTRY AGE` b18318 · `PLAN` b18454 · `BEGIN DATE` b18590 · `EFFECTIVE DATE` b18726 · `EXPIRED DATE` b18861 — **tanpa** kotak centang | seluruh peserta Batal | ✅ — ⚠️ **tampilan menyimpang (keputusan work owner 08-10-2026)**: `POLICY HOLDER`, `SEX`, `ENTRY AGE`, `PLAN`, `BEGIN DATE`, `EFFECTIVE DATE`, `EXPIRED DATE` disembunyikan dari grid (tampil di popup Details `RincianPeserta`); `SEX` tidak ada di `PL_Detail_Sec` Pega - ditambahkan ke popup Details keempat tipe sesudah `Entry Age` (label kepala grid b12602), lalu disembunyikan (08-10-2026) |
 
 ### 4d. Rekap mata uang — `.PremiumListSummary.CurrencyList` (b23025, b26038, b29037, b32036)
 
@@ -184,7 +184,7 @@ Tabel `T_PREMIUM_LIST_SUMMARY` (dihitung ulang dari peserta versi kasus, R08).
 
 `Activity/AddHistorySuggest.xml` (2 langkah, nol `//`): 1 b233 PRE=false (prakondisi b426 `.FlagOnGoingPolicy==1` diabaikan) — `DateSuggest` b255 `@CurrentDateTime()` b256, `No` b310, `PICSuggest` b331 `OperatorID.pyUserName` b332, `IsCedingConfirm` b352 `@if(.EmailTypePL=1,"Accept","Decline")` b353, `CommentSuggest` b373 `.Description` b374; 2 b466 `·` `Obj-Sort` `.No` b493 `Descending` b491 → `T_VIEW_SUGGEST` (`NO`, `DATE_SUGGEST`, `PIC_SUGGEST` = akun pelaku, `IS_CEDING_CONFIRM`, `COMMENT_SUGGEST`), dibaca `NO DESC`. ✅
 
-`Activity/GenerateNoEDM_Life.xml` (7 langkah, nol `//`): 1 b290 `·` (b448 `TempPolis.CARI4 ← PolicyNo`); 2 b529 `·` `ProdDateTime` (R16 ➖); 3 b680 PRE=false `GetProdKeOldData_SQL` (b733, `RDBList/GetProdKeOldData_SQL.xml` b84 `order by TGL_INPUT desc` → `PRODKE DESC`, R19); 4 b872 `·` `CARI4 = Prodke+1` (b946), `CARI14` pad dua digit bila satu digit (b967); 5 b1068 `·` prakondisi b1216 `PL_NUMBER_EDM==""` → `Generate_NoEndorsmentLife` (b1126, `RDBList/Generate_NoEndorsmentLife.xml` b84 `NOPOLIS||'/'||{InputData.CARI14}`); 6 b1264 `·` prakondisi b1390 → `PL_NUMBER_EDM` b1337; 7 b1430 `·` `Obj-Save`. → `NO_ENDORS` = `PL_NUMBER_EDM` = `<polis>/<NN>`, lahir sekali. ✅ (R23, OQ-EDM-008) *(ralat 01-10-2026, K3 keputusan work owner 01-10-2026: akhiran nomor = `PRODKE` Pega + 1 (kosong = 0) → NB warisan `/01`; versi tetap `NVL(PRODKE, 1)` — rumus lengkap di tiket 04 bab status 01-10-2026)*
+`Activity/GenerateNoEDM_Life.xml` (7 langkah, nol `//`): 1 b290 `·` (b448 `TempPolis.CARI4 ← PolicyNo`); 2 b529 `·` `ProdDateTime` (R16 ➖); 3 b680 PRE=false `GetProdKeOldData_SQL` (b733, `RDBList/GetProdKeOldData_SQL.xml` b84 `order by TGL_INPUT desc` → `PRODKE DESC`, R19); 4 b872 `·` `CARI4 = Prodke+1` (b946), `CARI14` pad dua digit bila satu digit (b967); 5 b1068 `·` prakondisi b1216 `PL_NUMBER_EDM==""` → `Generate_NoEndorsmentLife` (b1126, `RDBList/Generate_NoEndorsmentLife.xml` b84 `NOPOLIS||'/'||{InputData.CARI14}`); 6 b1264 `·` prakondisi b1390 → `PL_NUMBER_EDM` b1337; 7 b1430 `·` `Obj-Save`. → `NO_ENDORS` = `PL_NUMBER_EDM` = `<polis>/<NN>`, lahir sekali. ✅ (R23, OQ-EDM-008) *(ralat 01-10-2026, K3 keputusan work owner 01-10-2026: akhiran nomor = `PRODKE` Pega + 1 (kosong = 0) → NB warisan `/01`; versi tetap `NVL(PRODKE, 1)` — rumus lengkap di tiket 04 bab status 01-10-2026)* *(ralat **08-10-2026 — keputusan work owner (migrasi 485)**: PRODKE SATU hitungan mulai 0 — NB = 0 (kosong = 0), endorsement menarik versi ber-PRODKE terbesar, Confirm menulis versi baru = terbesar + 1, `NO_ENDORS` = `<PL Number>/<PRODKE dua digit>`; penghitung terpisah `UrutanPega` (K3) dan `NVL(…, 1)` DIHAPUS)*
 
 ## 5. Lihat polis lama — `View Old Policy` → `ViewOldPolicy_EDM` (`_QP`, `_TP`, `_TR`)
 
@@ -201,6 +201,8 @@ Rute `GET /kasus/{id}/polis-lama`. Komponen `components/PolisLama.tsx`.
 | `ViewOldPolicy_EDM_TR.xml` grid b1450 (19 kolom: `NAME_OF_INSURED` b1590 … `CLAIM_AMOUNT` b4200) + rekap b9496 (13 kolom: `COB` b9641 … `BALANCE` b11196); wadah luar b689 | — | R03 | ✅ |
 | `ShowLifePremiumSummary_EDM.xml` kepala `Endorsement Life Summary` b989, grid detail + rekap per Type (b5268 … b59639), `Production Date` b64353, tombol **`Submit`** b67733 → `InsertJsonPolisLife_Act` b67924 + `SetJsonPolisEDMLife_Confirm` b67957 | layar yatim (R02) | — | ➖ tak terjangkau |
 
+⚠️ **Tampilan menyimpang (keputusan work owner 08-10-2026)**: kolom `CLAIM_AMOUNT` DISEMBUNYIKAN dari popup (tabel peserta QR/QP/TR dan rekap QP; TP tidak memuatnya) - `components/PolisLama.tsx` `KOLOM_POLIS_LAMA_TERSEMBUNYI`; daftar korpus di `kolomKorpus.ts` dan data backend tidak berubah; kolom `No` (07-10-2026) tetap.
+
 ## 6. CSV — `UploadCSV_LifeEndorsement`, `ViewCSVResult_LifeEDM`, `SaveCSVEDMLife`, `SelectAllEdmLife_act`
 
 Rute `POST /kasus/{id}/unggah` (tinjau, nol tulis), `POST /kasus/{id}/csv` (multipart `berkas`, tanpa batas baris, dua lintasan atas
@@ -212,12 +214,12 @@ berkas sementara). Komponen `components/UnggahCSV.tsx`, `components/HasilCSV.tsx
 | `FlowAction/UploadCSV_LifeEndorsement.xml` b191 judul **`Endorsement Life - Upload CSV`**, `pyLocalActionActivity` b144 `UploadCSVEDMLifePremium_Act` | wizard `pxUploadCSVResults` | modal unggah berjudul sama | ✅ |
 | `Activity/UploadCSVEDMLifePremium_Act.xml`: 1 b252 `·`, 2 b342 `·`, 3 b490 `·` `pxUploadCSVResults` (b537 `ResultsClass` `ASM-FW-GISFW-Data-BatchLifePremiumDetail`, b539 `.ListLifePremiumDetailUpload`) | urai CSV ke daftar sementara | `POST /unggah` mengurai berkas dan **mengembalikan** barisnya — tidak disimpan (daftar sementara Pega hanya di clipboard) | ✅ |
 | idem 4 b633 `//`, 5 b779 `//`, 5.2 b2109 `//`, 5.4 b2389 `//`, 6 b2513 `//`; 5.1 b872 dan 5.3 b2260 `·` di bawah induk `//` | simpan ke tabel batch | ➖ ter-remark (spec §15) |
-| `Section/ViewCSVResult_LifeEDM.xml` wadah b616 `SELALU` (kondisi `1 = 2` diabaikan), grid b1082 `TempWorkPage.ListLifePremiumDetailUpload` (b1043), 38 kepala `POLICY NO` b1218 … | hasil urai | popup tabel 38 kolom, label VERBATIM | ✅ |
+| `Section/ViewCSVResult_LifeEDM.xml` wadah b616 `SELALU` (kondisi `1 = 2` diabaikan), grid b1082 `TempWorkPage.ListLifePremiumDetailUpload` (b1043), 38 kepala `POLICY NO` b1218 … | hasil urai | ~~popup tabel 38 kolom, label VERBATIM~~ — ⚠️ **menyimpang dari Pega (keputusan work owner 10-10-2026)**: kolom = grid Participants (`kolomGrid()`), lihat catatan 10-10-2026 bab 6 | ✅ |
 | tombol **`Generate Data Detail`** b14322 → `GenerateDataDtlLife_act` b14415 (`Activity/GenerateDataDtlLife_act.xml` 1 b223 `·` `pxConvertResultsToCSV`, b270 `FileName = DetailUpload`, b272 stempel waktu, b276 `CSVPropHeaders`) | unduh CSV hasil urai | unduhan CSV di peramban, kepala persis b276 | ✅ |
 | `Activity/SaveCSVEDMLife.xml` 1 b264 `·`; 2 b361 `·` + 2.1 b454 `·` prakondisi b547 `.EDMStatus=="New"` → hapus baris `New` | unggah ulang mengganti | baris `New` kasus dihapus lebih dulu (AC 35) | ✅ |
 | idem 3 b629 `·` `call ASM-FW-GISFW-Work-LIFE.Calculate1_Act` | mesin hitung NB | ➖ tidak dijalankan (R05, OQ-EDM-003) *(01-10-2026 K2 keputusan work owner 01-10-2026: tetap tidak dihitung — gerbang langkah 1 b416 `IsCalculationSystem` tak terbukti, OQ-EDM-021)* |
 | idem 4 b726 `·` (b800 pesan `"Plan di CSV tidak sesuai, mohon di cek kembali"`); 4.1 b840 `·` prakondisi b2466 `.PLAN=…PremiumListDetail(1).PLAN`, b2495 `.POLICY_HOLDER=…(1).POLICY_HOLDER`, 72 penetapan `@divide(@toDecimal(@replaceAll(.X,",",".")),1,20)`; 4.2 b2541 `·` pesan; 4.3 b2689 `·` prakondisi b2791 `pyWorkPage.EdmType==1` → b2715 `"New"` | validasi + pemetaan | seluruh baris divalidasi lebih dulu, pesan VERBATIM + nomor baris/kolom (R24); desimal tanpa `float`, koma = titik desimal; `EdmType=3` ditolak (AC 13) | ✅ |
-| idem 5 b2873 `·` b2899 `.EditInput1 = 1` | kunci unggah | ada baris `New` = unggah terkunci di layar (`InputEDMLife.xml` b8965/b10403) **dan** di server (409); sesudah `Save` rekap dihitung ulang (R31) | ✅ |
+| idem 5 b2873 `·` b2899 `.EditInput1 = 1` | kunci unggah | ada baris `New` = unggah terkunci di layar (`InputEDMLife.xml` b8965/b10403) **dan** di server (409); ~~sesudah `Save` rekap dihitung ulang (R31)~~ — ⚠️ **menyimpang dari Pega (keputusan work owner 08-10-2026)**: Process Endorsement (`Save`) adalah langkah FINAL - sesudahnya Upload CSV / View Upload / Add CSV Data nonaktif + teks bantuan, server menolak periksa dan tambah CSV 409 `ErrSudahDiproses` ("This endorsement has been processed. Participants can no longer be added or deleted.") sebelum tulisan apa pun | ✅ |
 | `Activity/SelectAllEdmLife_act.xml` 1 b232 `·` b259 `@if(Select.CARI1=="","true",@if(Select.CARI1=="true","false","true"))`; 2 b431 + 2.1 b431 PRE=false (prakondisi b533 `.STS_REJECT !=""` diabaikan) → `.EdmBatal` b456 | balik centang semua | sakelar di layar atas seluruh baris yang belum terkunci | ✅ |
 
 ## 7. Penyimpanan resmi — flow `Confirm` → `Activity/InsertJsonPolisLife_Act.xml` (16 langkah, 2 `//`)
@@ -231,9 +233,9 @@ Satu transaksi di `POST /kasus/{id}/putuskan` (spec §11), `services/edm_putusan
 | 1 b468 `·`, 2 b707 `·` (prakondisi b818 tanggal `>25`) | `ProdDateTime` | ➖ R16 |
 | 3 b858 PRE=false `GetProdKeOldData_SQL` (b911); 4 b1050 `·` `Prodke+1` (b1124), pad (b1145) | `PRODKE` | sama dengan `GenerateNoEDM_Life`, `PRODKE DESC`; ✅ |
 | 5 b1246 `·` prakondisi b1394 `PL_NUMBER_EDM==""` `Generate_NoEndorsmentLife` (b1304); 6 b1442 `·` prakondisi b1568 | nomor lahir sekali | ✅ |
-| 7 b1608 `·` (b1635 `@ASM.GetPageJSONString()`, b1682 `IsJsonPolis = 0`); 9 b2486 `·` `InsertJsonPolisEDM` (b2543) | blob JSON ke `JSON_POLIS` | ➖ dibuang (spec §16, AC 54; R18) |
-| 8 b1805 `·`; 10 b2663 `·` `SaveLifeinProduction_SQL` (b2720) | `LIFEINPRODUCTION` | ➖ R17, OQ-EDM-010 *(ralat 01-10-2026, K4 keputusan work owner 01-10-2026: ✅ DITULIS — `INSERT … SELECT` dari kepala kasus `T_PREMIUM_LIST`, 27 kolom VERBATIM, `DATERECEIVED` = `TRUNC(DATE_RECEIVED)` (`To_date(…,'DD/MM/YYYY')`), `TYPECEDINGNAME` = CASE CARI24 b2319, `CREATEOPNAME` = `CREATE_OP_NAME` (akun pembuat), `TGL_INPUT` = `SYSDATE`; prakondisi langkah 10 kosong b2684 → selalu jalan di jalur Confirm)* |
-| 11 b2889 PRE=false (`>50000` b5296 diabaikan) atas `pyWorkPage.PremiumListSummary.PremiumListDetail` (b2847); 11.1 b2889 PRE=false (b4456 `EDMStatus ← .EDMStatus`); 11.2 b4546 `·` prakondisi b4644 `Type=="QR" \|\| Type=="QP"` → `CARI48` b4567 `0`; 11.3 b4684 `·` b4782 `TR`/`TP` → b4706 `1`; 11.4 b4822 `·` b4920 `.EDMStatus=="Old"` → `CARI47` b4843 `1`; 11.5 b4960 `·` b5058 `!="Old"` → b4982 `0`; 11.6 b5098 PRE=false `SaveMasterLPDet` (b5154) | seluruh peserta kasus, termasuk `Old`/`New`/`Delete`/`Batal` | baris `M_LIFE_PREMIUM_DETAIL` per peserta, 80 kolom `RDBList/SaveMasterLPDet.xml` b87, `EDMSTATUS` ← `{TempValue.EDMStatus}` b246, `STATUSOLD` ← `{TempInputDetail.CARI47}` b247 (`1` bila `Old`), `STATUS` ← `{TempInputDetail.CARI48}` b248 (`0` QR/QP, `1` TR/TP), `PL_NUMBER` b222, `PL_NUMBER_EDM` b223, `IDPEGA` ← `{pyWorkPage.pzInsKey}` b245 = `EDMLF-<n>`; hapus-sebelum-sisip `PL_NUMBER`+`IDPEGA` (`_INDEX4`) — ⏸️ **belum ditulis**: benturan penjaga Claim Life (R29), menunggu OQ-EDM-016; peserta versi resmi sudah di `T_PREMIUM_LIST_DETAIL` (`PL_NUMBER_EDM`, `STATUS_OLD`, `STATUS`) ✅ *(ralat 01-10-2026, K5 keputusan work owner 01-10-2026: ✅ DITULIS — `repository.TulisPesertaWarisan`, `INSERT … SELECT` dari peserta kasus (`IDX_PLD_PL`) sesudah Resmikan, 80 kolom VERBATIM; `@toDecimal` → `NVL(…, 0)` (OQ-PL-10); `EM_PERCENT` ← CARI49 dan `RISK` ← CARI50 tidak pernah ditetapkan 11.1 → NULL, persis Pega)* |
+| 7 b1608 `·` (b1635 `@ASM.GetPageJSONString()`, b1682 `IsJsonPolis = 0`); 9 b2486 `·` `InsertJsonPolisEDM` (b2543) | blob JSON ke `JSON_POLIS` | ➖ blob dibuang (spec §16, AC 54; R18) · ✅ **08-10-2026 (keputusan work owner)**: Confirm menulis SATU baris `JSON_POLIS` dengan SQL langsung sesudah kepala diresmikan — `IDPEGA` = kasus, `NOPOLIS`, `PRODKE` baru (teks), `NOENDORS`, `TGL_PROD` (periode TANGGAL_CLOSING; bulan sama → tanggal Confirm, bergeser → tanggal 1 bulan periode), `USERNAME` = `CREATE_OP_NAME` (sama dengan `LIFEINPRODUCTION`), `TGL_INPUT`; `DATA_JSON` dan kolom konversi NULL; DELETE lalu INSERT (sekali per kasus) — `repository/edm_jsonpolis.go` |
+| 8 b1805 `·`; 10 b2663 `·` `SaveLifeinProduction_SQL` (b2720) | `LIFEINPRODUCTION` | ➖ R17, OQ-EDM-010 *(ralat 01-10-2026, K4 keputusan work owner 01-10-2026: ✅ DITULIS — `INSERT … SELECT` dari kepala kasus `T_PREMIUM_LIST`, 27 kolom VERBATIM, `DATERECEIVED` = `TRUNC(DATE_RECEIVED)` (`To_date(…,'DD/MM/YYYY')`), `TYPECEDINGNAME` = CASE CARI24 b2319, `CREATEOPNAME` = `CREATE_OP_NAME` (akun pembuat), `TGL_INPUT` = `SYSDATE`; prakondisi langkah 10 kosong b2684 → selalu jalan di jalur Confirm)* — ⚠️ **menyimpang (keputusan work owner 09-10-2026)**: ditambah kolom `DESCRIPTION` ← Comment keputusan (trim, kosong → NULL), dan `WPC` ← `TRUNC(p.WPC)`, `PRODUCTNAMEID` ← `p.PRODUCT_NAME_ID`, `PRODUCTNAME` ← `p.PRODUCT_NAME` dari kepala kasus (09-10-2026) - di luar daftar korpus EDM (31 kolom) |
+| 11 b2889 PRE=false (`>50000` b5296 diabaikan) atas `pyWorkPage.PremiumListSummary.PremiumListDetail` (b2847); 11.1 b2889 PRE=false (b4456 `EDMStatus ← .EDMStatus`); 11.2 b4546 `·` prakondisi b4644 `Type=="QR" \|\| Type=="QP"` → `CARI48` b4567 `0`; 11.3 b4684 `·` b4782 `TR`/`TP` → b4706 `1`; 11.4 b4822 `·` b4920 `.EDMStatus=="Old"` → `CARI47` b4843 `1`; 11.5 b4960 `·` b5058 `!="Old"` → b4982 `0`; 11.6 b5098 PRE=false `SaveMasterLPDet` (b5154) | seluruh peserta kasus, termasuk `Old`/`New`/`Delete`/`Batal` | baris `M_LIFE_PREMIUM_DETAIL` per peserta, 80 kolom `RDBList/SaveMasterLPDet.xml` b87, `EDMSTATUS` ← `{TempValue.EDMStatus}` b246, `STATUSOLD` ← `{TempInputDetail.CARI47}` b247 (`1` bila `Old`), `STATUS` ← `{TempInputDetail.CARI48}` b248 (`0` QR/QP, `1` TR/TP), `PL_NUMBER` b222, `PL_NUMBER_EDM` b223, `IDPEGA` ← `{pyWorkPage.pzInsKey}` b245 = `EDML-<n>`; hapus-sebelum-sisip `PL_NUMBER`+`IDPEGA` (`_INDEX4`) — ⏸️ **belum ditulis**: benturan penjaga Claim Life (R29), menunggu OQ-EDM-016; peserta versi resmi sudah di `T_PREMIUM_LIST_DETAIL` (`PL_NUMBER_EDM`, `STATUS_OLD`, `STATUS`) ✅ *(ralat 01-10-2026, K5 keputusan work owner 01-10-2026: ✅ DITULIS — `repository.TulisPesertaWarisan`, `INSERT … SELECT` dari peserta kasus (`IDX_PLD_PL`) sesudah Resmikan, 80 kolom VERBATIM; `@toDecimal` → `NVL(…, 0)` (OQ-PL-10); `EM_PERCENT` ← CARI49 dan `RISK` ← CARI50 tidak pernah ditetapkan 11.1 → NULL, persis Pega)* |
 | 12 b5385 `·` atas `CurrencyList` (b5343); 12.1 b5385 `·`; 12.2 b6171 `·` `InsertPLSummary` (b6226) | rekap per mata uang | baris `M_LIFE_PREMIUM_SUMMARY` per mata uang (37 kolom prosedur VERBATIM, `CARIn` ← properti bernama sama, prosedur tidak dipanggil), hapus-sebelum-sisip `PL_NUMBER`+`IDPEGA`; ✅ E2 |
 | 13 b6387 `//` `GetNopolisByIDPega` (b6444) | cek sudah masuk | ➖ ter-remark; alarm **dihidupkan** (spec penyimpangan 3) dengan pemicu bergeser (R33): simpan atomik — keadaan separuh mustahil — alarm menyala pada kegagalan efek keluar, pesan di layar + log tanpa alamat; baca-balik `_INDEX21` menunggu peserta warisan (OQ-EDM-016); ✅ *(ralat 01-10-2026, K5 keputusan work owner 01-10-2026: peserta warisan kini tertulis; langkah ini tetap ter-remark)* |
 | 14 b6564 `·` b6591 pesan galat `… Error Insert Data to Json_polis (InsertJsonPolisLife_Act)` | pesan galat JSON | ➖ penulis JSON dibuang |
@@ -292,9 +294,9 @@ terang; nomor polis dari kasus (`OLD_POLICY_NO`), bukan `JSON_POLIS`. ✅ ⏸️
 | 11 | `InputEDMLife` | `Add CSV Data` | b10405 | ✅ |
 | 12 | `InputEDMLife` | `DELETE ALL` | b13607 | ✅ |
 | 13 | `InputEDMLife` | `View Premium` | b36494 | ➖ `VIS 1=2` |
-| 14 | `InputEDMLife` | `Save` | b37202 | ✅ |
-| 15 | `InputEDMLife` | `Submit` (`EmailTypePL =1`) | b37494 | ✅ |
-| 16 | `InputEDMLife` | `Submit` (`EmailTypePL = 2 \|\| 7`) | b38109 | ✅ |
+| 14 | `InputEDMLife` | `Save` | b37202 | ✅  — ⚠️ **tampilan menyimpang (keputusan work owner 08-10-2026)**: tombol diganti nama **Process Endorsement**, dipindah ke bawah layar (sesudah tabel peserta + paging, sebelum rekap mata uang dan Keputusan), dan didahului konfirmasi `KonfirmasiProses` (Cancel / Continue); kondisi tampil/nonaktif dan aksi `SetPremi_EDM` tidak berubah. Tombol Back (bukan korpus) dihapus - kembali ke kotak masuk lewat menu Endorsement Life. ⛔ **Aturan baru, bukan korpus (08-10-2026)**: Perubahan Data tanpa peserta ditandai Delete DAN tanpa peserta `New` ditolak - tombol nonaktif + teks bantuan di layar, server 422 `ErrTanpaPerubahan` (`models.AdaPerubahan`, pesan "No changes to process. Mark at least one participant for Delete or add participants from CSV.") sebelum tulisan apa pun; Batal tidak diblokir |
+| 15 | `InputEDMLife` | `Submit` (`EmailTypePL =1`) | b37494 | ✅ — ⚠️ **tampilan menyimpang (keputusan work owner 08-10-2026)**: tombol berlabel **Confirm** (utama), selalu tampil tetapi nonaktif selama Status belum dipilih, dan didahului popup konfirmasi (`KonfirmasiPutusan`: Accept "Confirm endorsement?", Decline "Decline endorsement?", Cancel / Yes, kutipan Comment); aksi keputusan tidak berubah |
+| 16 | `InputEDMLife` | `Submit` (`EmailTypePL = 2 \|\| 7`) | b38109 | ✅ — ⚠️ **tampilan menyimpang (keputusan work owner 08-10-2026)**: tombol berlabel **Confirm** (utama), selalu tampil tetapi nonaktif selama Status belum dipilih, dan didahului popup konfirmasi (`KonfirmasiPutusan`: Accept "Confirm endorsement?", Decline "Decline endorsement?", Cancel / Yes, kutipan Comment); aksi keputusan tidak berubah |
 | 17 | `ShowLifePremiumSummary_EDM` | `View Old Policy` (`QR`) | b64965 | ✅ ➕ dipindah (R02) |
 | 18 | `ShowLifePremiumSummary_EDM` | `View Old Policy` (`QP`) | b65522 | ✅ ➕ dipindah (R02) |
 | 19 | `ShowLifePremiumSummary_EDM` | `View Old Policy` (`TR`) | b66083 | ✅ ➕ dipindah (R02) |
@@ -304,3 +306,110 @@ terang; nomor polis dari kasus (`OLD_POLICY_NO`), bukan `JSON_POLIS`. ✅ ⏸️
 
 Aksi XML di luar tiket yang dibangun (tambahan tiket): rincian peserta `PL_DetailAction` + retro `RetroLife` (bab 4c), riwayat keputusan
 `T_VIEW_SUGGEST` (bab 4f), unduh `Generate Data Detail` (bab 6), alarm efek keluar (bab 7, R33). Sensus ini dikunci `frontend/sensus.test.ts`.
+
+## Summary Comparison — fitur baru, bukan korpus (permintaan work owner 08-10-2026)
+
+Tabel per mata uang di layar Endorsement Life Detail (`components/PerbandinganRekap.tsx`), tepat di atas rekap mata uang
+dan sebelum Keputusan; `GET /api/endorsement-life/kasus/{id}/perbandingan` (baca-saja, nol migrasi). Peserta kasus
+dijumlah per (`CURRENCY`, kelas `EDM_STATUS`: Delete/Batal, New, selain itu Old) dengan ekspresi rekap yang SAMA dengan
+`T_PREMIUM_LIST_SUMMARY` (`repository.ekspresiRekap`); kolom uang = kolom rekap per Type (`MATA_UANG`) + cacah peserta.
+
+- Old policy (before) = Old − (Delete+Batal) (nilai tersimpan Delete/Batal negatif) · Deleted / Cancelled = Delete+Batal ·
+  Added (CSV) = New · After endorsement = Before + Deleted + Added (= Old + New) · Difference = After − Before.
+- Sebelum Process Endorsement baris Deleted / Cancelled tampil "—" + "Calculated after Process Endorsement" (tidak dihitung
+  dari centang layar). Dimuat ulang sesudah Add CSV Data dan Process Endorsement.
+- ⚠️ **Selisih dengan rekap**: rekap `T_PREMIUM_LIST_SUMMARY` menjumlah SELURUH baris kasus (Old sisa + Delete/Batal negatif
+  + New), jadi **rekap = After + Deleted**, bukan After. Untuk Batal: rekap = −Before (After 0). Dikunci uji
+  (`services/edm_perbandingan_test.go`); keputusan semantik rekap menunggu work owner.
+- **Tampilan dirapikan (08-10-2026)**: satu blok per mata uang bersub-judul (tanpa kolom Currency), kepala angka rata
+  kanan, Participants = jumlah orang tanpa tanda/warna (09-10-2026; kata "removed"/"added" dihapus 08-10-2026), nilai
+  negatif di sel mana pun merah (juga di tabel rekap), After tebal, baris "Difference (endorsement
+  premium)" disorot dengan angka hijau/merah lembut. Tabel rekap kini berjudul **Summary to
+  be posted on Confirm** (catatan rumus dan keterangan rekap dihapus - permintaan work owner 08-10-2026) (kepala angka rata kanan - `TabelKorpus` jenis `n`, berlaku untuk semua tabel korpus
+  modul), dan bagian keputusan berjudul **Decision**. Angka, rumus, endpoint tidak berubah.
+
+## Popup hasil Confirm — menggantikan `ConfirmSubmitEDM` (permintaan work owner 09-10-2026)
+
+Sesudah Confirm → Yes dengan Status **Accept**, popup "Endorsement confirmed" (`components/TerimaKasih.tsx`) menampilkan
+Endorsement No (kosong → "—"), EDM Type, Sub-type (hanya bila terisi) dan Case ID; tombol **OK** (X/Esc) menutup lalu kembali
+ke kotak masuk. Menggantikan `Thank you for Submit !` b526 / `No. Endorsement` b654 / `Close` b1366 (sensus: Close b1366
+kini beralasan). **Decline**: tanpa popup, langsung kembali ke kotak masuk (perilaku sebelumnya).
+
+## Confirm — kolom tambahan warisan (keputusan work owner 09-10-2026, bukan korpus)
+
+- `LIFEINPRODUCTION`: + `ANNUITYINTEREST` / `PREMIUMREFUNDFACTOR` ← kepala kasus (`ANNUITY_INTEREST` /
+  `PREMIUM_REFUND_FACTOR`, kini disalin saat Create Addendum), cadangan kepala versi yang di-endorse untuk kasus lama.
+- `M_LIFE_PREMIUM_SUMMARY`: + `PREMIUM_SELISIH` / `BALANCE_SELISIH` = *Difference* Summary Comparison per mata uang (tipe
+  kolom belum diverifikasi). Kolom prosedur lain tetap seperti sebelumnya.
+
+## Kotak masuk — kasus tertutup ikut terdaftar (keputusan work owner 09-10-2026)
+
+`GET /inbox` tidak lagi menyaring `STATUSS IS NULL` (`InboxEDMLife` b659/b673): kasus Resolved-Completed /
+Resolved-Rejected ikut terdaftar (urut `TGL_INPUT DESC, ID`), seperti kotak masuk PremiumList Life. Layar menampilkannya abu
+(`edm-inbox__tutup`, title "Case closed — cannot be opened"), dengan Endorsement No (`NO_ENDORS`) dan Work Status apa adanya,
+**tanpa** pembuka (`kasusEDMBisaDibuka`). Aturan "`STATUSS IS NULL` = terbuka" lain (index `UX_PL_EDM_TERBUKA`, gerbang 3,
+Tolak, Resmikan) tidak berubah.
+
+## Create Addendum — Policy No menerima nomor endorsement (keputusan work owner 10-10-2026)
+
+Isian Policy No boleh berisi nomor endorsement (mis. `RNML-QRL2.10.26.00042/01`): akhiran `/<angka>` paling akhir dibuang
+(`models.NomorPolisDariMasukan`) dan PL Number-nya dipakai untuk SEMUA gerbang Kelayakan dan BuatKasus serta
+`OLD_POLICY_NO`. Versi yang disalin tetap PRODKE terbesar (`VersiBerjalan`) — akhiran yang diketik tidak memilih versi.
+Kelayakan menjawab `nomorPolis`, `polisAda`, akhiran yang diketik, dan versi terakhir (`<polis>/%02d` dari PRODKE versi
+berjalan; kosong = versi new business). Layar menampilkan keterangan info (bukan galat) tanpa mengubah isian. Polis tanpa
+akhiran tidak ada → "Policy no Not Found !" seperti biasa.
+
+- **10-10-2026 (keputusan work owner)**: Summary Comparison hanya ditampilkan **sesudah** Process Endorsement
+  (`kasus.sudahSimpan`) — sebelumnya tidak dirender dan API-nya tidak dipanggil; cabang "Calculated after Process
+  Endorsement" dihapus.
+
+## View Old Policy — kolom Endorsement No di rekap (keputusan work owner 10-10-2026, opsi a)
+
+Tabel rekap popup View Old Policy (`M_LIFE_PREMIUM_SUMMARY`, semua versi polis) mendapat kolom tampilan **Endorsement No**
+tepat sesudah PL NUMBER (keempat tipe; `PolisLama.tsx` `kolomRekapPolisLama`), dari `PL_NUMBER_EDM` yang sudah ada di respons:
+berakhiran `/<angka>` dan berbeda dari PL NUMBER → apa adanya; selain itu **New Business** (baris NB PremiumList menyalin
+`T_PREMIUM_LIST.PL_NUMBER_EDM` NB yang tidak pernah diisi). Daftar korpus `POLIS_LAMA_REKAP`, backend, dan urutan baris tidak berubah.
+
+## CSV peserta baru — wajib isi + Download Template (keputusan work owner 10-10-2026, menyimpang dari Pega)
+
+⚠️ Pega (`SaveCSVEDMLife`) tidak mewajibkan kolom selain acuan PLAN/POLICY_HOLDER. Kini (Upload CSV dan Add CSV Data,
+`models/edm_csvwajib.go`): kolom wajib HARUS ada di judul (semua yang kurang disebut sekaligus) dan terisi di setiap baris
+(angka 0 boleh) — umum NAME_OF_INSURED, CERTIFICATE_NO, PLAN, POLICY_HOLDER, SEX, DOB, CURRENCY, BEGIN_DATE, EXPIRED_DATE,
+SUM_INSURED, salah satu AGE/ENTRY_AGE; per Type = kolom yang dijumlah rumus rekap PREMIUM/BALANCE (QR/QP/TP/TR; uji
+repository menyamakan keduanya). CURRENCY hanya IDR/USD dan harus mata uang peserta Old kasus; CERTIFICATE_NO tidak boleh
+ganda dalam berkas maupun sama dengan peserta Old kasus (TrimSpace + huruf besar). CSV tetap tidak menghitung premi.
+**Download Template** (`GET /kasus/{id}/templat-csv`): 72 properti, kolom wajib Type kasus di depan, satu baris contoh dari
+peserta Old pertama (CERTIFICATE_NO/NAME_OF_INSURED dikosongkan); gerbang sama dengan unggahan. Modal Upload CSV menampilkan
+daftar kolom wajib dari server (`kasus.kolomWajibCSV`).
+- **10-10-2026 (keputusan work owner: "buat net_premium wajib untuk semua type")**: `NET_PREMIUM` masuk kolom wajib UMUM CSV
+  untuk QR/QP/TP/TR (harus di judul, tidak kosong, 0 boleh) walau di luar rumus rekap; varian `NET_PREMIUM_REFUND` /
+  `_RETRO` / `_REFUND_RETRO` tidak diwajibkan. Ikut ke kelompok depan templat dan daftar "Required columns".
+- ~~10-10-2026 opsi A (pemisah ";" / baris pertama templat berisi petunjuk pemisah Excel)~~ — **dibatalkan 10-10-2026**
+  (keputusan work owner: "kembalikan csv seperti format sebelumnya"): templat dan unggahan kembali berpemisah koma saja.
+- **10-10-2026 (keputusan work owner: "kolom tax, prof_comm, claim tidak perlu")**: TAX, PROF_COMM, CLAIM tidak lagi wajib
+  di CSV (QR dan QP) - boleh tidak ada di judul dan boleh kosong (tersimpan 0, rekap NVL); bila diisi tetap divalidasi. Wajib QR
+  kini GROSS_PREMIUM, DEDUCTION, RI_ADMIN_FEE, BROKERAGE_FEE; QP GROSS_PREMIUM_REFUND, CLAIM_AMOUNT, DEDUCTION_REFUND,
+  BROKERAGE_FEE_REFUND, RI_ADMIN_FEE_REFUND; TP/TR dan kolom umum (termasuk NET_PREMIUM) tetap.
+- **10-10-2026 (keputusan work owner, menyimpang dari Pega 4.1 b2466/b2495)**: PLAN dan POLICY_HOLDER peserta baru diambil
+  dari POLIS seperti PremiumList Life (`TerapkanDataPolisKePeserta`, disalin - tidak diimpor): kepala kasus `BUSINESS_NAME` /
+  `POLICY_HOLDER_NAME`, bila kosong peserta Old pertama; keduanya kosong → unggahan ditolak (`models.NilaiPolisCSV`). Nilai CSV
+  diabaikan (tidak divalidasi, tidak wajib di judul, keluar dari "Required columns" dan kelompok depan templat);
+  `PesanCSVPlan` tidak lagi dipakai.
+- **10-10-2026 (opsi a)**: unggahan menerima pemisah koma DAN titik koma - dideteksi dari baris judul (BOM diabaikan;
+  ";" tanpa "," → ";"), tanpa dukungan baris petunjuk pemisah Excel; templat tetap koma. Desimal koma (berkutip atau tidak)
+  pada berkas ";" lolos; FACTOR tetap titik saja. Pratinjau View Upload (`csv.ts` `pemisahJudul`) memakai aturan yang sama.
+- **10-10-2026 (keputusan work owner: "tampilan dan kalimat nya disederhanakan")**: modal Upload CSV untuk user awam -
+  "Your file must include these columns:" + chip ("AGE or ENTRY_AGE"); blok Rows read / Rows rejected / Ignored diganti satu
+  kalimat ringkasan (merah "{n} of {total} rows have a problem…" / hijau "All {total} rows are valid…"), kolom asing satu baris
+  abu; tabel masalah dua kolom Row / Problem (kalimat server menyebut nama kolom). Kalimat penolakan server disederhanakan
+  (`models/edm_csvpesan.go`, tanpa awalan "models:" / "invalid CSV header:"); galat judul/berkas (422) disertai petunjuk
+  templat + tombol Download Template. Aturan validasi dan kode status HTTP TIDAK berubah. Menyimpang dari teks Pega (kalimat).
+- **10-10-2026 (keputusan work owner: "tulisan ini tidak perlu di pakai lagi, karena sudah ada di template csv nya")**: daftar
+  "Your file must include these columns:" + chip dihapus dari modal Upload CSV. Validasi kolom wajib di server tetap berjalan;
+  `kasus.kolomWajibCSV` tetap dikirim BacaKasus tetapi tidak lagi dipakai layar. Tombol Download Template dan petunjuk templat
+  pada galat 422 tetap.
+- **10-10-2026 (keputusan work owner: "Sama dengan grid peserta"; menyimpang dari Pega `ViewCSVResult_LifeEDM` grid b1082)**:
+  popup View Upload kini menampilkan kolom grid Participants yang tampil (`kolomGrid()` di `tampilan.ts`, urutan dan label sama -
+  saat ini POLICY NO, CERTIFICATE NO, NAME OF INSURED, DATE OF BIRTH; tanpa kolom No karena grid tidak punya), bukan 38 kolom
+  `HASIL_CSV`. Ikut otomatis bila `KOLOM_GRID_DI_RINCIAN` berubah. Nilai tetap teks mentah dari berkas (pratinjau peramban).
+  `Generate Data Detail` tidak berubah (`KEPALA_UNDUH_CSV`, 23 kolom `CSVPropHeaders` b276). `HASIL_CSV` tetap sebagai bukti korpus.

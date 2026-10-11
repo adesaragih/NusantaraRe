@@ -4,7 +4,7 @@ package repository
 // 05-10-2026). Aturannya murni di models/polis_hitungqr.go.
 //
 // Untuk apa berkas ini: membaca SEKALI per polis - kepala polis, parameter
-// produk Master Product Name Life, plan produk, master rate `RATE_LIFE` dan
+// produk Master Product Name Life, plan produk, master rate `M_RATE_LIFE` dan
 // master risk `RIRISK_LIFE` - untuk dihitung.
 //
 // ⛔ BACA-SAJA, kolom disebut satu per satu, berkunci ID / IDUSEDBY. Master
@@ -169,7 +169,7 @@ func (r *Rujukan) BahanHitungQR(ctx context.Context, produkID string) (models.Pa
 	return p, plan, rows.Err()
 }
 
-// RateHitungQR membaca SELURUH baris `RATE_LIFE` satu IDUSEDBY (tanpa batas tampilan).
+// RateHitungQR membaca SELURUH baris `M_RATE_LIFE` satu IDUSEDBY (tanpa batas tampilan).
 func (r *Rujukan) RateHitungQR(ctx context.Context, riRateID string) ([]models.BarisRateQR, error) {
 	tabel, err := r.db.Qualify(ViewRateProduk)
 	if err != nil {

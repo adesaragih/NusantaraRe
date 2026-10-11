@@ -7,7 +7,7 @@ import { kegagalanDari } from '../../../../inti/frontend/klien'
 import { pesanPenolakanEDM } from '../api'
 import { BUAT_EDM, OPSI_EDM_TYPE_BATAL, OPSI_EDM_TYPE_PERUBAHAN_DATA } from '../labels'
 import { subJenisKasus } from '../tampilan'
-import {
+import { keteranganAkhiran,
   alasanBelumSubmit,
   bolehSubmitEDM,
   EDM_TYPE_BATAL_BAWAAN,
@@ -260,5 +260,30 @@ describe('sub-jenis EDM Type (OQ-EDM-005, 07-10-2026)', () => {
     // Kolom inbox EDM Type Batal dihapus 07-10-2026; nilainya tetap tampil di layar kasus.
     const inbox = readFileSync(join(__dirname, 'InboxEndorsementLife.tsx'), 'utf8')
     expect(inbox).not.toContain('edmTypeBatal')
+  })
+})
+
+describe('Policy No bernomor endorsement (keputusan work owner 10-10-2026)', () => {
+  const dasar = { pesan: [], boleh: false, nomorPolis: 'RNML-QRL2.10.26.00042', polisAda: true }
+
+  it('keterangan hanya bila ada akhiran DAN polis ditemukan', () => {
+    expect(keteranganAkhiran(null)).toBe('')
+    expect(keteranganAkhiran({ ...dasar, adaAkhiran: false })).toBe('')
+    expect(keteranganAkhiran({ ...dasar, adaAkhiran: true, polisAda: false })).toBe('')
+  })
+
+  it('menyebut versi terakhir dari server, bukan akhiran yang diketik', () => {
+    expect(keteranganAkhiran({ ...dasar, adaAkhiran: true, akhiranMasukan: '01', akhiranVersiTerakhir: '02' })).toBe(
+      'Endorsement number entered — using policy RNML-QRL2.10.26.00042 (latest version /02).',
+    )
+    expect(keteranganAkhiran({ ...dasar, adaAkhiran: true, akhiranMasukan: '01', akhiranVersiTerakhir: '' })).toBe(
+      'Endorsement number entered — using policy RNML-QRL2.10.26.00042 (new business version).',
+    )
+  })
+
+  it('layar: alert--info memakai keteranganAkhiran(kelayakan); isian Policy No tidak diubah', () => {
+    const S = readFileSync(join(__dirname, 'BuatEndorsement.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    expect(S).toContain("{keteranganAkhiran(kelayakan) !== '' && (\n        <p className=\"alert alert--info edm-buat__status\" role=\"status\">")
+    expect(S).toContain('value={policyNo} onChange={ubah(setPolicyNo)}')
   })
 })

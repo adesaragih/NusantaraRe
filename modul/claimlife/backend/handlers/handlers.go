@@ -60,6 +60,15 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	// `Save to RNM` - tombol layar Outstanding (`InputOSClaimLife.xml`
 	// b21102 -> `SaveOutStandingLife_Act`). POST, sebab ia MENULIS.
 	mux.HandleFunc("POST /api/klaim-life/{id}/outstanding", simpanRNM(svc, stubPelaku))
+	// Tombol `Save` layar Outstanding (`InputOSClaimLife.xml` b19413, 10-10-2026): Accept peserta dan medan tab
+	// Register Claim. PUT, sebab ia menimpa isian.
+	mux.HandleFunc("PUT /api/klaim-life/{id}/outstanding/isian", simpanIsianOutstanding(svc, stubPelaku))
+	// Tombol `Save` layar Medical Check (`MedicalCheckClaimLife`, 11-10-2026): RECOMMENDATION per peserta.
+	mux.HandleFunc("PUT /api/klaim-life/{id}/medis", simpanMedis(svc, stubPelaku))
+	// View Detail peserta polis - tab Policy Details layar Outstanding (DetailPolisLife b631, 11-10-2026). Baca saja.
+	mux.HandleFunc("GET /api/klaim-life/{id}/peserta-polis", pesertaPolis(svc))
+	// Spreading peserta diambil dari PremiumList Life (keputusan work owner 11-10-2026). Baca saja.
+	mux.HandleFunc("GET /api/klaim-life/{id}/peserta/{pesertaId}/spreading-polis", spreadingPolis(svc))
 	// Gerbang Close Claim: memeriksa, belum menyelesaikan penugasan.
 	mux.HandleFunc("GET /api/klaim-life/{id}/boleh-tutup", bolehTutup(svc))
 	// Penutupan kasus - butir bb. POST, sebab ia MENGUBAH: STATUS_WORK
@@ -96,6 +105,11 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("POST /api/klaim-life/{id}/peserta/{pesertaId}/dokumen",
 		unggahDokumen(svc, stubPelaku))
 	mux.HandleFunc("GET /api/dokumen/{dokId}/isi", isiDokumen(svc, stubPelaku))
+	// 11-10-2026: "View" berbatas klaim - dokumen milik klaim lain ditolak 404 (SatuDokumen berbatas CLAIM_ID).
+	mux.HandleFunc("GET /api/klaim-life/{id}/dokumen/{dokId}/isi", isiDokumenKlaim(svc, stubPelaku))
+	// 11-10-2026: daftar kategori dropdown "Category" = Document Claim produk polis klaim (sumber yang SAMA dengan
+	// pemeriksa unggahan).
+	mux.HandleFunc("GET /api/klaim-life/{id}/dokumen/kategori", kategoriDokumen(svc, stubPelaku))
 	mux.HandleFunc("DELETE /api/klaim-life/{id}/dokumen/{dokId}",
 		hapusDokumen(svc, stubPelaku))
 }

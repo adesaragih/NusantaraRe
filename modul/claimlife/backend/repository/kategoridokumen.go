@@ -22,6 +22,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"nusantarare/inti/backend/db"
 )
@@ -68,4 +69,43 @@ func (r *PohonKlaim) AmbilKategoriWajib(ctx context.Context,
 		return nil, fmt.Errorf("repository: menelusuri kategori: %w", err)
 	}
 	return hasil, nil
+}
+
+// TabelDokumenKlaimProduk - daftar "DOCUMENT CLAIM / Document List" Master Product Name Life (modul masterproductnamelife,
+// migrasi 142: PRODUCTID VARCHAR2(6), URUT NUMBER(5), DOCUMENT VARCHAR2(500); PK (PRODUCTID, URUT)). BACA SAJA; salinan
+// bentuk baca, tanpa impor modul master.
+const TabelDokumenKlaimProduk = "M_PRODUCTNAME_LIFE_DOCCLAIM"
+
+// sqlDokumenKlaimProduk - Document Claim satu produk, URUTAN sama dengan master (URUT).
+func sqlDokumenKlaimProduk(tabel string) string {
+	return fmt.Sprintf(`SELECT d.DOCUMENT FROM %s d WHERE d.PRODUCTID = :1 ORDER BY d.URUT`, tabel)
+}
+
+// DokumenKlaimProduk membaca daftar Document Claim produk (keputusan work owner 11-10-2026: "category document didapat
+// dari document claim yang ada di product name yang digunakan oleh claim"). Produk tanpa daftar = kosong.
+func (r *PohonKlaim) DokumenKlaimProduk(ctx context.Context, produkID string) ([]string, error) {
+	tabel, err := r.db.Qualify(TabelDokumenKlaimProduk)
+	if err != nil {
+		return nil, err
+	}
+	q := sqlDokumenKlaimProduk(tabel)
+	if err := db.PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, q, produkID)
+	if err != nil {
+		return nil, fmt.Errorf("repository: membaca Document Claim produk %s: %w", produkID, err)
+	}
+	defer func() { _ = baris.Close() }()
+	var hasil []string
+	for baris.Next() {
+		var d sql.NullString
+		if err := baris.Scan(&d); err != nil {
+			return nil, fmt.Errorf("repository: memindai Document Claim: %w", err)
+		}
+		if t := strings.TrimSpace(d.String); t != "" {
+			hasil = append(hasil, t)
+		}
+	}
+	return hasil, baris.Err()
 }

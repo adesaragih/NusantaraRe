@@ -883,3 +883,28 @@ di Save to RNM. Bila bisnis menghendakinya, itu keputusan baru.
    Baris ber-sertifikat NULL memang tidak dapat didaftarkan (`AmbilUntukKlaim` berkunci `CERTIFICATE_NO = :2`). Tiket 11 Endorsement Life (di luar folder ini)
 **tidak** disunting — temuan B1 tertutup dari sisi pembaca di sini.
 
+## RALAT 10-10-2026 — nomor klaim TIDAK lahir saat Register
+
+Keputusan work owner 10-10-2026: *"claim no tidak generate saat register claim, tapi nanti setelah save to rnm"*.
+
+- AC penomoran tiket ini (AC 2, 3, 7-11, termasuk "commit segera setelah nomor terbentuk") kini berlaku untuk **Save to RNM**
+  (`services/simpanrnm.go` langkah 16-20, `SaveOutStandingLife_Act`), bukan untuk Register. Register menyimpan CLAIM_NO NULL.
+- Save to RNM menomori di transaksi pendek tersendiri (nomor + CLAIM_NO, commit), lalu transaksi utama; klaim yang sudah
+  bernomor tidak dinomori ulang. Penjaga `TestPenomoranDiTransaksiSendiri` dipindah ke Save to RNM.
+- Register = satu transaksi untuk semua case (semua-atau-tidak murni, tanpa nomor hangus); hasil dan konfirmasinya menampilkan
+  Case ID. Pengenal case baru berawalan `CLMLF-` (dulu `CLM-`; pengenal lama tetap).
+- Case DEV CLM-000009 yang sudah bernomor dibiarkan.
+
+## RALAT 10-10-2026 (kedua) — Register TIDAK menulis OS_AKSEPTASI_KLAIM_LIFE
+
+Keputusan work owner 10-10-2026: *"saat register claim, data peserta belum di insert ke tabel os_akseptasi_klaim_life; itu
+hanya terjadi saat save to rnm bersamaan dengan no klaim dan no akseptasi"*.
+
+- **AC 32 dicabut untuk Register.** `PohonKlaim.Simpan` tidak lagi menulis baris datar maupun tertanggung cermin. Baris datar
+  lahir di Save to RNM (`TulisCerminSaveRNM`, tiket 03), di transaksi utama sesudah transaksi penomoran. Ini sejalan dengan
+  Pega: `InsertJsonKlaimLife_sql` dipanggil `SaveOutStandingLife_Act` 22.1.3.1.
+- Penjaga terbalik `TestJalurTulisDatarWarisanWAJIBADA` tetap ada: jalur tulisnya wajib ada dan dipagari, tetapi kini di
+  `TulisCerminSaveRNM`, dan `Simpan` justru dilarang menyentuh tabel datar.
+- Uji `db` `pendaftaran_db_test` kini menuntut **nol** baris datar sesudah Register.
+- Klaim yang didaftarkan sebelum perubahan ini sudah punya baris datar (STS_REJECT NULL). Save to RNM memperbaruinya, tidak
+  menggandakannya.

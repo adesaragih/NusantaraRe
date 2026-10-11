@@ -173,7 +173,7 @@ type MasterSpreading struct {
 
 // SiapkanSpreading mengurai bahan satu treaty year. Angka yang tidak terurai →
 // ErrSyaratSpreading; syarat S6 dicatat per lapisan dan baru menolak bila lapisan
-// itu terpakai. \`rates\` = baris RATE_LIFE per RIRATEID.
+// itu terpakai. \`rates\` = baris M_RATE_LIFE per RIRATEID.
 func SiapkanSpreading(tahun TahunRetro, kontrak []KontrakRetro, reinsurer []ReinsurerRetro, bisnis []BusinessRetro,
 	rates map[string][]BarisRateQR, bisnisPolis, proRate string) (MasterSpreading, error) {
 

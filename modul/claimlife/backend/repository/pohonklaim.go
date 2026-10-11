@@ -8,11 +8,11 @@ package repository
 //
 // Dibaca sesudah: klaimlife.go (pembacaan tiket 01) dan migrasidata.go.
 //
-// Dua penulisan, satu transaksi:
-// sistem baru menulis DUA tempat - tabel relasional baru DAN baris datar ke
-// OS_AKSEPTASI_KLAIM_LIFE, sebab hilir masih membaca dari sana. Yang dibuang
-// hanya blob JSON. Keduanya berada di dalam SATU transaksi: kegagalan pada
-// salah satunya membatalkan keduanya.
+// ⛔ RALAT 10-10-2026 (keputusan work owner "saat register claim, data peserta belum di insert ke tabel
+// os_akseptasi_klaim_life; itu hanya terjadi saat save to rnm bersamaan dengan no klaim"): `Simpan` (Register) TIDAK
+// lagi menulis baris datar OS_AKSEPTASI_KLAIM_LIFE. Baris datar lahir di Save to RNM lewat `TulisCerminSaveRNM`, di
+// transaksi utama Save to RNM - seperti Pega (`SaveOutStandingLife_Act` 22.1.3.1 -> `InsertJsonKlaimLife_sql`).
+// Hilir tetap membaca tabel itu; yang dibuang hanya blob JSON.
 //
 // Istilah:
 //   - transaksi : sekumpulan perubahan yang berlaku semua atau tidak sama
@@ -33,7 +33,7 @@ import (
 	"nusantarare/modul/claimlife/backend/models"
 )
 
-// namaTabelLama adalah tabel datar warisan yang tetap ditulis.
+// namaTabelLama adalah tabel datar warisan yang tetap ditulis (sejak 10-10-2026 hanya oleh Save to RNM).
 const namaTabelLama = "OS_AKSEPTASI_KLAIM_LIFE"
 
 // namaTabelRetro dinyatakan sekali. Namanya pernah diperpendek dari 36 menjadi
@@ -261,8 +261,8 @@ func (r *PohonKlaim) isiIdentitas(ctx context.Context, tx *db.Tx, p *models.Poho
 	return nil
 }
 
-// Simpan menulis satu pohon klaim, beserta baris datarnya, dalam SATU
-// transaksi.
+// Simpan menulis satu pohon klaim dalam SATU transaksi. ⛔ Tanpa baris datar OS_AKSEPTASI_KLAIM_LIFE (RALAT
+// 10-10-2026): baris itu lahir di Save to RNM (TulisCerminSaveRNM).
 //
 // Transaksinya dibuka dan ditutup oleh pemanggil di services (ADR-U-0029);
 // fungsi ini hanya ikut di dalamnya.
@@ -297,10 +297,6 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *db.Tx, p models.PohonKlaim)
 	if err != nil {
 		return err
 	}
-	datarT, err := r.db.Qualify(namaTabelLama)
-	if err != nil {
-		return err
-	}
 
 	// Tingkat 1 - akar work object.
 	err = r.exec(ctx, tx, fmt.Sprintf(`INSERT INTO %s
@@ -320,15 +316,17 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *db.Tx, p models.PohonKlaim)
 
 	// Tingkat 2 - header klaim. ID-nya SAMA dengan ID work object: shared PK.
 	err = r.exec(ctx, tx, fmt.Sprintf(`INSERT INTO %s
-		(ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT, CURRENCY, TYPE)
-		VALUES (:1,:2,:3,:4,:5,:6,:7)`, header),
+		(ID, CLAIM_NO, POLICY_NO, BUSINESS_NAME, STS_REJECT, CURRENCY, TYPE, STS_KATASTROFE, IS_KPR)
+		VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9)`, header),
 		p.Work.ID, db.KosongJadiNil(p.Klaim.NomorKlaim), db.KosongJadiNil(p.Klaim.NomorPolis),
 		db.KosongJadiNil(p.Klaim.NamaBisnis), db.KosongJadiNil(p.Klaim.KodeStatus),
 		// Butir z1: mata uang header, supaya ClaimRetro yang dibaca kembali
 		// punya mata uang - uang tanpa mata uang tidak bermakna.
 		db.KosongJadiNil(p.Klaim.ClaimRetro.Currency),
 		// TYPE di header sejak migrasi 023 (keputusan work owner 01-10-2026).
-		db.KosongJadiNil(p.Klaim.Type))
+		db.KosongJadiNil(p.Klaim.Type),
+		// Catastrophe / Is KPR - bawaan Register 11-10-2026 (Non-Catastrophe / Non-KPR).
+		db.KosongJadiNil(p.Klaim.StsKatastrofe), db.KosongJadiNil(p.Klaim.IsKPR))
 	if err != nil {
 		return err
 	}
@@ -389,67 +387,139 @@ func (r *PohonKlaim) Simpan(ctx context.Context, tx *db.Tx, p models.PohonKlaim)
 		}
 	}
 
-	// Penulisan kedua - baris datar warisan, di dalam transaksi yang SAMA.
-	//
-	// ⚠️ [terbuka - tiket 02/03] Delapan belas dari 55 kolom yang ditulis; 37
-	// sisanya tinggal NULL. Hilir - Arasapas - membaca tabel ini, sehingga
-	// kekosongan itu terlihat olehnya. Ia TIDAK diperbaiki di tiket 14: sebagian
-	// besar kolom yang hilang adalah atribut polis (POLICY_HOLDER,
-	// NAME_OF_INSURED, SEX, DOB, AGE, PLAN, BEGIN_DATE, LAPSE_DATE,
-	// EXPIRED_DATE, SUM_INSURED, SUM_REASURED, CEDING_RETENTION,
-	// SHARE_NUSANTARA_RE, SHARE_RETRO, RETROCEDED_SHARE, EM_PERCENT, WPC,
-	// CEDINGCO, CEDINGCONAME, SOB, SOBNAME, BUSINESSID, TYPECEDING) yang
-	// keputusannya dibaca HIDUP dari tabel polis, dan pembacaan itu milik tiket
-	// 02 dan 03. Sisanya (DISEASE, ICD_CODE, NOTES, KETERANGAN, STATUS,
-	// RETROID, RETRONAME, SECURITYREINSURERID, SECURITYREINSURER,
-	// CONFIRMATION_DATE, CLAIM_RECEIVED_DATE, COMPLETE_DATE, PRODUCTNAMEID,
-	// PRODUCTNAME) menunggu tahap yang mengisinya - medical check, penutupan,
-	// dan modul PremiumList Life.
-	for _, b := range BarisLamaDari(p) {
-		// ⛔ Dipagari SEBELUM bind: kolom yang di tabel warisan bertipe NUMBER
-		// harus menerima bilangan, dan galat yang menyebut kolom serta nilainya
-		// jauh lebih berguna daripada ORA-01722 (butir s1).
-		if err = PeriksaNilaiWarisan(b); err != nil {
-			return err
-		}
-		err = r.exec(ctx, tx, fmt.Sprintf(`INSERT INTO %s
-			(ID, CASEID, NO_CLAIM, POLICY_NO, CERTIFICATE_NO, PL_NUMBER, BUSINESSNAME,
-			 CLAIM_RETRO, CURRENCY, CLAIM_AMOUNT, STS_REJECT, NO_ACCEPTATION,
-			 ACCEPTATION_DATE, TYPE, CREATEOPNAME,
-			 NAME_OF_BANK, IDBANK, ACCOUNTNO)
-			VALUES (:1,:2,:3,:4,:5,:6,:7,:8,:9,:10,:11,:12,:13,:14,:15,:16,:17,:18)`, datarT),
-			b.ID, db.KosongJadiNil(b.CASEID), db.KosongJadiNil(b.NO_CLAIM),
-			db.KosongJadiNil(b.POLICY_NO), db.KosongJadiNil(b.CERTIFICATE_NO),
-			db.KosongJadiNil(b.PL_NUMBER), db.KosongJadiNil(b.BUSINESSNAME),
-			db.KosongJadiNil(b.CLAIM_RETRO), db.KosongJadiNil(b.CURRENCY),
-			db.KosongJadiNil(b.CLAIM_AMOUNT), db.KosongJadiNil(b.STS_REJECT),
-			db.KosongJadiNil(b.NO_ACCEPTATION), db.KosongJadiNil(b.ACCEPTATION_DATE),
-			db.KosongJadiNil(b.TYPE), db.KosongJadiNil(b.CREATEOPNAME),
-			db.KosongJadiNil(b.NAME_OF_BANK), db.KosongJadiNil(b.IDBANK),
-			db.KosongJadiNil(b.ACCOUNTNO))
-		if err != nil {
-			return err
-		}
-	}
-	// ⛔ OQ-N2 DITUTUP (GILIRAN-17): NAME_OF_INSURED, DOB, CEDINGCO cermin
-	// diisi DI DALAM SQL dari baris sumber peserta, transaksi yang sama -
-	// nama dan tanggal lahir tidak pernah melintasi Go. Peserta tanpa baris
-	// sumber (`SOURCE_ID` kosong) hanya lahir dari uji/migrasi: pendaftaran
-	// membaca peserta ULANG dari sumbernya, dan Save to RNM menolak peserta
-	// tanpa SOURCE_ID.
-	cermin := NewKlaimLife(r.db)
-	for _, ps := range p.Klaim.Peserta {
-		if strings.TrimSpace(ps.SumberID) == "" {
-			continue
-		}
-		k := KunciPesertaSumber{PLNumber: ps.NomorPremiList, Sertifikat: ps.NomorSertifikat, SumberID: ps.SumberID}
-		for _, adj := range ps.Baris {
-			if err = cermin.IsiTertanggungCermin(ctx, tx, adj.ID, p.Work.ID, k, p.Klaim.NomorPolis); err != nil {
-				return err
-			}
-		}
-	}
 	return nil
+}
+
+// KolomCerminSaveRNM - kolom OS_AKSEPTASI_KLAIM_LIFE yang Save to RNM TULIS (INSERT) dan TIMPA (UPDATE), satu daftar
+// untuk kedua pernyataan (keputusan work owner 11-10-2026: "insert data outstanding ke table os_akseptasi_klaim_life ...
+// dan semua nilai dari peserta"; urutan = InsertJsonKlaimLife_sql). Sumber tiap kolom: services.SusunCerminSaveRNM.
+//
+// Di luar daftar:
+//   - ID, CASEID                    kunci baris (INSERT; WHERE pada UPDATE).
+//   - STS_REJECT                    kolom KEPUTUSAN - hanya saat INSERT (kosong); UPDATE tidak menyentuhnya ('0' milik
+//     SetelCerminOutstanding, 1/2 milik Komite RekamAkhirWarisan).
+//     ⭐ ACCEPTATION_DATE kini DI DAFTAR (keputusan work owner 11-10-2026 "iya gunakan tanggal outstanding masuk ke table"):
+//     tanggal outstanding, INSERT dan UPDATE baris yang belum berkeputusan. Komite menimpanya lagi saat keputusan akhir.
+//   - NAME_OF_INSURED, DOB, CEDINGCO diisi di SQL dari baris sumber / polis (IsiTertanggungCermin, OQ-N2).
+//   - STATUS, DISEASE, ICD_CODE, NOTES, KETERANGAN - sumbernya tahap Medical Check (keputusan work owner 11-10-2026, pekerjaan
+//     berikutnya). Save to RNM TIDAK menulisnya - INSERT membiarkannya NULL, UPDATE tidak menyentuhnya (nilai yang diisi
+//     tahap lain tidak terhapus).
+var KolomCerminSaveRNM = []string{
+	"NO_CLAIM", "NO_ACCEPTATION", "POLICY_NO", "POLICY_HOLDER", "CERTIFICATE_NO", "SEX", "AGE", "PLAN",
+	"BEGIN_DATE", "LAPSE_DATE", "EXPIRED_DATE", "EM_PERCENT", "CURRENCY", "SUM_INSURED", "CEDING_RETENTION",
+	"SUM_REASURED", "SHARE_NUSANTARA_RE", "CLAIM_AMOUNT", "WPC", "PL_NUMBER", "CEDINGCONAME", "SOB", "SOBNAME",
+	"BUSINESSID", "BUSINESSNAME", "SHARE_RETRO", "CLAIM_RETRO", "RETROID", "RETRONAME", "SECURITYREINSURERID",
+	"SECURITYREINSURER", "TYPECEDING", "TYPE", "CONFIRMATION_DATE", "CLAIM_RECEIVED_DATE", "COMPLETE_DATE",
+	"CREATEOPNAME", "PRODUCTNAMEID", "PRODUCTNAME", "RETROCEDED_SHARE", "NAME_OF_BANK", "IDBANK", "ACCOUNTNO",
+	"ACCEPTATION_DATE",
+}
+
+// kolomCerminSisipSaja - kolom keputusan, hanya ditulis saat baris datar LAHIR.
+var kolomCerminSisipSaja = []string{"STS_REJECT"}
+
+// sqlSisipCermin - satu baris datar per baris adjustment (`ID` = ID adjustment, `CASEID` = ID klaim). Kolom tanggal
+// lewat TO_DATE berformat tetap (PenampungTulisLama), tidak bergantung NLS sesi.
+func sqlSisipCermin(datar string) string {
+	kolom := append(append([]string{"ID", "CASEID"}, KolomCerminSaveRNM...), kolomCerminSisipSaja...)
+	tanda := make([]string, len(kolom))
+	for i, k := range kolom {
+		tanda[i] = PenampungTulisLama(k, i+1)
+	}
+	return fmt.Sprintf(`INSERT INTO %s
+		(%s)
+		VALUES (%s)`, datar, strings.Join(kolom, ", "), strings.Join(tanda, ", "))
+}
+
+// sqlPerbaruiCermin - baris datar yang SUDAH ada (klaim lama, atau Save to RNM ditekan ulang). Keputusan work owner
+// 11-10-2026: kolom KolomCerminSaveRNM DITIMPA dengan nilai Save to RNM (bukan NVL) - Save to RNM adalah saat datanya
+// dibekukan, jadi nilai lama yang berselisih harus diganti, bukan dipertahankan. ⛔ STS_REJECT TIDAK disentuh; baris yang sudah berkeputusan (STS_REJECT selain NULL/0) tidak disentuh sama sekali. Pengikatan menurut
+// URUTAN kemunculan.
+func sqlPerbaruiCermin(datar string) string {
+	set := make([]string, len(KolomCerminSaveRNM))
+	for i, k := range KolomCerminSaveRNM {
+		set[i] = k + " = " + PenampungTulisLama(k, i+1)
+	}
+	n := len(KolomCerminSaveRNM)
+	return fmt.Sprintf(`UPDATE %s
+	   SET %s
+	 WHERE ID = :%d AND CASEID = :%d AND (STS_REJECT IS NULL OR STS_REJECT = :%d)`,
+		datar, strings.Join(set, ", "), n+1, n+2, n+3)
+}
+
+// CerminBolehDisisip menentukan apakah Save to RNM boleh MELAHIRKAN baris datar yang belum ada: hanya untuk baris
+// adjustment yang BELUM pernah disimpan (STS_REJECT kosong - gerbang `.PrintFaceClaim==""` 22.1.3, b10115). Baris
+// putaran Komite (SisipkanBaris) dan baris berkeputusan tidak dilahirkan cerminnya di sini - perilaku lama tetap.
+func CerminBolehDisisip(kodeStatus string) bool {
+	return strings.TrimSpace(kodeStatus) == ""
+}
+
+// TulisCerminSaveRNM menulis baris datar satu baris adjustment di transaksi Save to RNM: UPDATE bila sudah ada,
+// INSERT bila belum ada dan `sisip` benar; lalu NAME_OF_INSURED/DOB/CEDINGCO dari baris sumber peserta (OQ-N2).
+// Mengembalikan true bila baris datarnya kini ada (ditulis atau diperbarui).
+//
+// ⛔ Idempoten: kunci `ID` + `CASEID`, jadi Save to RNM yang ditekan ulang memperbarui, tidak menggandakan.
+// ⛔ Di transaksi PEMANGGIL: bila transaksi utama gagal, tidak ada baris datar setengah jadi.
+func (r *PohonKlaim) TulisCerminSaveRNM(ctx context.Context, tx *db.Tx, b BarisLama, k KunciPesertaSumber,
+	sisip bool) (bool, error) {
+
+	if tx == nil {
+		return false, errors.New("repository: baris datar Save to RNM menuntut transaksi")
+	}
+	if strings.TrimSpace(b.ID) == "" || strings.TrimSpace(b.CASEID) == "" {
+		return false, fmt.Errorf("repository: menolak menulis baris datar tanpa ID dan CASEID (%q, %q)", b.ID, b.CASEID)
+	}
+	// ⛔ Dipagari SEBELUM bind (butir s1): kolom NUMBER menerima bilangan, galatnya menyebut kolom dan nilainya; teks
+	// tidak melebihi lebar kolom katalog (11-10-2026) - galat jelas, TIDAK dipotong diam-diam.
+	if err := PeriksaNilaiWarisan(b); err != nil {
+		return false, err
+	}
+	if err := PeriksaLebarWarisan(b); err != nil {
+		return false, err
+	}
+	nilai, err := NilaiTulisLama(b, KolomCerminSaveRNM)
+	if err != nil {
+		return false, err
+	}
+	sisipSaja, err := NilaiTulisLama(b, kolomCerminSisipSaja)
+	if err != nil {
+		return false, err
+	}
+	datarT, err := r.db.Qualify(namaTabelLama)
+	if err != nil {
+		return false, err
+	}
+	perbarui := sqlPerbaruiCermin(datarT)
+	if err := db.PeriksaSQL(perbarui); err != nil {
+		return false, err
+	}
+	h, err := tx.ExecContext(ctx, perbarui, append(nilai, b.ID, b.CASEID, kontrak.KodeOutstanding)...)
+	if err != nil {
+		return false, fmt.Errorf("repository: memperbarui baris datar %s: %w", b.ID, err)
+	}
+	n, err := h.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("repository: mencacah baris datar %s: %w", b.ID, err)
+	}
+	if n == 0 {
+		if !sisip {
+			return false, nil
+		}
+		sisipQ := sqlSisipCermin(datarT)
+		if err := db.PeriksaSQL(sisipQ); err != nil {
+			return false, err
+		}
+		semua := append(append([]any{b.ID, db.KosongJadiNil(b.CASEID)}, nilai...), sisipSaja...)
+		if _, err := tx.ExecContext(ctx, sisipQ, semua...); err != nil {
+			return false, fmt.Errorf("repository: menyisip baris datar %s: %w", b.ID, err)
+		}
+	}
+	// OQ-N2: nama dan tanggal lahir tidak pernah melintasi Go - diisi di SQL dari baris sumber peserta.
+	if strings.TrimSpace(k.SumberID) != "" {
+		if err := NewKlaimLife(r.db).IsiTertanggungCermin(ctx, tx, b.ID, b.CASEID, k); err != nil {
+			return false, err
+		}
+	}
+	return true, nil
 }
 
 // sqlHapusCerminBelumDisimpan - OQ-M6 (temuan /code-review GILIRAN-17): baris
@@ -563,24 +633,30 @@ func sqlIkutkanStatusCermin(lama, pes string, dariKosong bool) string {
 // dengan `sqlPolisRingkas` - sumber yang sama dengan yang dibandingkan
 // pemeriksa klaim ganda (`o.CEDINGCO = :4`). Polis yang tidak ada = NULL,
 // sama seperti sebelum GILIRAN-17.
-func sqlIsiCedingCermin(lama, polis string) string {
+// ⛔ 10-10-2026 (keputusan work owner "ambil ke tabel T_PREMIUM_LIST berdasarkan idpega peserta nya saja"): header
+// polis = baris UTAMA T_PREMIUM_LIST ber-`ID = ID_PEGA = IDPEGA` baris sumber peserta (M_LIFE_PREMIUM_DETAIL, kunci
+// PL_NUMBER + CERTIFICATE_NO + ID seperti sqlIsiTertanggungCermin). NO_POLIS / PL / POLICY_NO tidak dipakai lagi.
+// Pengikatan menurut URUTAN kemunculan.
+func sqlIsiCedingCermin(lama, polis, sumber string) string {
 	return fmt.Sprintf(`UPDATE %s o
-	   SET CEDINGCO = (SELECT pl.CEDING_CO FROM %s pl WHERE pl.NO_POLIS = :1
-	                    ORDER BY NVL(pl.PROD_KE, 0) DESC FETCH FIRST 1 ROWS ONLY)
-	 WHERE o.ID = :2 AND o.CASEID = :3`, lama, polis)
+	   SET CEDINGCO = (SELECT pl.CEDING_CO FROM %s pl
+	                    WHERE pl.ID = (SELECT m.IDPEGA FROM %s m
+	                                    WHERE m.PL_NUMBER = :1 AND m.CERTIFICATE_NO = :2 AND m.ID = :3 AND ROWNUM = 1)
+	                      AND pl.ID_PEGA = pl.ID)
+	 WHERE o.ID = :4 AND o.CASEID = :5`, lama, polis, sumber)
 }
 
 // isiCedingCermin menjalankan `sqlIsiCedingCermin` di transaksi pemanggil.
-func (r *KlaimLife) isiCedingCermin(ctx context.Context, tx *db.Tx, lama, adjID, caseID, nomorPolis string) error {
+func (r *KlaimLife) isiCedingCermin(ctx context.Context, tx *db.Tx, lama, sumber, adjID, caseID string, k KunciPesertaSumber) error {
 	polis, err := r.db.Qualify("T_PREMIUM_LIST")
 	if err != nil {
 		return err
 	}
-	q := sqlIsiCedingCermin(lama, polis)
+	q := sqlIsiCedingCermin(lama, polis, sumber)
 	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, q, db.KosongJadiNil(nomorPolis), adjID, caseID); err != nil {
+	if _, err := tx.ExecContext(ctx, q, k.PLNumber, k.Sertifikat, k.SumberID, adjID, caseID); err != nil {
 		return fmt.Errorf("repository: mengisi CEDINGCO cermin %s: %w", adjID, err)
 	}
 	return nil
@@ -935,4 +1011,38 @@ func (r *PohonKlaim) Dampak(ctx context.Context, klaimID, caseID string) (
 		}
 	}
 	return d, nil
+}
+
+// sqlSOBPolis - `T_PREMIUM_LIST.SOB` (Source of Business id) baris UTAMA polis ber-`ID = ID_PEGA = IDPEGA` peserta, versi
+// terbaru - kunci yang sama dengan header polis klaim (services.RingkasPolisIdPega; salinan BACA bentuk
+// premiumlistlife sqlPolisRingkasIdPega, tanpa impor modul itu). kontrak.PolisRingkas (inti) hanya membawa SOB_NAME.
+func sqlSOBPolis(polis string) string {
+	return fmt.Sprintf(`SELECT p.SOB FROM %s p
+	  WHERE p.ID = :1 AND p.ID_PEGA = p.ID
+	  ORDER BY NVL(p.PROD_KE, 0) DESC
+	  FETCH FIRST 1 ROWS ONLY`, polis)
+}
+
+// SOBPolis membaca SOB id polis (OS_AKSEPTASI_KLAIM_LIFE.SOB, keputusan work owner 11-10-2026). Tidak ada baris = "".
+func (r *KlaimLife) SOBPolis(ctx context.Context, idPega string) (string, error) {
+	if strings.TrimSpace(idPega) == "" {
+		return "", nil
+	}
+	polis, err := r.db.Qualify("T_PREMIUM_LIST")
+	if err != nil {
+		return "", err
+	}
+	qq := sqlSOBPolis(polis)
+	if err := db.PeriksaSQL(qq); err != nil {
+		return "", err
+	}
+	var sob sql.NullString
+	err = r.db.QueryRowContext(ctx, qq, strings.TrimSpace(idPega)).Scan(&sob)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("repository: membaca SOB polis %s: %w", idPega, err)
+	}
+	return strings.TrimSpace(sob.String), nil
 }

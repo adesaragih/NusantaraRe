@@ -19,7 +19,7 @@
 | --- | --- | --- |
 | Kotak masuk | `GET /api/endorsement-life/inbox?halaman=1` | **200** — `{"baris":[],"total":0,"halaman":1,"ukuran":20}`, 0,05 detik |
 | Gerbang kelayakan, polis `UJI-TIDAK-ADA`, EDM Type `1` | `POST /api/endorsement-life/kelayakan` (lima gerbang **tanpa tulis**) | **200** — `{"pesan":["Policy no Not Found !"],"boleh":false}`, 0,15 detik |
-| EDM Type `3` (Batal) | — | **tidak dicoba**: gerbang 5 membaca invoice Arasapas, izinnya menunggu DBA (OQ-EDM-012) |
+| EDM Type `3` (Batal) | — | **tidak dicoba**: gerbang 5 membaca invoice Arasapas, izinnya menunggu DBA (OQ-EDM-012). *10-10-2026: gerbang 5 dinonaktifkan sementara (saklar `models.GerbangPembayaranAktif`) — Batal kini dapat diuji tanpa izin Arasapas.* |
 
 Log backend DEV: 2 baris (skema, alamat dengar), nol `INSERT`/`UPDATE`/`DELETE`/`MERGE`.
 

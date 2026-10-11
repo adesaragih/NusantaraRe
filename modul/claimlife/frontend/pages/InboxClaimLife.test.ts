@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest'
 import { PERAN } from '../../../../inti/frontend/labels'
 import { TAHAP } from '../labels'
 import { TAHAP_NOMOR } from '../api'
-import { KOLOM_EKSPOR, tabUntuk } from './InboxClaimLife'
+import { KOLOM_EKSPOR, tabTampil, tabUntuk, tanggalTampil } from './InboxClaimLife'
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Claim Life'
 const adaKorpus = existsSync(KORPUS)
@@ -124,14 +124,8 @@ describe('ekspor xlsx hanya kolom yang tampil', () => {
     // ⛔ Ekspor yang memuat kolom yang layarnya tidak tampilkan membuat
     // berkas dan layar menjawab pertanyaan yang berbeda — dan yang
     // memegang berkasnya tidak akan tahu mana yang benar.
-    const urutTabel = [
-      'caseId',
-      'nomorKlaim',
-      'nomorPolis',
-      'status',
-      'createOpName',
-      'tglCreate',
-    ]
+    // Urutan keputusan work owner 11-10-2026.
+    const urutTabel = ['caseId', 'nomorKlaim', 'plNumber', 'createOpName', 'updateOpName', 'tglCreate', 'status']
     expect(KOLOM_EKSPOR.map((k) => k.kunci)).toEqual(urutTabel)
   })
 
@@ -146,5 +140,62 @@ describe('ekspor xlsx hanya kolom yang tampil', () => {
     // Tombol yang menghasilkan berkas kosong mengajari orang mengabaikannya.
     const sumber = readFileSync(join(__dirname, 'InboxClaimLife.tsx'), 'utf8')
     expect(sumber).toContain('disabled={hal === null || hal.baris.length === 0}')
+  })
+})
+
+describe('inbox dirapikan (keputusan work owner 10-10-2026)', () => {
+  const SUMBER_INBOX = readFileSync(join(__dirname, 'InboxClaimLife.tsx'), 'utf8').replace(/\r\n/g, '\n')
+
+  it('tab Input Register disembunyikan selama kosong; muncul lagi bila ada kasus Send Back to Register', () => {
+    const admin = tabUntuk([PERAN.admin])
+    expect(tabTampil(admin, {}).map((t) => t.judul)).toEqual([TAHAP.outstandingClaim])
+    expect(tabTampil(admin, { [TAHAP_NOMOR.inputRegister]: 0 }).map((t) => t.judul)).toEqual([TAHAP.outstandingClaim])
+    expect(tabTampil(admin, { [TAHAP_NOMOR.inputRegister]: 2 }).map((t) => t.judul)).toEqual([TAHAP.inputRegister, TAHAP.outstandingClaim])
+    const semua = tabUntuk([PERAN.admin, PERAN.medis, PERAN.spv])
+    expect(tabTampil(semua, {}).map((t) => t.judul)).toEqual([TAHAP.outstandingClaim, TAHAP.medicalCheck, TAHAP.claimAnalis])
+  })
+
+  it('tab bawaan = tab tampil pertama (Outstanding Claim); label Inggris saja, badge di setiap tab', () => {
+    expect(SUMBER_INBOX).toContain('useState<NomorTahap | null>(tabTampil(semuaTab, {})[0]?.nomor ?? null)')
+    expect(SUMBER_INBOX).not.toContain('judulID')
+    expect(SUMBER_INBOX).not.toContain('inbox__tab-id')
+    expect(SUMBER_INBOX).toContain('{jumlah[t.nomor] !== undefined && <span className="inbox__lencana">{jumlah[t.nomor]}</span>}')
+  })
+
+  it('teks kosong dan paginasi seperti inbox lain; Register primary + Export xlsx ghost', () => {
+    expect(SUMBER_INBOX).toContain('<Kosong pesan="No cases in this queue." />')
+    expect(SUMBER_INBOX).toContain('<Halaman halaman={hal.halaman} ukuran={hal.ukuran} total={hal.total} onPindah={setHalaman} />')
+    for (const id of ['Sebelumnya', 'Berikutnya', 'Tidak ada kasus', 'Tidak ada antrian']) expect(SUMBER_INBOX).not.toContain(id)
+    expect(SUMBER_INBOX).toContain('className="btn btn--primary" onClick={onRegister}')
+    expect(SUMBER_INBOX).toContain('className="btn btn--ghost"')
+    expect(SUMBER_INBOX).toContain('Export xlsx')
+  })
+
+  it('waktu buat dd/mm/yyyy HH:mm; kosong tanda pisah', () => {
+    expect(tanggalTampil('2026-10-10T07:05:00')).toBe('10/10/2026 07:05')
+    expect(tanggalTampil('')).toBe('—')
+  })
+})
+
+describe('perbaikan DEV 10-10-2026', () => {
+  it('Claim No kosong tampil tanda pisah (nomor lahir di Save to RNM); modul berbahasa UI Inggris seperti endorsementlife', () => {
+    const src = readFileSync(join(__dirname, 'InboxClaimLife.tsx'), 'utf8')
+    expect(src).toContain("<td>{b.nomorKlaim === '' ? '—' : b.nomorKlaim}</td>")
+    const rute = readFileSync(join(__dirname, '..', 'rute.tsx'), 'utf8')
+    expect(rute).toContain('<BahasaUI.Provider value="en">')
+    expect(rute).toContain('<div className="claimlife">')
+  })
+})
+
+describe('kolom PL Number dan Update Operator Name (11-10-2026)', () => {
+  it('label, urutan header tabel = urutan ekspor, Policy No hilang', () => {
+    expect(KOLOM_EKSPOR.map((k) => k.label)).toEqual([
+      'Case ID', 'Claim No', 'PL Number', 'Create Operator Name', 'Update Operator Name', 'Create Date/Time', 'Work Status',
+    ])
+    const sumber = readFileSync(join(__dirname, 'InboxClaimLife.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    const kepala = [...sumber.matchAll(/<th>\{KOLOM\.([a-zA-Z]+)\}<\/th>/g)].map((m) => m[1])
+    expect(kepala).toEqual(KOLOM_EKSPOR.map((k) => k.kunci))
+    expect(sumber).not.toContain("'Policy No'")
+    expect(sumber).toContain("<td>{b.plNumber === '' ? '—' : b.plNumber}</td>")
   })
 })

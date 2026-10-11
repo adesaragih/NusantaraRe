@@ -116,6 +116,7 @@ func TestGalatDiagnosaDipetakanKeKodeYangBenar(t *testing.T) {
 		{"peserta terkunci", services.ErrDiagnosaTerkunci, http.StatusConflict},
 		{"kasus tertutup", kontrak.ErrKasusSudahTertutup, http.StatusConflict},
 		{"tahap salah", services.ErrTahapTidakBergridPeserta, http.StatusConflict},
+		{"bukan Medical Check", services.ErrDiagnosaBukanMedicalCheck, http.StatusConflict},
 		{"nilai kepanjangan", services.ErrNilaiDiagnosaKepanjangan,
 			http.StatusUnprocessableEntity},
 		{"permintaan tidak sah", galat.ErrPermintaanTidakSah, http.StatusBadRequest},

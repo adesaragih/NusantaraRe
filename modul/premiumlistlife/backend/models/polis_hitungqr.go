@@ -4,7 +4,7 @@ package models
 //
 // Untuk apa berkas ini: aturan MURNI (tanpa Oracle) yang mengisi kolom hasil
 // peserta polis Type "QR" dari SUM_INSURED, parameter produk Master Product
-// Name Life, master rate (`RATE_LIFE`) dan master risk (`RIRISK_LIFE`).
+// Name Life, master rate (`M_RATE_LIFE`) dan master risk (`RIRISK_LIFE`).
 // Type lain TIDAK melewati berkas ini - nilainya tetap dari CSV.
 //
 // Acuan: `SetRateLIfePremium_Act` langkah 1-10.4 (Find RIRATE / RIRISK, set
@@ -94,7 +94,7 @@ type PlanProdukQR struct {
 	RIRateID string
 }
 
-// BarisRateQR - satu baris view `RATE_LIFE` (semua kolom teks di view).
+// BarisRateQR - satu baris tabel `M_RATE_LIFE` (semua kolom teks).
 type BarisRateQR struct{ ID, Gender, Age, Contract, Rate string }
 
 // BarisRiskQR - satu baris view `RIRISK_LIFE`.
@@ -114,7 +114,7 @@ type riskQR struct {
 	risk           *apd.Decimal
 }
 
-// MasterRate - master rate satu R/I Rate (`RATE_LIFE` per IDUSEDBY) yang sudah
+// MasterRate - master rate satu R/I Rate (`M_RATE_LIFE` per IDUSEDBY) yang sudah
 // diurai dan seragam (seluruhnya U atau seluruhnya F/M). Dipakai rate PREMI
 // dan rate RETRO (spreading) - satu pencarian, keputusan work owner 06-10-2026.
 type MasterRate struct {
@@ -127,7 +127,7 @@ type MasterRate struct {
 // Gender menjawab apakah master ber-GENDER F/M.
 func (mr MasterRate) Gender() bool { return mr.gender }
 
-// UraiMasterRate mengurai baris `RATE_LIFE` satu R/I Rate dan menegakkan
+// UraiMasterRate mengurai baris `M_RATE_LIFE` satu R/I Rate dan menegakkan
 // keseragamannya. Kalimat galat ("" = sah) untuk pemanggil yang membungkusnya.
 func UraiMasterRate(id string, rate []BarisRateQR) (MasterRate, string) {
 	mr := MasterRate{id: id}

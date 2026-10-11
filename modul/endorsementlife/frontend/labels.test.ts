@@ -25,7 +25,6 @@ const MODAL_CSV = 'FlowAction\\UploadCSV_LifeEndorsement.xml'
 const HASIL_CSV = 'Section\\ViewCSVResult_LifeEDM.xml'
 const UNDUH_CSV = 'Activity\\GenerateDataDtlLife_act.xml'
 const PUTUSAN = 'Section\\ConfirmSection.xml'
-const TERIMA = 'Section\\ConfirmSubmitEDM.xml'
 const RIWAYAT = 'Activity\\AddHistorySuggest.xml'
 
 type Bukti = readonly [kunci: string, berkas: string, baris: number, tag: string]
@@ -74,7 +73,6 @@ export const BUKTI: readonly Bukti[] = [
   ['GRID_EDM.effectiveDate', INPUT, 13282, 'pyValue'],
   ['GRID_EDM.expiredDate', INPUT, 13417, 'pyValue'],
   ['SIMPAN_EDM.deleteAll', INPUT, 13607, 'pyLabel'],
-  ['SIMPAN_EDM.save', INPUT, 37202, 'pyLabel'],
   ['UNGGAH_EDM.uploadCsv', INPUT, 8973, 'pyLabel'],
   ['UNGGAH_EDM.viewUpload', INPUT, 9340, 'pyLabel'],
   ['UNGGAH_EDM.addCsvData', INPUT, 10405, 'pyLabel'],
@@ -86,28 +84,79 @@ export const BUKTI: readonly Bukti[] = [
   ['PUTUSAN_EDM.kolomPic', PUTUSAN, 2125, 'pyValue'],
   ['PUTUSAN_EDM.kolomStatus', PUTUSAN, 2263, 'pyValue'],
   ['PUTUSAN_EDM.kolomComment', PUTUSAN, 2399, 'pyValue'],
-  ['PUTUSAN_EDM.submit', INPUT, 37494, 'pyLabel'],
-  ['TERIMA_EDM.terimaKasih', TERIMA, 526, 'pyValue'],
-  ['TERIMA_EDM.noEndorsement', TERIMA, 654, 'pyLabelFieldValue'],
-  ['TERIMA_EDM.close', TERIMA, 1366, 'pyLabel'],
 ]
 
 /** Kunci tanpa baris korpus - beserta alasannya di komentar. */
 export const BUKAN_KORPUS: readonly string[] = [
+  'UNGGAH_EDM.ringkasMasalah', // modal Upload CSV disederhanakan (keputusan work owner 10-10-2026)
+  'UNGGAH_EDM.ringkasLolos', // modal Upload CSV disederhanakan (keputusan work owner 10-10-2026)
+  'UNGGAH_EDM.kolomAsing', // modal Upload CSV disederhanakan (keputusan work owner 10-10-2026)
+  'UNGGAH_EDM.catatanBaris', // modal Upload CSV disederhanakan (keputusan work owner 10-10-2026)
+  'UNGGAH_EDM.kolomMasalah', // modal Upload CSV disederhanakan (keputusan work owner 10-10-2026)
+  'UNGGAH_EDM.petunjukTemplat', // modal Upload CSV disederhanakan (keputusan work owner 10-10-2026)
+  'UNGGAH_EDM.downloadTemplate', // templat CSV (keputusan work owner 10-10-2026)
+  'POLIS_LAMA_EDM.endorsementNo', // kolom Endorsement No rekap View Old Policy (keputusan work owner 10-10-2026)
+  'POLIS_LAMA_EDM.newBusiness', // baris versi new business di rekap View Old Policy (keputusan work owner 10-10-2026)
+  'BUAT_EDM.infoAkhiran', // Policy No bernomor endorsement (keputusan work owner 10-10-2026)
+  'BUAT_EDM.versiTerakhir', // Policy No bernomor endorsement (keputusan work owner 10-10-2026)
+  'BUAT_EDM.versiNB', // Policy No bernomor endorsement (keputusan work owner 10-10-2026)
+  'INBOX_EDM.tutup', // kasus tertutup di kotak masuk tidak dapat dibuka (keputusan work owner 09-10-2026)
+  'HASIL_EDM.judul', // popup hasil Confirm menggantikan ConfirmSubmitEDM (permintaan work owner 09-10-2026)
+  'HASIL_EDM.noEndorsement', // popup hasil Confirm menggantikan ConfirmSubmitEDM (permintaan work owner 09-10-2026)
+  'HASIL_EDM.edmType', // popup hasil Confirm menggantikan ConfirmSubmitEDM (permintaan work owner 09-10-2026)
+  'HASIL_EDM.subType', // popup hasil Confirm menggantikan ConfirmSubmitEDM (permintaan work owner 09-10-2026)
+  'HASIL_EDM.caseId', // popup hasil Confirm menggantikan ConfirmSubmitEDM (permintaan work owner 09-10-2026)
+  'HASIL_EDM.ok', // popup hasil Confirm menggantikan ConfirmSubmitEDM (permintaan work owner 09-10-2026)
+  'KONFIRMASI_PUTUSAN_EDM.confirm', // Submit b37494/b38109 diganti nama Confirm + konfirmasi (keputusan work owner 08-10-2026)
+  'KONFIRMASI_PUTUSAN_EDM.judulAccept', // Submit b37494/b38109 diganti nama Confirm + konfirmasi (keputusan work owner 08-10-2026)
+  'KONFIRMASI_PUTUSAN_EDM.isiAccept', // Submit b37494/b38109 diganti nama Confirm + konfirmasi (keputusan work owner 08-10-2026)
+  'KONFIRMASI_PUTUSAN_EDM.judulDecline', // Submit b37494/b38109 diganti nama Confirm + konfirmasi (keputusan work owner 08-10-2026)
+  'KONFIRMASI_PUTUSAN_EDM.isiDecline', // Submit b37494/b38109 diganti nama Confirm + konfirmasi (keputusan work owner 08-10-2026)
+  'KONFIRMASI_PUTUSAN_EDM.batal', // Submit b37494/b38109 diganti nama Confirm + konfirmasi (keputusan work owner 08-10-2026)
+  'KONFIRMASI_PUTUSAN_EDM.ya', // Submit b37494/b38109 diganti nama Confirm + konfirmasi (keputusan work owner 08-10-2026)
+  'PERBANDINGAN_EDM.judul', // Summary Comparison (permintaan work owner 08-10-2026)
+  'PERBANDINGAN_EDM.judulRekap', // Summary Comparison dirapikan (permintaan work owner 08-10-2026)
+  'PERBANDINGAN_EDM.judulKeputusan', // Summary Comparison dirapikan (permintaan work owner 08-10-2026)
+  'PERBANDINGAN_EDM.kolomBaris', // Summary Comparison (permintaan work owner 08-10-2026)
+  'PERBANDINGAN_EDM.kolomPeserta', // Summary Comparison (permintaan work owner 08-10-2026)
+  'PERBANDINGAN_EDM.before', // Summary Comparison (permintaan work owner 08-10-2026)
+  'PERBANDINGAN_EDM.deleted', // Summary Comparison (permintaan work owner 08-10-2026)
+  'PERBANDINGAN_EDM.added', // Summary Comparison (permintaan work owner 08-10-2026)
+  'PERBANDINGAN_EDM.after', // Summary Comparison (permintaan work owner 08-10-2026)
+  'PERBANDINGAN_EDM.difference', // Summary Comparison (permintaan work owner 08-10-2026)
+  'PERBANDINGAN_EDM.kosong', // Summary Comparison (permintaan work owner 08-10-2026)
+  'PROSES_EDM.sudahDiproses', // Process Endorsement langkah final, CSV terkunci (keputusan work owner 08-10-2026)
+  'PROSES_EDM.tanpaPerubahan', // proteksi Process Endorsement tanpa perubahan (keputusan work owner 08-10-2026)
+  'PROSES_EDM.processEndorsement', // tombol Save b37202 diganti nama + konfirmasi (keputusan work owner 08-10-2026)
+  'PROSES_EDM.memproses', // tombol Save b37202 diganti nama + konfirmasi (keputusan work owner 08-10-2026)
+  'PROSES_EDM.judulKonfirmasi', // tombol Save b37202 diganti nama + konfirmasi (keputusan work owner 08-10-2026)
+  'PROSES_EDM.hapusN', // tombol Save b37202 diganti nama + konfirmasi (keputusan work owner 08-10-2026)
+  'PROSES_EDM.hapusNol', // tombol Save b37202 diganti nama + konfirmasi (keputusan work owner 08-10-2026)
+  'PROSES_EDM.baruN', // tombol Save b37202 diganti nama + konfirmasi (keputusan work owner 08-10-2026)
+  'PROSES_EDM.batalN', // tombol Save b37202 diganti nama + konfirmasi (keputusan work owner 08-10-2026)
+  'PROSES_EDM.batalSemua', // tombol Save b37202 diganti nama + konfirmasi (keputusan work owner 08-10-2026)
+  'PROSES_EDM.rekap', // tombol Save b37202 diganti nama + konfirmasi (keputusan work owner 08-10-2026)
+  'PROSES_EDM.batal', // tombol Save b37202 diganti nama + konfirmasi (keputusan work owner 08-10-2026)
+  'PROSES_EDM.lanjut', // tombol Save b37202 diganti nama + konfirmasi (keputusan work owner 08-10-2026)
   'MENU_EDM.kelompok', // nama FOLDER korpus, dibuktikan terpisah di bawah
   'UMUM_EDM.kosong', // teks bawaan grid kosong
   'UMUM_EDM.tutup', // ikon tutup harness `pxIconCancel` tanpa teks
   'INBOX_EDM.kolomPolicyNo', // korpus b8964 "Policy No"; kini "PL_NUMBER" seperti kotak masuk PremiumList Life (keputusan work owner 07-10-2026) - isinya tetap OLD_POLICY_NO
+  'INBOX_EDM.statusTerbuka', // sel Work Status kasus terbuka = nama tahap InputEDMLife (keputusan work owner 08-10-2026) - tampilan, STATUSS tetap kosong
   'INBOX_EDM.kolomStatus', // korpus b10052 "Status"; kini "Work Status" seperti kotak masuk PremiumList Life (keputusan work owner 07-10-2026) - isinya tetap STATUSS
   'KASUS_EDM.bagianPolis', // judul bagian layar kasus - tampilan (keputusan work owner 07-10-2026)
   'KASUS_EDM.bagianPihak', // judul bagian layar kasus - tampilan (keputusan work owner 07-10-2026)
   'KASUS_EDM.bagianEndorsement', // judul bagian layar kasus - tampilan (keputusan work owner 07-10-2026)
   'KASUS_EDM.peserta', // judul bagian peserta layar kasus - tampilan (keputusan work owner 07-10-2026)
+  'RINCI_EDM.bagianPeserta', // judul bagian popup Details - tampilan (keputusan work owner 08-10-2026)
+  'RINCI_EDM.bagianPeriode', // judul bagian popup Details - tampilan (keputusan work owner 08-10-2026)
+  'RINCI_EDM.bagianPertanggungan', // judul bagian popup Details - tampilan (keputusan work owner 08-10-2026)
+  'RINCI_EDM.bagianPremi', // judul bagian popup Details - tampilan (keputusan work owner 08-10-2026)
+  'RINCI_EDM.bagianSpreading', // judul bagian popup Details - tampilan (keputusan work owner 08-10-2026)
   'UMUM_EDM.nomor', // kolom nomor baris popup View Old Policy - tampilan saja (keputusan work owner 07-10-2026)
   'BUAT_EDM.pilih', // teks pilihan kosong dropdown sub-jenis (layar Pega, diberikan work owner 07-10-2026); opsi properti tidak diekspor
   'BUAT_EDM.cancel', // footer Create Addendum - keputusan work owner 07-10-2026 (harness hanya ikon tutup)
   'BUAT_EDM.bantuan', // teks bantuan Submit nonaktif - keputusan work owner 07-10-2026 (Pega menyembunyikan Submit)
-  'UMUM_EDM.kembali', // kembali dari layar kasus ke kotak masuk (`finishAssignment`)
   'UMUM_EDM.memuat', // teks bawaan muat
   'UMUM_EDM.memeriksa', // gerbang sedang berjalan
   'UMUM_EDM.rinci', // tombol buka rincian baris (`pyEditingMode` `expandPane`, tanpa teks di korpus)
@@ -116,14 +165,9 @@ export const BUKAN_KORPUS: readonly string[] = [
   'UMUM_EDM.tandaiHapus', // nama aksesibel kotak centang `.EdmBatal` b15753 (`pyLabelPreview` kosong)
   'UMUM_EDM.mengunggah', // unggahan sedang berjalan
   'UMUM_EDM.pilihBerkas', // isian berkas wizard `pxUploadCSVResults` (teks bawaan Pega, tidak diekspor)
-  'UMUM_EDM.barisDibaca', // ringkasan tinjauan `POST /unggah` (AC tiket 07: tinjau sebelum simpan)
-  'UMUM_EDM.barisDitolak', // idem
   'UMUM_EDM.barisDisimpan', // hasil `Add CSV Data`
-  'UMUM_EDM.kolomDiabaikan', // judul di luar 4.1 (`STATUS`, `OVRR_COMM` b276) - diabaikan, ditampilkan
   'UMUM_EDM.pesanTerpotong', // server mengembalikan 200 penolakan pertama
   'UMUM_EDM.kolomBaris', // tabel penolakan (AC 37: nomor baris dan kolom)
-  'UMUM_EDM.kolomKolom', // idem
-  'UMUM_EDM.kolomPesan', // idem
   'UMUM_EDM.memutuskan', // keputusan sedang dikirim
   'UMUM_EDM.efekDilewati', // gerbang `IsPEGAPROD` b7230 - efek keluar hanya di produksi (tiket 10)
   'UMUM_EDM.efekGagal', // alarm di layar menggantikan `SendEmailNotification` 15 `//` (E5)

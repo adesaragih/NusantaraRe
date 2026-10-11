@@ -50,7 +50,8 @@ func Pendaftaran() inti.Pendaftaran {
 		Membutuhkan: []inti.Kontrak{inti.KontrakDari[kontrak.PembacaPolis]()},
 		Menyediakan: []inti.Kontrak{inti.KontrakDari[kontrak.KlaimKomite]()},
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
-			svc := services.DariDasar(p.Dasar()).DenganPembacaPolis(inti.Ambil[kontrak.PembacaPolis](p))
+			svc := services.DariDasar(p.Dasar()).DenganPembacaPolis(inti.Ambil[kontrak.PembacaPolis](p)).
+				DenganGaramToken(p.Config().StorageTokenSalt)
 			inti.Sediakan[kontrak.KlaimKomite](p, services.KlaimUntukKomite(svc))
 			return Baru(svc, p.Config().AuthStub), nil
 		},

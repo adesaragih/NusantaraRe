@@ -1,13 +1,11 @@
 package repository
 
 // SQL modul R/I Rate Life. Ringkasan: kolom `M_RATE_LIFE_SUMMARY` (migrasi inti 927/928, RALAT R6) - baca dan tulis
-// kolom bernama, satu tabel. Rincian: tulis tabel fisik
-// `M_RATE_LIFE` (sisip = `JSON_OBJECT`, ubah = baca-ubah-tulis JSONDATA di Go, rirl_json.go - kunci JSON lain milik Pega
-// tetap), baca view `RATE_LIFE`. Baris `M_RATE_LIFE` milik satu ringkasan dipilih lewat view (`ID IN (SELECT ID FROM RATE_LIFE WHERE
-// IDUSEDBY = :n)`) supaya maknanya SAMA dengan pembaca lain (`GetRateRetro`, `BrowseLifeRate_SQL`).
+// kolom bernama, satu tabel. Rincian (RALAT R7, 10-10-2026): baca DAN tulis kolom tabel flat `M_RATE_LIFE` - sisip =
+// INSERT kolom, ubah = UPDATE kolom, baris milik satu ringkasan = `IDUSEDBY = :n` (makna sama dengan pembaca lain,
+// `GetRateRetro`, `BrowseLifeRate_SQL`). View `RATE_LIFE` dan JSONDATA tidak lagi ada di DEV.
 //
-// ⚠️ `RATE_LIFE` view atas CLOB tanpa indeks: setiap kueri ber-IDUSEDBY mengurai seluruh JSON (puluhan detik di DEV
-// untuk agregat). Karena itu kunci kembar upload dibaca SEKALI untuk seluruh ringkasan berkas (daftar IN).
+// Kunci kembar upload tetap dibaca SEKALI untuk seluruh ringkasan berkas (daftar IN).
 
 import (
 	"context"
@@ -78,7 +76,7 @@ func PeriksaTulis(objek, q string) error {
 }
 
 // nama - nama berskema setiap objek.
-type nama struct{ tabelRingkasan, tabelRate, viewRate, seqRingkasan, seqRate string }
+type nama struct{ tabelRingkasan, tabelRate, seqRingkasan, seqRate string }
 
 func (g *Gudang) nama() (nama, error) {
 	var n nama
@@ -86,7 +84,7 @@ func (g *Gudang) nama() (nama, error) {
 		ke    *string
 		objek string
 	}{{&n.tabelRingkasan, TabelRingkasan}, {&n.tabelRate, TabelRate},
-		{&n.viewRate, ViewRate}, {&n.seqRingkasan, SeqRingkasan}, {&n.seqRate, SeqRate}} {
+		{&n.seqRingkasan, SeqRingkasan}, {&n.seqRate, SeqRate}} {
 		q, err := g.db.Qualify(p.objek)
 		if err != nil {
 			return nama{}, err
@@ -179,8 +177,13 @@ func SqlUbahRingkasan(t string) string {
 func SqlHapusRingkasan(t string) string { return fmt.Sprintf(`DELETE FROM %s WHERE ID = :1`, t) }
 
 // SqlHapusRate - baris rate milik ringkasan (`DeleteSummaryDetail`: ringkasan BESERTA rinciannya).
-func SqlHapusRate(t, v string) string {
-	return fmt.Sprintf(`DELETE FROM %s WHERE ID IN (SELECT ID FROM %s WHERE IDUSEDBY = :1)`, t, v)
+func SqlHapusRate(t string) string {
+	return fmt.Sprintf(`DELETE FROM %s WHERE %s = :1`, t, KolomRateIDUsedBy)
+}
+
+// SqlUbahNamaRate - salinan nama (USEDBY) setiap baris rate milik ringkasan; kosong = NULL.
+func SqlUbahNamaRate(t string) string {
+	return fmt.Sprintf(`UPDATE %s SET %s = :1 WHERE %s = :2`, t, KolomRateUsedBy, KolomRateIDUsedBy)
 }
 
 // SqlJumlahRate - jumlah baris rate milik ringkasan.
@@ -206,11 +209,16 @@ func SqlRateDari(v string, n int) string {
 	return fmt.Sprintf(`SELECT %s FROM %s WHERE IDUSEDBY IN (%s)`, kolomRate, v, strings.Join(ikat, ", "))
 }
 
-// SqlSisipRate - baris rate baru (`JSON_OBJECT`; TYPE tidak diisi; CONTRACT kosong = kunci tidak ditulis).
+// SqlSisipRate - baris rate baru: INSERT kolom (RALAT R7); TYPE tidak ditulis (NULL); nilai kosong diikat NULL.
 func SqlSisipRate(t string) string {
-	return fmt.Sprintf(`INSERT INTO %s (ID, %s) VALUES (:1, JSON_OBJECT('%s' VALUE :2, '%s' VALUE :3, '%s' VALUE :4,
-	  '%s' VALUE :5, '%s' VALUE :6, '%s' VALUE :7 ABSENT ON NULL))`,
-		t, KolomJSON, JSONIDUsedBy, JSONUsedBy, JSONGender, JSONContract, JSONAge, JSONRate)
+	return fmt.Sprintf(`INSERT INTO %s (ID, %s, %s, %s, %s, %s, %s) VALUES (:1, :2, :3, :4, :5, :6, :7)`,
+		t, KolomRateIDUsedBy, KolomRateUsedBy, KolomRateGender, KolomRateContract, KolomRateAge, KolomRateRate)
+}
+
+// SqlUbahRate - Edit satu baris rate milik ringkasan :6 (RALAT R7): GENDER, CONTRACT, AGE, RATE langsung; kosong = NULL.
+func SqlUbahRate(t string) string {
+	return fmt.Sprintf(`UPDATE %s SET %s = :1, %s = :2, %s = :3, %s = :4 WHERE ID = :5 AND TRIM(%s) = :6`,
+		t, KolomRateGender, KolomRateContract, KolomRateAge, KolomRateRate, KolomRateIDUsedBy)
 }
 
 type pemindai interface{ Scan(...any) error }
@@ -418,16 +426,8 @@ func (g *Gudang) UbahNamaRate(ctx context.Context, tx *db.Tx, idUsedBy, nama str
 	if err != nil {
 		return 0, err
 	}
-	b, err := g.bacaBaris(ctx, tx, ViewRate, SqlIDRateMilik(n.viewRate), 1, idUsedBy)
-	if err != nil {
-		return 0, err
-	}
-	for _, s := range b {
-		if err := g.ubahJSON(ctx, tx, TabelRate, n.tabelRate, s[0], map[string]string{JSONUsedBy: nama}, nil); err != nil {
-			return 0, err
-		}
-	}
-	return len(b), nil
+	j, err := g.tulis(ctx, tx, TabelRate, SqlUbahNamaRate(n.tabelRate), "mengubah nama rate", db.KosongJadiNil(nama), idUsedBy)
+	return int(j), err
 }
 
 // HapusRingkasan - Delete ringkasan; ErrTidakAda bila ID tidak ada.
@@ -449,7 +449,7 @@ func (g *Gudang) HapusRate(ctx context.Context, tx *db.Tx, idUsedBy string) (int
 	if err != nil {
 		return 0, err
 	}
-	j, err := g.tulis(ctx, tx, TabelRate, SqlHapusRate(n.tabelRate, n.viewRate), "menghapus rate", idUsedBy)
+	j, err := g.tulis(ctx, tx, TabelRate, SqlHapusRate(n.tabelRate), "menghapus rate", idUsedBy)
 	return int(j), err
 }
 
@@ -459,7 +459,7 @@ func (g *Gudang) JumlahRate(ctx context.Context, tx *db.Tx, idUsedBy string) (in
 	if err != nil {
 		return 0, err
 	}
-	s, err := g.satuNilai(ctx, tx, ViewRate, SqlJumlahRate(n.viewRate), idUsedBy)
+	s, err := g.satuNilai(ctx, tx, TabelRate, SqlJumlahRate(n.tabelRate), idUsedBy)
 	return angka(s), err
 }
 
@@ -473,7 +473,7 @@ func (g *Gudang) DaftarRate(ctx context.Context, idUsedBy string, halaman int) (
 	if err != nil {
 		return nil, 0, err
 	}
-	b, err := g.bacaBaris(ctx, nil, ViewRate, SqlDaftarRate(n.viewRate), 7, idUsedBy, (halaman-1)*models.UkuranHalamanRate,
+	b, err := g.bacaBaris(ctx, nil, TabelRate, SqlDaftarRate(n.tabelRate), 7, idUsedBy, (halaman-1)*models.UkuranHalamanRate,
 		models.UkuranHalamanRate)
 	return keRate(b), total, err
 }
@@ -491,7 +491,7 @@ func (g *Gudang) RateDari(ctx context.Context, tx *db.Tx, ids []string) ([]model
 	for i, id := range ids {
 		args[i] = id
 	}
-	b, err := g.bacaBaris(ctx, tx, ViewRate, SqlRateDari(n.viewRate, len(ids)), 7, args...)
+	b, err := g.bacaBaris(ctx, tx, TabelRate, SqlRateDari(n.tabelRate, len(ids)), 7, args...)
 	return keRate(b), err
 }
 
@@ -507,14 +507,18 @@ func (g *Gudang) SisipRate(ctx context.Context, tx *db.Tx, r models.Rate) error 
 	return err
 }
 
-// UbahRate - Edit satu baris rate: GENDER, CONTRACT, AGE, RATE (kosong = kunci dibuang); baris harus milik
-// ringkasan r.IDUsedBy (kunci IDUSEDBY JSON lama), selain itu ErrTidakAda.
+// UbahRate - Edit satu baris rate: GENDER, CONTRACT, AGE, RATE (kosong = NULL, RALAT R7); baris harus milik
+// ringkasan r.IDUsedBy (kolom IDUSEDBY), selain itu ErrTidakAda.
 func (g *Gudang) UbahRate(ctx context.Context, tx *db.Tx, r models.Rate) error {
 	n, err := g.nama()
 	if err != nil {
 		return err
 	}
-	return g.ubahJSON(ctx, tx, TabelRate, n.tabelRate, r.ID, map[string]string{
-		JSONGender: r.Gender, JSONContract: r.Contract, JSONAge: r.Age, JSONRate: r.Rate},
-		func(lama string) bool { return TeksKunci(lama, JSONIDUsedBy) == strings.TrimSpace(r.IDUsedBy) })
+	k := db.KosongJadiNil
+	j, err := g.tulis(ctx, tx, TabelRate, SqlUbahRate(n.tabelRate), "mengubah rate", k(r.Gender), k(r.Contract), k(r.Age),
+		k(r.Rate), r.ID, strings.TrimSpace(r.IDUsedBy))
+	if err == nil && j == 0 {
+		return ErrTidakAda
+	}
+	return err
 }

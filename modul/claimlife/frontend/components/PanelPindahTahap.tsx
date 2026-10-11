@@ -86,14 +86,36 @@ export function tombolPindahTahap(tahap: string): TombolPindah[] {
   }
 }
 
+/** Keadaan satu tombol perpindahan di layar pemakai (10-10-2026, layar Outstanding mengikuti Pega). */
+export interface AturanTombolPindah {
+  tampil: boolean
+  aktif: boolean
+}
+
 export function PanelPindahTahap({
   klaimID,
   tahap,
   sesudahPindah,
+  aturTombol,
+  tanpaJudul = false,
+  sebelumPindah,
+  tanganiGalat,
 }: {
   klaimID: string
   tahap: string
-  sesudahPindah?: () => void
+  /** Dipanggil sesudah berhasil, dengan tujuan perpindahannya (11-10-2026: kabar Inbox per tujuan). */
+  sesudahPindah?: (tujuan: TahapJalur) => void
+  /**
+   * Kondisi tampil / nonaktif per tombol dari section pemakai (mis. `InputOSClaimLife` b21699 / b21832 / b22123).
+   * Tanpa ini setiap tombol tampil dan aktif. ⚠️ Kenyamanan tampilan saja; gerbang yang sama ditegakkan server (409).
+   */
+  aturTombol?: (t: TombolPindah) => AturanTombolPindah
+  /** Tanpa judul "Perpindahan dari …" - layar yang menaruh tombolnya di baris aksinya sendiri. */
+  tanpaJudul?: boolean
+  /** Pra-periksa layar (11-10-2026); false = tidak memindah (pemanggil menampilkan sebabnya). */
+  sebelumPindah?: (t: TombolPindah) => boolean
+  /** Penangan galat pemanggil (mis. 422 berdaftar ke PitaGalat); true = sudah ditangani. */
+  tanganiGalat?: (e: unknown) => boolean
 }) {
   const [sibuk, setSibuk] = useState<string | null>(null)
   const [galat, setGalat] = useState<string | null>(null)
@@ -101,6 +123,8 @@ export function PanelPindahTahap({
   const [menunggu, setMenunggu] = useState<TombolPindah | null>(null)
 
   const tombol = tombolPindahTahap(tahap)
+    .map((t) => ({ t, atur: aturTombol?.(t) ?? { tampil: true, aktif: true } }))
+    .filter((x) => x.atur.tampil)
   if (tombol.length === 0) return null
 
   async function pindah(tujuan: TahapJalur): Promise<void> {
@@ -110,9 +134,9 @@ export function PanelPindahTahap({
     setMenunggu(null)
     try {
       await pindahTahap(klaimID, tujuan)
-      sesudahPindah?.()
+      sesudahPindah?.(tujuan)
     } catch (e) {
-      setGalat(pesanGalat(e) ?? 'Perpindahan tahap gagal.')
+      if (tanganiGalat?.(e) !== true) setGalat(pesanGalat(e) ?? 'Moving the case failed.')
     } finally {
       setSibuk(null)
     }
@@ -120,14 +144,16 @@ export function PanelPindahTahap({
 
   return (
     <section className="tahap">
-      <h4 className="tahap__judul">Perpindahan dari {tahap}</h4>
+      {!tanpaJudul && <h4 className="tahap__judul">Perpindahan dari {tahap}</h4>}
       <p>
-        {tombol.map((t) => (
+        {tombol.map(({ t, atur }) => (
           <button
             key={t.tujuan}
             type="button"
-            disabled={sibuk !== null}
+            className="btn btn--ghost"
+            disabled={sibuk !== null || !atur.aktif}
             onClick={() => {
+              if (sebelumPindah !== undefined && !sebelumPindah(t)) return
               // Local action: bertanya dulu. Activity langsung: pindah.
               if (t.konfirmasi !== undefined) setMenunggu(t)
               else void pindah(t.tujuan)

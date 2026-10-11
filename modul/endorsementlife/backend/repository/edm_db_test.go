@@ -55,8 +55,9 @@ func pasangSkema(t *testing.T) (*intidb.DB, string, func()) {
 	if _, err := migrasi.Jalankan(ctx, repo, skemauji.SumberMigrasi()...); err != nil {
 		t.Fatalf("menjalankan migrasi: %v", err)
 	}
-	tiruanJSON := `CREATE TABLE ` + skema + `.JSON_POLIS (IDPEGA VARCHAR2(64), NOPOLIS VARCHAR2(255),
-	    PRODKE NUMBER, TGL_INPUT DATE, DATA_JSON CLOB)`
+	// Bentuk ALL_TAB_COLUMNS DEV (kolom yang dibaca/ditulis modul ini): PRODKE VARCHAR2(5).
+	tiruanJSON := `CREATE TABLE ` + skema + `.JSON_POLIS (IDPEGA VARCHAR2(50) NOT NULL, NOPOLIS VARCHAR2(100) NOT NULL,
+	    NOENDORS VARCHAR2(100), PRODKE VARCHAR2(5), TGL_INPUT DATE, DATA_JSON CLOB, TGL_PROD DATE, USERNAME VARCHAR2(200))`
 	if _, err := repo.ExecContext(ctx, tiruanJSON); err != nil && !strings.Contains(err.Error(), "ORA-00955") {
 		t.Fatalf("tiruan JSON_POLIS: %v", err)
 	}
@@ -75,8 +76,8 @@ func jalankan(t *testing.T, repo *intidb.DB, q ...string) {
 	}
 }
 
-// TestMigrasi480ProdKeBawaanSatuDanIndexVersi - E1: baris new business yang
-// `INSERT`-nya tidak menyebut `PROD_KE` (bentuk PremiumList) menjadi versi 1;
+// TestMigrasi480ProdKeBawaanSatuDanIndexVersi - E1 diralat 485 (08-10-2026): baris new business yang
+// `INSERT`-nya tidak menyebut `PROD_KE` (bentuk PremiumList) ber-PRODKE 0 (DEFAULT 0);
 // ketiga index pencari versi ada; sequence kasus menerbitkan angka.
 func TestMigrasi480ProdKeBawaanSatuDanIndexVersi(t *testing.T) {
 	repo, skema, tutup := pasangSkema(t)
@@ -87,8 +88,8 @@ func TestMigrasi480ProdKeBawaanSatuDanIndexVersi(t *testing.T) {
 	if err := repo.QueryRowContext(ctx, `SELECT PROD_KE FROM `+skema+`.T_PREMIUM_LIST WHERE ID = 'UJI-NB-1'`).Scan(&prodKe); err != nil {
 		t.Fatal(err)
 	}
-	if !prodKe.Valid || prodKe.Int64 != 1 {
-		t.Fatalf("PROD_KE baris NB = %v, mau 1 (DEFAULT 1, ralat E1)", prodKe)
+	if !prodKe.Valid || prodKe.Int64 != 0 {
+		t.Fatalf("PROD_KE baris NB = %v, mau 0 (DEFAULT 0, migrasi 485)", prodKe)
 	}
 	var n int
 	if err := repo.QueryRowContext(ctx, `SELECT COUNT(*) FROM SYS.ALL_INDEXES WHERE OWNER = :1
@@ -119,40 +120,43 @@ func TestBacaKasusDanVersiTerhadapOracle(t *testing.T) {
 	defer tutup()
 	ctx := context.Background()
 	jalankan(t, repo,
-		// Versi NB sistem baru: PROD_KE kosong di INSERT → 1.
+		// Versi NB sistem baru: PROD_KE kosong di INSERT → 0 (DEFAULT 0, migrasi 485).
 		`INSERT INTO `+skema+`.T_PREMIUM_LIST (ID, ID_PEGA, TGL_INPUT, TYPE) VALUES ('UJI-NB-2', 'UJI-NB-2', SYSDATE, 'QR')`,
 		`INSERT INTO `+skema+`.T_PREMIUM_LIST_DETAIL (ID, PREMIUM_LIST_ID, PL_NUMBER, CERTIFICATE_NO) VALUES ('UJI-D-NB', 'UJI-NB-2', 'UJI-PL-2', 'UJI-C1')`,
 		// Kasus EDM terbuka atas polis itu.
 		`INSERT INTO `+skema+`.T_PREMIUM_LIST (ID, ID_PEGA, TGL_INPUT, OLD_POLICY_NO, EDM_TYPE, PROD_KE, TYPE)
-		   VALUES ('EDMLF-901', 'EDMLF-901', SYSDATE, 'UJI-PL-2', '1', 2, 'QR')`,
+		   VALUES ('EDML-901', 'EDML-901', SYSDATE, 'UJI-PL-2', '1', 1, 'QR')`,
 		`INSERT INTO `+skema+`.T_PREMIUM_LIST_DETAIL (ID, PREMIUM_LIST_ID, PARENT_ID, PL_NUMBER, CERTIFICATE_NO, EDM_STATUS, SUM_INSURED)
-		   VALUES ('UJI-D-EDM', 'EDMLF-901', 'UJI-D-NB', 'UJI-PL-2', 'UJI-C1', 'Old', 0.5)`,
+		   VALUES ('UJI-D-EDM', 'EDML-901', 'UJI-D-NB', 'UJI-PL-2', 'UJI-C1', 'Old', 0.5)`,
 		// Polis warisan: dua versi, yang kedua Batal.
 		`INSERT INTO `+skema+`.JSON_POLIS (IDPEGA, NOPOLIS, PRODKE, TGL_INPUT, DATA_JSON)
 		   VALUES ('UJI-IDPEGA-1', 'UJI-PL-3', NULL, SYSDATE - 2, '{"EdmType":""}')`,
 		`INSERT INTO `+skema+`.JSON_POLIS (IDPEGA, NOPOLIS, PRODKE, TGL_INPUT, DATA_JSON)
-		   VALUES ('UJI-IDPEGA-2', 'UJI-PL-3', 2, SYSDATE - 1, '{"EdmType":"3"}')`,
+		   VALUES ('UJI-IDPEGA-2', 'UJI-PL-3', '2', SYSDATE - 1, '{"EdmType":"3"}')`,
+		// Baris JSON_POLIS sistem baru (PremiumList NBLF-, PRODKE '0') - BUKAN versi warisan (08-10-2026).
+		`INSERT INTO `+skema+`.JSON_POLIS (IDPEGA, NOPOLIS, PRODKE, TGL_INPUT)
+		   VALUES ('NBLF-9', 'UJI-PL-3', '9', SYSDATE)`,
 	)
 	g := repository.Baru(repo)
 	baris, total, err := g.Inbox(ctx, 1, 20)
 	// Endorsement No = NO_ENDORS (07-10-2026) - kosong selama kasus terbuka; Policy No = OLD_POLICY_NO.
-	if err != nil || total != 1 || len(baris) != 1 || baris[0].CaseID != "EDMLF-901" || baris[0].EndorsementNo != "" ||
+	if err != nil || total != 1 || len(baris) != 1 || baris[0].CaseID != "EDML-901" || baris[0].EndorsementNo != "" ||
 		baris[0].PolicyNo != "UJI-PL-2" {
 		t.Fatalf("inbox = %+v, %d, %v", baris, total, err)
 	}
-	k, err := g.AmbilKasus(ctx, nil, "EDMLF-901", false)
-	if err != nil || k.ProdKe != 2 || k.Kepala["TYPE"] != "QR" {
+	k, err := g.AmbilKasus(ctx, nil, "EDML-901", false)
+	if err != nil || k.ProdKe != 1 || k.Kepala["TYPE"] != "QR" {
 		t.Fatalf("kasus = %+v, %v", k, err)
 	}
 	if _, err := g.AmbilKasus(ctx, nil, "UJI-NB-2", false); err != repository.ErrTidakAda {
 		t.Errorf("baris NB terbaca sebagai kasus: %v", err)
 	}
-	p, err := g.DaftarPeserta(ctx, "EDMLF-901", 1, 20)
+	p, err := g.DaftarPeserta(ctx, "EDML-901", 1, 20)
 	if err != nil || len(p) != 1 || p[0].ParentID != "UJI-D-NB" || p[0].Nilai["SUM_INSURED"] != "0.5" {
 		t.Fatalf("peserta = %+v, %v", p, err)
 	}
 	v, ada, err := g.VersiBerjalan(ctx, nil, "UJI-PL-2", 0)
-	if err != nil || !ada || v.ID != "UJI-NB-2" || v.Jenis != models.SumberAplikasi || v.ProdKe != 1 {
+	if err != nil || !ada || v.ID != "UJI-NB-2" || v.Jenis != models.SumberAplikasi || v.ProdKe != 0 {
 		t.Fatalf("versi NB = %+v, %v, %v (kasus terbuka bukan versi)", v, ada, err)
 	}
 	v, ada, err = g.VersiBerjalan(ctx, nil, "UJI-PL-3", 0)
@@ -160,8 +164,8 @@ func TestBacaKasusDanVersiTerhadapOracle(t *testing.T) {
 		t.Fatalf("versi warisan = %+v, %v, %v", v, ada, err)
 	}
 	v, _, err = g.VersiBerjalan(ctx, nil, "UJI-PL-3", 2)
-	if err != nil || v.ID != "UJI-IDPEGA-1" || v.ProdKe != 1 {
-		t.Fatalf("versi sebelum 2 = %+v, %v (PRODKE kosong dibaca 1)", v, err)
+	if err != nil || v.ID != "UJI-IDPEGA-1" || v.ProdKe != 0 {
+		t.Fatalf("versi sebelum 2 = %+v, %v (PRODKE kosong dibaca 0)", v, err)
 	}
 	if _, ada, _ = g.VersiBerjalan(ctx, nil, "UJI-PL-TIDAK-ADA", 0); ada {
 		t.Error("polis tak dikenal ditemukan")

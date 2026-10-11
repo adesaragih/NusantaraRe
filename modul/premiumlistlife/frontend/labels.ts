@@ -94,6 +94,20 @@ export const KONFIRMASI_KEPUTUSAN = {
   ya: 'Yes, continue',
 } as const
 
+/**
+ * Save Offer yang MENUTUP kasus - Status Bind / Closed pada kasus Input Offer (bendera "0"), keputusan work
+ * owner 08-10-2026. Kode status VERBATIM radio `PilihanStatusOffer` server.
+ */
+export const TUTUP_STATUS_OFFER = {
+  kodeBind: 'Bind',
+  kodeClosed: 'Closed',
+  judul: 'Save Offer',
+  bind: 'Save the offer and close the case as Resolved-Completed?',
+  closed: 'Save the offer and close the case as Resolved-Rejected?',
+  batal: 'Cancel',
+  ya: 'Yes',
+} as const
+
 /** Popup hasil Confirm yang menerbitkan PL Number (03-10-2026). */
 export const HASIL_NOMOR_PL = {
   judul: 'PL Number created',

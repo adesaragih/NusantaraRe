@@ -18,9 +18,217 @@
   text-decoration: underline;
 }
 
+/* Kasus tertutup di kotak masuk (09-10-2026, pola PremiumList): abu, tidak dapat dibuka. */
+.edm-inbox__tutup > td {
+  color: var(--text-3);
+  cursor: default;
+}
+
+/* Baris kotak masuk dapat dibuka dengan keyboard (08-10-2026): garis fokus. Kursor + hover dari inbox__baris inti. */
+.edm-baris-kasus:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
 /* Layar kasus dirapikan (keputusan work owner 07-10-2026; pola Premium List Detail). */
+/* Header kasus (perbaikan 08-10-2026): blok kiri (judul + chip, `edm-kepala__judul`) mengisi ruang, blok tombol
+   rata kanan sejajar judul. `inbox__judul` tak lagi anak langsung header, jadi `margin-right: auto`-nya tidak
+   mendorong tombol - dorongan kini dari `margin-left: auto` blok tombol. Layar sempit: `flex-wrap` inti
+   (`inbox__kepala`) menurunkan tombol ke bawah judul. */
 .edm-kasus__kepala {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.edm-kasus__kepala > .edm-kepala__judul {
+  flex: 1 1 20rem;
+  min-width: 0;
+}
+
+.edm-kasus__kepala > .edm-aksi {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* Judul + baris chip Case ID (08-10-2026) - rupa chip seperti kepala Premium List Detail. */
+.edm-kepala__judul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.edm-kepala__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.edm-kepala__chip {
+  display: inline-flex;
   align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-base);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.edm-kepala__chip--utama {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* Process Endorsement di bawah layar, rata kanan (keputusan work owner 08-10-2026). */
+.edm-kasus__proses {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  justify-content: flex-end;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Teks bantuan tombol Process Endorsement nonaktif (tanpa perubahan, 08-10-2026). */
+.edm-kasus__bantuan {
+  flex: 1 1 16rem;
+  margin: 0;
+  text-align: right;
+}
+
+@media (max-width: 720px) {
+  .edm-kasus__bantuan {
+    flex-basis: 100%;
+    text-align: left;
+  }
+}
+
+/* Summary Comparison (08-10-2026, dirapikan): satu blok per mata uang bersub-judul; After tebal bergaris atas;
+   Difference disorot lembut, angkanya hijau (+) / merah (−) dari token inti. */
+.edm-banding {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.edm-banding__blok {
+  min-width: 0;
+}
+
+.edm-banding__uang {
+  margin: 0 0 0.25rem;
+  font-size: var(--fs-base, 1rem);
+  font-weight: 700;
+}
+
+.edm-banding__blok table {
+  margin-top: 0;
+}
+
+.edm-banding__total > td {
+  font-weight: 700;
+  border-top: 2px solid var(--border);
+}
+
+.edm-banding__selisih > td {
+  background: var(--primary-soft);
+  font-weight: 600;
+}
+
+.edm-banding__naik {
+  color: var(--success-text);
+}
+
+/* Nilai negatif merah - Summary Comparison dan rekap kasus (08-10-2026). */
+.edm-negatif {
+  color: var(--danger-text);
+}
+
+/* Rekap yang dikirim saat Confirm (08-10-2026): berjudul; kolom Currency sempit. */
+.edm-rekap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-top: 0.5rem;
+}
+
+.edm-rekap table {
+  margin-top: 0;
+}
+
+.edm-rekap table th:first-child,
+.edm-rekap table td:first-child {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* Bagian keputusan berjudul, berjarak dari tabel di atasnya (08-10-2026). */
+.edm-keputusan {
+  margin-top: 1.25rem;
+}
+
+/* Popup hasil Confirm (09-10-2026): label kiri, nilai tebal. */
+.edm-hasil {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.edm-hasil__baris {
+  display: grid;
+  grid-template-columns: minmax(8rem, auto) 1fr;
+  gap: 1rem;
+}
+
+.edm-hasil__baris dt {
+  color: var(--text-3);
+}
+
+.edm-hasil__baris dd {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+/* Kalimat ringkasan tinjauan CSV (10-10-2026): merah bila ada masalah, hijau bila semua lolos. */
+.edm-csv__ringkasan {
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+}
+
+.edm-csv__ringkasan--masalah {
+  color: var(--danger-text);
+}
+
+.edm-csv__ringkasan--lolos {
+  color: var(--success-text);
+}
+
+.edm-csv__petunjuk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.edm-konfirmasi {
+  margin: 0 0 0.5rem;
+}
+
+/* Kutipan Comment di popup Confirm keputusan (08-10-2026). */
+.edm-konfirmasi__kutipan {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--border);
+  overflow-wrap: anywhere;
+  color: var(--text-3);
 }
 
 .edm-kasus__info {
@@ -237,6 +445,70 @@
   flex-direction: column;
   gap: 0.75rem;
   padding: 0.5rem 0;
+  min-width: 0;
+}
+
+/* Popup Details dirapikan (keputusan work owner 08-10-2026): bagian berdampingan (hingga 4 di layar lebar,
+   menurun otomatis di layar sempit), tiap bagian kisi dua kolom; nilai panjang dibungkus. */
+.edm-rinci__semua {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem 1.5rem;
+  align-items: start;
+}
+
+.edm-rinci__bagian {
+  min-width: 0;
+}
+
+.edm-rinci__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+/* Teks panjang tanpa spasi (mis. Certificate No) dibungkus di dalam selnya, tidak menimpa sel sebelah
+   (perbaikan 08-10-2026): item kisi boleh menyusut di bawah lebar isinya, nilai dipecah di mana saja. */
+.edm-rinci__grid > .edm-kepala__medan {
+  min-width: 0;
+}
+
+.edm-rinci__grid dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Medan bernilai panjang (`MEDAN_RINCI_LEBAR`) satu baris selebar bagian. */
+.edm-rinci__lebar {
+  grid-column: 1 / -1;
+}
+
+.edm-rinci__spreading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.edm-rinci__lapisan {
+  min-width: 0;
+}
+
+/* Tabel retro: nama reinsurer panjang dibungkus (sel inti `inbox__tabel td` nowrap); angka tetap satu baris utuh,
+   tabel digulir mendatar oleh `edm-gulir` bila tidak muat - tidak ada angka terpotong. */
+.edm-rinci__lapisan td:not(.edm-angka) {
+  min-width: 12rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.edm-rinci__lapisanjudul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  margin: 0 0 0.5rem;
+  font-size: var(--fs-sm, 0.85rem);
+  font-weight: 400;
 }
 
 .edm-baris-rinci > td {

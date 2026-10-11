@@ -124,7 +124,7 @@ func TestBuatKasusTerhadapOracle(t *testing.T) {
 		t.Fatalf("salinan aplikasi = %+v (baris Delete tidak tersalin)", s)
 	}
 	k, err := g.AmbilKasus(ctx, nil, id, false)
-	if err != nil || k.ProdKe != 2 || k.Kepala["PRODUCT_NAME"] != "UJI-PRODUK" || k.Kepala["DATE_RECEIVED"] != "2026-01-02" || k.EdmDate != "2026-10-01" {
+	if err != nil || k.ProdKe != 1 || k.Kepala["PRODUCT_NAME"] != "UJI-PRODUK" || k.Kepala["DATE_RECEIVED"] != "2026-01-02" || k.EdmDate != "2026-10-01" {
 		t.Fatalf("kasus = %+v, %v", k, err)
 	}
 	p, err := g.DaftarPeserta(ctx, id, 1, 20)
@@ -153,7 +153,7 @@ func TestBuatKasusTerhadapOracle(t *testing.T) {
 		t.Fatalf("salinan warisan = %+v, %v", sW, err)
 	}
 	kW, _ := g.AmbilKasus(ctx, nil, idW, false)
-	if kW.Kepala["TYPE"] != "TR" || kW.Kepala["DATE_RECEIVED"] != "2024-01-15" || kW.Kepala["RI_SLIP_RNM"] != "UJI-SLIP" || kW.ProdKe != 2 {
+	if kW.Kepala["TYPE"] != "TR" || kW.Kepala["DATE_RECEIVED"] != "2024-01-15" || kW.Kepala["RI_SLIP_RNM"] != "UJI-SLIP" || kW.ProdKe != 1 {
 		t.Fatalf("kepala warisan = %+v", kW)
 	}
 	pW, _ := g.DaftarPeserta(ctx, idW, 1, 20)

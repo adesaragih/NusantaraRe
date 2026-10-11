@@ -136,7 +136,7 @@ const (
 	StatusKasusSelesai  = "Resolved-Completed" // END52 b686
 	StatusKasusDitolak  = "Resolved-Rejected"  // End1 b642
 	TahapInputEDMLife   = "InputEDMLife"       // assignment b731
-	AwalanKasus         = "EDMLF-"             // spec §16 AC 72
+	AwalanKasus         = "EDML-"              // spec §16 AC 72 - sama dengan Pega (keputusan work owner 07-10-2026; dulu EDMLF-)
 	panjangMaksPengenal = 32                   // `T_PREMIUM_LIST.ID VARCHAR2(32)`
 )
 
@@ -144,7 +144,7 @@ const (
 // tetapi jurnal balik dicatat siapa dan kapan (`T_PREMIUM_LIST` tanpa kolom pengubah).
 const AksiSimpan = "Save"
 
-// RakitPengenalKasus menyusun `EDMLF-<n>` dari angka sequence, tanpa padding
+// RakitPengenalKasus menyusun `EDML-<n>` dari angka sequence, tanpa padding
 // - sejajar `NBLF-<n>` PremiumList.
 func RakitPengenalKasus(urut string) (string, error) {
 	u := strings.TrimSpace(urut)
@@ -158,9 +158,18 @@ func RakitPengenalKasus(urut string) (string, error) {
 	return id, nil
 }
 
-// KasusEDM menjawab apakah sebuah pengenal adalah kasus modul ini.
+// KasusEDM menjawab apakah sebuah pengenal adalah kasus modul ini: `EDML-` diikuti angka saja
+// (bentuk `RakitPengenalKasus`). `EDMLF-…` (awalan lama), `NBLF-…`, dan `EDML-` kosong ditolak.
 func KasusEDM(id string) bool {
-	return strings.HasPrefix(id, AwalanKasus) && len(id) > len(AwalanKasus)
+	if !strings.HasPrefix(id, AwalanKasus) || len(id) == len(AwalanKasus) {
+		return false
+	}
+	for _, c := range id[len(AwalanKasus):] {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // Jenis transaksi (`.Type`) - QR/QP memakai kolom gross, TP/TR retro.
@@ -213,62 +222,22 @@ var KolomJurnalBalik = []string{
 	"RI_ADMIN_FEE_REFUND", "BROKERAGE_FEE", "BROKERAGE_FEE_REFUND", "BROKERAGE_FEE_REFUND_RETRO",
 }
 
-// NomorEndorsement merakit `PL_NUMBER_EDM` = `NOENDORS` dari nomor polis dan versi berjalan, PERSIS rumus
-// Pega (K3 keputusan work owner 01-10-2026, OQ-EDM-008) - `Activity/GenerateNoEDM_Life.xml`, nol langkah `//`:
+// NomorEndorsement merakit `PL_NUMBER_EDM` = `NOENDORS` = `<PL Number>/<PRODKE baru dua digit>` (keputusan work
+// owner 08-10-2026): PRODKE baru = PRODKE versi terbesar + 1, mis. `RNML-QRL2.10.26.00042/01` (PRODKE 1), `/02`.
+// Pola Pega `GenerateNoEDM_Life` 4 b966 (`@if(@length(CARI4)=1,"0"+CARI4,CARI4)`): satu digit diberi nol depan,
+// lebih dari dua digit (> 99) tetap angka apa adanya (`/100`).
 //
-//	3 b680 PRE=false (selalu jalan) `GetProdKeOldData_SQL` b733: `select PRODKE as HASIL2 … where NOPOLIS=
-//	  {TempPolis.CARI4} order by TGL_INPUT desc` (`TempPolis.CARI4 ← PolicyNo` b447)
-//	4 b872 `Local.Prodke` (int, b278) ← `OldData.pxResults(1).HASIL2` b898/b899 - kosong = 0;
-//	  `InputData.CARI4 = Local.Prodke+1` b945/b946; `CARI14 = @if(@length(CARI4)=1,"0"+CARI4,CARI4)` b966/b967
-//	5 b1068 prakondisi b1216 `PL_NUMBER_EDM==""` → `Generate_NoEndorsmentLife` b1126:
-//	  `SELECT NOPOLIS||'/'||{InputData.CARI14} AS HASIL1 FROM POOLDATA.JSON_POLIS WHERE NOPOLIS = …`
-//
-// Nomor = `<polis>/` + CARI14 dengan CARI4 = v.UrutanPega + 1. Versi baru = v.ProdKe + 1 (E1, migrasi 480
-// `NVL(PRODKE, 1)`) - TERPISAH dari nomor, sehingga NB warisan ber-`PRODKE` kosong (versi 1) bernomor
-// pertama `/01`, bukan `/02`.
-//
-// ⚠️ Yang PERSIS Pega adalah rumus sesudah versi berjalan dipilih. Versi berjalan sendiri dipilih
-// `PRODKE DESC` (lalu `TGL_INPUT DESC`), bukan `TGL_INPUT desc` `GetProdKeOldData_SQL` - penyimpangan sadar 1
-// (RALAT R19): bila `PRODKE` warisan tidak sejalan dengan urutan sisip, kedua pembaca Pega sendiri memberi
-// `PRODKE` berbeda, dan sistem ini memakai satu urutan.
-//
+// ⛔ Satu sumber: PRODKE (penghitung terpisah `UrutanPega` K3 dihapus 08-10-2026, migrasi 485).
 // ⛔ BUKAN dari `PROC_GENERATE_SEQUENCE_NUMBER` (ADR-0006 tidak berlaku).
-// Mengembalikan nomor dan `PRODKE` versi baru.
-func NomorEndorsement(nomorPolis string, v Versi) (string, int, error) {
+func NomorEndorsement(nomorPolis string, prodKeBaru int) (string, error) {
 	np := strings.TrimSpace(nomorPolis)
 	if np == "" {
-		return "", 0, errors.New("models: policy number is empty")
+		return "", errors.New("models: policy number is empty")
 	}
-	if v.ProdKe < 1 {
-		return "", 0, fmt.Errorf("models: current production number %d is not a version", v.ProdKe)
+	if prodKeBaru < 1 {
+		return "", fmt.Errorf("models: endorsement production number %d must be at least 1", prodKeBaru)
 	}
-	if v.UrutanPega < 0 {
-		return "", 0, fmt.Errorf("models: the Pega production number of the current version %q is unknown "+
-			"(its endorsement number has no numeric suffix); the next endorsement number cannot be derived", v.ID)
-	}
-	cari14 := strconv.Itoa(v.UrutanPega + 1)
-	if len(cari14) == 1 {
-		cari14 = "0" + cari14
-	}
-	return np + "/" + cari14, v.ProdKe + 1, nil
-}
-
-// UrutanPegaTakDiketahui - Versi.UrutanPega bila akhiran nomor versi itu tak terurai.
-const UrutanPegaTakDiketahui = -1
-
-// UrutanDariNomor - urutan Pega endorsement sistem baru = akhiran nomornya (angka sesudah `/` terakhir).
-// Nomor tanpa akhiran angka = galat (data rusak), bukan nol diam-diam.
-func UrutanDariNomor(nomor string) (int, error) {
-	n := strings.TrimSpace(nomor)
-	i := strings.LastIndex(n, "/")
-	akhir := ""
-	if i >= 0 {
-		akhir = n[i+1:]
-	}
-	if akhir == "" || strings.Trim(akhir, "0123456789") != "" {
-		return 0, fmt.Errorf("models: endorsement number %q has no numeric suffix", nomor)
-	}
-	return strconv.Atoi(akhir)
+	return fmt.Sprintf("%s/%02d", np, prodKeBaru), nil
 }
 
 // NomorInvoiceArasapas - `SetErrorBatalEndorsement_Act` 1 b464

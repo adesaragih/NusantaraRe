@@ -106,7 +106,7 @@ func TestKolomBacaClaimLifeDiisiPenulisPremiumList(t *testing.T) {
 		// ⚠️ Instrumen diuji atas jawaban yang sudah diketahui: ujung pertama
 		// dan terakhir tiap daftar harus terbaca, termasuk yang ber-TO_CHAR.
 		mau := map[string][2]string{
-			"kolomSalin":     {"ID", "CLAIM_AMOUNT"},
+			"kolomSalin":     {"ID", "IDPEGA"},
 			"sqlCariPeserta": {"PL_NUMBER", "EDMSTATUS"},
 		}[nama]
 		if kolom[0] != mau[0] || kolom[len(kolom)-1] != mau[1] {

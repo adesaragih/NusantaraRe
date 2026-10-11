@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"strings"
 
+	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/claimlife/backend/models"
 	"nusantarare/modul/claimlife/backend/repository"
 )
@@ -57,15 +58,17 @@ var tipeTanpaGerbangDokumen = map[string]bool{"TP": true, "TR": true}
 //
 // Sama dengan Penomor pada tiket 02: tempatnya dipisah, dan yang belum
 // diketahui terlihat sebagai satu galat terang.
+//
+// ⭐ 11-10-2026 (keputusan work owner): berbatas KLAIM - daftarnya Document Claim produk polis klaim itu.
 type SumberKategoriWajib interface {
-	KategoriWajib(ctx context.Context) ([]string, error)
+	KategoriWajib(ctx context.Context, klaimID string) ([]string, error)
 }
 
 // KategoriWajibBelumDiketahui adalah implementasi bawaan; ia selalu gagal.
 type KategoriWajibBelumDiketahui struct{}
 
 // KategoriWajib selalu gagal, dengan pesan yang menyebut apa yang ditunggu.
-func (KategoriWajibBelumDiketahui) KategoriWajib(context.Context) ([]string, error) {
+func (KategoriWajibBelumDiketahui) KategoriWajib(context.Context, string) ([]string, error) {
 	return nil, fmt.Errorf("%w: rule GetCategoryLife_SQL tidak ada di korpus, dan "+
 		"korpus tidak pernah mengenumerasi nilai KATEGORI_1/KATEGORI_2; daftarnya "+
 		"diperlukan dari DBA atau work owner lebih dulu", ErrKategoriWajibBelumDiketahui)
@@ -83,9 +86,9 @@ func (KategoriWajibBelumDiketahui) KategoriWajib(context.Context) ([]string, err
 // yaitu NOMOR URUT peserta dalam daftar - bukan pengenalnya. Nomor urut 1-based
 // dipertahankan supaya pesannya dapat dibandingkan dengan sistem lama.
 //
-// ⚠️ `[terbuka]` Rule aslinya menyaring `.IsAccept=="true"`; tabel kita tidak
-// punya kolom itu. `IS_CHECK` - "dipilih untuk diklaim" - adalah padanan
-// terdekat yang ada, dan bukan hal yang sama. Dicatat, tidak didiamkan.
+// ✅ 10-10-2026 (migrasi 026): rule aslinya menyaring `.IsAccept=="true"` (`SaveOutStandingLife_Act` b1181,
+// WhenTrue 2 / WhenFalse 3) - kini dibaca dari IS_ACCEPT, checkbox Accept layar Outstanding. Dulu `IS_CHECK` dipakai
+// sebagai padanan terdekat; itu ralat.
 func PeriksaDokumenAda(tipe string, peserta []models.Peserta) error {
 	if tipeTanpaGerbangDokumen[strings.ToUpper(strings.TrimSpace(tipe))] {
 		return nil
@@ -101,12 +104,12 @@ func PeriksaDokumenAda(tipe string, peserta []models.Peserta) error {
 		ErrDokumenBelumDiunggah, gabungNomor(kurang))
 }
 
-// nomorPesertaYangGagal - lewati peserta yang tidak dipilih, kumpulkan NOMOR
+// nomorPesertaYangGagal - lewati peserta yang tidak di-Accept, kumpulkan NOMOR
 // URUT yang gagal syaratnya (dipakai pula gerbang 1 Save to RNM).
 func nomorPesertaYangGagal(peserta []models.Peserta, gagal func(models.Peserta) bool) []int {
 	var out []int
 	for i, p := range peserta {
-		if !dipilihUntukDiklaim(p) {
+		if !diterimaDiOutstanding(p) {
 			continue
 		}
 		if gagal(p) {
@@ -129,29 +132,41 @@ func gabungNomor(nomor []int) string {
 //
 // Nilainya teks warisan, dan korpus memakai "true" maupun "'true'" - keduanya
 // diterima, apa pun yang tidak dikenal dianggap TIDAK dipilih.
-func dipilihUntukDiklaim(p models.Peserta) bool {
-	v := strings.Trim(strings.TrimSpace(p.IsCheck), "'\"")
+// diterimaDiOutstanding - `.IsAccept=="true"` (b1181), IS_ACCEPT migrasi 026. Bentuk bertanda kutip dan "1"/"Y"
+// tetap dibaca seperti pembaca IS_CHECK lama: nilai warisan yang sama-sama berarti tercentang.
+func diterimaDiOutstanding(p models.Peserta) bool {
+	v := strings.Trim(strings.TrimSpace(p.IsAccept), "'\"")
 	return strings.EqualFold(v, "true") || v == "1" || strings.EqualFold(v, "Y")
 }
 
-// kategoriOracle membaca daftar kategori wajib - butir ar1, A2.
-type kategoriOracle struct{ pohon *repository.PohonKlaim }
+type kategoriOracle struct{ svc *Service }
 
-// KategoriWajibOracle menyusun pembaca kategori yang memakai Oracle.
+// KategoriWajibOracle menyusun pembaca kategori dokumen klaim.
 //
-// ⚠️ `ar1` `[USULAN yang disahkan]`, bukan `[terverifikasi]`: rule
-// `GetCategoryLife_SQL` tidak ada di korpus, sehingga tabel mana yang Pega
-// baca tidak dapat dipastikan. Kandidat kedua dicatat di repository dan tidak
-// dipakai.
+// ⭐ 11-10-2026 (keputusan work owner "category document didapat dari document claim yang ada di product name yang
+// digunakan oleh claim"): sumbernya Document Claim Master Product Name Life (M_PRODUCTNAME_LIFE_DOCCLAIM) untuk
+// ProductNameID polis klaim (header polis via IDPEGA peserta) - menggantikan CATEGORY_ATTACH_CLAIMLIFE (butir ar1, yang
+// kini tidak dipakai jalur mana pun; gerbang dokumen Save to RNM hanya menghitung ADA-nya dokumen, bukan kategorinya).
 func KategoriWajibOracle(svc *Service) SumberKategoriWajib {
-	return kategoriOracle{pohon: repository.NewPohonKlaim(svc.DB())}
+	return kategoriOracle{svc: svc}
 }
 
-// KategoriWajib membaca daftar kategori untuk sebuah kode bisnis.
-func (k kategoriOracle) KategoriWajib(ctx context.Context) ([]string, error) {
-	// ⛔ Kode bisnis belum tersimpan di model relasional - temuan audit A0,
-	// kolomnya lahir di `014`. Sampai pembacanya ada, penyaring `BISNIS`
-	// memakai daftar `ALL` saja, dan itu DINYATAKAN, bukan disembunyikan:
-	// keenam baris DEV memang seluruhnya `ALL`.
-	return k.pohon.AmbilKategoriWajib(ctx, "")
+// KategoriWajib membaca Document Claim produk polis klaim itu, urutan master. Polis tanpa produk / produk tanpa daftar
+// = kosong (layar menyatakannya; unggahan menolak 422).
+func (k kategoriOracle) KategoriWajib(ctx context.Context, klaimID string) ([]string, error) {
+	klaim, err := k.svc.KlaimLife().Ambil(ctx, klaimID)
+	if err != nil {
+		return nil, err
+	}
+	polis, _, err := RingkasPolisIdPega(ctx, k.svc.PembacaPolis(), IdPegaPeserta(klaim.Peserta))
+	if errors.Is(err, kontrak.ErrPolisNomorTakDitemukan) {
+		return []string{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(polis.ProductNameID) == "" {
+		return []string{}, nil
+	}
+	return repository.NewPohonKlaim(k.svc.DB()).DokumenKlaimProduk(ctx, strings.TrimSpace(polis.ProductNameID))
 }

@@ -214,7 +214,7 @@ func jawabGalat(w http.ResponseWriter, err error, apa string) bool {
 	case errors.Is(err, services.ErrBelumAda):
 		log.Printf("riratelife: %s: %v", apa, err)
 		galat.Tulis(w, http.StatusServiceUnavailable,
-			"R/I Rate Life: table, view, or sequence (M_RATE_LIFE_SUMMARY, M_RATE_LIFE, RATE_LIFE, SEQ_M_RATE_LIFE_SUMMARY, SEQ_M_RATE_LIFE) is not in this schema")
+			"R/I Rate Life: table or sequence (M_RATE_LIFE_SUMMARY, M_RATE_LIFE, SEQ_M_RATE_LIFE_SUMMARY, SEQ_M_RATE_LIFE) is not in this schema")
 	default:
 		log.Printf("riratelife: %s: %v", apa, err)
 		galat.Tulis(w, http.StatusInternalServerError, "R/I Rate Life: "+apa+" gagal; rinciannya di log server")

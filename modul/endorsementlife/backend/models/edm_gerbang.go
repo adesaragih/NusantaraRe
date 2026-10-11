@@ -62,15 +62,34 @@ func PesanGerbang(nomorPolis, edmType string, f FaktaGerbang) []string {
 }
 
 // Kelayakan adalah jawaban gerbang untuk layar `EndorsmentLife_Section`.
+// GerbangPembayaranAktif - saklar gerbang 5 (pembayaran Arasapas untuk EDM Type 3 / Batal,
+// `SetErrorBatalEndorsement_Act` 3.10). DINONAKTIFKAN SEMENTARA (keputusan work owner 10-10-2026: "untuk
+// sementara pengecekan di hapus dulu, tapi nanti akan digunakan lagi") sampai izin baca
+// `ARASAPAS.DETAIL_INVOICE` (OQ-EDM-012) tersedia - selama mati, skema Arasapas sama sekali tidak dibaca.
+// Ubah ke `true` untuk menyalakan kembali. `var` (bukan `const`) hanya supaya uji dapat menyalakannya.
+var GerbangPembayaranAktif = false
+
 type Kelayakan struct {
 	// Pesan - kosong = boleh dibuat.
 	Pesan []string `json:"pesan"`
 	// Boleh - `Protect.CARI1 = '0'` **dan** `EdmType` `1`/`3` (syarat tombol
 	// `Submit` b4226).
 	Boleh bool `json:"boleh"`
+	// Policy No bernomor endorsement (keputusan work owner 10-10-2026): NomorPolis = hasil
+	// `NomorPolisDariMasukan` yang dipakai semua gerbang; AdaAkhiran/AkhiranMasukan = akhiran yang diketik;
+	// PolisAda = versi polis ditemukan; NomorVersiTerakhir/AkhiranVersiTerakhir = versi PRODKE terbesar
+	// (`VersiBerjalan`, `<polis>/%02d`) - kosong bila belum pernah di-endorse (versi new business).
+	NomorPolis           string `json:"nomorPolis"`
+	AdaAkhiran           bool   `json:"adaAkhiran"`
+	AkhiranMasukan       string `json:"akhiranMasukan"`
+	PolisAda             bool   `json:"polisAda"`
+	NomorVersiTerakhir   string `json:"nomorVersiTerakhir"`
+	AkhiranVersiTerakhir string `json:"akhiranVersiTerakhir"`
 }
 
-// PesanCSVPlan - `SaveCSVEDMLife` 4 b800, VERBATIM (berbahasa Indonesia di korpus).
+// PesanCSVPlan - `SaveCSVEDMLife` 4 b800, VERBATIM (berbahasa Indonesia di korpus). ⚠️ TIDAK LAGI dipakai unggahan
+// sejak 10-10-2026 (keputusan work owner): PLAN / POLICY_HOLDER kini diambil dari polis, nilai CSV diabaikan
+// (`RapikanBarisCSV`). Konstanta dipertahankan sebagai bukti korpus.
 const PesanCSVPlan = "Plan di CSV tidak sesuai, mohon di cek kembali"
 
 // KodeJurnalPelunasan - `IVD_JR_ID` baris pelunasan Arasapas

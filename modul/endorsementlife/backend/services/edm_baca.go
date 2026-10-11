@@ -59,6 +59,7 @@ func (l *Layanan) muatKasus(ctx context.Context, id string) (models.Kasus, error
 		return models.Kasus{}, err
 	}
 	k.CSVTerkunci = k.Cacah[models.StatusNew] > 0
+	k.KolomWajibCSV = models.DaftarKolomWajibCSV(k.Kepala["TYPE"])
 	if k.SudahSimpan, err = l.gudang.AdaRekap(ctx, nil, id); err != nil {
 		return models.Kasus{}, err
 	}
@@ -75,6 +76,30 @@ func (l *Layanan) muatKasus(ctx context.Context, id string) (models.Kasus, error
 		k.Riwayat = []models.BarisRiwayat{}
 	}
 	return k, nil
+}
+
+// Perbandingan - summary sebelum/sesudah endorsement per mata uang (permintaan
+// work owner 08-10-2026, bukan korpus). Baca-saja; gerbang sama dengan
+// pembacaan kasus lain (identitas, kasus Endorsement Life yang ada).
+func (l *Layanan) Perbandingan(ctx context.Context, p inti.Pelaku, id string) ([]models.BarisPerbandingan, error) {
+	if err := inti.WajibIdentitas(p); err != nil {
+		return nil, err
+	}
+	if !models.KasusEDM(id) {
+		return nil, fmt.Errorf("%w: %q", ErrKasusTidakAda, id)
+	}
+	k, err := l.gudang.AmbilKasus(ctx, nil, id, false)
+	if errors.Is(err, repository.ErrTidakAda) {
+		return nil, fmt.Errorf("%w: %q", ErrKasusTidakAda, id)
+	}
+	if err != nil {
+		return nil, err
+	}
+	kel, err := l.gudang.PerbandinganKasus(ctx, nil, id, k.Kepala["TYPE"])
+	if err != nil {
+		return nil, err
+	}
+	return models.SusunPerbandingan(kel, models.KolomRekapKasus[1:])
 }
 
 // BacaKasus membaca kepala kasus `InputEDMLife`.

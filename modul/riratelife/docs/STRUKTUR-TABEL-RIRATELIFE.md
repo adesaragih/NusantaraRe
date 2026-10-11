@@ -3,14 +3,19 @@
 Modul `riratelife` (perintah work owner 05-10-2026). **RALAT R6 (07-10-2026, `MODUL.md`, menggantikan R4)**:
 ringkasan disimpan di **SATU tabel `M_RATE_LIFE_SUMMARY`** berkolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID
 (migrasi inti `927` + `928`); JSONDATA ringkasan dan tabel flat `RATE_LIFE_SUMMARY` (926) dibuang. Rincian rate tetap di
-tabel JSON warisan `M_RATE_LIFE` + view `RATE_LIFE` (tidak berubah). Nama objek dan kunci JSON ditulis SEKALI di
+tabel JSON warisan `M_RATE_LIFE` + view `RATE_LIFE` (tidak berubah). Nama objek dan kolom ditulis SEKALI di
 `backend/repository/rirl_tabel.go`.
+
+**RALAT R7 (10-10-2026, `MODUL.md`)** - keputusan work owner *"view rate_life sudah tidak digunakan, sekarang gunakan tabel
+M_RATE_LIFE"*: view `RATE_LIFE` **dibuang di DEV** (ORA-00942) dan `M_RATE_LIFE` kini **tabel FLAT 8 kolom tanpa JSONDATA**
+(ALL_TAB_COLUMNS DEV dikirim work owner 10-10-2026; diubah DBA, tanpa migrasi). Rincian dibaca DAN ditulis di kolom
+`M_RATE_LIFE` (INSERT / UPDATE kolom biasa); nol JSON.
 
 | Objek | Jenis | Ditulis | Dibaca | Pembaca lain |
 | --- | --- | --- | --- | --- |
 | `M_RATE_LIFE_SUMMARY` | tabel, PK `ID`, 5 kolom (sesudah 928) | Add, Edit, Delete, Simpan Upload, Rate Detail Save (OPERATORID/MODIFIEDDATE) | grid, nama kembar, ID terpakai / ID tertinggi | `mastercontractretrolife`, `masterproductnamelife` (`SELECT ID, USEDBY`, baca-saja) |
-| `M_RATE_LIFE` | tabel JSON warisan, 96.038-98.305 baris DEV | Edit (salinan nama), Delete, Simpan Upload, Rate Detail tambah / ubah | ID terpakai / ID tertinggi | — |
-| `RATE_LIFE` | view, 8 kolom | — | Rate Detail, jumlah rate, kembar upload | `mastercontractretrolife`, `masterproductnamelife`, Pega `GetRateRetro` (IDUSEDBY) |
+| `M_RATE_LIFE` | tabel warisan FLAT 8 kolom (RALAT R7), 96.038-98.305 baris DEV | Edit (UPDATE USEDBY), Delete, Simpan Upload, Rate Detail tambah / ubah (INSERT / UPDATE kolom) | Rate Detail, jumlah rate, kembar upload, ID terpakai / ID tertinggi | `mastercontractretrolife`, `masterproductnamelife`, `premiumlistlife`, `claimlife` (baca-saja, IDUSEDBY) |
+| `RATE_LIFE` | view - **DIBUANG di DEV 10-10-2026, tidak dipakai lagi** (RALAT R7) | — | — | — |
 | `SEQ_M_RATE_LIFE_SUMMARY` | sequence (923) | NEXTVAL | — | — |
 | `SEQ_M_RATE_LIFE` | sequence (923) | NEXTVAL | — | — |
 | `RATE_LIFE_SUMMARY` | tabel flat 926 - **DIBUANG 928** (riwayat di bawah) | — | — | — |
@@ -59,20 +64,27 @@ a.JSONDATA.FLAG FROM M_RATE_LIFE_SUMMARY a`, ALL_VIEWS dibaca WO 06-10-2026). In
 
 ## M_RATE_LIFE
 
-Tabel warisan (dinyatakan di `MODUL.md`, bukan dibuat migrasi).
+Tabel warisan (dinyatakan di `MODUL.md`, bukan dibuat migrasi). **Sejak RALAT R7 (10-10-2026) FLAT, tanpa JSONDATA** -
+kolom per ALL_TAB_COLUMNS DEV dikirim work owner 10-10-2026 (sama dengan kolom view `RATE_LIFE` lama).
 
 | Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
 | --- | --- | --- | --- | --- | --- |
 | `ID` | VARCHAR2(10) | tidak | unik (data) | rate ID | `SEQ_M_RATE_LIFE` (nomor terpakai dilewati) |
-| `JSONDATA` | CLOB | ? | | JSON | sisip `JSON_OBJECT(... ABSENT ON NULL)`; Edit nama kunci `USEDBY`; Rate Detail Edit kunci `GENDER`, `CONTRACT`, `AGE`, `RATE` (kosong = kunci dibuang) - baca `FOR UPDATE`, ganti di Go, tulis utuh (RALAT R3) |
+| `IDUSEDBY` | VARCHAR2(10) | ya | | kunci ringkasan | ID ringkasan `M_RATE_LIFE_SUMMARY` |
+| `USEDBY` | VARCHAR2(500) | ya | | "R/I RATE NAME" | salinan nama ringkasan; Edit nama = `UPDATE M_RATE_LIFE SET USEDBY = :nama WHERE IDUSEDBY = :id` (Go `BatasNama` 200) |
+| `TYPE` | VARCHAR2(100) | ya | | — | tidak pernah ditulis (NULL di seluruh baris DEV) |
+| `GENDER` | VARCHAR2(10) | ya | | "GENDER" | U / M / F; kosong = NULL |
+| `CONTRACT` | VARCHAR2(10) | ya | | "CONTRACT" | teks bulat 0-120; kosong = NULL |
+| `AGE` | VARCHAR2(10) | ya | | "AGE" | teks bulat 0-120; kosong = NULL |
+| `RATE` | VARCHAR2(50) | ya | | "RATE" | teks berkoma desimal (`0.50` → `0,50`, A8); Go menolak > 50 byte (`models.LebarRate`) |
 
-Kunci JSON yang ditulis (terbukti dari view): `IDUSEDBY` (ID ringkasan), `USEDBY`, `GENDER` (U/M/F), `CONTRACT`
-(0-120 atau tidak ditulis), `AGE` (0-120), `RATE` (teks berkoma desimal). `TYPE` tidak pernah ditulis (NULL di
-seluruh baris DEV). Rate Detail (`InboxRIRate`): `GENDER` dan `AGE` boleh kosong (kunci tidak ditulis), `CONTRACT` wajib.
+Sisip (Simpan Upload, Rate Detail Save) = `INSERT (ID, IDUSEDBY, USEDBY, GENDER, CONTRACT, AGE, RATE)`; Rate Detail Edit =
+`UPDATE … SET GENDER, CONTRACT, AGE, RATE WHERE ID = :id AND TRIM(IDUSEDBY) = :ringkasan` (dulu "kunci JSON dibuang", kini
+NULL); Delete = `DELETE … WHERE IDUSEDBY = :id`. Rate Detail (`InboxRIRate`): `GENDER` dan `AGE` boleh kosong, `CONTRACT` wajib.
 
-## RATE_LIFE
+## Riwayat — view RATE_LIFE (dibuang di DEV 10-10-2026, RALAT R7)
 
-View warisan (dinyatakan di `MODUL.md`), dibaca saja.
+Tidak dipakai lagi oleh modul mana pun (penjaga `TestTidakAdaViewRateLifeDiKodeProduksi`). Definisi lama, untuk sejarah:
 
 | Kolom | Tipe | Null | Kunci | Dipakai | Sumber |
 | --- | --- | --- | --- | --- | --- |

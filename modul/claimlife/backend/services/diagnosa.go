@@ -48,6 +48,8 @@ var (
 	ErrDiagnosaTerkunci = errors.New("services: peserta sudah diputus, diagnosanya tidak dapat diubah")
 	// ErrTahapTidakBergridPeserta - tahap ini tidak membuka layar detail.
 	ErrTahapTidakBergridPeserta = errors.New("services: tahap ini tidak membuka grid peserta")
+	// ErrDiagnosaBukanMedicalCheck - diagnosa diubah HANYA di tahap Medical Check (11-10-2026).
+	ErrDiagnosaBukanMedicalCheck = errors.New("services: diagnosa hanya dapat diubah di tahap Medical Check")
 	// ErrNilaiDiagnosaKepanjangan - satu nilai melebihi lebar kolomnya.
 	ErrNilaiDiagnosaKepanjangan = errors.New("services: nilai diagnosa melebihi lebar kolomnya")
 )
@@ -111,6 +113,13 @@ func (d *DiagnosaPeserta) pagari(ctx context.Context, pelaku inti.Pelaku,
 	if !models.TahapBergridPeserta(tahap) {
 		return k, fmt.Errorf("%w: %s (yang membukanya %v)",
 			ErrTahapTidakBergridPeserta, tahap, models.TahapPembukaGridPeserta())
+	}
+	// ⛔ 11-10-2026 (work owner): bagian MEDICAL ADVISOR dapat diubah HANYA di
+	// tahap Medical Check oleh Medical Advisor (b4908/b6401 pyPosition); tahap
+	// lain membacanya saja. Pemegang Medical Check = ReasLifeMedicalAdvisor
+	// (gerbang peran di bawah).
+	if tahap != models.TahapMedicalCheck {
+		return k, fmt.Errorf("%w: tahap %s", ErrDiagnosaBukanMedicalCheck, tahap)
 	}
 	peranTahap, ada := models.PeranPemegangTahap(tahap)
 	if !ada {

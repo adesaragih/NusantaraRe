@@ -65,10 +65,12 @@ func setTanggalKejadian(svc *services.Service, stubPelaku bool) http.HandlerFunc
 		case errors.As(err, &dolSalah):
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(http.StatusUnprocessableEntity)
+			// 11-10-2026: `galat` = kalimat jelas (nomor peserta + rentang valuasi); kalimat XML "Invalid DOL" di `kode`.
 			_ = json.NewEncoder(w).Encode(struct {
 				Galat     string `json:"galat"`
+				Kode      string `json:"kode"`
 				PesertaID string `json:"pesertaId"`
-			}{dolSalah.Error(), dolSalah.PesertaID})
+			}{dolSalah.Kalimat(), dolSalah.Error(), dolSalah.PesertaID})
 			return
 		case errors.Is(err, services.ErrDOLKosong):
 			galat.Tulis(w, http.StatusBadRequest, "tanggal kejadian belum diisi")

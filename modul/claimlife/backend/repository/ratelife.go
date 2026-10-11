@@ -3,13 +3,16 @@ package repository
 // Rate retro per produk - OQ-M7 DITUTUP 29-09-2026 (GILIRAN-17), izin sempit
 // seperti butir bh.
 //
-// Untuk apa berkas ini: membaca baris `RATE_LIFE` satu `OUTWARDRATEID` -
+// Untuk apa berkas ini: membaca baris `M_RATE_LIFE` satu `OUTWARDRATEID` -
 // masukan rate `services.HitungSpreading` (`BarisRate`).
 //
 // `[terverifikasi]` `Claim Life/RDBList/GetRateRetro.xml` b84:
 //
 //	SELECT AGE AS CARI1, CONTRACT AS CARI2, GENDER AS CARI3, RATE AS CARI4
 //	  FROM POOLDATA.RATE_LIFE WHERE IDUSEDBY = {InputData.CARI3}
+//
+// ⚠️ 10-10-2026 (keputusan work owner): view `RATE_LIFE` dibuang di DEV (ORA-00942); yang dibaca kini tabel flat
+// `M_RATE_LIFE` (kolom sama, tanpa JSONDATA). Izin dan lima kolomnya tidak berubah.
 //
 // dipanggil `SpreadingClaimLife_Act` langkah 6 (b1692, `RateRetroTemp` b1699,
 // b1750) dengan `CARI3 = .OUTWARDRATEID` (langkah 5.1 b1502, b1527-b1528).
@@ -25,7 +28,7 @@ package repository
 // larang. Karena itu Spreading TETAP tidak dipanggil, dan pembaca ini nol
 // pemanggil produksi sampai sumbernya ada (daftar serah terima).
 //
-// ⚠️ Nilainya TEKS apa adanya. `RATE` di view berdesimal koma pada sebagian
+// ⚠️ Nilainya TEKS apa adanya. `RATE` di tabel berdesimal koma pada sebagian
 // besar baris, dan 564 nilai tidak bersih `[data DBA]`
 // (KATALOG-TABEL-PESERTA-DAN-TREATY.md) - konversinya milik penyambung
 // Spreading kelak, sekali saat masuk (ADR-U-0022), dengan galat per baris.
@@ -46,14 +49,15 @@ import (
 // `TestMasterViewTidakDisentuh`; kolom keenam akan berbunyi.
 var KolomRateLife = []string{"ID", "AGE", "CONTRACT", "GENDER", "RATE"}
 
-// NamaViewRateLife - view yang dibaca, ditulis UTUH (lihat ambangproduk.go).
-const NamaViewRateLife = "RATE_LIFE"
+// NamaViewRateLife - tabel rate yang dibaca, ditulis UTUH (lihat ambangproduk.go). Dulu view `RATE_LIFE`;
+// sejak 10-10-2026 tabel flat `M_RATE_LIFE` (nama konstanta dipertahankan).
+const NamaViewRateLife = "M_RATE_LIFE"
 
-// ErrRateLifeTanpaPengenal - `IDUSEDBY` kosong tidak pernah membaca view.
+// ErrRateLifeTanpaPengenal - `IDUSEDBY` kosong tidak pernah membaca tabel rate.
 var ErrRateLifeTanpaPengenal = errors.New(
-	"repository: pengenal rate (OUTWARDRATEID) kosong; RATE_LIFE tidak dibaca")
+	"repository: pengenal rate (OUTWARDRATEID) kosong; M_RATE_LIFE tidak dibaca")
 
-// BarisRateLife adalah satu baris `RATE_LIFE`, TEKS apa adanya.
+// BarisRateLife adalah satu baris `M_RATE_LIFE`, TEKS apa adanya.
 type BarisRateLife struct {
 	ID           string
 	Umur         string // AGE

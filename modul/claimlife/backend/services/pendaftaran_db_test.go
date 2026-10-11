@@ -12,6 +12,7 @@ package services_test
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -20,6 +21,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/kontrak"
 	intiuang "nusantarare/inti/backend/uang"
 	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/claimlife/backend/repository"
@@ -88,8 +90,6 @@ func permintaan() services.PermintaanDaftar {
 	return services.PermintaanDaftar{
 		NomorPremiList: "UJI-PL-1",
 		NomorPolis:     "UJI-POL-0001",
-		Type:           "QP",
-		KodeBisnis:     "L1",
 		MataUang:       "IDR",
 		// Hanya nomor sertifikat; nilai polisnya dibaca server dari tiruan
 		// M_LIFE_PREMIUM_DETAIL yang dibuat skema uji (tiket 03).
@@ -103,11 +103,14 @@ func TestDaftarMenulisTigaTempatDanBarisDatar(t *testing.T) {
 	defer bersihkan()
 	ctx := context.Background()
 
-	pohon, err := svc.Pendaftaran().DenganPenomor(&penomorUji{}).
-		Daftar(ctx, inti.Pelaku{AkunID: "UJI-OPERATOR"}, permintaan())
+	semua, err := svc.Pendaftaran().Daftar(ctx, inti.Pelaku{AkunID: "UJI-OPERATOR"}, permintaan())
 	if err != nil {
 		t.Fatalf("mendaftarkan klaim: %v", err)
 	}
+	if len(semua) != 1 {
+		t.Fatalf("case terbentuk %d, mau 1 (satu PL, satu mata uang)", len(semua))
+	}
+	pohon := semua[0]
 	if !strings.HasPrefix(pohon.Work.ID, repository.AwalanKlaim) {
 		t.Errorf("pengenal work %q tidak berawalan %q", pohon.Work.ID, repository.AwalanKlaim)
 	}
@@ -120,8 +123,9 @@ func TestDaftarMenulisTigaTempatDanBarisDatar(t *testing.T) {
 	if err != nil {
 		t.Fatalf("membaca klaim: %v", err)
 	}
-	if klaim.NomorKlaim != "UJI-CLM-NOMOR" {
-		t.Errorf("nomor klaim = %q", klaim.NomorKlaim)
+	// RALAT 10-10-2026: Register tidak menomori - CLAIM_NO kosong sampai Save to RNM.
+	if klaim.NomorKlaim != "" {
+		t.Errorf("nomor klaim = %q, mau kosong sampai Save to RNM", klaim.NomorKlaim)
 	}
 	if klaim.ClaimRetro.Currency != "IDR" {
 		t.Errorf("mata uang header = %q, mau IDR; butir z1 belum sampai ke jalur baca",
@@ -182,13 +186,14 @@ func TestDaftarMenulisTigaTempatDanBarisDatar(t *testing.T) {
 	if baris[0].KodeStatus != "" {
 		t.Errorf("baris lahir berkode %q; 7.8 tidak menulis STS_REJECT", baris[0].KodeStatus)
 	}
-	// AC 32: baris datar warisan kini ikut tertulis - barisnya ada.
+	// RALAT 10-10-2026 (keputusan work owner): Register TIDAK menulis baris datar OS_AKSEPTASI_KLAIM_LIFE - ia lahir di
+	// Save to RNM bersama nomor klaim. Dulu AC 32 menuntut satu baris di sini.
 	datar, err := repository.NewPohonKlaim(db).CacahBarisLama(ctx, pohon.Work.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if datar != 1 {
-		t.Errorf("baris datar OS_AKSEPTASI_KLAIM_LIFE = %d, mau 1 (AC 32)", datar)
+	if datar != 0 {
+		t.Errorf("Register menulis %d baris datar OS_AKSEPTASI_KLAIM_LIFE, mau 0 (RALAT 10-10-2026)", datar)
 	}
 }
 
@@ -212,8 +217,7 @@ func TestPesertaBatalTidakDapatDidaftarkan(t *testing.T) {
 
 	minta := permintaan()
 	minta.Sertifikat = []string{"010"} // fixture: EDMSTATUS = 'Batal'
-	_, err := svc.Pendaftaran().DenganPenomor(&penomorUji{}).
-		Daftar(context.Background(), inti.Pelaku{AkunID: "UJI-OPERATOR"}, minta)
+	_, err := svc.Pendaftaran().Daftar(context.Background(), inti.Pelaku{AkunID: "UJI-OPERATOR"}, minta)
 	if err == nil {
 		t.Fatal("peserta batal diterima; penyaring hidup tidak berlaku di jalur pendaftaran")
 	}
@@ -227,7 +231,7 @@ func TestDuaPendaftaranDuaPengenal(t *testing.T) {
 	svc, bersihkan := siapkanPendaftaran(t)
 	defer bersihkan()
 	ctx := context.Background()
-	daftar := svc.Pendaftaran().DenganPenomor(&penomorUji{})
+	daftar := svc.Pendaftaran()
 
 	satu, err := daftar.Daftar(ctx, inti.Pelaku{AkunID: "UJI-OPERATOR"}, permintaan())
 	if err != nil {
@@ -237,29 +241,86 @@ func TestDuaPendaftaranDuaPengenal(t *testing.T) {
 	if err != nil {
 		t.Fatalf("pendaftaran kedua: %v", err)
 	}
-	if satu.Work.ID == dua.Work.ID {
-		t.Errorf("dua pendaftaran memakai pengenal yang sama: %q", satu.Work.ID)
+	if len(satu) != 1 || len(dua) != 1 || satu[0].Work.ID == dua[0].Work.ID {
+		t.Errorf("dua pendaftaran memakai pengenal yang sama: %+v %+v", satu, dua)
 	}
 }
 
-// ⛔ Penomoran yang gagal MEMBATALKAN seluruh transaksi.
-//
-// Tanpa ini, klaim setengah jadi tertinggal di basis data: baris work object
-// ada, headernya tidak, dan tidak ada yang melaporkannya.
-func TestPenomorGagalMembatalkanSeluruhTransaksi(t *testing.T) {
+// RALAT 10-10-2026: pendaftaran TIDAK bergantung penomor (dulu: penomor yang gagal membatalkan seluruh transaksi) -
+// Register berhasil tanpa penomor apa pun, CLAIM_NO kosong, pengenal berawalan CLMLF-.
+func TestRegisterTanpaPenomor(t *testing.T) {
 	svc, bersihkan := siapkanPendaftaran(t)
 	defer bersihkan()
 	ctx := context.Background()
-
-	// Penomor bawaan selalu gagal selama butir o belum diputuskan.
-	_, err := svc.Pendaftaran().Daftar(ctx, inti.Pelaku{AkunID: "UJI-OPERATOR"}, permintaan())
-	if err == nil {
-		t.Fatal("pendaftaran berhasil padahal penomoran belum diputuskan")
+	semua, err := svc.Pendaftaran().Daftar(ctx, inti.Pelaku{AkunID: "UJI-OPERATOR"}, permintaan())
+	if err != nil || len(semua) != 1 {
+		t.Fatalf("pendaftaran: %v", err)
 	}
+	if semua[0].Klaim.NomorKlaim != "" || !strings.HasPrefix(semua[0].Work.ID, "CLMLF-") {
+		t.Errorf("nomor %q, pengenal %q", semua[0].Klaim.NomorKlaim, semua[0].Work.ID)
+	}
+}
 
-	// Nol baris work object tertinggal.
-	pohon, err := svc.KlaimLife().Ambil(ctx, repository.AwalanKlaim+"000001")
-	if err == nil && pohon != nil {
-		t.Errorf("klaim setengah jadi tertinggal: %+v", pohon.ID)
+// Aturan in-app Register (keputusan work owner 10-10-2026) terhadap Oracle uji: peserta 006 sudah terdaftar di klaim
+// pertama -> pendaftaran kedua ditolak 409 (Outstanding, baris peserta NULL), lalu Accepted ('1') tetap ditolak,
+// Rejected ('2') boleh, baris tercabut (STS_HAPUS) boleh.
+func TestDaftarPesertaAktifDiKlaimLain(t *testing.T) {
+	svc, bersihkan := siapkanPendaftaran(t)
+	defer bersihkan()
+	ctx := context.Background()
+	daftar := svc.Pendaftaran()
+	pelaku := inti.Pelaku{AkunID: "UJI-OPERATOR", Peran: []string{services.PeranInputRegister}}
+
+	pertama, err := daftar.Daftar(ctx, pelaku, permintaan())
+	if err != nil || len(pertama) != 1 {
+		t.Fatalf("pendaftaran pertama: %v", err)
+	}
+	klaimID := pertama[0].Work.ID
+	// ubahStatus menulis kode ke baris peserta DAN baris adjustment-nya (seperti PerbaruiStatusBaris); kolom STS_HAPUS
+	// hanya ke peserta.
+	ubahStatus := func(kolom, nilai string) {
+		t.Helper()
+		pes, err := svc.DB().Qualify("T_CLAIMLF_PREMIUMLIST_DETAIL")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := svc.DB().ExecContext(ctx, "UPDATE "+pes+" SET "+kolom+" = :1 WHERE CLAIM_ID = :2", nilai, klaimID); err != nil {
+			t.Fatal(err)
+		}
+		if kolom != "STS_REJECT" {
+			return
+		}
+		adj, err := svc.DB().Qualify("T_CLAIMLF_ADJUSTMENT")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := svc.DB().ExecContext(ctx, "UPDATE "+adj+" SET STS_REJECT = :1 WHERE PREMIUM_LIST_DETAIL_ID IN "+
+			"(SELECT ID FROM "+pes+" WHERE CLAIM_ID = :2)", nilai, klaimID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	harusDitolak := func(label string) {
+		t.Helper()
+		_, err := daftar.Daftar(ctx, pelaku, permintaan())
+		if !errors.Is(err, services.ErrPesertaSudahDiklaim) || !strings.Contains(err.Error(), "(PL UJI-PL-1)") ||
+			!strings.Contains(err.Error(), "("+label+")") {
+			t.Fatalf("%s: galat %v", label, err)
+		}
+	}
+	harusDitolak("Outstanding")
+	ubahStatus("STS_REJECT", kontrak.KodeOutstanding)
+	harusDitolak("Outstanding")
+	ubahStatus("STS_REJECT", kontrak.KodeAksep)
+	harusDitolak("Accepted")
+	ubahStatus("STS_REJECT", kontrak.KodeDitolak)
+	kedua, err := daftar.Daftar(ctx, pelaku, permintaan())
+	if err != nil || len(kedua) != 1 {
+		t.Fatalf("peserta Rejected harus boleh didaftarkan lagi: %v", err)
+	}
+	// Klaim kedua kini aktif; cabut pesertanya (STS_HAPUS) -> boleh lagi.
+	klaimID = kedua[0].Work.ID
+	ubahStatus("STS_HAPUS", "1")
+	if _, err := daftar.Daftar(ctx, pelaku, permintaan()); err != nil {
+		t.Fatalf("baris tercabut harus tidak dihitung: %v", err)
 	}
 }

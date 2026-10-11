@@ -581,7 +581,7 @@ pada baris new business, terisi saat endorsement:
 
 Ditambah pembeda versi umum: `NOENDORS` `[terverifikasi]` (`Generate_NoEndorsmentLife`),
 `PL_NUMBER_EDM`, **`PRODKE`** (⚠️ **versi berjalan = `PRODKE` terbesar**, `[terverifikasi]`),
-`EDMSTATUS`, `STATUSOLD`, dan identitas kerja **`EDMLF-<n>`** `[fakta bisnis — work owner]`
+`EDMSTATUS`, `STATUSOLD`, dan identitas kerja **`EDML-<n>`** (keputusan work owner 07-10-2026, sama dengan Pega; `EDMLF-<n>` dulu tebakan analogi `NBLF-`)
 (paritas `NBLF-`; **nol kecocokan di korpus** — diterima sebagai fakta bisnis).
 
 #### ⚠️ Penyimpangan sadar 10 — pencocokan peserta lewat `PARENT_ID`, bukan indeks
@@ -743,7 +743,8 @@ Perintah verifikasi wajib ditulis eksplisit di tiap tiket selama `Makefile` belu
 
 **Penomoran**
 
-23. Endorsement memperoleh `PL_NUMBER_EDM` dirakit **`<nomor polis>/<PRODKE+1>`** — **bukan** dari
+23. *(08-10-2026, keputusan work owner, migrasi 485: PRODKE SATU hitungan mulai 0 — NB 0; nomor = PRODKE baru dua digit; Confirm juga menulis `JSON_POLIS` tanpa `DATA_JSON`.)*
+    Endorsement memperoleh `PL_NUMBER_EDM` dirakit **`<nomor polis>/<PRODKE+1>`** — **bukan** dari
     `PROC_GENERATE_SEQUENCE_NUMBER`.
 24. Nomor endorsement **lahir sekali**; pemanggilan ulang tidak mengubahnya dan tidak menaikkan
     `PRODKE`.
@@ -861,7 +862,7 @@ Perintah verifikasi wajib ditulis eksplisit di tiap tiket selama `Makefile` belu
     dihitung ulang; kegagalan di mana pun **membatalkan seluruhnya**. *(§11)*
 71. ⚠️ Menjalankan penyalinan **dua kali** untuk maksud endorsement yang sama **tidak** menghasilkan
     dua versi — pemeriksaan `(NOPOLIS, PRODKE)` menahannya. *(§11)*
-72. Identitas kerja endorsement berbentuk **`EDMLF-<n>`**, sejajar `NBLF-<n>` pada new business.
+72. Identitas kerja endorsement berbentuk **`EDML-<n>`** tanpa nol di depan, sama dengan Pega; sequence mulai 828 (migrasi 484) — *keputusan work owner 07-10-2026* (dulu `EDMLF-<n>`, tebakan analogi `NBLF-<n>`).
     *(§16; `[fakta bisnis — work owner]`)*
 
 ---
@@ -874,7 +875,7 @@ Perintah verifikasi wajib ditulis eksplisit di tiap tiket selama `Makefile` belu
 | --- | --- | --- | --- |
 | ~~**OQ-001**~~ (sisa) | ~~DDL fisik `M_LIFE_PREMIUM_SUMMARY`, `M_LIFE_PREMIUM_DETAIL`, `JSON_POLIS`~~ | — | ✅ **DITUTUP 2026-09-16** — tabel target **dirancang sendiri** bersama PremiumList Life (§16). ⚠️ Pertanyaan **nilai uang negatif** terjawab oleh rancangan: kolom uang **desimal presisi arbitrer bertanda**, dan jurnal balik memang menulis nilai negatif (§6, §16) |
 | **OQ-020** (sisa) | Arti `QP` dan `QR` | Product+UW | **TETAP TERBUKA.** ⚠️ **KOREKSI 2026-09-16:** sempat ditandai ditutup "dari dropdown `TYPE` korpus EDM Life (QR=Receivable/QP=Payable)" — itu **KELIRU**. Sensus: `Receivable`/`Payable` **NOL berkas** di `Endorsement Life/`; label hanya di `pyLocalizedValue` payload `DATA_JSON` runtime (instance), **bukan rule korpus**. Yang terbukti cuma perilaku (`Q*`→gross, `T*`→retrosesi). Arti QP/QR belum terverifikasi |
-| `[terbuka]` | **`NOENDORS`** — format & kontrak `Generate_NoEndorsmentLife`; **`EDMLF-`** — format & generator | DBA / work owner | penomoran; **tidak memblokir** |
+| `[terbuka]` | **`NOENDORS`** — format & kontrak `Generate_NoEndorsmentLife`; ~~**`EDMLF-`** — format & generator~~ → `EDML-<n>` mulai 828 (07-10-2026, migrasi 484) | DBA / work owner | penomoran; **tidak memblokir** |
 | **OQ-066** | Penanda korpus tidak dapat dipercaya sendirian — pelajaran metodologi | Arsitektur Pega + Product+UW | §15; sudah diterapkan sebagai kehati-hatian |
 | **OQ-028** | Seluruh Assignment memakai `WorkList` (bukan `WorkBasket`) — implikasi routing/RBAC | IAM | §2; belum menyentuh AC |
 

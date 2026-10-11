@@ -5,6 +5,9 @@ package tiruan
 import (
 	"context"
 	"fmt"
+	"slices"
+	"sort"
+	"strings"
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/modul/endorsementlife/backend/models"
@@ -17,12 +20,51 @@ func (g *Gudang) AcuanCSV(_ context.Context, _ *db.Tx, kasusID string) (models.A
 	if g.Galat != nil {
 		return models.AcuanCSV{}, false, g.Galat
 	}
+	var a models.AcuanCSV
+	ada := false
 	for _, d := range g.pesertaKasus(kasusID) {
 		if d.EdmStatus != models.StatusNew {
-			return models.AcuanCSV{Plan: d.Nilai["PLAN"], PolicyHolder: d.Nilai["POLICY_HOLDER"]}, true, nil
+			a, ada = models.AcuanCSV{Plan: d.Nilai["PLAN"], PolicyHolder: d.Nilai["POLICY_HOLDER"]}, true
+			break
 		}
 	}
-	return models.AcuanCSV{}, false, nil
+	if !ada {
+		return models.AcuanCSV{}, false, nil
+	}
+	// Meniru sqlMataUangCSV / sqlSertifikatCSV: peserta Old (atau status kosong).
+	a.Sertifikat = map[string]bool{}
+	for _, d := range g.pesertaKasus(kasusID) {
+		if d.EdmStatus != "" && d.EdmStatus != models.StatusOld {
+			continue
+		}
+		if mu := strings.TrimSpace(d.Nilai["CURRENCY"]); mu != "" && !slices.Contains(a.MataUang, mu) {
+			a.MataUang = append(a.MataUang, mu)
+		}
+		if cn := models.KunciSertifikat(d.Nilai["CERTIFICATE_NO"]); cn != "" {
+			a.Sertifikat[cn] = true
+		}
+	}
+	sort.Strings(a.MataUang)
+	return a, true, nil
+}
+
+// ContohPesertaCSV meniru sqlContohPesertaCSV: peserta Old pertama urutan grid, nilai apa adanya.
+func (g *Gudang) ContohPesertaCSV(_ context.Context, _ *db.Tx, kasusID string) (map[string]string, bool, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Galat != nil {
+		return nil, false, g.Galat
+	}
+	for _, d := range g.pesertaKasus(kasusID) {
+		if d.EdmStatus == "" || d.EdmStatus == models.StatusOld {
+			hasil := map[string]string{}
+			for k, v := range d.Nilai {
+				hasil[k] = v
+			}
+			return hasil, true, nil
+		}
+	}
+	return nil, false, nil
 }
 
 // HapusPesertaBaru meniru `sqlHapusPesertaBaru`.

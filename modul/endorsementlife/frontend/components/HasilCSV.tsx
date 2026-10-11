@@ -1,19 +1,25 @@
-// Popup `View Upload` b9340 → `Section/ViewCSVResult_LifeEDM.xml`: grid 38 kolom (b1082) atas isi
-// berkas terunggah, nilainya teks mentah seperti daftar sementara Pega; `Generate Data Detail` b14322
-// mengunduhnya kembali berkepala `CSVPropHeaders` b276.
+// Popup `View Upload` b9340 → `Section/ViewCSVResult_LifeEDM.xml`: atas isi berkas terunggah, nilainya teks mentah
+// seperti daftar sementara Pega; `Generate Data Detail` b14322 mengunduhnya kembali berkepala `CSVPropHeaders` b276
+// (23 kolom, tidak berubah). Kolom tabel = kolom grid Participants yang tampil (`kolomGrid`, urutan dan label sama) -
+// keputusan work owner 10-10-2026 "Sama dengan grid peserta", menyimpang dari grid 38 kolom b1082 (`HASIL_CSV`).
 
 import { useMemo, useState } from 'react'
 
 import { Halaman, Kosong, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import { simpanBlob } from '../../../../inti/frontend/lib/simpanBlob'
 import { KEPALA_UNDUH_CSV, namaBerkasUnduh, rakitCSV } from '../csv'
-import { HASIL_CSV } from '../kolomKorpus'
+import type { KolomKorpus } from '../kolomKorpus'
 import { UMUM_EDM, UNGGAH_EDM } from '../labels'
-import { UKURAN_HALAMAN_EDM } from '../tampilan'
+import { kolomGrid, UKURAN_HALAMAN_EDM } from '../tampilan'
 import { TabelKorpus } from './TabelKorpus'
 
-/** Kolom grid sebagai teks mentah: nilai unggahan belum diurai (`10,5`, `02/01/1990`). */
-const KOLOM_MENTAH = HASIL_CSV.map((k) => ({ ...k, jenis: 't' as const }))
+/**
+ * Kolom grid Participants sebagai teks mentah: nilai unggahan belum diurai (`10,5`, `02/01/1990` tampil apa adanya).
+ * Dihitung tiap render supaya ikut bila `KOLOM_GRID_DI_RINCIAN` berubah. `berkas`/`baris` hanya untuk kunci React.
+ */
+export function kolomViewUpload(): KolomKorpus[] {
+  return kolomGrid().map(([label, kolom], i) => ({ label, kolom, jenis: 't', berkas: '', baris: i, tag: 'pyValue' }))
+}
 
 export default function HasilCSV({ baris, onTutup }: { baris: ReadonlyArray<Record<string, string>>; onTutup: () => void }) {
   const [halaman, setHalaman] = useState(1)
@@ -40,7 +46,7 @@ export default function HasilCSV({ baris, onTutup }: { baris: ReadonlyArray<Reco
         <Kosong pesan={UMUM_EDM.kosong} />
       ) : (
         <>
-          <TabelKorpus kolom={KOLOM_MENTAH} baris={potong} kunci={(_, i) => String((halaman - 1) * UKURAN_HALAMAN_EDM + i)} />
+          <TabelKorpus kolom={kolomViewUpload()} baris={potong} kunci={(_, i) => String((halaman - 1) * UKURAN_HALAMAN_EDM + i)} />
           <Halaman halaman={halaman} ukuran={UKURAN_HALAMAN_EDM} total={baris.length} onPindah={setHalaman} />
         </>
       )}

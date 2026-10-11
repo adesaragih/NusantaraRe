@@ -51,6 +51,20 @@ export function subJenisSah(edmType: string, perubahanData: string, batal: strin
   return false
 }
 
+/**
+ * Keterangan Policy No bernomor endorsement (keputusan work owner 10-10-2026): hanya bila masukan berakhiran
+ * "/<angka>" DAN polis ditemukan. Versi yang disebut = versi terakhir dari server (bukan akhiran yang diketik);
+ * belum pernah di-endorse = versi new business. Isian Policy No tidak diubah.
+ */
+export function keteranganAkhiran(k: KelayakanEDM | null): string {
+  if (k === null || k.adaAkhiran !== true || k.polisAda !== true) return ''
+  const versi =
+    (k.akhiranVersiTerakhir ?? '') !== ''
+      ? BUAT_EDM.versiTerakhir.replace('{akhiran}', k.akhiranVersiTerakhir ?? '')
+      : BUAT_EDM.versiNB
+  return BUAT_EDM.infoAkhiran.replace('{polis}', k.nomorPolis ?? '').replace('{versi}', versi)
+}
+
 /** Keadaan yang menentukan Submit dan teks bantuannya. */
 export interface KeadaanSubmitEDM {
   policyNo: string
@@ -251,6 +265,12 @@ export default function BuatEndorsement({ onTutup, onDibuat }: { onTutup: () => 
       {memeriksa && (
         <p className="alert alert--info edm-buat__status" role="status">
           {UMUM_EDM.memeriksa}
+        </p>
+      )}
+      {/* Policy No bernomor endorsement: keterangan info, bukan galat (10-10-2026). */}
+      {keteranganAkhiran(kelayakan) !== '' && (
+        <p className="alert alert--info edm-buat__status" role="status">
+          {keteranganAkhiran(kelayakan)}
         </p>
       )}
       {pesanGerbang.length > 0 && (

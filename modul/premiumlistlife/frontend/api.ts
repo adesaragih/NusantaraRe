@@ -476,6 +476,11 @@ export interface PenawaranPolis {
     classOfBusiness: PilihanKode[]
     status: PilihanKode[]
   }
+  /**
+   * Status kerja bila Save Offer ini MENUTUP kasus (Status Bind/Closed, bendera "0" - keputusan work owner
+   * 08-10-2026); kosong/absen selain itu.
+   */
+  statusTutup?: string
 }
 
 /** Badan `PUT /api/polis-life/{id}/penawaran` — kode, bukan nama. */
@@ -712,7 +717,7 @@ export interface RincianProduk {
   riRiskId?: string
 }
 
-/** Satu baris rate - view `RATE_LIFE` (dialog View Rate Master Product Name Life). */
+/** Satu baris rate - tabel `M_RATE_LIFE` (dialog View Rate Master Product Name Life). */
 export interface BarisRateProduk {
   id: string
   usedBy: string
