@@ -28,8 +28,8 @@ describe('SubTabItem - tampilan', () => {
         ubah={() => {}}
       />,
     )
-    expect(html).toContain('<td class="nbf-angka">1.234.567,5</td>')
-    expect(html).toContain('<td>USD</td><td class="nbf-angka">1.234.567,75</td>')
+    expect(html).toContain('<td class="nbf-angka">1.234.567,5000</td>')
+    expect(html).toContain('<td>USD</td><td class="nbf-angka">1.234.567,7500</td>')
   })
 })
 

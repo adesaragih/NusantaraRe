@@ -25,6 +25,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
@@ -341,8 +342,10 @@ func TestPorsiPembayaranKasusNyata(t *testing.T) {
 		Predikat:      p,
 		EDMDay:        teksDari(q, "EDMDay"),
 		StartDateTime: waktuPega(t, teksDari(pd, "StartDateTime")), EndDateTime: waktuPega(t, teksDari(pd, "EndDateTime")),
-		EdmDate: waktuPega(t, teksDari(q, "EdmDate")), CacahMataUang: len(daftar(fx, "CurrencyList")),
-		EdmType: models.JenisEndorsemen(teksDari(q, "EdmType")),
+		EdmDate:  waktuPega(t, teksDari(q, "EdmDate")),
+		MataUang: barisBayarDari(t, fx), MataUangLama: barisBayarDari(t, hal(fx, "OldData")),
+		ProrateEDMEndAwal: rasioDari(t, fx, "ProrateEDMEnd"),
+		EdmType:           models.JenisEndorsemen(teksDari(q, "EdmType")),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -371,12 +374,205 @@ func TestPorsiPembayaranTanggalNyataBulat(t *testing.T) {
 		Predikat:      services.PredikatPembayaran{IsEDM: true, IsEdmAdjRate: true},
 		EDMDay:        teksDari(q, "EDMDay"),
 		StartDateTime: waktuPega(t, teksDari(pd, "StartDateTime")), EndDateTime: waktuPega(t, teksDari(pd, "EndDateTime")),
-		EdmDate: waktuPega(t, teksDari(q, "EdmDate")), CacahMataUang: 1,
+		EdmDate: waktuPega(t, teksDari(q, "EdmDate")), MataUang: barisUji(t), MataUangLama: barisUji(t),
+		ProrateEDMEndAwal: rasio(t, "1"), ShareBaru: rasio(t, "1"), ShareLama: rasio(t, "1"),
 	})
 	if err != nil {
 		t.Fatalf("tanggal nyata ditolak: %v", err)
 	}
 	if h.Day <= 0 || h.ProrateEDMEnd.Kosong() {
 		t.Errorf("%+v", h)
+	}
+}
+
+// barisBayarDari - `CurrencyList` halaman fixture → baris pembayaran.
+//
+// ⚠️ `[dugaan]` `Deduction2` tidak tersimpan di baris baru maupun lama fixture
+// ini, sedangkan `EDMOldDeduction2` (ditulis 13.2.3 dari lokal
+// `OldDeduction2`) tersimpan "0" - Pega tampaknya membaca medan absen sebagai
+// 0. Kode produksi TETAP menolak nilai kosong (ErrNilaiPembayaranKosong); di
+// sini medan absen itu dipasok 0 untuk merekonsiliasi rumusnya.
+func barisBayarDari(t *testing.T, h halaman) []services.BarisBayar {
+	t.Helper()
+	var hasil []services.BarisBayar
+	for _, b := range daftar(h, "CurrencyList") {
+		name := teksDari(b, "Name")
+		py := hal(hal(b, "Policy"), "Payment")
+		u := func(k string) uang.Money {
+			d := desimalDari(t, py, k)
+			if d == nil {
+				return uang.Money{}
+			}
+			return uang.Money{Amount: d, Currency: name}
+		}
+		ded2 := u("Deduction2")
+		if ded2.Kosong() {
+			ded2 = uang.Money{Amount: apd.New(0, 0), Currency: name}
+		}
+		var cicil []services.Cicilan
+		for _, c := range daftar(py, "ListInstallment") {
+			cicil = append(cicil, services.Cicilan{InstallmentPercentage: rasioDari(t, c, "InstallmentPercentage")})
+		}
+		hasil = append(hasil, services.BarisBayar{Name: name, Payment: services.PembayaranBaris{
+			Premium: u("Premium"), Commision: u("Commision"), BrokerageFee: u("BrokerageFee"), Deduction2: ded2,
+			PPh: u("PPh"), PPN: u("PPN"),
+			EDMPremiMenjadi: u("EDMPremiMenjadi"), EDMOldPremi: u("EDMOldPremi"), EDMOldPayment: u("EDMOldPayment"),
+			EDMOldCommision: u("EDMOldCommision"), EDMOldBrokerage: u("EDMOldBrokerage"), EDMOldPPN: u("EDMOldPPN"),
+			EDMOldPPh: u("EDMOldPPh"), EDMOldDeduction2: u("EDMOldDeduction2"),
+			ListInstallment: cicil,
+		}})
+	}
+	return hasil
+}
+
+// sesudahDouble - nilai desimal dibulatkan ke IEEE-754 double terdekat.
+// ⚠️ ALAT UKUR test saja (A19): Pega mendeklarasikan lokal `preminew`,
+// `oldpayment`, `premiins`, `ricommins` sebagai `double`; kode produksi tetap
+// desimal eksak (CLAUDE.md §7), dan di sini dibuktikan bahwa selisihnya
+// dengan Pega HANYA pembulatan double itu.
+func sesudahDouble(t *testing.T, d *apd.Decimal) float64 {
+	t.Helper()
+	f, err := strconv.ParseFloat(d.Text('f'), 64)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return f
+}
+
+// TestPembayaranKasusNyataBlok13 - kasus nyata NB-15 (Extend Period):
+// `CountPaymentEdm_Act` 13.2 per mata uang terhadap nilai tersimpan.
+//
+//   - EKSAK: komponen yang lewat lokal `Decimal` (EDMOldPremi, EDMOldCommision,
+//     EDMOldBrokerage/PPN/PPh/Deduction2).
+//   - SAMA SESUDAH DOUBLE: nilai yang lewat lokal `double` (EDMNewPremi,
+//     EDMPremiMenjadi, EDMOldPayment, cicilan Premium, PaymentTotal, dan
+//     RICommision) - dan untuk dua di antaranya dibuktikan TIDAK sama eksak
+//     (A19 terukur). ⛔ Ralat instrumen: draf sebelumnya mengelompokkan cicilan
+//     RICommision sebagai "eksak", padahal `ricommins` lokal double (temuan
+//     review spec).
+//   - RUMUS: SumTotalPayment BUKAN lokal double - ia selisih DESIMAL dua medan
+//     tersimpan (`13566.16033544548 − 11242.674235452056 = 2323.486099993424`
+//     = nilai Pega), jadi diuji rumusnya di kedua sisi. ⛔ Ralat instrumen: draf
+//     pertama test ini memasukkannya ke kelompok "sesudah double" dan merah.
+//
+// Tidak dibandingkan: NetPremium (ditulis TSIObj langkah 3 dari
+// ProrateEDMEnd/EDM* SESUDAH CountPremiEDM_DT, yang tidak ada di fixture).
+func TestPembayaranKasusNyataBlok13(t *testing.T) {
+	fx := muatFixture(t)
+	q, pd := hal(fx, "QuotationData"), hal(fx, "PolicyData")
+	h, err := services.HitungPorsiPembayaran(services.MasukanPorsiPembayaran{
+		Predikat:      services.PredikatPembayaran{IsEDM: true, IsEdmExtendPeriod: true},
+		EDMDay:        teksDari(q, "EDMDay"),
+		StartDateTime: waktuPega(t, teksDari(pd, "StartDateTime")), EndDateTime: waktuPega(t, teksDari(pd, "EndDateTime")),
+		EdmDate:  waktuPega(t, teksDari(q, "EdmDate")),
+		MataUang: barisBayarDari(t, fx), MataUangLama: barisBayarDari(t, hal(fx, "OldData")),
+		ProrateEDMEndAwal: rasioDari(t, fx, "ProrateEDMEnd"),
+		EdmType:           models.JenisEndorsemen(teksDari(q, "EdmType")),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(h.BarisTerbawa) != 0 {
+		t.Errorf("baris terbawa %v", h.BarisTerbawa)
+	}
+	simpan := daftar(fx, "CurrencyList")[0]
+	py := hal(hal(simpan, "Policy"), "Payment")
+	cicilPega := daftar(py, "ListInstallment")[0]
+	kita := h.MataUang[0]
+	kc := kita.Payment.ListInstallment[0]
+
+	for label, v := range map[string]struct {
+		kita uang.Money
+		pega *apd.Decimal
+	}{
+		"EDMOldPremi":      {kita.Payment.EDMOldPremi, desimalDari(t, py, "EDMOldPremi")},
+		"EDMOldCommision":  {kita.Payment.EDMOldCommision, desimalDari(t, py, "EDMOldCommision")},
+		"EDMOldBrokerage":  {kita.Payment.EDMOldBrokerage, desimalDari(t, py, "EDMOldBrokerage")},
+		"EDMOldPPN":        {kita.Payment.EDMOldPPN, desimalDari(t, py, "EDMOldPPN")},
+		"EDMOldPPh":        {kita.Payment.EDMOldPPh, desimalDari(t, py, "EDMOldPPh")},
+		"EDMOldDeduction2": {kita.Payment.EDMOldDeduction2, desimalDari(t, py, "EDMOldDeduction2")},
+	} {
+		if v.kita.Kosong() || v.kita.Amount.Cmp(v.pega) != 0 {
+			t.Errorf("EKSAK %s: kita %v, Pega %v", label, v.kita.Amount, v.pega)
+		}
+	}
+	for label, v := range map[string]struct {
+		kita uang.Money
+		pega *apd.Decimal
+	}{
+		"EDMNewPremi":          {kita.Payment.EDMNewPremi, desimalDari(t, py, "EDMNewPremi")},
+		"EDMPremiMenjadi":      {kita.Payment.EDMPremiMenjadi, desimalDari(t, py, "EDMPremiMenjadi")},
+		"EDMOldPayment":        {kita.Payment.EDMOldPayment, desimalDari(t, py, "EDMOldPayment")},
+		"cicilan Premium":      {kc.Premium, desimalDari(t, cicilPega, "Premium")},
+		"cicilan PaymentTotal": {kc.PaymentTotal, desimalDari(t, cicilPega, "PaymentTotal")},
+		"cicilan RICommision":  {kc.RICommision, desimalDari(t, cicilPega, "RICommision")},
+	} {
+		if v.kita.Kosong() {
+			t.Errorf("%s kosong", label)
+			continue
+		}
+		if sesudahDouble(t, v.kita.Amount) != sesudahDouble(t, v.pega) {
+			t.Errorf("DOUBLE %s: kita %v (≈%v), Pega %v (≈%v)", label, v.kita.Amount, sesudahDouble(t, v.kita.Amount), v.pega, sesudahDouble(t, v.pega))
+		}
+	}
+	// Bukti A19: nilai lewat lokal double TIDAK sama eksak dengan hitungan
+	// desimal (ricommins `881.3222` kebetulan terwakili persis oleh double,
+	// jadi hanya dicek sesudah-double).
+	for label, v := range map[string]struct {
+		kita uang.Money
+		pega *apd.Decimal
+	}{
+		"EDMOldPayment":   {kita.Payment.EDMOldPayment, desimalDari(t, py, "EDMOldPayment")},
+		"cicilan Premium": {kc.Premium, desimalDari(t, cicilPega, "Premium")},
+	} {
+		if v.kita.Amount.Cmp(v.pega) == 0 {
+			t.Errorf("%s sama EKSAK - A19 tidak terbukti", label)
+		}
+	}
+	// RUMUS 13.2.3: SumTotalPayment = EDMPremiMenjadi − EDMOldPayment.
+	selisih := func(a, b *apd.Decimal) *apd.Decimal {
+		r := new(apd.Decimal)
+		if _, err := utils.DecimalContext().Sub(r, a, b); err != nil {
+			t.Fatal(err)
+		}
+		return r
+	}
+	if pega := selisih(desimalDari(t, py, "EDMPremiMenjadi"), desimalDari(t, py, "EDMOldPayment")); pega.Cmp(desimalDari(t, simpan, "SumTotalPayment")) != 0 {
+		t.Errorf("RUMUS Pega SumTotalPayment %v ≠ %v", desimalDari(t, simpan, "SumTotalPayment"), pega)
+	}
+	if kitaSum := selisih(kita.Payment.EDMPremiMenjadi.Amount, kita.Payment.EDMOldPayment.Amount); kitaSum.Cmp(kita.SumTotalPayment.Amount) != 0 {
+		t.Errorf("RUMUS kita SumTotalPayment %v ≠ %v", kita.SumTotalPayment.Amount, kitaSum)
+	}
+}
+
+// TestPremiEDMDTKasusNyataDitolak - CountPremiEDM_DT atas kasus nyata NB-15:
+// tanggal polis baru sesudah langkah 4 (05:00 GMT) dibandingkan dengan tanggal
+// polis LAMA yang tidak dinormalisasi (`T170000.000 GMT`) → selisih n,5 hari →
+// ditolak (A09), bukan ditebak. Tanggal ternormalisasi diambil dari
+// HitungPorsiPembayaran (langkah 4), bukan dihitung ulang di sini.
+func TestPremiEDMDTKasusNyataDitolak(t *testing.T) {
+	fx := muatFixture(t)
+	q, pd := hal(fx, "QuotationData"), hal(fx, "PolicyData")
+	lama := hal(fx, "OldData")
+	normal, err := services.HitungPorsiPembayaran(services.MasukanPorsiPembayaran{
+		Predikat:      services.PredikatPembayaran{IsEDM: true},
+		EDMDay:        teksDari(q, "EDMDay"),
+		StartDateTime: waktuPega(t, teksDari(pd, "StartDateTime")), EndDateTime: waktuPega(t, teksDari(pd, "EndDateTime")),
+		EdmDate:  waktuPega(t, teksDari(q, "EdmDate")),
+		MataUang: barisBayarDari(t, fx), MataUangLama: barisBayarDari(t, lama),
+		ProrateEDMEndAwal: rasioDari(t, fx, "ProrateEDMEnd"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	lpd := hal(lama, "PolicyData")
+	_, err = services.HitungPremiEDMDT(services.MasukanPremiEDMDT{
+		StartDateTime: normal.StartDateTime, EndDateTime: normal.EndDateTime, EdmDate: waktuPega(t, teksDari(q, "EdmDate")),
+		LamaStart: waktuPega(t, teksDari(lpd, "StartDateTime")), LamaEnd: waktuPega(t, teksDari(lpd, "EndDateTime")),
+		EdmType:  models.JenisEndorsemen(teksDari(q, "EdmType")),
+		MataUang: barisBayarDari(t, fx), MataUangLama: barisBayarDari(t, lama),
+	})
+	if !errors.Is(err, services.ErrSatuanSelisihWaktuBelumTerverifikasi) {
+		t.Errorf("galat %v, mau ErrSatuanSelisihWaktuBelumTerverifikasi", err)
 	}
 }

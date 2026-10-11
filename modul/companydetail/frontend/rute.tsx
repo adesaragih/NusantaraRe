@@ -7,10 +7,10 @@ import './companydetail.css'
 import type { HalamanCD } from './menu'
 import CompanyDetail from './pages/CompanyDetail'
 
-export function RuteCD({ halaman }: PropsRute<HalamanCD>) {
+export function RuteCD({ halaman, mulaiBaru }: PropsRute<HalamanCD>) {
   return (
     <BahasaUI.Provider value="en">
-      <div className="companydetail">{halaman === 'companydetail-daftar' && <CompanyDetail />}</div>
+      <div className="companydetail">{halaman === 'companydetail-daftar' && <CompanyDetail mulaiBaru={mulaiBaru} />}</div>
     </BahasaUI.Provider>
   )
 }

@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { Gagal, Halaman, Kosong, Memuat, UKURAN_HALAMAN } from '../../../../inti/frontend/components/ui/dasar'
+import { Gagal, Halaman, Kosong, Memuat, Modal, UKURAN_HALAMAN } from '../../../../inti/frontend/components/ui/dasar'
 import { useBolehUbah } from '../../../../inti/frontend/lib/hakMenu'
 import { ambilDaftar, ambilPilihan, type Account, type GroupBusiness, type HalamanDaftar } from '../api'
 import { atauStrip } from '../aturan'
@@ -15,7 +15,19 @@ import { NAMA_ACC } from '../menu'
 /** Jeda ketik sebelum server ditanya. */
 const JEDA_MS = 300
 
-export default function Accounts() {
+export default function Accounts({
+  mulaiBaru = false,
+  onSelesaiBaru,
+}: {
+  mulaiBaru?: boolean
+  /**
+   * Diisi = mode POPUP SAJA (tombol New Group Business NB FacIn, `MenuModul.formBaruBerjendela`, work owner 10-10-2026
+   * "HANYA MUNCULIN INI SAJA, MENU UTAMA ACCOUNT NYA TIDAK USAH"): hanya popup Add yang dirender, tanpa daftar;
+   * Cancel / X / Save memanggil ini.
+   */
+  onSelesaiBaru?: () => void
+} = {}) {
+  const hanyaPopup = onSelesaiBaru !== undefined
   // Menu View only (M_LOGIN_GO_MENU.HAK, 04-10-2026): tanpa tombol Add; backend juga menolak tulisnya.
   const bolehUbah = useBolehUbah(NAMA_ACC)
   const [kata, setKata] = useState('')
@@ -24,7 +36,8 @@ export default function Accounts() {
   const [data, setData] = useState<HalamanDaftar | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
   const [groupBusiness, setGroupBusiness] = useState<GroupBusiness[]>([])
-  const [formBuka, setFormBuka] = useState(false)
+  // `mulaiBaru` (PropsRute, 10-10-2026): dibuka tombol New Group Business form Opportunity NB FacIn - langsung form Add.
+  const [formBuka, setFormBuka] = useState(mulaiBaru && bolehUbah)
   const [pesan, setPesan] = useState<string | null>(null)
 
   const muat = useCallback(() => {
@@ -41,8 +54,9 @@ export default function Accounts() {
   }, [cari, halaman])
 
   useEffect(() => {
-    muat()
-  }, [muat])
+    // Mode popup saja tidak menampilkan daftar - tidak perlu dimuat.
+    if (!hanyaPopup) muat()
+  }, [muat, hanyaPopup])
 
   useEffect(() => {
     ambilPilihan().then(
@@ -69,6 +83,21 @@ export default function Accounts() {
     setFormBuka(false)
     setPesan(ACC.tersimpan(a.idView))
     muat()
+  }
+
+  if (hanyaPopup) {
+    // Akar tetap dipasang: token tema `--acc-*` dan gaya popup tinggal di `.accounts__akar`; `--popup` tanpa kotak.
+    return (
+      <section className="accounts__akar accounts__akar--popup">
+        {bolehUbah ? (
+          <FormAccount groupBusiness={groupBusiness} onTutup={onSelesaiBaru} onTersimpan={onSelesaiBaru} />
+        ) : (
+          <Modal judul={ACC.judulBaru} onTutup={onSelesaiBaru} labelBatal={ACC.batal}>
+            <p>{ACC.tanpaHakTambah}</p>
+          </Modal>
+        )}
+      </section>
+    )
   }
 
   return (

@@ -16,7 +16,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/apd/v3"
@@ -57,8 +56,10 @@ var uangKerugian = []struct {
 	{"preventionOfLoss", func(c models.CatatanKerugian) *apd.Decimal { return c.PreventionOfLoss }},
 }
 
-// periksaKerugian - catatan kerugian baris objek ke-`n` (tanpa basis data). Currency wajib (K-069/K-012, pola A133);
-// Loss Detail tidak dipaksa wajib (N-4); Remarks tanpa enumerasi.
+// periksaKerugian - catatan kerugian baris objek ke-`n` (tanpa basis data). Currency TIDAK wajib (keputusan work owner
+// 07-10-2026 "Currency ini tidak wajib di isi" = Pega `Section\InputCauseOfLoss_FacIn.xml` pyRequired=false; meralat N-9 /
+// A133) - kosong disimpan NULL, BUKAN 'UNKNOWN' (K-012); terisi tetap wajib ada di CURRENCY (periksaMataUang). Loss Detail
+// tidak dipaksa wajib (N-4); Remarks tanpa enumerasi.
 func periksaKerugian(n int, rugi []models.CatatanKerugian) []string {
 	if len(rugi) > batasKerugian {
 		return []string{fmt.Sprintf("baris[%d].lossRecords paling banyak %d", n, batasKerugian)}
@@ -66,9 +67,6 @@ func periksaKerugian(n int, rugi []models.CatatanKerugian) []string {
 	var masalah []string
 	for m, c := range rugi {
 		awal := fmt.Sprintf("baris[%d].lossRecords[%d].", n, m)
-		if strings.TrimSpace(c.Currency) == "" {
-			masalah = append(masalah, awal+"currency wajib diisi")
-		}
 		for _, u := range uangKerugian {
 			if !desimalSah(u.nilai(c)) {
 				masalah = append(masalah, awal+u.nama+pesanDesimal)

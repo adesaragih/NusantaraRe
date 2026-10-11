@@ -79,6 +79,23 @@ section mana pun yang terkait portal. Tombol `Create opportunity` membuat kasus 
   isian lama dikosongkan. Gambar memperlihatkan urutan abjad, sedangkan RD sort ID DESC — urutan dari backend.
 - **Work owner 02-10-2026 atas tiket 27:** pencarian akun PEKA huruf besar-kecil, 15 baris per halaman.
 - **C-2 — dua tombol Group Business lain nonaktif (`New Company Detail`, `New Group Business`)** (aksinya tidak diketahui).
+  - **DIGANTI keputusan work owner 10-10-2026:** *"BUTTON NEW COMPANY DETAIL = ISI MENU COMPANY DETAIL, BUTTON NEW
+    GROUP BUSINESS = ISI MENU ACCOUNT"*. Korpus NB FacIn tidak memuat aksi kedua tombol ini (grep `Company Detail` /
+    `Group Business` hanya mengenai `Section/SFAPortal_OpportunitiesList.xml`), jadi sumbernya keputusan ini, bukan Pega.
+    Tombol membuka halaman menu modul `companydetail` / `accounts` di jendela selebar layar lewat prop Shell baru
+    `PropsRute.onBukaMenu` (aditif, `inti/frontend/modul.ts` + `frontend/App.tsx`), sehingga isian Opportunity tetap.
+    Hak menu akun berlaku: menu yang tidak dipegang menampilkan pesan "Menu … tidak tersedia untuk akun Anda.". Setelah
+    company / account dibuat, jendela ditutup dan akunnya dipilih lewat Search Group Business.
+  - **Work owner 10-10-2026 (lanjutan):** *"New Company Detail LANGSUNG MENU CREATE NYA, NEW GROUP BUSINESS JUGA
+    LANGSUNG TAMPILAN SAAT ADD"*. `onBukaMenu(modul, { baru: true })` → prop Shell `PropsRute.mulaiBaru`; Company
+    Detail membuka form Create organization, Accounts membuka form Add. Perubahan di kedua modul itu hanya menambah:
+    satu prop opsional di `rute.tsx` + keadaan awal halaman; tanpa prop, perilaku menu biasa tidak berubah. Akun View
+    only tetap mendapat daftar (`useBolehUbah`).
+  - **Work owner 10-10-2026 (lanjutan 2), New Group Business:** *"HANYA MUNCULIN INI SAJA, MENU UTAMA ACCOUNT NYA TIDAK
+    USAH"*. Accounts menyatakan `formBaruBerjendela: true` di `menu.ts` (`MenuModul`, aditif). Shell lalu memasang
+    rutenya tanpa bingkai jendela, dan halaman Accounts hanya merender popup **Add account**. Cancel, X, dan Save menutup
+    popup. Akun View only mendapat popup berisi keterangan. Company Detail tetap di jendela selebar layar, karena form
+    Create-nya berupa halaman.
 - **C-3 — `Stage` ditampilkan read-only berisi `Opportunity`** `[dugaan]`: di gambar ia kotak berisi
   tanpa panah dropdown.
 - **C-4 — `Class Of Business` kotak teks biasa**; arti segitiga biru (`[dugaan]` autocomplete / smart

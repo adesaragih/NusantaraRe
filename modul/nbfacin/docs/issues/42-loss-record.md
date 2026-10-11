@@ -118,3 +118,32 @@ di VARCHAR2(500). Backend tetap tanpa validasi enumerasi.
 **ADR-0034 (butir 94, 03-10-2026):** uang/persen di dalam aplikasi kini `*apd.Decimal` (bukan teks); urai teks JSON →
 desimal sekali di handler (`services.UraiDesimalIsian`, pesan 400 sama), ikat/baca Oracle lewat `repository/desimal.go`.
 Kontrak JSON tidak berubah.
+
+## Ralat 07-10-2026 - Currency TIDAK wajib (keputusan work owner)
+
+Work owner: "di tab object, sub menu loss record, Currency ini tidak wajib di isi, ganti". `[terverifikasi]`
+`NB FacIn\Section\InputCauseOfLoss_FacIn.xml` sel `.Currency`: `pyRequired=false`. Keputusan N-9 (Currency wajib, pola A133 /
+kolom rancangan `T_LISTCAUSEOFLOSS.CURRENCY NOT NULL DEFAULT 'UNKNOWN'`) **diralat**: layar tidak menandai / menahan Save
+(sesi 0f, `SubTabKerugian.tsx`); Currency kosong disimpan NULL - bukan 'UNKNOWN' (K-012 tetap); kolom dibuat boleh kosong
+lewat migrasi baru (diminta ke c3; migrasi 191 yang sudah jalan tidak diubah).
+
+### Backend tiket 42b (sesi c3, 07-10-2026)
+
+- **Pemeriksaan** - `periksaKerugian` tidak lagi mewajibkan Currency; `periksaMataUang` hanya memeriksa Currency catatan
+  kerugian yang DIISI (tetap wajib ada di CURRENCY, tanpa ITL). Kosong → bind NULL (`argKerugian`, `db.KosongJadiNil`) -
+  bukan "" dan bukan 'UNKNOWN' (K-012).
+- **Migrasi 209** (DITULIS, belum dijalankan): `ALTER TABLE T_LISTCAUSEOFLOSS MODIFY (CURRENCY VARCHAR2(50) NULL)`. DEFAULT
+  'UNKNOWN' dibiarkan (aplikasi selalu menulis kolomnya eksplisit; membuangnya = perubahan yang tidak diminta). Tipe ditulis
+  ulang supaya pembaca tipe penjaga STRUKTUR tetap VARCHAR2(50). Jalur mundur mengisi NULL dengan 'UNKNOWN' (= DEFAULT) lalu
+  NOT NULL - ORA-02296 bila tidak. Urutan: 209 SEBELUM biner baru (biner baru menulis NULL; tanpa 209 Save tab Object yang
+  memuat catatan tanpa Currency gagal ORA-01400). Rancangan loader (`skemaTabel` T_LISTCAUSEOFLOSS.CURRENCY "… NOT NULL") tidak
+  diubah: penjaga skema loader hanya membandingkan TIPE (`TestMigrasiFlatSebagianCocokRancangan`), bukan NOT NULL.
+- **Loss Ratio per lokasi** (W-4, `DDL\SetLossRatio_Act.xml`) `[terverifikasi]`: aktivitas itu tidak menyebut Currency sama
+  sekali (0 kemunculan) - ΣAmount / ΣClaim dijumlah tanpa memandang mata uang, tanpa kurs. Catatan tanpa Currency ikut
+  dijumlah seperti catatan lain; tidak ada konversi kurs yang terdampak. ⚠️ Artinya aritmetika lintas mata uang SUDAH ada
+  sejak tiket 42 (IDR + USD dijumlah mentah) - perilaku Pega apa adanya, dilaporkan, bukan diubah.
+- **Proteksi Accept** "Loss record on location n can't be empty !" (ProtectFIREMBUPA_Act 9.2.10) `[terverifikasi]` bersyarat
+  `@LengthOfPageList(.Property.ListCauseOfLoss)==0` - menghitung BARIS, tidak memandang Currency; catatan tanpa Currency tetap
+  memenuhi. Tidak ada perubahan.
+- Instrumen: uji pemeriksaan / simpan / bind NULL; mutasi 2 titik (bind NULL, lewati Currency kosong) - keduanya menggagalkan
+  uji.

@@ -38,7 +38,7 @@ inti 914.
 
 ## Tabel
 
-Menulis `CITYINPUT` (dibuat `masterprovince` 880; `PROVINCENAME` + kota baru dari RW: 883, `modul/masterprovince/docs/issues/04-city-provincename.md`). EMAIL / MOID tidak tampil di menu (04-10-2026), kolomnya tetap. Rujukan Province dari `PROVINCE`; `BRANCHID` diperiksa ke `BRANCH` (tabel warisan yang dinyatakan `marketingofficer`), isian teks.
+Menulis `CITYINPUT` (dibuat `masterprovince` 215; `PROVINCENAME` + kota baru dari RW: 218, `modul/masterprovince/docs/issues/04-city-provincename.md`). EMAIL / MOID tidak tampil di menu (04-10-2026), kolomnya tetap. Rujukan Province dari `PROVINCE`; `BRANCHID` diperiksa ke `BRANCH` (tabel warisan yang dinyatakan `marketingofficer`), isian teks.
 
 ## Rute
 

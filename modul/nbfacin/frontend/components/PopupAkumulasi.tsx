@@ -316,7 +316,7 @@ export default function PopupAkumulasi({
               <div className="nbf-akum__kaki">
                 <button
                   type="button"
-                  className="btn btn--ghost nbf-akum__kiri"
+                  className="btn nbf-tema__tombol btn--ghost nbf-akum__kiri"
                   onClick={() => {
                     setPesan('')
                     setTambah(true)
@@ -326,7 +326,7 @@ export default function PopupAkumulasi({
                 </button>
                 <button
                   type="button"
-                  className="btn btn--ghost"
+                  className="btn nbf-tema__tombol btn--ghost"
                   onClick={() => {
                     setS(ISIAN_KOSONG)
                     setHasil(null)
@@ -336,7 +336,7 @@ export default function PopupAkumulasi({
                 >
                   {P.bersih.label}
                 </button>
-                <button type="submit" className="btn btn--primary" disabled={memuat}>
+                <button type="submit" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" disabled={memuat}>
                   {P.filter.label}
                 </button>
               </div>

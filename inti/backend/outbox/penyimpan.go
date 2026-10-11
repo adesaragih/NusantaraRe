@@ -130,16 +130,29 @@ func (r *Penyimpan) AntreEfek(ctx context.Context, tx *db.Tx,
 // DUA modul. Tanpa penyaring itu worker Claim Life memungut baris polis,
 // pelaksananya tidak mengenal jenisnya, dan baris itu ditandai GAGAL PERMANEN
 // oleh worker yang bukan pemiliknya - kegagalan palsu yang menutupi yang asli.
+//
+// ⛔ Batasan Oracle: row_limiting_clause (`FETCH FIRST n ROWS ONLY`) TIDAK boleh
+// bersama `FOR UPDATE` - Oracle merakitnya sebagai inline view analitik dan
+// menolak dengan ORA-02014 ("cannot select FOR UPDATE from view with DISTINCT,
+// GROUP BY, etc.") walau T_LOG_SERVICE_RNM tabel biasa (bug DEV 10-10-2026,
+// pekerja lampiran nbfacin). Karena itu kandidat (yang jatuh tempo paling awal)
+// dipilih di subkueri ROWNUM, lalu baris TABEL DASAR-nya dikunci `FOR UPDATE
+// SKIP LOCKED` (keputusan work owner 10-10-2026, cara 1). Harga: bila kandidat
+// itu sedang dikunci worker lain, putaran ini kosong (ErrEfekTidakAda) dan
+// putaran berikutnya mengambil kandidat baru; penandaan `AND STATUS = :4`
+// (SQLTandaiJalan) tetap pengaman pemungutan ganda.
 func sqlPungutEfek(tabel string) string {
 	return fmt.Sprintf(`SELECT ID, LINI, MODUL, JENIS_EFEK, RUJUKAN, MUATAN,
 			   PERCOBAAN
 		  FROM %s
-		 WHERE STATUS = :1
-		   AND JADWAL_BERIKUT <= :2
-		   AND MODUL = :3
-		 ORDER BY JADWAL_BERIKUT ASC
-		 FETCH FIRST 1 ROWS ONLY
-		 FOR UPDATE SKIP LOCKED`, tabel)
+		 WHERE ID = (SELECT ID FROM (SELECT ID
+		                               FROM %s
+		                              WHERE STATUS = :1
+		                                AND JADWAL_BERIKUT <= :2
+		                                AND MODUL = :3
+		                              ORDER BY JADWAL_BERIKUT ASC)
+		              WHERE ROWNUM = 1)
+		 FOR UPDATE SKIP LOCKED`, tabel, tabel)
 }
 
 // sqlTandaiJalan merakit penandaannya.

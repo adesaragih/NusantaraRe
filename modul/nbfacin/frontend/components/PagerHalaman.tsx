@@ -20,10 +20,10 @@ export default function PagerHalaman({
     <div className="pager">
       <span className="muted">{T.menampilkan(halaman, ukuran, total)}</span>
       <nav className="pager__aksi" aria-label={T.navigasiHalaman}>
-        <button type="button" className="btn btn--ghost btn--sm" disabled={halaman <= 1} onClick={() => onPindah(1)}>
+        <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" disabled={halaman <= 1} onClick={() => onPindah(1)}>
           {T.pertama}
         </button>
-        <button type="button" className="btn btn--ghost btn--sm" disabled={halaman <= 1} onClick={() => onPindah(halaman - 1)}>
+        <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" disabled={halaman <= 1} onClick={() => onPindah(halaman - 1)}>
           {T.sebelumnya}
         </button>
         {nomorHalaman(halaman, dari).map((n, i) =>
@@ -43,10 +43,10 @@ export default function PagerHalaman({
             </button>
           ),
         )}
-        <button type="button" className="btn btn--ghost btn--sm" disabled={halaman >= dari} onClick={() => onPindah(halaman + 1)}>
+        <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" disabled={halaman >= dari} onClick={() => onPindah(halaman + 1)}>
           {T.berikutnya}
         </button>
-        <button type="button" className="btn btn--ghost btn--sm" disabled={halaman >= dari} onClick={() => onPindah(dari)}>
+        <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" disabled={halaman >= dari} onClick={() => onPindah(dari)}>
           {T.terakhir}
         </button>
       </nav>

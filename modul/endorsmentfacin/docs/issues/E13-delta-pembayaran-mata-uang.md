@@ -19,12 +19,19 @@ before-image sebelum jalur produksi membacanya (K-048).
 
 **Blocked by:** E12 · E06
 
-**Status:** sebagian — 01-10-2026. Porsi periode tahap pembayaran:
-`backend/services/porsipembayaran.go` — `CountPaymentEdm_Act` langkah 1 (keluar bila bukan EDM), 3, 4
-(normalisasi tanggal polis ke tanggal Jakarta 05:00 GMT), 9 (FIX RATE untuk MarineCargo ∨
-AdjShareCedant), 11 (`CountPaymentEdmTSIObj_Act`), blok 13–15; gerbang dari registry
-(`PredikatPembayaranDari`). Rekonsiliasi kasus nyata `ProrateEDMEnd = 1` (lemah: konstanta blok 13).
-Belum: rumus pembayaran 13.2/14.4/15.5, `SumTotalPayment`, netto +PPh+PPN, `CountPremiEDM_DT`.
+**Status:** sebagian — 09-10-2026. `CountPaymentEdm_Act` diport dari langkah 1 sampai blok 15 kecuali
+langkah 2 (`SetRIComm_Act`, query master pajak — E17 dilewati) dan 6 (`GetEdmProdKe_Act`, query; hasilnya
+masukan `HasilProdKe`): `porsipembayaran.go` (porsi, langkah 1/3/4/7/9/11, blok 13–15), `pembayaran.go`
+(pembayaran per mata uang 13.2/14.4/15.5 + `CountPaymentEdmTSIObj_Act` 1.4/1.5/2.2/langkah 3 cicilan),
+`predikatkasus.go` (`KasusSesudahRISlip`, langkah 5), langkah 10 di `premiedmdt.go` (E14). `[terverifikasi]`
+Rekonsiliasi kasus nyata NB-15 blok 13: komponen lewat lokal `Decimal` EKSAK; lewat lokal `double` sama
+sesudah pembulatan double (A19 — Pega menghitung `preminew`/`oldpayment`/`premiins`/`ricommins` sebagai
+`double`; port tetap desimal eksak, CLAUDE.md §7). ⛔ Menyimpang dari tiket, mengikuti korpus: "mata uang
+baru → seluruh nilai sebelum dipaksa nol" — korpus 13.2/15.5 tidak menolkan apa pun, 14.4.4 tiga medan,
+TSIObj 1.4.4 empat medan, `CountPremiEDM_DT` EdmType 4 tiga medan (EdmType 1/2 lewat penolan Param);
+komponen lain TERBAWA dari baris sebelumnya (A20, `BarisTerbawa`). Langkah 10 dirangkai di tempatnya lewat
+`MasukanPorsiPembayaran.LangkahSepuluh` (`TestRangkaianLangkahSepuluh`). Langkah 5 menulis `Type = 0` ke
+halaman kerja di Pega; di sini hanya salinan untuk predikat — penulisan balik belum diport.
 
 - [ ] Selisih pembayaran = nilai sesudah − nilai sebelum, per mata uang
 - [ ] Netto = premi − komisi − brokerage − potongan **+ PPh + PPN**

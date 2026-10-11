@@ -139,16 +139,17 @@ go run ./cmd/api                        # atau .\bin\api.exe
 
 ⛔ **Urutan deploy master (04-10-2026; tinjau tim inti)** — Master Data dipecah menjadi delapan modul menu
 (`masternation` … `masterobjectitemtype`, mesin bersama `inti/backend/master` + `inti/frontend/master`); tabelnya
-milik `masterprovince` 880–882 (dulu `masterdata` 760–762). Kode yang membaca tabel baru sebelum migrasinya berjalan
+milik `masterprovince` 215–218 (dulu 880–883, sebelumnya `masterdata` 760–762; dipindah 05-10-2026 karena bentrok
+rentang dengan `aggregate` — langkah `T_MIGRASI` DEV di `modul/masterprovince/MODUL.md` bab "Penomoran ulang (05-10-2026)"). Kode yang membaca tabel baru sebelum migrasinya berjalan
 gagal (ORA-00904 / ORA-00942). Backend dan frontend dideploy BERSAMA (`/api/masterdata` dibuang):
 
 1. Pasang biner yang memuat commit `072370f0` — pelari migrasi melewati pra-terbang untuk VIEW yang diganti tabel
    bernama sama di langkah yang sama (`DROP VIEW` sebelum `CREATE TABLE`). Biner lebih lama berhenti di pra-terbang
-   880 ("kolom yang diminta migrasi tetapi tidak ada: [STS_AKTIF]") selama PROVINCE dkk. masih VIEW, dan karena
+   215 ("kolom yang diminta migrasi tetapi tidak ada: [STS_AKTIF]") selama PROVINCE dkk. masih VIEW, dan karena
    pra-terbang memeriksa SEMUA langkah tertunda, migrasi modul lain ikut tertahan.
-2. `-migrate` (work owner): 880 → 881 → 882 → 912–919 (baris menu delapan modul, DIMIGRASI '1', tanpa slot) → 920
+2. `-migrate` (work owner): 215 → 216 → 217 → 218 → 912–919 (baris menu delapan modul, DIMIGRASI '1', tanpa slot) → 920
    (hak menu Master Data disalin ke delapan menu, baris 'masterdata' dibuang). Di DEV yang sudah menjalankan
-   880–882: hanya 912–920 yang baru; nama 911 / 996 yang tercatat tanpa berkas diabaikan pelari.
+   nama lama 880–883 / 760–762: ganti dulu namanya di `T_MIGRASI` (bab di atas), lalu hanya 912–920 yang baru; nama 911 / 996 yang tercatat tanpa berkas diabaikan pelari.
 3. Baru sesudahnya buka layar delapan master dan saran akumulasi nbfacin (Choose Accumulation). `MODUL_AKTIF` yang
    menyebut nama satu per satu: tambah kedelapan nama, buang `masterdata`.
 

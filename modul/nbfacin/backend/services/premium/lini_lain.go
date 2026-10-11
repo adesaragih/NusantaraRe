@@ -184,7 +184,9 @@ func calculateAnekaGolf(in Input) (uang.Money, error) {
 	case "1":
 		// Langkah 14.1 (CountPremiCoverageAneka L3311) `Local.Prorate == 0 ||
 		// Local.Prorate = ""`: pro-rata dihitung ulang dari tanggal polis (14.1.1-14.1.3,
-		// @DateTime) - belum diport. FillPremiGolf tidak punya langkah itu.
+		// @DateTime) - diport di services/hitunganeka.go (pemanggil memberi pro-rata
+		// hasilnya). FillPremiGolf langkah 2 (L399) mengisi pro-rata dari tanggal SEBELUM
+		// rumus (tiket 73 P2), jadi 0 di sini = Start = End.
 		if in.LiniBisnis != LiniGolf && (proRata == nil || proRata.IsZero()) {
 			return uang.Money{}, fmt.Errorf("%w: pro-rata ANEKA dari tanggal (langkah 14.1)", ErrBentukBelumDiport)
 		}

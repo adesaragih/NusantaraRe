@@ -41,8 +41,12 @@ func argFEA(f models.BarisFEA) []any {
 }
 
 // bacaFEA - FEA case `id` per T_LOCATIONLIST.ID (teks).
-func (r *ObjekOracle) bacaFEA(ctx context.Context, t tabelObjek, id string) (map[string][]models.BarisFEA, error) {
-	baris, err := r.db.QueryContext(ctx, sqlBacaFEA(t), id)
+func (r *ObjekOracle) bacaFEA(ctx context.Context, t tabelObjek, b lingkupBaca) (map[string][]models.BarisFEA, error) {
+	q, arg, err := b.kueri(sqlBacaFEA(t))
+	if err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca FEA objek: %w", err)
 	}
@@ -72,22 +76,18 @@ func (r *ObjekOracle) bacaFEA(ctx context.Context, t tabelObjek, id string) (map
 }
 
 // sisipFEA - FEA satu lokasi, SEQ_NO 1..n.
-func (r *ObjekOracle) sisipFEA(ctx context.Context, tx *db.Tx, t tabelObjek, idLokasi string, fea []models.BarisFEA) error {
+func (w *tulisObjek) sisipFEA(ctx context.Context, idLokasi string, fea []models.BarisFEA) error {
 	for j, f := range fea {
-		idFEA, err := r.db.NomorBerikut(ctx, tx, sequenceFEAList)
+		idFEA, err := w.p.nomor(ctx, sequenceFEAList)
 		if err != nil {
 			return err
 		}
-		uid, err := uidAcak()
+		uid, err := w.uid()
 		if err != nil {
 			return err
 		}
 		arg := append([]any{idFEA, idLokasi, j + 1, uid}, argFEA(f)...)
-		h, err := jalankan(ctx, tx, sqlSisipFEA(t.fea), "menyisipkan "+TabelFEAList, arg...)
-		if err != nil {
-			return err
-		}
-		if err := db.PastikanSatuBaris(h, TabelFEAList); err != nil {
+		if err := w.p.sisip(ctx, sqlSisipFEA(w.t.fea), TabelFEAList, arg); err != nil {
 			return err
 		}
 	}

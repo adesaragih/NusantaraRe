@@ -50,8 +50,12 @@ func sqlSisipTableOfLimit(tol string) string {
 }
 
 // bacaOkupasi - okupasi case `id` per T_PROPERTY.ID (teks).
-func (r *ObjekOracle) bacaOkupasi(ctx context.Context, t tabelObjek, id string) (map[string][]models.OkupasiObjek, error) {
-	baris, err := r.db.QueryContext(ctx, sqlBacaOkupasi(t), id)
+func (r *ObjekOracle) bacaOkupasi(ctx context.Context, t tabelObjek, b lingkupBaca) (map[string][]models.OkupasiObjek, error) {
+	q, arg, err := b.kueri(sqlBacaOkupasi(t))
+	if err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca okupasi objek: %w", err)
 	}
@@ -80,18 +84,19 @@ func (r *ObjekOracle) bacaOkupasi(ctx context.Context, t tabelObjek, id string) 
 }
 
 // sisipOkupasi - okupasi satu property (SEQ_NO 1..n), masing-masing dengan satu baris TableOfLimit.
-func (r *ObjekOracle) sisipOkupasi(ctx context.Context, tx *db.Tx, t tabelObjek, idProperty string, okupasi []models.OkupasiObjek) error {
+func (w *tulisObjek) sisipOkupasi(ctx context.Context, idProperty string, okupasi []models.OkupasiObjek) error {
 	k := db.KosongJadiNil
+	t := w.t
 	for j, o := range okupasi {
-		idOkupasi, err := r.db.NomorBerikut(ctx, tx, sequenceOccupationList)
+		idOkupasi, err := w.p.nomor(ctx, sequenceOccupationList)
 		if err != nil {
 			return err
 		}
-		idTol, err := r.db.NomorBerikut(ctx, tx, sequenceTableOfLimit)
+		idTol, err := w.p.nomor(ctx, sequenceTableOfLimit)
 		if err != nil {
 			return err
 		}
-		uid, err := uidAcak()
+		uid, err := w.uid()
 		if err != nil {
 			return err
 		}
@@ -103,11 +108,7 @@ func (r *ObjekOracle) sisipOkupasi(ctx context.Context, tx *db.Tx, t tabelObjek,
 				k(o.OccupationID), k(o.OccupationName)}},
 			{sqlSisipTableOfLimit(t.tol), TabelTableOfLimit, []any{idTol, idOkupasi, k(o.Category), k(o.ConstructionClass), k(o.PctLimit)}},
 		} {
-			h, err := jalankan(ctx, tx, l.q, "menyisipkan "+l.tabel, l.arg...)
-			if err != nil {
-				return err
-			}
-			if err := db.PastikanSatuBaris(h, l.tabel); err != nil {
+			if err := w.p.sisip(ctx, l.q, l.tabel, l.arg); err != nil {
 				return err
 			}
 		}

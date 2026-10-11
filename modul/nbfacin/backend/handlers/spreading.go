@@ -1,7 +1,8 @@
 package handlers
 
 // Tab Spreading kasus FIRE (tiket 48): GET / PUT /api/nbfacin/kasus/{caseId}/spreading, POST …/spreading/hitung-share,
-// POST …/spreading/salin. Kontrak frontend modul/nbfacin/frontend/api.ts `TampilanSpreading`.
+// POST …/spreading/salin, POST …/spreading/hitung-baris (tiket 59, tahap uw). Kontrak frontend
+// modul/nbfacin/frontend/api.ts `TampilanSpreading`.
 //
 // Badan PUT = TampilanSpreading utuh dari layar: kunci tambahan (oldId, rate, tsi, total[], treaty[], ringkasan…) DITERIMA
 // dan diabaikan - yang dipakai hanya percentShare, oldId coverage (pemeriksa bentuk, 409) dan treatyType / treatyName /
@@ -216,14 +217,19 @@ func hitungShareSpreading(svc *services.Service) http.HandlerFunc {
 	}
 }
 
-// salinSpreading - POST …/spreading/salin badan {percentShare, template}: tidak menyimpan.
-func salinSpreading(svc *services.Service) http.HandlerFunc {
+// salinSpreading - POST …/spreading/salin badan {percentShare, template}: tidak menyimpan; tahap uw saja (tiket 59).
+func salinSpreading(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		pelaku := inti.PelakuDari(r, stubPelaku)
+		if err := inti.WajibIdentitas(pelaku); err != nil {
+			tulisGalat(w, err)
+			return
+		}
 		_, ps, templat, ok := uraiBadanSpreading(w, r)
 		if !ok {
 			return
 		}
-		d, err := svc.SalinSpreading(r.Context(), r.PathValue("caseId"), ps, templat)
+		d, err := svc.SalinSpreading(r.Context(), pelaku, r.PathValue("caseId"), ps, templat)
 		if err != nil {
 			tulisGalat(w, err)
 			return
@@ -239,31 +245,8 @@ func simpanSpreading(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		if !ok {
 			return
 		}
-		if b.Lokasi == nil {
-			galat.Tulis(w, http.StatusBadRequest, "badan permintaan harus memuat lokasi")
-			return
-		}
-		var masalah []string
-		lokasi := make([]models.LokasiSpreading, 0, len(b.Lokasi))
-		for i, l := range b.Lokasi {
-			lm := models.LokasiSpreading{Items: make([]models.ItemSpreading, 0, len(l.Items))}
-			for j, it := range l.Items {
-				im := models.ItemSpreading{Coverages: make([]models.CoverageSpreading, 0, len(it.Coverages))}
-				for m, c := range it.Coverages {
-					cm := models.CoverageSpreading{OldID: c.OldID, Spreading: make([]models.BarisSpreading, 0, len(c.Spreading))}
-					for n, s := range c.Spreading {
-						jalur := fmt.Sprintf("lokasi[%d].items[%d].coverages[%d].spreading[%d].sharePercentage", i, j, m, n)
-						cm.Spreading = append(cm.Spreading, models.BarisSpreading{TreatyType: s.TreatyType, TreatyName: s.TreatyName,
-							SharePercentage: services.UraiDesimalIsian(jalur, s.SharePercentage, &masalah)})
-					}
-					im.Coverages = append(im.Coverages, cm)
-				}
-				lm.Items = append(lm.Items, im)
-			}
-			lokasi = append(lokasi, lm)
-		}
-		if len(masalah) > 0 {
-			tulisGalat(w, fmt.Errorf("%w: %s", services.ErrMasukanSpreading, strings.Join(masalah, "; ")))
+		lokasi, ok := uraiLokasiBadan(w, b)
+		if !ok {
 			return
 		}
 		d, err := svc.SimpanSpreading(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("caseId"), ps, lokasi)
@@ -272,5 +255,98 @@ func simpanSpreading(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			return
 		}
 		galat.TulisJSON(w, keSpreadingKabel(d))
+	}
+}
+
+// hitungBarisSpreading - POST …/spreading/hitung-baris badan {percentShare, lokasi} (bentuk badan PUT): hitungan Save tahap
+// uw tanpa menulis (tiket 59).
+func hitungBarisSpreading(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		pelaku := inti.PelakuDari(r, stubPelaku)
+		if err := inti.WajibIdentitas(pelaku); err != nil {
+			tulisGalat(w, err)
+			return
+		}
+		b, ps, _, ok := uraiBadanSpreading(w, r)
+		if !ok {
+			return
+		}
+		lokasi, ok := uraiLokasiBadan(w, b)
+		if !ok {
+			return
+		}
+		d, err := svc.HitungBarisSpreading(r.Context(), pelaku, r.PathValue("caseId"), ps, lokasi)
+		if err != nil {
+			tulisGalat(w, err)
+			return
+		}
+		galat.TulisJSON(w, keSpreadingKabel(d))
+	}
+}
+
+// uraiLokasiBadan - lokasi badan (wajib) -> model: oldId coverage + treatyType / treatyName / sharePercentage baris; galat
+// 400 sudah ditulis bila ok=false.
+func uraiLokasiBadan(w http.ResponseWriter, b badanSpreading) ([]models.LokasiSpreading, bool) {
+	if b.Lokasi == nil {
+		galat.Tulis(w, http.StatusBadRequest, "badan permintaan harus memuat lokasi")
+		return nil, false
+	}
+	var masalah []string
+	lokasi := make([]models.LokasiSpreading, 0, len(b.Lokasi))
+	for i, l := range b.Lokasi {
+		lm := models.LokasiSpreading{Items: make([]models.ItemSpreading, 0, len(l.Items))}
+		for j, it := range l.Items {
+			im := models.ItemSpreading{Coverages: make([]models.CoverageSpreading, 0, len(it.Coverages))}
+			for m, c := range it.Coverages {
+				cm := models.CoverageSpreading{OldID: c.OldID, Spreading: make([]models.BarisSpreading, 0, len(c.Spreading))}
+				for n, s := range c.Spreading {
+					jalur := fmt.Sprintf("lokasi[%d].items[%d].coverages[%d].spreading[%d].sharePercentage", i, j, m, n)
+					cm.Spreading = append(cm.Spreading, models.BarisSpreading{TreatyType: s.TreatyType, TreatyName: s.TreatyName,
+						SharePercentage: services.UraiDesimalIsian(jalur, s.SharePercentage, &masalah)})
+				}
+				im.Coverages = append(im.Coverages, cm)
+			}
+			lm.Items = append(lm.Items, im)
+		}
+		lokasi = append(lokasi, lm)
+	}
+	if len(masalah) > 0 {
+		tulisGalat(w, fmt.Errorf("%w: %s", services.ErrMasukanSpreading, strings.Join(masalah, "; ")))
+		return nil, false
+	}
+	return lokasi, true
+}
+
+// pesanTemplateKabel - jawaban POST …/spreading/periksa-template (api.ts `{ pesan: string[] }`).
+type pesanTemplateKabel struct {
+	Pesan []string `json:"pesan"`
+}
+
+// periksaTemplateSpreading - POST …/spreading/periksa-template badan {template} (tiket 59 lanjutan): proteksi Type Treaty Copy
+// Spreading seketika; tidak menyimpan.
+func periksaTemplateSpreading(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		pelaku := inti.PelakuDari(r, stubPelaku)
+		if err := inti.WajibIdentitas(pelaku); err != nil {
+			tulisGalat(w, err)
+			return
+		}
+		var b struct {
+			Template []templateSpreadingKabel `json:"template"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, batasBadanSpreading)).Decode(&b); err != nil || b.Template == nil {
+			galat.Tulis(w, http.StatusBadRequest, "badan permintaan harus memuat template")
+			return
+		}
+		templat := make([]models.TemplateSpreading, 0, len(b.Template))
+		for _, t := range b.Template {
+			templat = append(templat, models.TemplateSpreading{TreatyType: t.TreatyType, TreatyName: t.TreatyName})
+		}
+		pesan, err := svc.PeriksaTemplateSpreading(r.Context(), pelaku, r.PathValue("caseId"), templat)
+		if err != nil {
+			tulisGalat(w, err)
+			return
+		}
+		galat.TulisJSON(w, pesanTemplateKabel{Pesan: pesan})
 	}
 }

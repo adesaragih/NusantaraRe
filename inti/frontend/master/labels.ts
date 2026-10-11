@@ -9,6 +9,9 @@ export const TEKS_MASTER = {
   nonaktif: 'Nonaktif',
   kolomStatus: 'Status',
   kolomAksi: 'Aksi',
+  /** Jejak ubah digabung dua baris (nama, tanggal di bawahnya) - pola Kelola User (10-10-2026). */
+  kolomDibuat: 'Dibuat',
+  kolomDiubah: 'Diubah',
   tambah: 'Tambah',
   ubah: 'Ubah',
   aktifkan: 'Aktifkan',

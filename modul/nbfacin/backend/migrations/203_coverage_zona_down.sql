@@ -1,0 +1,3 @@
+-- Jalur mundur 203 - kolom Zone dan 4.2 Construction T_COVERAGELIST.
+ALTER TABLE {skema}.T_COVERAGELIST DROP (ZONE, CONSTRUCTION_EARTHQUAKE)
+/

@@ -16,7 +16,7 @@ type portalTiruan struct {
 	err   error
 }
 
-func (p portalTiruan) CariPortal(context.Context, string, int, int) ([]models.BarisPortal, int, error) {
+func (p portalTiruan) CariPortal(context.Context, string, string, int, int) ([]models.BarisPortal, int, error) {
 	return p.baris, p.total, p.err
 }
 
@@ -25,13 +25,14 @@ func (p portalTiruan) CariPortal(context.Context, string, int, int) ([]models.Ba
 // membuat case (tidak tertimpa).
 func TestCariPortal(t *testing.T) {
 	svc := services.Baru(nil).DenganPortal(portalTiruan{total: 16, baris: []models.BarisPortal{
-		{CaseID: "UJI-NB-2", Name: "UJI Prospek", GroupBusiness: "UJI GRUP", InsuredName: "UJI TERTANGGUNG", Marketing: "UJI MO", Status: "Pending-Policy"},
+		{CaseID: "UJI-NB-2", Name: "UJI Prospek", GroupBusiness: "UJI GRUP", InsuredName: "UJI TERTANGGUNG", Marketing: "UJI MO", Status: "Pending-Policy",
+			NBStatus: "NB IS IN TEAM LEADER'S INBOX"},
 		{CaseID: "UJI-NB-1"},
 	}})
 	kode, isi := minta(t, svc, "GET", "/api/nbfacin/opportunity?cari=uji&halaman=2", "", "UJI-USER")
 	mau := `{"baris":[{"caseId":"UJI-NB-2","name":"UJI Prospek","groupBusiness":"UJI GRUP","insuredName":"UJI TERTANGGUNG",` +
-		`"marketing":"UJI MO","status":"Pending-Policy"},{"caseId":"UJI-NB-1","name":"","groupBusiness":"","insuredName":"",` +
-		`"marketing":"","status":""}],"total":16,"halaman":2,"ukuran":15}`
+		`"marketing":"UJI MO","status":"Pending-Policy","nbStatus":"NB IS IN TEAM LEADER'S INBOX"},{"caseId":"UJI-NB-1","name":"",` +
+		`"groupBusiness":"","insuredName":"","marketing":"","status":"","nbStatus":"NEW NB"}],"total":16,"halaman":2,"ukuran":15}`
 	if kode != 200 || isi != mau {
 		t.Fatalf("%d %s\nmau %s", kode, isi, mau)
 	}

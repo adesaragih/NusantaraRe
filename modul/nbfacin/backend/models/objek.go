@@ -75,6 +75,9 @@ type CoverageObjek struct {
 	// Unit (.Unit Indemnity Unit, kode), AccumulationCode, AccumulationDescription (Accumulation Address) - tiket 46,
 	// teks apa adanya (migrasi 195).
 	Unit, AccumulationCode, AccumulationDescription string
+	// Zone (.Zone, ZONES.DESCRIPTION) dan ConstructionEarthquake (.ConstructionEarthquake 4.2 Construction,
+	// CONSTRUCTION.CONSTRUCTION) - tiket 52, teks apa adanya (migrasi 203).
+	Zone, ConstructionEarthquake string
 }
 
 // Deductible - satu .CoverageList(k).DeductibleList(d) (kelas Data-Deductible, tiket 45). Kode pilihan = teks
@@ -168,6 +171,13 @@ type BarisTableOfLimit struct {
 	PctLimit    string // TABLEOFLIMIT.PCTLIMIT
 }
 
+// BarisBisnisLini - satu baris BUSINESS untuk lini case (tiket 73 P0): ID, OLDID, GROUPPANEL dari baris yang SAMA.
+type BarisBisnisLini struct {
+	ID         string // BUSINESS.ID -> BusinessCode
+	OldID      string // BUSINESS.OLDID -> BusinessOldId
+	GroupPanel string // BUSINESS.GROUPPANEL -> .Quotation.GroupPanel
+}
+
 // BarisCoverage - satu pilihan coverage (tiket 43) dari tabel COVERAGE (popup dan otomatis).
 type BarisCoverage struct {
 	ID    string // ID -> .Coverage
@@ -232,4 +242,35 @@ type CZoneZip struct {
 // ZipAkumulasi - satu saran Zip Code form Add New akumulasi (BrowseRiskAddressZipCode_RD + SetCountryID_Act).
 type ZipAkumulasi struct {
 	ZipCode, City, Province, Nation, NationInitial string
+}
+
+// AkumulasiCoverage - PUT …/akumulasi (tiket 60): ID baris T_COVERAGELIST dan dua kolom akumulasinya.
+type AkumulasiCoverage struct {
+	ID                                        string
+	AccumulationCode, AccumulationDescription string
+}
+
+// RWCsv - satu baris BrowseRW2_SQL (Save Data CSV objek, tiket 66): Note (kelurahan / ASMRW), DistrictName, CITYNAME,
+// PROVINCENAME, NATION (NATIONNAME).
+type RWCsv struct {
+	Note, District, City, Province, Nation string
+}
+
+// MataUangCsv - satu baris GetDataCurrencyByName_SQL (ID, OLDID, CURRENCY "CURR").
+type MataUangCsv struct {
+	ID, OldID, Currency string
+}
+
+// HalamanObjek - satu halaman tab Object FIRE (tiket 75 F3): Total lokasi yang cocok dengan pencarian; Lokasi dan IDLokasi
+// (T_LOCATIONLIST.ID) sejajar, urut SEQ_NO.
+type HalamanObjek struct {
+	Total    int
+	Lokasi   []ObjekFire
+	IDLokasi []string
+}
+
+// LokasiUbah - lokasi tab Object yang diubah (PATCH …/objek, tiket 75 F3): ID = T_LOCATIONLIST.ID dari GET …/objek/halaman.
+type LokasiUbah struct {
+	ID    string
+	Objek ObjekFire
 }

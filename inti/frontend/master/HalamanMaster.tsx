@@ -31,12 +31,14 @@ export default function HalamanMaster({ prefix }: { prefix: string }) {
     }
   }, [klien])
 
+  // Tema Kelola User (work owner 10-10-2026 "template nya ikutin menu kelola user"): akar `.kelola-user` membawa token `--ku-*`
+  // ke daftar, form, dan popup konfirmasi (dirender di dalam akar ini).
   return (
-    <section className="inbox">
+    <section className="inbox kelola-user">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{meta?.judul ?? ''}</h2>
       </header>
-      <p className="muted">{TEKS_MASTER.sub}</p>
+      <p className="muted kelola-user__sub">{TEKS_MASTER.sub}</p>
       {meta === null && galat === null && <Memuat pesan={TEKS_MASTER.memuat} />}
       <Gagal galat={galat} />
       {meta && <DaftarMaster klien={klien} meta={meta} />}

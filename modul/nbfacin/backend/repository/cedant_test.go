@@ -7,7 +7,7 @@ import "testing"
 func TestSQLCedant(t *testing.T) {
 	tb := tabelCedant{work: "U.W", general: "U.G", quo: "U.Q", ceding: "U.C", cedant: "U.D"}
 	for nama, c := range map[string]struct{ got, mau string }{
-		"kepala": {sqlBacaKepalaCedant(tb), "SELECT TO_CHAR(g.SHARE_CEDANT_TYPE), q.SOB_NAME, q.CEDING_CO, q.CEDING_CO_NAME, w.FLAG_ONGOING_POLICY FROM U.W w " +
+		"kepala": {sqlBacaKepalaCedant(tb), "SELECT TO_CHAR(g.SHARE_CEDANT_TYPE), q.SOB_NAME, q.CEDING_CO, q.CEDING_CO_NAME, w.FLAG_ONGOING_POLICY, q.SHARE_OF_CEDING FROM U.W w " +
 			"LEFT JOIN U.G g ON g.ID = w.ID LEFT JOIN U.Q q ON q.PARENT_ID = w.ID WHERE w.ID = :1 AND w.LINI = :2"},
 		"grid": {sqlBacaCedant("U.D"), "SELECT CEDING_CO, CEDING_CO_NAME, " + angkaKeluar("SHARE_CEDING") +
 			" FROM U.D WHERE PARENT_ID = :1 ORDER BY SEQ_NO"},

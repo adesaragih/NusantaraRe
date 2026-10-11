@@ -105,7 +105,7 @@ func TestSQLTulisMaster(t *testing.T) {
 	}
 }
 
-// TestJejakDiSetiapMaster - MD-7: tabel flat (880) membawa jejak sendiri; tepat NATION dan OBJECTITEMTYPE (warisan,
+// TestJejakDiSetiapMaster - MD-7: tabel flat (masterprovince 215) membawa jejak sendiri; tepat NATION dan OBJECTITEMTYPE (warisan,
 // MD-2) memakai T_MASTER_STATUS; keempat kunci jejak turunan.
 func TestJejakDiSetiapMaster(t *testing.T) {
 	var terpisah []string
@@ -133,7 +133,7 @@ func TestJejakDiSetiapMaster(t *testing.T) {
 }
 
 // TestCityTanpaEmailMoID - "di menu city kolom email dan mo id di hapus saja" (04-10-2026): SQL City tidak menyebut
-// EMAIL / MOID, jadi tambah membiarkannya NULL dan ubah tidak mengosongkan isi lamanya; PROVINCENAME (883) ikut ditulis.
+// EMAIL / MOID, jadi tambah membiarkannya NULL dan ubah tidak mengosongkan isi lamanya; PROVINCENAME (masterprovince 218) ikut ditulis.
 func TestCityTanpaEmailMoID(t *testing.T) {
 	c := master(t, "city")
 	for _, q := range []string{sqlSisip("UJI.C", c), sqlUbah("UJI.C", c), sqlDaftar(c, sumber(c, "UJI.C", "UJI.S"), "", 0)} {

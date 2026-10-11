@@ -9,6 +9,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/mail"
 	"os"
 	"strconv"
 	"strings"
@@ -86,6 +87,14 @@ type Config struct {
 	// membuat berkas pelanggan mendarat di folder kerja siapa pun yang
 	// kebetulan menjalankan server.
 	UnggahanDir string
+
+	// SMTPNBFacIn - kotak surat keluar korespondensi NB Fac In (tiket 56; persetujuan work owner 06-10-2026 "iya kirim
+	// email sungguhan"). Host atau alamat pengirim (Dari) kosong = SMTP belum dikonfigurasi: modul tidak mengirim (503).
+	SMTPNBFacIn SMTP
+
+	// GrupNBFacIn - penanda case "group" NB Fac In (tiket 63, keputusan work owner 08-10-2026 D5): pengganti literal When
+	// IsGroup. ⛔ Nilainya (login akun / kode marketing) hanya dari env, tidak pernah di kode (CLAUDE.md §4.10).
+	GrupNBFacIn GrupNBFacIn
 
 	// ModulAktif - modul yang dipasang proses ini (refactor bentuk B), dari
 	// MODUL_AKTIF: nama dipisah koma, huruf kecil, tanpa ganda. KOSONG
@@ -188,6 +197,16 @@ func Load() (Config, error) {
 	c.UnggahanDir = strings.TrimSpace(os.Getenv("UNGGAHAN_DIR"))
 	c.ModulAktif = bacaDaftarModul(os.Getenv("MODUL_AKTIF"))
 
+	// PELAKSANA_STORAGE / TCO_PEKERJA_LAMPIRAN_INTERVAL dibuang mengikuti GitHub (7d627608: penyimpanan lewat
+	// inti/backend/penyimpanan + STORAGE_TOKEN_SALT); keputusan work owner 10-10-2026 "Ikut GitHub, sesuaikan nbfacin".
+	var err error
+	if c.SMTPNBFacIn, err = bacaSMTP("NBFACIN_SMTP"); err != nil {
+		return Config{}, err
+	}
+	c.GrupNBFacIn = GrupNBFacIn{Login: daftarKoma(os.Getenv("NBFACIN_GROUP_LOGIN")),
+		MarketingCode:        daftarKoma(os.Getenv("NBFACIN_GROUP_MARKETINGCODE")),
+		BondingMarketingName: daftarKoma(os.Getenv("NBFACIN_BONDING_MARKETINGNAME"))}
+
 	raw := strings.TrimSpace(os.Getenv("IS_PEGA_PROD"))
 	if raw != "" {
 		b, err := strconv.ParseBool(raw)
@@ -244,4 +263,76 @@ func ambil(nama, bawaan string) string {
 		return v
 	}
 	return bawaan
+}
+
+// GrupNBFacIn - NBFACIN_GROUP_LOGIN (login akun, dipisah koma) dan NBFACIN_GROUP_MARKETINGCODE (kode marketing, dipisah koma);
+// tiket 64: NBFACIN_BONDING_MARKETINGNAME (nama marketing penanda Bonding, When IsTBonding). Kosong = tidak ada.
+// ⛔ Nilainya tidak pernah dicetak (String hanya jumlah).
+type GrupNBFacIn struct {
+	Login, MarketingCode, BondingMarketingName []string
+}
+
+// String - jumlah saja (aman dicetak di log).
+func (g GrupNBFacIn) String() string {
+	return fmt.Sprintf("Grup{login:%d marketingCode:%d bondingMarketingName:%d}", len(g.Login), len(g.MarketingCode),
+		len(g.BondingMarketingName))
+}
+
+// daftarKoma - teks dipisah koma -> butir dipangkas, butir kosong dibuang; kosong -> nil.
+func daftarKoma(teks string) []string {
+	var hasil []string
+	for _, b := range strings.Split(teks, ",") {
+		if b = strings.TrimSpace(b); b != "" {
+			hasil = append(hasil, b)
+		}
+	}
+	return hasil
+}
+
+// SMTP - satu kotak surat keluar. ⛔ Nilainya hanya dari env (ADR-0004); Password tidak pernah dicetak (String).
+type SMTP struct {
+	Host     string
+	Port     int // 0 = bawaan pemakai (587); 465 = TLS implisit
+	User     string
+	Password string
+	// Dari - alamat kotak surat sistem pengirim (header From), dari <awalan>_FROM.
+	Dari string
+	// TanpaTLS - <awalan>_TANPA_TLS=true: boleh mengirim TANPA enkripsi bila server tidak menawarkan STARTTLS (tanpa akun
+	// saja). Bawaan false = TLS WAJIB (keputusan work owner 06-10-2026, tiket 56).
+	TanpaTLS bool
+}
+
+// Dikonfigurasi - Host dan Dari terisi.
+func (s SMTP) Dikonfigurasi() bool { return s.Host != "" && s.Dari != "" }
+
+// String - tanpa User / Password (aman dicetak di log).
+func (s SMTP) String() string {
+	return fmt.Sprintf("SMTP{host:%t port:%d dari:%t auth:%t tanpaTLS:%t}", s.Host != "", s.Port, s.Dari != "", s.User != "", s.TanpaTLS)
+}
+
+// bacaSMTP - <awalan>_HOST / _PORT / _USER / _PASSWORD / _FROM / _TANPA_TLS. Port bukan bilangan 1..65535, FROM bukan
+// alamat email polos (tanpa nama tampilan, tanpa CR / LF), atau TANPA_TLS bukan boolean -> ErrKonfigurasi.
+func bacaSMTP(awalan string) (SMTP, error) {
+	s := SMTP{Host: strings.TrimSpace(os.Getenv(awalan + "_HOST")), User: strings.TrimSpace(os.Getenv(awalan + "_USER")),
+		Password: os.Getenv(awalan + "_PASSWORD"), Dari: strings.TrimSpace(os.Getenv(awalan + "_FROM"))}
+	if raw := strings.TrimSpace(os.Getenv(awalan + "_PORT")); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n < 1 || n > 65535 {
+			return SMTP{}, fmt.Errorf("%w: %s_PORT harus bilangan 1..65535: %q", ErrKonfigurasi, awalan, raw)
+		}
+		s.Port = n
+	}
+	if raw := strings.TrimSpace(os.Getenv(awalan + "_TANPA_TLS")); raw != "" {
+		b, err := strconv.ParseBool(raw)
+		if err != nil {
+			return SMTP{}, fmt.Errorf("%w: %s_TANPA_TLS harus true / false: %q", ErrKonfigurasi, awalan, raw)
+		}
+		s.TanpaTLS = b
+	}
+	if s.Dari != "" {
+		if a, err := mail.ParseAddress(s.Dari); err != nil || a.Name != "" || a.Address != s.Dari {
+			return SMTP{}, fmt.Errorf("%w: %s_FROM harus satu alamat email polos", ErrKonfigurasi, awalan)
+		}
+	}
+	return s, nil
 }

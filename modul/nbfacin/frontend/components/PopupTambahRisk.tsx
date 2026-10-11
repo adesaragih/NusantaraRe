@@ -109,7 +109,7 @@ export default function PopupTambahRisk({
       lebar
       labelBatal={T.tutup.label}
       aksi={
-        <button type="submit" className="btn btn--primary" disabled={menyimpan}>
+        <button type="submit" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" disabled={menyimpan}>
           {menyimpan ? TEKS_TAMBAH_RISK.menyimpan : T.simpan.label}
         </button>
       }
@@ -136,7 +136,7 @@ export default function PopupTambahRisk({
                 <li key={`${i}-${r.zipCode}-${r.territoryName}`}>
                   <button
                     type="button"
-                    className="btn btn--ghost btn--sm"
+                    className="btn nbf-tema__tombol btn--ghost btn--sm"
                     onClick={() => {
                       setKetikZip(false)
                       setA((x) => terapkanRW(x, r))

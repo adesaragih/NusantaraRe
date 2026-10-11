@@ -180,6 +180,12 @@
   box-shadow: var(--acc-cekung-kecil);
 }
 
+/* Popup Add saja (tombol New Group Business NB FacIn, 10-10-2026): akar hanya membawa token tema, tanpa kotak halaman.
+   `display: contents` tetap mewariskan custom property ke popup. */
+.accounts .accounts__akar.accounts__akar--popup {
+  display: contents;
+}
+
 .accounts .btn:disabled {
   box-shadow: none;
 }

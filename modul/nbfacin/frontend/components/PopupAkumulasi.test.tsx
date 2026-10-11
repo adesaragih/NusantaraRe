@@ -66,7 +66,7 @@ describe('PopupAkumulasi - tampilan dirapikan (04-10-2026)', () => {
     expect(html).toContain(TEKS_AKUMULASI.sub)
     expect(html).toContain(`${TEKS_AKUMULASI.zipLokasi}<strong>12345</strong>`)
     expect(html).toMatch(/<form class="nbf-akum__kartu"/)
-    expect(html).toMatch(new RegExp(`<button type="submit" class="btn btn--primary">${P.filter.label}</button>`))
+    expect(html).toMatch(new RegExp(`<button type="submit" class="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary">${P.filter.label}</button>`))
     expect(html).toContain(TEKS_AKUMULASI.petunjukAwal)
   })
   it('jumlah kondisi aktif menghitung teks yang terisi', () => {

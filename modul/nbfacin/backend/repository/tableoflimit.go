@@ -34,6 +34,10 @@ const (
 type PembacaTableOfLimit interface {
 	// KodeBisnis - BUSINESS.ID ber-NOTE `nama` di group `grup` (paling banyak dua, cukup untuk mengenali ganda).
 	KodeBisnis(ctx context.Context, nama, grup string) ([]string, error)
+	// OldIDBisnis - BUSINESS.OLDID baris yang sama dengan KodeBisnis (tiket 62: `BusinessOldId` predikat bentuk B tangga).
+	OldIDBisnis(ctx context.Context, nama, grup string) ([]string, error)
+	// BisnisLini - ID, OLDID, GROUPPANEL baris BUSINESS ber-GROUPPANEL (tiket 73 P0: lini case; paling banyak dua).
+	BisnisLini(ctx context.Context, nama, grup string) ([]models.BarisBisnisLini, error)
 	// DaftarTableOfLimit - baris TABLEOFLIMIT ber-BIZCODE `kode`, seluruh tahun (A161); `kategori` kosong = tanpa
 	// saringan kategori.
 	DaftarTableOfLimit(ctx context.Context, kode, kategori string) ([]models.BarisTableOfLimit, error)
@@ -46,8 +50,26 @@ type TableOfLimitOracle struct{ db *db.DB }
 func NewTableOfLimitOracle(d *db.DB) *TableOfLimitOracle { return &TableOfLimitOracle{db: d} }
 
 // sqlKodeBisnis - NOTE dicocokkan persis (nama Class of Business tersimpan = BUSINESS.NOTE pilihan layar, tiket 28/29).
-func sqlKodeBisnis(bisnis string) string {
-	return "SELECT ID FROM " + bisnis + " WHERE NOTE = :1 AND BUSINESSGROUPID = :2 ORDER BY ID FETCH FIRST 2 ROWS ONLY"
+func sqlKodeBisnis(bisnis string) string { return sqlKolomBisnis(bisnis, "ID") }
+
+// sqlOldIDBisnis - `[terverifikasi]` Pega mengisi `pyWorkPage.OfferFacIn.QuotationData.BusinessOldId` dari
+// RDBList\GetOldIDBusiness_SQL.xml (`select oldid as CARI1 ... from business where (ID ={OldID.CARI2} OR NOTE =
+// {OldID.CARI2}) AND GROUPPANEL IS NOT NULL`, pxResults(1), Activity\SaveJsonOfferFacIn_Act.xml langkah 3-5). Di sini baris
+// BUSINESS dikenali seperti KodeBisnis (NOTE + BUSINESSGROUPID, butir 89) - `[keputusan agent]`, tiket 62.
+func sqlOldIDBisnis(bisnis string) string { return sqlKolomBisnis(bisnis, "OLDID") }
+
+// sqlBisnisLini - lini case (tiket 73 P0). GROUPPANEL VARCHAR2(4000) `[terverifikasi]` DDL\BUSINESS.txt L5. Saringan
+// `GROUPPANEL IS NOT NULL` disamakan dengan Pega `[terverifikasi]` RDBList\GetOldIDBusiness_SQL.xml (`... from business where
+// (ID ={OldID.CARI2} OR NOTE ={OldID.CARI2}) AND GROUPPANEL IS NOT NULL`) - keputusan work owner 09-10-2026. ID, OLDID, dan
+// GROUPPANEL dibaca dalam SATU kueri supaya ketiganya dari baris yang sama sesudah saringan. Pengenalan baris tetap NOTE +
+// BUSINESSGROUPID (butir 89); `ID = ... OR NOTE = ...` Pega TIDAK ditiru (temuan, belum diputuskan).
+func sqlBisnisLini(bisnis string) string {
+	return "SELECT ID, OLDID, GROUPPANEL FROM " + bisnis +
+		" WHERE NOTE = :1 AND BUSINESSGROUPID = :2 AND GROUPPANEL IS NOT NULL ORDER BY ID FETCH FIRST 2 ROWS ONLY"
+}
+
+func sqlKolomBisnis(bisnis, kolom string) string {
+	return "SELECT " + kolom + " FROM " + bisnis + " WHERE NOTE = :1 AND BUSINESSGROUPID = :2 ORDER BY ID FETCH FIRST 2 ROWS ONLY"
 }
 
 // sqlTableOfLimit - DISTINCT atas kolom laporan RD; :1 kode, [:2 kategori], batas terakhir. Tanpa TAHUN (A161) - baris
@@ -63,11 +85,45 @@ func sqlTableOfLimit(tol string, denganKategori bool) string {
 
 // KodeBisnis - lihat PembacaTableOfLimit.
 func (r *TableOfLimitOracle) KodeBisnis(ctx context.Context, nama, grup string) ([]string, error) {
+	return r.kolomBisnis(ctx, sqlKodeBisnis, nama, grup)
+}
+
+// OldIDBisnis - lihat PembacaTableOfLimit.
+func (r *TableOfLimitOracle) OldIDBisnis(ctx context.Context, nama, grup string) ([]string, error) {
+	return r.kolomBisnis(ctx, sqlOldIDBisnis, nama, grup)
+}
+
+// BisnisLini - lihat PembacaTableOfLimit.
+func (r *TableOfLimitOracle) BisnisLini(ctx context.Context, nama, grup string) ([]models.BarisBisnisLini, error) {
 	q, err := r.db.Qualify(TabelBisnis)
 	if err != nil {
 		return nil, err
 	}
-	baris, err := r.db.QueryContext(ctx, sqlKodeBisnis(q), nama, grup)
+	baris, err := r.db.QueryContext(ctx, sqlBisnisLini(q), nama, grup)
+	if err != nil {
+		return nil, fmt.Errorf("repository: baca %s: %w", TabelBisnis, err)
+	}
+	defer baris.Close()
+	hasil := []models.BarisBisnisLini{}
+	for baris.Next() {
+		var id, old, gp sql.NullString
+		if err := baris.Scan(&id, &old, &gp); err != nil {
+			return nil, fmt.Errorf("repository: %s: %w", TabelBisnis, err)
+		}
+		hasil = append(hasil, models.BarisBisnisLini{ID: id.String, OldID: old.String, GroupPanel: gp.String})
+	}
+	if err := baris.Err(); err != nil {
+		return nil, fmt.Errorf("repository: %s: %w", TabelBisnis, err)
+	}
+	return hasil, nil
+}
+
+func (r *TableOfLimitOracle) kolomBisnis(ctx context.Context, susun func(string) string, nama, grup string) ([]string, error) {
+	q, err := r.db.Qualify(TabelBisnis)
+	if err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, susun(q), nama, grup)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca %s: %w", TabelBisnis, err)
 	}

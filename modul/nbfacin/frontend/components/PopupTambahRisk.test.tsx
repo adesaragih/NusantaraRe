@@ -21,7 +21,7 @@ describe('PopupTambahRisk - keadaan awal (gambar 1)', () => {
 
   it('Title = DESA terpilih; Save = kirim form; Close = tombol batal modal', () => {
     expect(HTML).toMatch(/<option value="DESA" selected="">DESA<\/option>/)
-    expect(HTML).toMatch(new RegExp(`<button type="submit" class="btn btn--primary">${T.simpan.label}</button>`))
+    expect(HTML).toMatch(new RegExp(`<button type="submit" class="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary">${T.simpan.label}</button>`))
     expect(HTML).toContain(`>${T.tutup.label}</button>`)
   })
 })

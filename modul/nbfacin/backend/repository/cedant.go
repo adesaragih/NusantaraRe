@@ -60,7 +60,8 @@ func (r *CedantOracle) tabel() (tabelCedant, error) {
 
 // sqlBacaKepalaCedant - satu baris per case Fac In (General / Quotation boleh belum ada).
 func sqlBacaKepalaCedant(t tabelCedant) string {
-	return "SELECT TO_CHAR(g.SHARE_CEDANT_TYPE), q.SOB_NAME, q.CEDING_CO, q.CEDING_CO_NAME, w.FLAG_ONGOING_POLICY FROM " + t.work + " w LEFT JOIN " +
+	return "SELECT TO_CHAR(g.SHARE_CEDANT_TYPE), q.SOB_NAME, q.CEDING_CO, q.CEDING_CO_NAME, w.FLAG_ONGOING_POLICY, q.SHARE_OF_CEDING FROM " +
+		t.work + " w LEFT JOIN " +
 		t.general + " g ON g.ID = w.ID LEFT JOIN " + t.quo + " q ON q.PARENT_ID = w.ID WHERE w.ID = :1 AND w.LINI = :2"
 }
 
@@ -95,15 +96,15 @@ func (r *CedantOracle) BacaCedant(ctx context.Context, id string) (models.KasusC
 	if err != nil {
 		return k, err
 	}
-	var tipe, sob, kode, nama, flag sql.NullString
-	err = r.db.QueryRowContext(ctx, sqlBacaKepalaCedant(t), id, LiniFacIn).Scan(&tipe, &sob, &kode, &nama, &flag)
+	var tipe, sob, kode, nama, flag, share sql.NullString
+	err = r.db.QueryRowContext(ctx, sqlBacaKepalaCedant(t), id, LiniFacIn).Scan(&tipe, &sob, &kode, &nama, &flag, &share)
 	if errors.Is(err, sql.ErrNoRows) {
 		return k, ErrKasusTidakAda
 	}
 	if err != nil {
 		return k, fmt.Errorf("repository: baca kepala tab Cedant: %w", err)
 	}
-	k.ShareCedantType, k.SobName, k.FlagOnGoingPolicy = tipe.String, sob.String, flag.String
+	k.ShareCedantType, k.SobName, k.FlagOnGoingPolicy, k.ShareOfCeding = tipe.String, sob.String, flag.String, share.String
 	if k.Cedant, err = r.bacaCedant(ctx, t.cedant, id); err != nil {
 		return k, err
 	}

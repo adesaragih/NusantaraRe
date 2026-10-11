@@ -31,6 +31,125 @@ export function nomorHalaman(kini: number, dari: number): (number | null)[] {
   return hasil
 }
 
+/** Kunci jejak ubah (MD-7) - digabung dua kolom "Dibuat" / "Diubah" (nama, tanggal di bawahnya), pola Kelola User. */
+export const KUNCI_JEJAK = ['createOp', 'tglCreate', 'updateOp', 'tglUpdate'] as const
+
+/**
+ * Susunan kolom tampil (work owner 10-10-2026 "perbaiki biar user friendly, template nya ikutin menu kelola user"):
+ * - Old ID di bawah ID (pola Contact ID di bawah username), bukan kolom sendiri;
+ * - empat kolom jejak menjadi "Dibuat" / "Diubah" bila meta memuatnya;
+ * - kolom data lain tetap urutan meta.
+ */
+export function susunKolom(kunci: readonly string[]) {
+  const ada = new Set(kunci)
+  const oldDiBawahId = ada.has('id') && ada.has('oldId')
+  const data = kunci.filter((k) => !(KUNCI_JEJAK as readonly string[]).includes(k) && !(oldDiBawahId && k === 'oldId'))
+  return {
+    data,
+    oldDiBawahId,
+    dibuat: ada.has('createOp') || ada.has('tglCreate'),
+    diubah: ada.has('updateOp') || ada.has('tglUpdate'),
+  }
+}
+
+/** Sel dua baris: nilai utama, nilai kedua redup di bawahnya; keduanya kosong = "—". */
+function SelDua({ atas, bawah }: { atas: string; bawah: string }) {
+  if (atas === '' && bawah === '') return <span className="muted">—</span>
+  return (
+    <>
+      {atas === '' ? <span className="muted">—</span> : atas}
+      {bawah !== '' && <div className="muted">{bawah}</div>}
+    </>
+  )
+}
+
+/** Tabel satu halaman master (template Kelola User) - murni, tanpa muat data. */
+export function TabelMaster({
+  kolom,
+  baris,
+  onUbah,
+  onStatus,
+}: {
+  kolom: MetaMaster['kolom']
+  baris: BarisMaster[]
+  onUbah: (b: BarisMaster) => void
+  onStatus: (b: BarisMaster) => void
+}) {
+  const susun = susunKolom(kolom.map((k) => k.kunci))
+  const kolomData = kolom.filter((k) => susun.data.includes(k.kunci))
+  const teks = (b: BarisMaster, k: string) => String(b[k] ?? '')
+  return (
+    <table className="inbox__tabel kelola-user__tabel">
+      <thead>
+        <tr>
+          {kolomData.map((k) => (
+            <th key={k.kunci} scope="col">
+              {labelKolom(k.kunci, k.kolom)}
+            </th>
+          ))}
+          {susun.dibuat && <th scope="col">{TEKS.kolomDibuat}</th>}
+          {susun.diubah && <th scope="col">{TEKS.kolomDiubah}</th>}
+          <th scope="col">{TEKS.kolomStatus}</th>
+          <th scope="col" className="table__actions">
+            {TEKS.kolomAksi}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {baris.map((b) => (
+          <tr key={String(b.id)} className="inbox__baris">
+            {kolomData.map((k) => (
+              <td key={k.kunci}>
+                {teks(b, k.kunci)}
+                {k.kunci === 'id' && susun.oldDiBawahId && teks(b, 'oldId') !== '' && (
+                  <div className="muted">
+                    {labelKolom('oldId', 'oldId')} {teks(b, 'oldId')}
+                  </div>
+                )}
+              </td>
+            ))}
+            {susun.dibuat && (
+              <td>
+                <SelDua atas={teks(b, 'createOp')} bawah={teks(b, 'tglCreate')} />
+              </td>
+            )}
+            {susun.diubah && (
+              <td>
+                <SelDua atas={teks(b, 'updateOp')} bawah={teks(b, 'tglUpdate')} />
+              </td>
+            )}
+            <td>
+              <span className="kelola-user__status">
+                <span className={`badge ${b.aktif ? 'kelola-user__badge--aktif' : 'kelola-user__badge--nonaktif'}`}>
+                  {b.aktif ? TEKS.aktif : TEKS.nonaktif}
+                </span>
+              </span>
+            </td>
+            <td className="table__actions">
+              <span className="kelola-user__aksi">
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => onUbah(b)}
+                >
+                  {TEKS.ubah}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--ghost btn--sm"
+                  onClick={() => onStatus(b)}
+                >
+                  {b.aktif ? TEKS.nonaktifkan : TEKS.aktifkan}
+                </button>
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
 export default function DaftarMaster({ klien, meta }: { klien: KlienMaster; meta: MetaMaster }) {
   const [kueri, setKueri] = useState('')
   const [q, setQ] = useState('')
@@ -95,7 +214,7 @@ export default function DaftarMaster({ klien, meta }: { klien: KlienMaster; meta
     <>
       <div className="toolbar">
         <input
-          className="field__input"
+          className="field__input kelola-user__cari"
           type="search"
           aria-label={TEKS.cari}
           placeholder={TEKS.cari}
@@ -103,7 +222,7 @@ export default function DaftarMaster({ klien, meta }: { klien: KlienMaster; meta
           onChange={(e) => setKueri(e.target.value)}
         />
         <select
-          className="field__input"
+          className="field__input master-data__saring"
           aria-label={TEKS.kolomStatus}
           value={status}
           onChange={(e) => {
@@ -139,56 +258,19 @@ export default function DaftarMaster({ klien, meta }: { klien: KlienMaster; meta
       {data !== null && data.baris.length > 0 && (
         <>
           <div className="table-wrap">
-            <table className="inbox__tabel">
-              <thead>
-                <tr>
-                  {kolom.map((k) => (
-                    <th key={k.kunci} scope="col">
-                      {labelKolom(k.kunci, k.kolom)}
-                    </th>
-                  ))}
-                  <th scope="col">{TEKS.kolomStatus}</th>
-                  <th scope="col" className="table__actions">
-                    {TEKS.kolomAksi}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.baris.map((b) => (
-                  <tr key={String(b.id)} className="inbox__baris">
-                    {kolom.map((k) => (
-                      <td key={k.kunci}>{String(b[k.kunci] ?? '')}</td>
-                    ))}
-                    <td>
-                      <span className="badge">{b.aktif ? TEKS.aktif : TEKS.nonaktif}</span>
-                    </td>
-                    <td className="table__actions">
-                      <button
-                        type="button"
-                        className="btn btn--ghost btn--sm"
-                        onClick={() => {
-                          setPesan(null)
-                          setForm(b)
-                        }}
-                      >
-                        {TEKS.ubah}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn--ghost btn--sm"
-                        onClick={() => {
-                          setPesan(null)
-                          setGalatAksi(null)
-                          setKonfirmasi(b)
-                        }}
-                      >
-                        {b.aktif ? TEKS.nonaktifkan : TEKS.aktifkan}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <TabelMaster
+              kolom={kolom}
+              baris={data.baris}
+              onUbah={(b) => {
+                setPesan(null)
+                setForm(b)
+              }}
+              onStatus={(b) => {
+                setPesan(null)
+                setGalatAksi(null)
+                setKonfirmasi(b)
+              }}
+            />
           </div>
           <div className="pager">
             <span className="muted">{TEKS.menampilkan(data.halaman, data.ukuran, data.total)}</span>

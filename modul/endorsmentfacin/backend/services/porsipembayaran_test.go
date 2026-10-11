@@ -20,8 +20,10 @@ func porsiBayar(t *testing.T, ubah func(*services.MasukanPorsiPembayaran)) servi
 		Predikat:      services.PredikatPembayaran{IsEDM: true},
 		EDMDay:        "365",
 		StartDateTime: tanggal(t, "2026-01-01 00:00"), EndDateTime: tanggal(t, "2026-01-05 00:00"),
-		EdmDate:       tanggal(t, "2026-01-02 05:00"),
-		CacahMataUang: 1,
+		EdmDate:  tanggal(t, "2026-01-02 05:00"),
+		MataUang: barisUji(t), MataUangLama: barisUji(t),
+		ProrateEDMEndAwal: rasio(t, "1"), ShareBaru: rasio(t, "5"), ShareLama: rasio(t, "5"),
+		HasilProdKe: "0",
 	}
 	ubah(&m)
 	h, err := services.HitungPorsiPembayaran(m)
@@ -32,6 +34,22 @@ func porsiBayar(t *testing.T, ubah func(*services.MasukanPorsiPembayaran)) servi
 }
 
 func rasioSatu(t *testing.T) uang.Ratio { return rasio(t, "1") }
+
+// barisUji - satu baris mata uang bernilai nol penuh dengan satu cicilan 100%
+// (cukup untuk test porsi; nilai pembayaran diuji di pembayaran_test.go).
+func barisUji(t *testing.T) []services.BarisBayar {
+	t.Helper()
+	nol := duit(t, "0")
+	return []services.BarisBayar{{
+		Name: mataUangUji,
+		Payment: services.PembayaranBaris{
+			Premium: nol, Commision: nol, BrokerageFee: nol, Deduction2: nol, PPh: nol, PPN: nol,
+			EDMPremiMenjadi: nol, EDMOldPremi: nol, EDMOldPayment: nol, EDMOldCommision: nol,
+			EDMOldBrokerage: nol, EDMOldPPN: nol, EDMOldPPh: nol, EDMOldDeduction2: nol,
+			ListInstallment: []services.Cicilan{{InstallmentPercentage: rasio(t, "100")}},
+		},
+	}}
+}
 
 // TestExtendPeriodPorsiSatu - blok 13 (IsEdmExtendPeriod): datedif = day = 1,
 // ProrateEDMEnd = 1; ProrateStartEDM TIDAK ditulis.
@@ -131,7 +149,7 @@ func TestAdjRateFixRateAtauMarine(t *testing.T) {
 // 14.4.5 tidak berjalan: ProrateEDMEnd tetap 1 dari 14.1, ProrateStartEDM tidak
 // ditulis.
 func TestAdjRateTanpaBarisMataUang(t *testing.T) {
-	h := porsiBayar(t, func(m *services.MasukanPorsiPembayaran) { m.Predikat.IsEdmAdjRate, m.CacahMataUang = true, 0 })
+	h := porsiBayar(t, func(m *services.MasukanPorsiPembayaran) { m.Predikat.IsEdmAdjRate, m.MataUang = true, nil })
 	if h.ProrateEDMEnd.Value.Cmp(rasioSatu(t).Value) != 0 || !h.ProrateStartEDM.Kosong() {
 		t.Errorf("%+v", h)
 	}
@@ -155,7 +173,8 @@ func TestHariTakBulatDitolak(t *testing.T) {
 	_, err := services.HitungPorsiPembayaran(services.MasukanPorsiPembayaran{
 		Predikat:      services.PredikatPembayaran{IsEDM: true, IsEdmAdjRate: true},
 		StartDateTime: tanggal(t, "2026-01-01 00:00"), EndDateTime: tanggal(t, "2026-01-05 00:00"),
-		EdmDate: tanggal(t, "2026-01-02 12:00"), CacahMataUang: 1,
+		EdmDate: tanggal(t, "2026-01-02 12:00"), MataUang: barisUji(t), MataUangLama: barisUji(t),
+		ProrateEDMEndAwal: rasio(t, "1"),
 	})
 	if !errors.Is(err, services.ErrSatuanSelisihWaktuBelumTerverifikasi) {
 		t.Errorf("galat %v", err)
@@ -192,7 +211,7 @@ func TestTSIObjHariInklusif(t *testing.T) {
 func TestTSIObjBatalProrata(t *testing.T) {
 	h := porsiBayar(t, func(m *services.MasukanPorsiPembayaran) { m.EdmType = models.EdmBatalProrata })
 	samaRasio(t, "ProrateEDMEnd", h.ProrateEDMEnd, uang.Ratio{Value: rasio(t, "1").Value, Scale: 20})
-	if h := porsiBayar(t, func(m *services.MasukanPorsiPembayaran) { m.EdmType, m.CacahMataUang = models.EdmBatalProrata, 0 }); h.Ditulis {
+	if h := porsiBayar(t, func(m *services.MasukanPorsiPembayaran) { m.EdmType, m.MataUang = models.EdmBatalProrata, nil }); h.Ditulis {
 		t.Error("tanpa baris mata uang, langkah 3 menulis")
 	}
 }

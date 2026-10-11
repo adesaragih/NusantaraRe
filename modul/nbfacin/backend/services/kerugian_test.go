@@ -68,17 +68,16 @@ func TestLossRatioTerlalu(t *testing.T) {
 	}
 }
 
-// TestPeriksaKerugian - currency wajib, uang desimal <= 8, tanggal DD-MM-YYYY sah, lebar kolom; detail tidak wajib.
+// TestPeriksaKerugian - currency TIDAK wajib (tiket 42b), uang desimal <= 8, tanggal DD-MM-YYYY sah, lebar kolom; detail tidak wajib.
 func TestPeriksaKerugian(t *testing.T) {
-	if m := periksaKerugian(0, []models.CatatanKerugian{catatan("29-02-2024", "1.5", "0"), {Currency: "USD"}}); len(m) != 0 {
+	if m := periksaKerugian(0, []models.CatatanKerugian{catatan("29-02-2024", "1.5", "0"), {Currency: "USD"}, {Currency: ""}}); len(m) != 0 {
 		t.Fatalf("sah ditolak: %v", m)
 	}
 	for nama, u := range map[string]struct {
 		c     models.CatatanKerugian
 		pesan string
 	}{
-		"tanpa mata uang": {models.CatatanKerugian{Currency: " "}, "baris[1].lossRecords[0].currency wajib"},
-		"claim 31 digit":  {models.CatatanKerugian{Currency: "IDR", Claim: ds(strings.Repeat("9", 31))}, "baris[1].lossRecords[0].claim harus"},
+		"claim 31 digit": {models.CatatanKerugian{Currency: "IDR", Claim: ds(strings.Repeat("9", 31))}, "baris[1].lossRecords[0].claim harus"},
 		"prevention minus": {models.CatatanKerugian{Currency: "IDR", PreventionOfLoss: ds("-1")},
 			"baris[1].lossRecords[0].preventionOfLoss harus"},
 		"amount 9 desimal": {models.CatatanKerugian{Currency: "IDR", Amount: ds("1.123456789")}, "baris[1].lossRecords[0].amount harus"},
@@ -124,6 +123,11 @@ func TestGantiObjekKerugian(t *testing.T) {
 	if _, err := svc.GantiObjek(ctx, akun, "UJI-NB-1", obj); !errors.Is(err, ErrMasukanObjek) ||
 		!strings.Contains(err.Error(), `baris[0].lossRecords[0].currency "ITL" tidak ada`) {
 		t.Errorf("ITL: %v", err)
+	}
+	// tiket 42b: Currency kosong boleh (tidak diperiksa ke CURRENCY).
+	obj[0].LossRecords[0].Currency = ""
+	if d, err := svc.GantiObjek(ctx, akun, "UJI-NB-1", obj); err != nil || d[0].LossRecords[0].Currency != "" {
+		t.Errorf("tanpa currency: %v", err)
 	}
 	obj[0].LossRecords[0].Currency = "IDR"
 	tanpaKasus := Baru(nil).DenganObjek(tersimpan).DenganTransaksi(tanpaTx).DenganPilihanItem(pilihanItemTiruan{&panggil})

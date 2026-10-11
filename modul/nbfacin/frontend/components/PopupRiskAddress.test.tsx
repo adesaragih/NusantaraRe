@@ -29,8 +29,8 @@ describe('PopupRiskAddress', () => {
   })
 
   it('kaki: Search = kirim form (Enter juga); Add hidup membuka PopupTambahRisk menggantikan popup ini (tiket 37)', () => {
-    expect(HTML).toMatch(new RegExp(`<button type="submit" class="btn btn--primary">${R.cari.label}</button>`))
-    expect(HTML).toMatch(new RegExp(`<button type="button" class="btn btn--ghost">${R.tambah.label}</button>`))
+    expect(HTML).toMatch(new RegExp(`<button type="submit" class="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary">${R.cari.label}</button>`))
+    expect(HTML).toMatch(new RegExp(`<button type="button" class="btn nbf-tema__tombol btn--ghost">${R.tambah.label}</button>`))
     expect(SUMBER).toContain('onKirim={() => void muat(saring, 1)}')
     expect(SUMBER).toContain('onClick={() => setMenambah(true)}')
     expect(SUMBER).toMatch(/if \(menambah\) \{[\s\S]*?return <PopupTambahRisk onTutup=\{\(\) => setMenambah\(false\)\} onTersimpan=\{onBaru\} \/>/)

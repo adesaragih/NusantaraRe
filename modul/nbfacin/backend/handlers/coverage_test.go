@@ -32,7 +32,7 @@ func kasusPeriode() *models.Kasus {
 var kunciCoverage = []string{"coverage", "oldId", "coverageNote", "coverageBasis", "day", "tsi", "indemnity", "rate", "rateOjk",
 	"firstLoss", "discountPercentage", "tsiLiability", "netRate", "limitOfLiability", "pctLol", "proRatePercent",
 	"indemnityPercentage", "firstScale", "sublimit", "lostLimit", "emlPml", "discount", "premium", "conditions", "deductibles", "unit",
-	"accumulationCode", "accumulationDescription"}
+	"accumulationCode", "accumulationDescription", "zone", "constructionEarthquake"}
 
 // TestCariCoverage - GET /api/nbfacin/coverage (tiket 43): bentuk persis BarisCoverage, kata di-trim, kosong = semua;
 // tanpa identitas; 400 / 503.
@@ -139,7 +139,7 @@ func TestObjekCoverage(t *testing.T) {
 		t.Errorf("item: %s", isi)
 	}
 	tot := j.Baris[0].TotalPerCurrency
-	if len(tot) != 1 || tot[0]["currency"] != "IDR" || tot[0]["tsi"] != "1000000000" || tot[0]["premium"] != "1000000" || tot[0]["rate"] != "1" {
+	if len(tot) != 1 || tot[0]["currency"] != "IDR" || tot[0]["tsi"] != "1000000000" || tot[0]["premium"] != "1000000" || tot[0]["rate"] != "0.001" { // tanpa ×1000 (keputusan work owner 05-10-2026)
 		t.Errorf("totalPerCurrency: %s", isi)
 	}
 	for nama, u := range map[string]struct {
@@ -222,7 +222,7 @@ func TestObjekDeductible(t *testing.T) {
 			`{"coverage":"2","coverageBasis":"1"}]}]}]}`
 	}
 	kode, isi := minta(t, svc, "PUT", jalur, badan(ded1+","+ded2), "UJI-USER")
-	if kode != 200 || !strings.Contains(isi, `"deductibles":[`+ded1+","+ded2+`],"unit":""`) || !strings.Contains(isi, `"conditions":"","deductibles":[],"unit":""`) ||
+	if kode != 200 || !strings.Contains(isi, `"deductibles":[`+ded1+","+ded2+`],"unit":"0"`) || !strings.Contains(isi, `"conditions":"","deductibles":[],"unit":"0"`) ||
 		!strings.Contains(isi, `"premium":"1000000"`) {
 		t.Fatalf("%d %s", kode, isi)
 	}
@@ -257,7 +257,7 @@ func TestCoverageUnitAkumulasi(t *testing.T) {
 	badan := func(isi string) string {
 		return `{"baris":[{"objectType":"UJI","items":[{"currency":"IDR","tsi":"1000000000","coverages":[{"coverage":"1","coverageBasis":"1",` + isi + `}]}]}]}`
 	}
-	if kode, isi := minta(t, svc, "PUT", "/api/nbfacin/kasus/UJI-NB-1/objek", badan(akum), "UJI-USER"); kode != 200 || !strings.Contains(isi, `"deductibles":[],`+akum+`}`) {
+	if kode, isi := minta(t, svc, "PUT", "/api/nbfacin/kasus/UJI-NB-1/objek", badan(akum), "UJI-USER"); kode != 200 || !strings.Contains(isi, `"deductibles":[],`+akum+`,`) {
 		t.Fatalf("%d %s", kode, isi)
 	}
 	if c := d[0].Items[0].Coverages[0]; c.Unit != "1" || c.AccumulationCode != "UJI-61151-000001" || c.AccumulationDescription != "UJI ALAMAT AKUMULASI" {
