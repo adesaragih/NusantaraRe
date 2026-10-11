@@ -101,3 +101,29 @@ func PeriksaClaimGrossTerhadapShare(claimGross, shareNusantaraRe uang.Money, kod
 	}
 	return ErrClaimGrossMelebihiShare
 }
+
+// HitungPersenKlaim - Percent Claim (%) dialog AdjustmentDetail (b1656), keputusan work owner 11-10-2026: TIDAK diisi
+// pemakai, DITURUNKAN dari Claim RNM terhadap Share Nusantara Re ("share 100, claim rnm 50 -> percent 50%, claim paid
+// 50"). Pecahan dibulatkan lima desimal seperti `@divide(…,100,5)` b702, lalu ditulis sebagai persen. Kosong bila
+// salah satunya kosong atau share nol.
+//
+// ⛔ TIDAK DISIMPAN (tanpa kolom PCT_CLAIM): turunan penuh dari dua kolom yang ada.
+func HitungPersenKlaim(claimGross, shareNusantaraRe uang.Money) (string, error) {
+	if claimGross.Kosong() || shareNusantaraRe.Kosong() || shareNusantaraRe.Amount.IsZero() {
+		return "", nil
+	}
+	ctx := utils.DecimalContext()
+	pecahan := new(apd.Decimal)
+	if _, err := ctx.Quo(pecahan, claimGross.Amount, shareNusantaraRe.Amount); err != nil {
+		return "", fmt.Errorf("models: membagi claim gross: %w", err)
+	}
+	if _, err := ctx.Quantize(pecahan, pecahan, -desimalPersenKlaim); err != nil {
+		return "", fmt.Errorf("models: membulatkan persen klaim: %w", err)
+	}
+	persen := new(apd.Decimal)
+	if _, err := ctx.Mul(persen, pecahan, apd.New(100, 0)); err != nil {
+		return "", fmt.Errorf("models: persen klaim: %w", err)
+	}
+	persen.Reduce(persen)
+	return utils.FormatDecimal(persen), nil
+}

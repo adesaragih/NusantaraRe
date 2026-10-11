@@ -48,7 +48,7 @@ func (r *resolverTiruan) Resolve(_ context.Context, k layanan.KunciLayanan) (str
 
 func TestConfirmBukanProduksiMelewatiEfekKeluar(t *testing.T) {
 	_, l, _ := gudangPutusan(t)
-	h, err := l.Putuskan(context.Background(), pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "1"})
+	h, err := l.Putuskan(context.Background(), pelakuUji, "EDML-1", services.MasukanPutusan{Status: "1"})
 	if err != nil || h.EfekKeluar == nil || !h.EfekKeluar.Dilewati || len(h.EfekKeluar.Gagal) != 0 || h.Status != models.StatusKasusSelesai {
 		t.Fatalf("%+v %v", h, err)
 	}
@@ -60,7 +60,7 @@ func TestAlarmHanyaBilaKirimanGagal(t *testing.T) {
 	_, l, _ := gudangPutusan(t)
 	kirim, alarm, a := &efekTiruan{nama: "arasapas"}, &efekTiruan{nama: "alarm"}, &antreanTiruan{}
 	l.DenganPenyalur(services.NewPenyalurEDM(inti.Produksi, a, kirim, alarm))
-	h, err := l.Putuskan(ctx, pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "1"})
+	h, err := l.Putuskan(ctx, pelakuUji, "EDML-1", services.MasukanPutusan{Status: "1"})
 	if err != nil || kirim.dipakai != 1 || alarm.dipakai != 0 || len(h.EfekKeluar.Gagal) != 0 || h.EfekKeluar.Dilewati {
 		t.Fatalf("berhasil: %+v kirim %d alarm %d %v", h.EfekKeluar, kirim.dipakai, alarm.dipakai, err)
 	}
@@ -72,8 +72,8 @@ func TestAlarmHanyaBilaKirimanGagal(t *testing.T) {
 	kirim = &efekTiruan{nama: "arasapas", galat: errors.New("UJI gagal di uji-alamat-rahasia")}
 	alarm, a = &efekTiruan{nama: "alarm", galat: outbox.ErrEmailBelumDisetujui}, &antreanTiruan{}
 	l2.DenganJejak(&jejakTiruan{}).DenganPenyalur(services.NewPenyalurEDM(inti.Produksi, a, kirim, alarm))
-	h, err = l2.Putuskan(ctx, pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "1"})
-	if err != nil || h.Status != models.StatusKasusSelesai || g.Polis["EDMLF-1"].Status != models.StatusKasusSelesai {
+	h, err = l2.Putuskan(ctx, pelakuUji, "EDML-1", services.MasukanPutusan{Status: "1"})
+	if err != nil || h.Status != models.StatusKasusSelesai || g.Polis["EDML-1"].Status != models.StatusKasusSelesai {
 		t.Fatalf("kegagalan efek membatalkan Confirm: %+v %v", h, err)
 	}
 	if alarm.dipakai != 1 || len(a.catatan) != 2 || len(h.EfekKeluar.Gagal) != 2 {
@@ -89,7 +89,7 @@ func TestDeclineTanpaEfekKeluar(t *testing.T) {
 	_, l, _ := gudangPutusan(t)
 	kirim := &efekTiruan{nama: "arasapas"}
 	l.DenganPenyalur(services.NewPenyalurEDM(inti.Produksi, &antreanTiruan{}, kirim, &efekTiruan{nama: "alarm"}))
-	h, err := l.Putuskan(context.Background(), pelakuUji, "EDMLF-1", services.MasukanPutusan{Status: "2"})
+	h, err := l.Putuskan(context.Background(), pelakuUji, "EDML-1", services.MasukanPutusan{Status: "2"})
 	if err != nil || h.EfekKeluar != nil || kirim.dipakai != 0 {
 		t.Fatalf("%+v %v kirim %d", h, err, kirim.dipakai)
 	}

@@ -7,10 +7,12 @@ import './accounts.css'
 import type { HalamanACC } from './menu'
 import Accounts from './pages/Accounts'
 
-export function RuteACC({ halaman }: PropsRute<HalamanACC>) {
+export function RuteACC({ halaman, mulaiBaru, onBeranda }: PropsRute<HalamanACC>) {
   return (
     <BahasaUI.Provider value="en">
-      <div className="accounts">{halaman === 'accounts-daftar' && <Accounts />}</div>
+      <div className="accounts">
+        {halaman === 'accounts-daftar' && <Accounts mulaiBaru={mulaiBaru} onSelesaiBaru={mulaiBaru === true ? onBeranda : undefined} />}
+      </div>
     </BahasaUI.Provider>
   )
 }

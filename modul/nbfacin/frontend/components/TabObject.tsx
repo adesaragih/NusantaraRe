@@ -202,7 +202,7 @@ function Centang({ label, checked, onChange }: { label: string; checked: boolean
 }
 
 /** Sub-tab Object Address (`ObjectDetails`). */
-function ObjectAddress({ o, ubah, galatType }: { o: ObjekFire; ubah: (o: ObjekFire) => void; galatType: boolean }) {
+export function ObjectAddress({ o, ubah, galatType }: { o: ObjekFire; ubah: (o: ObjekFire) => void; galatType: boolean }) {
   const set = (k: keyof ObjekFire) => (v: string) => ubah({ ...o, [k]: v })
   const [pilihRisk, setPilihRisk] = useState(false)
   return (
@@ -234,10 +234,10 @@ function ObjectAddress({ o, ubah, galatType }: { o: ObjekFire; ubah: (o: ObjekFi
         {/* Tombol Choose / Clear di atas judul Risk Address (work owner 05-10-2026). */}
         <div className="nbf-alamat__kepala">
           <div className="nbf-opp__tombol">
-            <button type="button" className="btn btn--sm" onClick={() => setPilihRisk(true)}>
+            <button type="button" className="btn nbf-tema__tombol btn--sm" onClick={() => setPilihRisk(true)}>
               {A.chooseRisk.label}
             </button>
-            <button type="button" className="btn btn--sm" onClick={() => ubah(kosongkanRisk(o))}>
+            <button type="button" className="btn nbf-tema__tombol btn--sm" onClick={() => ubah(kosongkanRisk(o))}>
               {A.clearRisk.label}
             </button>
           </div>
@@ -431,7 +431,7 @@ export default function TabObject({ caseId, insuredName = '' }: { caseId: string
                 </th>
               ))}
               <th scope="col" className="table__actions">
-                <button type="button" className="btn btn--ghost btn--sm" onClick={tambah}>
+                <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={tambah}>
                   {GRID_OBJEK.tambah}
                 </button>
               </th>
@@ -467,7 +467,7 @@ export default function TabObject({ caseId, insuredName = '' }: { caseId: string
                   <td>{x.data.objectName}</td>
                   <td>{x.data.riskLocation}</td>
                   <td className="table__actions">
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => hapus(x.kunci)}>
+                    <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={() => hapus(x.kunci)}>
                       {GRID_OBJEK.hapus}
                     </button>
                   </td>
@@ -517,7 +517,7 @@ export default function TabObject({ caseId, insuredName = '' }: { caseId: string
         <Halaman halaman={hal} ukuran={GRID_OBJEK.ukuran} total={baris.length} onPindah={setHalaman} />
       )}
       <div className="nbf-objek__kaki">
-        <button type="button" className="btn btn--primary" onClick={() => void simpan()} disabled={menyimpan}>
+        <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" onClick={() => void simpan()} disabled={menyimpan}>
           {menyimpan ? TEKS_FORM_OPPORTUNITY.menyimpan : SIMPAN_OBJEK.label}
         </button>
       </div>

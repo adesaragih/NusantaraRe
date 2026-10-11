@@ -302,9 +302,13 @@ func (k *Kelola) Pilihan(ctx context.Context) (PilihanKelola, error) {
 	return p, nil
 }
 
-// Buat membuat akun dengan sandi yang DIKETIK admin - aturan sandi berlaku.
-// `wajibGanti` = centang "Change Password Next Login".
+// Buat membuat akun dengan sandi yang DIKETIK admin - aturan sandi berlaku; kosong = `SandiBawaan` (perintah work
+// owner 11-10-2026). `wajibGanti` = centang "Change Password Next Login".
 func (k *Kelola) Buat(ctx context.Context, aktor string, a AkunBaru, sandi string, wajibGanti bool) error {
+	if sandi == "" {
+		sandi = SandiBawaan
+	}
+	a.IDKontak = "" // CONTACT_ID tetap hanya untuk pemuat akun
 	if err := PeriksaSandiBaru(sandi); err != nil {
 		return err
 	}

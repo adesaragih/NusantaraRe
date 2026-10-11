@@ -68,7 +68,15 @@ func PraRegister(k *Konteks, h *Halaman, riwayat []RiwayatKlaimPolis) {
 	}
 	h.Setel(CD+"ExGratia", "0")   // 11
 	h.Setel(JalurIsRegister, "1") // 12
+	// Section InputRegisterDetail sel 924 `pyDefaultValue` INDONESIA (Country kosong): Province ke bawah langsung tampil
+	// (perintah work owner 11-10-2026 "GIMANA SEHARUSNYA MEMILIH INI").
+	if h.Ambil(CD+"Country") == "" {
+		h.Setel(CD+"Country", NegaraBawaan)
+	}
 }
+
+// NegaraBawaan - nilai awal Country Input Register (sel 924 `pyDefaultValue`).
+const NegaraBawaan = "INDONESIA"
 
 // SetelRiwayatPolis = CallActivityInputRegister 8-9.1: grid "Claim History" (`.HistoryClaim`: ClaimNo, DateOfLoss).
 // Langkah 8 bergerbang nomor polis tertulis mati - DIBUANG (bawaan c prompt §3): berlaku untuk setiap polis.
@@ -81,18 +89,21 @@ func SetelRiwayatPolis(h *Halaman, riwayat []RiwayatKlaimPolis) {
 }
 
 // CheckAnyAcceptation = `CheckAnyAcceptation`: IsAnyAcceptation = 1 bila ada adjustment ber-AcceptanceStatus 1.
-func CheckAnyAcceptation(h *Halaman) {
-	n := 0
+func CheckAnyAcceptation(h *Halaman) { h.Setel(JalurIsAnyAccept, nolSatu(AdaAkseptasi(h))) }
+
+// AdaAkseptasi - ada adjustment ber-AcceptanceStatus 1 (diakseptasi), dibaca langsung dari baris adjustment: penanda
+// tersimpan IsAnyAcceptation hanya dihitung ulang pra-proses Register / aksi Estimasi, tidak sesudah komite menyetujui.
+func AdaAkseptasi(h *Halaman) bool {
 	for o := range h.AmbilDaftar(DaftarObjek) {
 		for i := range h.AmbilDaftar(DaftarItem(o + 1)) {
 			for _, a := range h.AmbilDaftar(DaftarDiItem(o+1, i+1, AnakAdj)) {
 				if a["AcceptanceStatus"] == "1" {
-					n++
+					return true
 				}
 			}
 		}
 	}
-	h.Setel(JalurIsAnyAccept, nolSatu(n > 0))
+	return false
 }
 
 func nolSatu(b bool) string {
@@ -105,11 +116,11 @@ func nolSatu(b bool) string {
 // CheckDate = `CheckDate_Act` (dipanggil ProteksiDataRegister_Act 3 bila DOL terisi). Langkah 10, 14, 17, 19
 // ber-remark; cabang TreatyIn tidak terjangkau (polis Choose Polis selalu RNM-F).
 //
-// ⚠️ Langkah 9 / 13 `Param.StartDate := Policy.StartDateTime+1` / `EndDateTime+1`: tanggal polis sesudah CopyNB_Act
-// langkah 11 berbentuk teks "yyyyMMdd"; `+1` atas teks di ekspresi Pega = penggabungan teks ("201801011"), tanggal yang
-// tak terurai sehingga `@CompareDates` langkah 11 selalu salah - pesan "Start Date Policy" tidak pernah terpasang.
-// Maksudnya tidak pasti (+1 hari atau tanpa +1) -> OQ-CFI-12; dibangun mengikuti hasil XML: pemeriksaan awal polis
-// tidak memasang pesan. Langkah 15 membandingkan DOL dengan EndDateTime APA ADANYA (bukan Param.EndDate) - dibangun.
+// Langkah 9-12 (DOL vs awal polis): XML menulis `Param.StartDate := Policy.StartDateTime+1`, yang atas teks "yyyyMMdd"
+// sesudah CopyNB_Act 11 tidak terurai sebagai tanggal (OQ-CFI-12). Keputusan work owner 11-10-2026 ("PROTEKSI INI KO GA
+// ADA?", pilihan "tolak bila DOL < Start"): DOL SEBELUM tanggal mulai polis ditolak dengan pesan langkah 2
+// errMsg3; DOL tepat di tanggal mulai boleh. Langkah 15 membandingkan DOL dengan EndDateTime APA ADANYA (bukan
+// Param.EndDate) - dibangun.
 func CheckDate(k *Konteks, h *Halaman) {
 	dol := h.Ambil(CD + "DateOfLoss")
 	if SesudahTanggal(dol, k.Hari()) { // 3-4
@@ -121,8 +132,11 @@ func CheckDate(k *Konteks, h *Halaman) {
 	if SesudahTanggal(dol, h.Ambil(CD+"ReportDate")) { // 7-8
 		h.TambahPesan(CD+"DateOfLoss", PesanDOLLebihLapor)
 	}
-	if h.Ambil(JalurIsTreatyIn) != "0" { // 13, 15 bergerbang IsTreatyIn==0
+	if h.Ambil(JalurIsTreatyIn) != "0" { // 9, 13, 15 bergerbang IsTreatyIn==0
 		return
+	}
+	if SesudahTanggal(h.Ambil(JalurMulaiPolis), dol) { // 9, 11-12 (keputusan work owner 11-10-2026)
+		h.TambahPesan(CD+"DateOfLoss", PesanDOLLebihMulaiPolis)
 	}
 	lewat := SesudahTanggal(dol, h.Ambil(JalurAkhirPolis)) // 15
 	if IsAneka(h) {                                        // 16 MaintenancePeriod
@@ -310,7 +324,8 @@ func GetCeding(k *Konteks, h *Halaman, ceding string) error {
 }
 
 // setelAlamatPelapor = GetLeaderReport (kode agen dari nama klien bila kosong) + GetAddressCeding + alamat dirangkai
-// "a, b, c, d" (GetReportStatus_Act 8-13 / GetCeding_act 2-6).
+// "a, b, c, d" (GetReportStatus_Act 8-13 / GetCeding_act 2-6). Bagian kosong dilewati (work owner 11-10-2026 "PERBAIKI
+// CHOOSENYA INI!"): klien tanpa CLIENT_ADDRESS membuat Reporter Address ", , , " - kini kosong.
 func setelAlamatPelapor(k *Konteks, h *Halaman, klien, agen string) error {
 	if agen == "" {
 		id, err := k.Acuan.AgenKlien(k.Ctxt(), klien)
@@ -323,7 +338,7 @@ func setelAlamatPelapor(k *Konteks, h *Halaman, klien, agen string) error {
 	if err != nil {
 		return err
 	}
-	h.Setel(CD+"ReportAddress", al[0]+", "+al[1]+", "+al[2]+", "+al[3])
+	h.Setel(CD+"ReportAddress", rangkaiAlamat(al[:]...))
 	return nil
 }
 
@@ -339,6 +354,52 @@ func InputCurrencyValue(k *Konteks, h *Halaman) error {
 
 // SetTempLocation = `SetTempLocation_Act` (change Location of Loss): langkah 1 (`pre=false` - gerbang tidak berlaku).
 func SetTempLocation(h *Halaman) { h.Setel(JalurLokasiSementara, h.Ambil(CD+"Location")) }
+
+// TingkatWilayah - urutan memilih wilayah Input Register (Section InputRegisterDetail sel 924-928): sumber pilihan, jalur
+// nama, jalur ID.
+var TingkatWilayah = []struct{ Sumber, Nama, ID string }{
+	{SumberNegara, CD + "Country", CD + "CountryID"},
+	{SumberProvinsi, CD + "Province", CD + "ProvinceID"},
+	{SumberKota, CD + "City", CD + "CityID"},
+	{SumberDistrik, CD + "District", CD + "DistrictID"},
+	{SumberRW, CD + "RW", CD + "RWID"},
+}
+
+// JalurWilayah - jalur nama tingkat wilayah bersumber `sumber` ("" bila bukan sumber wilayah).
+func JalurWilayah(sumber string) string {
+	for _, t := range TingkatWilayah {
+		if t.Sumber == sumber {
+			return t.Nama
+		}
+	}
+	return ""
+}
+
+// BuangWilayahPilihan - nama Country / Province / City / District / Region hanya masuk lewat aksi pemilihannya
+// (`aksiPilihWilayah`: dicek terhadap master menurut induk terpilih, tingkat bawah dikosongkan) atau Zip Code
+// (`InputKodePos`); kiriman layar untuk jalur itu diabaikan supaya nilai lama layar tidak menimpa pilihan yang sudah
+// dicek (temuan work owner 11-10-2026 "MASA AKU BISA ISI GINI? LOGIC NYA DIMANA?").
+func BuangWilayahPilihan(terbuka map[string]bool) {
+	for _, t := range TingkatWilayah {
+		delete(terbuka, t.Nama)
+	}
+}
+
+// KosongkanWilayahBawah - perintah work owner 11-10-2026 ("PERBAIKI LOGIC NYA. GIMANA SEHARUSNYA MEMILIH INI"): tingkat
+// `sumber` diganti -> semua tingkat di bawahnya (nama + ID) dan Zip Code (isian Region, sel 928) dikosongkan.
+func KosongkanWilayahBawah(h *Halaman, sumber string) {
+	bawah := false
+	for _, t := range TingkatWilayah {
+		if bawah {
+			h.Hapus(t.Nama)
+			h.Hapus(t.ID)
+		}
+		bawah = bawah || t.Sumber == sumber
+	}
+	if bawah {
+		h.Hapus(CD + "PostalCode")
+	}
+}
 
 // InputKodePos = `InputKodePos1_Act` (change Zip Code): wilayah dari kode pos (baris terakhir menimpa), Location
 // dirangkai dari lokasi sementara + RW, District, City, Province.
@@ -358,9 +419,23 @@ func InputKodePos(k *Konteks, h *Halaman) error {
 		h.Setel(CD+"CityID", w.CityID)
 		h.Setel(CD+"ProvinceID", w.ProvinceID)
 	}
-	h.Setel(CD+"Location", h.Ambil(JalurLokasiSementara)+", "+h.Ambil(CD+"RW")+", "+h.Ambil(CD+"District")+", "+
-		h.Ambil(CD+"City")+", "+h.Ambil(CD+"Province")) // 5
+	// 5 - bagian kosong dilewati (work owner 11-10-2026 "RAPIHKAN!"): XML merangkai `TempLocaion.CARI1 + ", " + RW ...`
+	// apa adanya, jadi Zip Code yang dipilih sebelum Location diketik menghasilkan ", KEL, ..." di layar komite.
+	h.Setel(CD+"Location", rangkaiAlamat(h.Ambil(JalurLokasiSementara), h.Ambil(CD+"RW"), h.Ambil(CD+"District"),
+		h.Ambil(CD+"City"), h.Ambil(CD+"Province")))
 	return nil
+}
+
+// rangkaiAlamat - bagian alamat dirangkai ", " TANPA bagian kosong (rangkaian XML `a + ", " + b + ...` apa adanya
+// meninggalkan pemisah menggantung ", , , " bila bagiannya kosong).
+func rangkaiAlamat(bagian ...string) string {
+	var out []string
+	for _, v := range bagian {
+		if v = strings.TrimSpace(v); v != "" {
+			out = append(out, v)
+		}
+	}
+	return strings.Join(out, ", ")
 }
 
 // SetAdjuster = `SetAdjsuter_act` / SetConsultant = `SetConsultant_Act`: nama dari RD BrowseAdjusterConsultant; ID atau

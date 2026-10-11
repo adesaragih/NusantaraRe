@@ -37,13 +37,17 @@ type HasilKeputusan struct {
 	Selesai     bool   `json:"selesai"`
 	KomiteCount int    `json:"komiteCount"`
 	AcceptedNo  string `json:"acceptedNo,omitempty"`
-	// GalatDokumen - keputusan TERSIMPAN, tetapi PDF akseptasi gagal dibuat / diunggah / dicatat (`simpanDokumenAkseptasi`).
+	// GalatDokumen - keputusan TERSIMPAN, tetapi PDF akseptasi / close claim gagal dibuat / diunggah / dicatat
+	// (`simpanDokumenAkseptasi` / `simpanDokumenTutup`).
 	GalatDokumen string `json:"galatDokumen,omitempty"`
 }
 
 // PesanDokumenGagal - `[tidak ada di korpus]` (urutan Pega tidak ditiru, keputusan work owner 2026-09-18): Submit sudah
 // tersimpan saat PDF akseptasi gagal; penyetuju diberi tahu, sebabnya dicatat di log server.
 const PesanDokumenGagal = "The decision was saved, but the acceptance note PDF could not be stored. Please contact the administrator."
+
+// PesanDokumenTutupGagal - `[tidak ada di korpus]` padanan PesanDokumenGagal untuk PDF close claim (KomitePost_Close S12).
+const PesanDokumenTutupGagal = "The decision was saved, but the close claim PDF could not be stored. Please contact the administrator."
 
 // Putuskan menjalankan satu Submit `kep` oleh `p` atas kasus komite `id`.
 func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, kep models.Keputusan) (HasilKeputusan, error) {
@@ -52,7 +56,7 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, kep mo
 	}
 	saat := l.jam()
 	var hasil HasilKeputusan
-	dokumen := false
+	dokumen, dokumenTutup := false, false
 	err := l.g.Transaksi(ctx, func(tx *db.Tx) error {
 		k, kl, err := l.muat(ctx, tx, id, true)
 		if err != nil {
@@ -67,7 +71,7 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, kep mo
 		if strings.TrimSpace(models.AdjustmentKlaim(kl)["AcceptedNo"]) != "" {
 			return ErrAksiTertutup
 		}
-		if k.Tutup() { // TT 4: Subjectivity dan dua Propose hanya tampil untuk `.TransferType = 2`
+		if k.TanpaAdjustment() { // TT 3 / TT 4: Subjectivity dan dua Propose hanya tampil untuk `.TransferType = 2`
 			kep.IsSubjectivity, kep.SubjectivityNote, kep.UsulTutup, kep.UsulCadang = false, "", false, false
 		}
 		if pesan := models.PeriksaIsian(k, kep); len(pesan) > 0 {
@@ -75,7 +79,7 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, kep mo
 		}
 		j := &jalan{l: l, ctx: ctx, tx: tx, k: k, kl: kl, akun: p.AkunID, saat: saat}
 		var r models.Rencana
-		if k.Tutup() { // KomitePost S3 -> KomitePost_Close
+		if k.TanpaAdjustment() { // KomitePost S3 -> KomitePost_Close (TT 4) / S2 -> KomitePost_Reject (TT 3)
 			r = models.RencanakanTutup(k, kep, p.AkunID, saat)
 		} else { // KomitePost S1 -> KomitePostAdjustment
 			r = models.Rencanakan(k, kl, kep, p.AkunID, saat)
@@ -85,6 +89,7 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, kep mo
 		}
 		hasil = HasilKeputusan{KasusID: k.ID, Selesai: r.Selesai, KomiteCount: r.Count, AcceptedNo: j.nomor}
 		dokumen = r.SimpanRetro // S21 -> SaveAcceptationTreaty_TKMT S8 PrintFileAcceptance_TKMT
+		dokumenTutup = r.DokumenTutup
 		return nil
 	})
 	if err != nil {
@@ -94,6 +99,12 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, kep mo
 		if err := l.simpanDokumenAkseptasi(ctx, id, p.AkunID, saat); err != nil {
 			log.Printf("komiteclaimprop: dokumen akseptasi kasus %s: %v", id, err)
 			hasil.GalatDokumen = PesanDokumenGagal
+		}
+	}
+	if dokumenTutup { // KomitePost_Close S12.2-S12.7
+		if err := l.simpanDokumenTutup(ctx, id, p.AkunID, saat); err != nil {
+			log.Printf("komiteclaimprop: dokumen close claim kasus %s: %v", id, err)
+			hasil.GalatDokumen = PesanDokumenTutupGagal
 		}
 	}
 	return hasil, nil
@@ -157,8 +168,12 @@ func (j *jalan) laksanakan(r *models.Rencana) error {
 		return galatKontrak(err)
 	}
 	kunci := models.KunciInstans(k.KlaimID)
-	if r.JSONKlaim { // S28 (TT 4: KomitePost_Close S10)
-		if err := j.l.g.SalinJSONKlaim(ctx, tx, kunci, kl.Nilai["ClaimData.NoClaim"], noPolis, j.saat); err != nil {
+	noKlaim := kl.Nilai["ClaimData.NoClaim"]
+	// S28 (TT 4: KomitePost_Close S10, TT 3: KomitePost_Reject S11). PEGA_JSON_KLAIM_PNC menelan galatnya sendiri
+	// (EXCEPTION WHEN OTHERS -> StsSimpan 0, langkah berikut tetap jalan) dan JSON_KLAIM.MNK_NO_KLAIM / NOPOLIS NOT NULL
+	// (katalog DEV 11-10-2026): klaim tanpa Claim No - Reject di posisi admin - tidak mendapat baris, Submit jalan terus.
+	if r.JSONKlaim && noKlaim != "" && noPolis != "" {
+		if err := j.l.g.SalinJSONKlaim(ctx, tx, kunci, noKlaim, noPolis, j.saat); err != nil {
 			return err
 		}
 	}
@@ -171,7 +186,14 @@ func (j *jalan) laksanakan(r *models.Rencana) error {
 			return err
 		}
 	}
-	if r.KlaimDitolak { // KomitePost_Close S13
+	if r.OSTolak { // KomitePost_Reject S7: SaveRejectTreatyIn_Act_KMT per baris EstimationList klaim induk
+		for _, e := range kl.Daftar["ClaimData.EstimationList"] {
+			if err := j.l.g.SisipOS(ctx, tx, models.SusunOSTolak(kl, e, j.saat), j.saat); err != nil {
+				return err
+			}
+		}
+	}
+	if r.KlaimDitolak { // KomitePost_Close S13 / KomitePost_Reject S13
 		if err := j.l.g.SisipKlaimDitolak(ctx, tx, models.KlaimDitolak{InsKey: kunci, ID: k.KlaimID, InsName: k.KlaimID,
 			Label: models.LabelKlaimTreaty, StatusWork: models.StatusKlaimTerbuka, Kelas: models.KelasKlaim,
 			PembuatNama: kl.Nilai[kontrak.JalurNamaPembuatKlaimTreaty], PembuatID: kl.Nilai[kontrak.JalurPembuatKlaimTreaty],

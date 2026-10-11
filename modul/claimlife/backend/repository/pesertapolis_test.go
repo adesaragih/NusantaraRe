@@ -437,7 +437,7 @@ func TestUrutanKolomSalinDikunci(t *testing.T) {
 	}
 	ekspresi = append(ekspresi, strings.TrimSpace(kolomSalin[mulai:]))
 
-	const mau = 29
+	const mau = 30
 	if len(ekspresi) != mau {
 		t.Fatalf("kolomSalin memuat %d ekspresi, mau %d; salinKePeserta membaca "+
 			"posisi 0-%d dan akan bergeser seluruhnya", len(ekspresi), mau, mau-1)

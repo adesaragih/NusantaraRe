@@ -31,6 +31,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -47,6 +48,9 @@ import (
 )
 
 var (
+	// ErrKategoriDokumenTerlaluPanjang - nama Document Claim melebihi lebar KATEGORI_2 (11-10-2026).
+	ErrKategoriDokumenTerlaluPanjang = errors.New("services: this document category name is longer than the stored " +
+		"category column allows; the database column must be widened first")
 	// ErrKategoriDokumenTidakDikenal - kategori di luar daftar wajib.
 	ErrKategoriDokumenTidakDikenal = errors.New(
 		"services: kategori dokumen tidak ada di daftar kategori")
@@ -69,13 +73,18 @@ const NamaAplikasiBerkas = "RNM-CLAIM-LIFE"
 // VERBATIM `Insert_T_Storage_SQL.xml` b100: literal `'standard'`.
 const PenyimpananStandar = "standard"
 
+// LebarKategoriDokumen - lebar T_CLAIMLF_DOCUMENT.KATEGORI_2 (VARCHAR2(64), migrasi 010).
+const LebarKategoriDokumen = 64
+
 // Unggahan melayani ketiga tombol `Section/DocumentLife.xml`.
 type Unggahan struct {
-	svc     *Service
-	sumber  SumberKategoriWajib
-	folder  string
-	tautan  func(id int64) string
-	jakarta *time.Location
+	svc    *Service
+	sumber SumberKategoriWajib
+	// penyimpanan - Google Storage seperti Master Product Name Life (11-10-2026); uji memakai tiruan.
+	penyimpanan PenyimpananDokumen
+	folder      string
+	tautan      func(id int64) string
+	jakarta     *time.Location
 	// batas adalah batas byte satu berkas, bawaannya BatasUkuranUnggahan.
 	//
 	// ⚠️ Medan, bukan konstanta yang dibaca langsung - dan sebabnya satu
@@ -101,12 +110,13 @@ func (s *Service) Dokumen() *Unggahan {
 		jakarta = time.FixedZone("WIB", 7*60*60)
 	}
 	return &Unggahan{
-		svc:     s,
-		sumber:  KategoriWajibBelumDiketahui{},
-		folder:  s.UnggahanDir(),
-		tautan:  TautanUnduhBawaan,
-		jakarta: jakarta,
-		batas:   unggah.BatasUkuranUnggahan,
+		svc:         s,
+		penyimpanan: s.penyimpananDokumen(),
+		sumber:      KategoriWajibBelumDiketahui{},
+		folder:      s.UnggahanDir(),
+		tautan:      TautanUnduhBawaan,
+		jakarta:     jakarta,
+		batas:       unggah.BatasUkuranUnggahan,
 	}
 }
 
@@ -114,6 +124,13 @@ func (s *Service) Dokumen() *Unggahan {
 func (u *Unggahan) DenganKategori(s SumberKategoriWajib) *Unggahan {
 	salin := *u
 	salin.sumber = s
+	return &salin
+}
+
+// DenganPenyimpanan mengganti penyimpanan objek - dipakai uji (tiruan).
+func (u *Unggahan) DenganPenyimpanan(p PenyimpananDokumen) *Unggahan {
+	salin := *u
+	salin.penyimpanan = p
 	return &salin
 }
 
@@ -217,7 +234,7 @@ func (u *Unggahan) Unggah(ctx context.Context, pelaku inti.Pelaku,
 	// ⛔ Kategori diperiksa terhadap daftar butir ar1. (Gerbang kelengkapan
 	// Save ke Outstanding yang dulu memakai daftar yang sama ter-remark di XML
 	// dan dibuang - butir bl; pemeriksaan unggah ini keputusan ar1 sendiri.)
-	if err := u.periksaKategori(ctx, berkas.Kategori); err != nil {
+	if err := u.periksaKategori(ctx, klaimID, berkas.Kategori); err != nil {
 		return models.Dokumen{}, err
 	}
 
@@ -275,16 +292,62 @@ func (u *Unggahan) Unggah(ctx context.Context, pelaku inti.Pelaku,
 		}
 		return models.Dokumen{}, err
 	}
+	// 11-10-2026 (keputusan work owner "samakan dengan penyimpanan document product name"): seperti Master Product Name
+	// Life (UnggahLampiran -> kirimLampiran), efek penyimpanan dicoba SEGERA sesudah commit, di permintaan yang sama -
+	// tidak menunggu pekerja latar. Gagal kirim tidak menggagalkan unggahan: efeknya tetap antre dengan galatnya.
+	u.kirimSegera(ctx, idTeks, saat)
+	if baru, err := repository.NewKlaimLife(u.svc.DB()).SatuDokumen(ctx, klaimID, id); err == nil {
+		return baru, nil
+	}
 	return dok, nil
 }
 
+// kirimSegera - satu percobaan efek "storage-unggah" dokumen itu (pola masterproductnamelife kirimLampiran), dengan
+// pelaksana penyimpanan Claim Life yang ada (PelaksanaBerkasLokal: kartu T_CLAIMLF_STORAGE + T_STORAGE_ID).
+func (u *Unggahan) kirimSegera(ctx context.Context, rujukan string, saat time.Time) {
+	ctx, batal := context.WithTimeout(context.WithoutCancel(ctx), time.Minute)
+	defer batal()
+	baca := repository.NewKlaimLife(u.svc.DB())
+	err := u.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
+		b, ada, err := baca.PungutEfekUnggahDokumen(ctx, tx, ModulClaimLife, unggah.JenisEfekStorageUnggah, rujukan, saat)
+		if err != nil || !ada {
+			return err
+		}
+		// 11-10-2026: Google Storage + T_STORAGE_IMAGE (PelaksanaGoogle); PelaksanaBerkasLokal pensiun untuk dokumen baru.
+		var jalan error
+		if u.penyimpanan != nil {
+			jalan = NewPelaksanaGoogle(u.svc, u.penyimpanan).Laksanakan(ctx, tx, b)
+		} else {
+			// Transport Google belum dipasang (izin penjaga inti): pelaksana lokal seperti sebelumnya.
+			jalan = NewPelaksanaBerkasLokal(u.svc).Laksanakan(ctx, tx, b)
+		}
+		if jalan == nil {
+			return outbox.NewPenyimpan(u.svc.DB()).TuntaskanEfek(ctx, tx, b.ID, outbox.StatusEfekSelesai, time.Time{}, "", saat)
+		}
+		status, jadwal := outbox.StatusEfekAntre, saat.Add(outbox.Backoff(b.Percobaan+1))
+		if !outbox.LayakDicobaUlang(jalan) || b.Percobaan >= outbox.PercobaanMaksimum {
+			status, jadwal = outbox.StatusEfekGagalPermanen, time.Time{}
+		}
+		log.Printf("claimlife: menyimpan dokumen %s gagal: %v", rujukan, jalan)
+		return outbox.NewPenyimpan(u.svc.DB()).TuntaskanEfek(ctx, tx, b.ID, status, jadwal, jalan.Error(), saat)
+	})
+	if err != nil {
+		log.Printf("claimlife: mencatat hasil penyimpanan dokumen %s gagal: %v", rujukan, err)
+	}
+}
+
 // periksaKategori menolak kategori di luar daftar butir ar1.
-func (u *Unggahan) periksaKategori(ctx context.Context, kategori string) error {
+func (u *Unggahan) periksaKategori(ctx context.Context, klaimID, kategori string) error {
 	k := strings.TrimSpace(kategori)
 	if k == "" {
 		return fmt.Errorf("%w: kategori dokumen wajib diisi", galat.ErrPermintaanTidakSah)
 	}
-	wajib, err := u.sumber.KategoriWajib(ctx)
+	// ⚠️ T_CLAIMLF_DOCUMENT.KATEGORI_2 VARCHAR2(64) (migrasi 010), sedangkan Document Claim master VARCHAR2(500): nama yang
+	// lebih panjang DITOLAK terang (422), tidak dipotong. Melebarkan kolom = migrasi (jatah habis) - menunggu keputusan.
+	if len(k) > LebarKategoriDokumen {
+		return fmt.Errorf("%w: %d byte (kolom KATEGORI_2 hanya %d byte)", ErrKategoriDokumenTerlaluPanjang, len(k), LebarKategoriDokumen)
+	}
+	wajib, err := u.sumber.KategoriWajib(ctx, klaimID)
 	if err != nil {
 		return err
 	}
@@ -369,10 +432,10 @@ func (u *Unggahan) Unduh(ctx context.Context, pelaku inti.Pelaku,
 	// ⛔ `T_STORAGE_ID` kosong berarti efek unggahnya BELUM selesai - bukan
 	// berkasnya hilang. Dibedakan supaya layar dapat berkata "sedang
 	// diproses" alih-alih "tidak ditemukan".
-	if !models.BolehSimpanBarisDokumen(dok.TStorageID) {
-		return models.Dokumen{}, "", fmt.Errorf("%w: dokumen %d",
-			ErrDokumenBelumTerunggah, dokID)
-	}
+	// 11-10-2026 (keputusan work owner "View" selama storage belum jalan): dokumen yang efek unggahnya BELUM selesai
+	// (T_STORAGE_ID kosong) tetap dilayani dari berkas LOKAL di UNGGAHAN_DIR - cadangan sampai pekerja penyimpanan ada.
+	// Jalurnya disusun server dari pengenal dokumen (namaBerkasLokal = ID + ekstensi), tidak pernah dari klien; berkas
+	// yang tidak ada dijawab 404 oleh handler. ErrDokumenBelumTerunggah tetap ada untuk pemanggil lain.
 	if strings.TrimSpace(u.folder) == "" {
 		return models.Dokumen{}, "", unggah.ErrUnggahanDirBelumDisetel
 	}
@@ -405,27 +468,145 @@ func (u *Unggahan) Hapus(ctx context.Context, pelaku inti.Pelaku,
 		return err
 	}
 	baca := repository.NewKlaimLife(u.svc.DB())
+	// SatuDokumen berbatas klaim: dokumen klaim lain = ErrDokumenTidakAda (404).
 	dok, err := baca.SatuDokumen(ctx, klaimID, dokID)
 	if err != nil {
 		return err
 	}
-	return u.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
+	tertunda := !models.PerluHapusDiPenyimpanan(dok.TStorageID)
+	// 11-10-2026 (seperti Master Product Name Life / DeleteDocument_Act → DeleteGoogleStorage_Act): objek di Google Storage
+	// dihapus LEBIH DULU - gagal = rekam tetap (pesan jelas); lalu baris T_STORAGE_IMAGE dan baris dokumen satu transaksi.
+	objek, diGoogle := repository.ObjekPenyimpanan{}, false
+	if !tertunda {
+		if objek, diGoogle, err = baca.AmbilObjekPenyimpanan(ctx, nil, dok.TStorageID); err != nil {
+			return err
+		}
+		if diGoogle {
+			if u.penyimpanan == nil {
+				return ErrTransportBelumDisetujui
+			}
+			if err := u.penyimpanan.Hapus(ctx, objek); err != nil {
+				return err
+			}
+		}
+	}
+	err = u.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		if err := baca.HapusDokumen(ctx, tx, dokID); err != nil {
 			return err
 		}
-		if !models.PerluHapusDiPenyimpanan(dok.TStorageID) {
-			// Prasyarat b472: nol penyimpanan yang perlu disentuh. Berkas
-			// lokalnya pun belum pernah tertaut, jadi tidak ada yang
-			// diantre - mengantre pekerjaan kosong membanjiri outbox.
-			return nil
+		switch {
+		case tertunda:
+			// Efek "storage-unggah" yang MASIH ANTRE dibatalkan di transaksi yang sama (outbox inti tanpa status
+			// "dibatalkan": ditutup "selesai" dengan catatan).
+			return batalkanEfekUnggah(ctx, tx, u.svc.DB(), baca, strconv.FormatInt(dok.ID, 10), saat)
+		case diGoogle:
+			return baca.HapusObjekPenyimpanan(ctx, tx, objek.ImageID)
+		default:
+			// Dokumen LAMA dengan kartu stub lokal T_CLAIMLF_STORAGE (dipensiunkan untuk dokumen baru).
+			return baca.HapusKartuBerkas(ctx, tx, dok.TStorageID)
 		}
-		_, err := outbox.NewPenyimpan(u.svc.DB()).AntreEfek(ctx, tx,
-			outbox.LiniLife, ModulClaimLife, unggah.JenisEfekStorageHapus, dok.TStorageID,
-			muatanBerkas(klaimID, filepath.Join(u.folder,
-				namaBerkasLokal(strconv.FormatInt(dok.ID, 10), dok.NamaFile)),
-				dok.NamaFile), saat)
-		return err
 	})
+	if err != nil {
+		return err
+	}
+	// Berkas lokal (antrean / salinan stub) dibuang SESUDAH commit, best-effort.
+	if strings.TrimSpace(u.folder) != "" {
+		jalur := filepath.Join(u.folder, namaBerkasLokal(strconv.FormatInt(dok.ID, 10), dok.NamaFile))
+		if e := os.Remove(jalur); e != nil && !os.IsNotExist(e) {
+			log.Printf("claimlife: dokumen %d dihapus, tetapi berkas lokalnya gagal dibuang: %v", dok.ID, e)
+		}
+	}
+	return nil
+}
+
+// BukaDokumen membuka isi dokumen untuk "View" (11-10-2026), berbatas klaim:
+//   - objek di T_STORAGE_IMAGE → Google Storage (URL bertanda tangan diunduh backend; URL diperbarui bila kedaluwarsa);
+//   - selain itu (belum tersimpan / dokumen lama berkartu stub lokal) → salinan lokal UNGGAHAN_DIR.
+//
+// Jalur lokal disusun dari pengenal dokumen, tidak pernah dari klien.
+func (u *Unggahan) BukaDokumen(ctx context.Context, pelaku inti.Pelaku, klaimID string, dokID int64) (
+	models.Dokumen, io.ReadCloser, error) {
+
+	if err := inti.WajibIdentitas(pelaku); err != nil {
+		return models.Dokumen{}, nil, err
+	}
+	if strings.TrimSpace(klaimID) == "" {
+		return models.Dokumen{}, nil, fmt.Errorf("%w: pengenal klaim wajib diisi", galat.ErrPermintaanTidakSah)
+	}
+	if u == nil || u.svc == nil || !u.svc.PunyaDatabase() {
+		return models.Dokumen{}, nil, db.ErrTanpaOracle
+	}
+	baca := repository.NewKlaimLife(u.svc.DB())
+	dok, err := baca.SatuDokumen(ctx, klaimID, dokID)
+	if err != nil {
+		return models.Dokumen{}, nil, err
+	}
+	if strings.TrimSpace(dok.TStorageID) != "" {
+		o, ada, err := baca.AmbilObjekPenyimpanan(ctx, nil, dok.TStorageID)
+		if err != nil {
+			return models.Dokumen{}, nil, err
+		}
+		if ada && strings.TrimSpace(o.URLPublic) != "" {
+			if u.penyimpanan == nil {
+				return models.Dokumen{}, nil, ErrTransportBelumDisetujui
+			}
+			isi, baru, err := u.penyimpanan.Buka(ctx, o)
+			if err != nil {
+				return models.Dokumen{}, nil, err
+			}
+			if baru != nil {
+				if err := baca.PerbaruiObjekPenyimpanan(ctx, nil, *baru); err != nil {
+					log.Printf("claimlife: memperbarui URL objek dokumen %d gagal: %v", dok.ID, err)
+				}
+			}
+			return dok, isi, nil
+		}
+	}
+	if strings.TrimSpace(u.folder) == "" {
+		return models.Dokumen{}, nil, unggah.ErrUnggahanDirBelumDisetel
+	}
+	f, err := os.Open(filepath.Join(u.folder, namaBerkasLokal(strconv.FormatInt(dok.ID, 10), dok.NamaFile)))
+	if err != nil {
+		return models.Dokumen{}, nil, fmt.Errorf("%w: dokumen %d", ErrBerkasDokumenTidakAda, dok.ID)
+	}
+	return dok, f, nil
+}
+
+// BukaDokumenLewatPengenal - "View" rute lama /api/dokumen/{id}/isi: klaim dicari dulu, lalu BukaDokumen berbatas klaim.
+func (u *Unggahan) BukaDokumenLewatPengenal(ctx context.Context, pelaku inti.Pelaku, dokID int64) (
+	models.Dokumen, io.ReadCloser, error) {
+
+	if err := inti.WajibIdentitas(pelaku); err != nil {
+		return models.Dokumen{}, nil, err
+	}
+	if u == nil || u.svc == nil || !u.svc.PunyaDatabase() {
+		return models.Dokumen{}, nil, db.ErrTanpaOracle
+	}
+	klaimID, err := repository.NewKlaimLife(u.svc.DB()).KlaimDokumen(ctx, dokID)
+	if err != nil {
+		return models.Dokumen{}, nil, err
+	}
+	return u.BukaDokumen(ctx, pelaku, klaimID, dokID)
+}
+
+// CatatanBatalUnggah - GALAT_TERAKHIR efek "storage-unggah" yang dibatalkan karena dokumennya dihapus.
+const CatatanBatalUnggah = "dibatalkan: dokumen dihapus sebelum diunggah ke penyimpanan"
+
+// batalkanEfekUnggah menutup efek "storage-unggah" dokumen yang masih antre, di transaksi pemanggil.
+func batalkanEfekUnggah(ctx context.Context, tx *db.Tx, d *db.DB, baca *repository.KlaimLife, rujukan string,
+	saat time.Time) error {
+
+	id, err := baca.EfekUnggahAntre(ctx, tx, ModulClaimLife, unggah.JenisEfekStorageUnggah, rujukan, outbox.StatusEfekAntre)
+	if err != nil {
+		return err
+	}
+	for _, x := range id {
+		if err := outbox.NewPenyimpan(d).TuntaskanEfek(ctx, tx, x, outbox.StatusEfekSelesai, time.Time{},
+			CatatanBatalUnggah, saat); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // PelaksanaBerkasLokal menjalankan efek berkas TANPA layanan luar.
@@ -497,6 +678,20 @@ func (p *PelaksanaBerkasLokal) unggah(ctx context.Context, tx *db.Tx,
 		// tidak akan menjadi angka pada percobaan kedelapan.
 		return fmt.Errorf("%w: rujukan %q bukan pengenal dokumen",
 			galat.ErrPermintaanTidakSah, b.Rujukan)
+	}
+	// 11-10-2026: dokumen yang sudah DIHAPUS sebelum efeknya berjalan dilewati (dibuang berkas lokalnya, efek dianggap
+	// tuntas) - berkas yang dihapus pemakai tidak pernah diunggah.
+	ada, err := p.baca.DokumenAda(ctx, tx, id)
+	if err != nil {
+		return err
+	}
+	if !ada {
+		if jalur := jalurDariMuatan(b.Muatan); jalur != "" {
+			if e := os.Remove(jalur); e != nil && !os.IsNotExist(e) {
+				log.Printf("claimlife: efek unggah dokumen %d dilewati (dokumen terhapus); berkas gagal dibuang: %v", id, e)
+			}
+		}
+		return nil
 	}
 	saat := p.jam()
 	// ⛔ `IMAGEID` DITERBITKAN DI SINI, dan bukan pengenal dokumennya.

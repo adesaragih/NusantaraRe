@@ -1870,7 +1870,7 @@ var registry = map[string]predikat{
 			"A": {jenis: banding, kiri: "pyWorkPage.PositionNote", tidakSama: false, kanan: operand{teksLiteral, "ReasFacInUnderwriting"}},
 			"B": {jenis: banding, kiri: "pyWorkPage.PositionNote", tidakSama: false, kanan: operand{teksLiteral, "ReasFacInSeniorUnderwriting"}},
 			"C": {jenis: banding, kiri: "pyWorkPage.PositionNote", tidakSama: false, kanan: operand{teksLiteral, "ReasFacInUnderwritingFinancial"}},
-			"D": {jenis: banding, kiri: "pyWorkPage.PositionNote", tidakSama: false, kanan: operand{teksLiteral, "ReasFacInJuniorUnderwriting"}},
+			"D": {jenis: banding, kiri: "pyWorkPage.PositionNote", tidakSama: false, kanan: operand{teksLiteral, "ReasFacInJuniorUnderwritingB"}},
 			"E": {jenis: banding, kiri: "pyWorkPage.PositionNote", tidakSama: false, kanan: operand{teksLiteral, "ReasFacInDepHeadUnderwriting"}},
 			"F": {jenis: banding, kiri: "pyWorkPage.PositionNote", tidakSama: false, kanan: operand{teksLiteral, "ReasFacInJuniorUnderwritingA"}},
 		},

@@ -165,14 +165,6 @@
   overflow-wrap: anywhere;
 }
 
-/* Checkbox `On Retention` b47303 (`pyCheckboxCaption` b47312). */
-.mpnl .mpnl-centang {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 12px 0;
-}
-
 /* Label statik `OF SUM REASURED` b24882 di samping `Nusantara Re Share (%)`. */
 /* `OF SUM REASURED` b24880 - keterangan di kanan nilai `Nusantara Re Share (%)`. */
 .mpnl .mpnl-catatan-medan {

@@ -2,8 +2,11 @@ package repository
 
 import (
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
+
+	"nusantarare/modul/riratelife/backend/models"
 )
 
 // RALAT R1: definisi view RATE_LIFE_SUMMARY (ALL_VIEWS, dibaca WO 06-10-2026) = enam kolom ini (sejarah; dipulihkan
@@ -34,7 +37,7 @@ func TestKunciDanKolomCocokDenganView(t *testing.T) {
 	}
 	for _, k := range strings.Split(kolomRate, ", ") {
 		if !slices.Contains(rate, k) {
-			t.Errorf("kolom rate %s tidak ada di view", k)
+			t.Errorf("kolom rate %s tidak ada di M_RATE_LIFE", k)
 		}
 	}
 	for _, q := range []string{SqlSisipRingkasan("T"), SqlUbahRate("T"), SqlSisipRate("T"), SqlDaftar("V", "", false), kolomRingkasan, kolomRate} {
@@ -42,6 +45,27 @@ func TestKunciDanKolomCocokDenganView(t *testing.T) {
 			if strings.Contains(q, k) {
 				t.Errorf("%q memuat %s:\n%s", k, k, q)
 			}
+		}
+	}
+}
+
+// RALAT R7: M_RATE_LIFE flat 8 kolom dengan lebar ALL_TAB_COLUMNS DEV 10-10-2026; batas validasi Go muat di kolomnya.
+func TestLebarKolomRateFlat(t *testing.T) {
+	if !slices.Equal(KolomRate, []string{"ID", "IDUSEDBY", "USEDBY", "TYPE", "GENDER", "CONTRACT", "AGE", "RATE"}) {
+		t.Fatalf("kolom M_RATE_LIFE %v", KolomRate)
+	}
+	for _, k := range KolomRate {
+		if LebarKolomRate[k] == 0 {
+			t.Errorf("lebar %s tidak tercatat", k)
+		}
+	}
+	if models.LebarRate != LebarKolomRate["RATE"] || models.BatasNama > LebarKolomRate["USEDBY"] ||
+		len(strconv.Itoa(models.UmurMaks)) > LebarKolomRate["AGE"] || len(strconv.Itoa(models.UmurMaks)) > LebarKolomRate["CONTRACT"] {
+		t.Errorf("batas Go melebihi kolom: RATE %d, USEDBY %d, umur %d", models.LebarRate, models.BatasNama, models.UmurMaks)
+	}
+	for _, gd := range models.Gender {
+		if len(gd) > LebarKolomRate["GENDER"] {
+			t.Errorf("gender %q", gd)
 		}
 	}
 }

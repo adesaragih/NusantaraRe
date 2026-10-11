@@ -76,6 +76,9 @@ var aksiInduk = map[string]string{
 	"CloseClaimProp":     "BukaTutupKlaim",
 	// tombol Yes tutup tanpa pembayaran (pop-up PreventRejectClaimProp yang sama)
 	"SendCloseClaimToKomite": "BukaTutupKlaim",
+	// pop-up Reject Claim (ClaimRejectTreaty -> SureRejectClaimTreaty) - terbuka selama tombol Reject Claim tampil
+	"SureRejectClaimT":        "BukaTolakKlaim",
+	"CheckRejectClaimTreaty2": "BukaTolakKlaim",
 	// tombol modal CommitteeTreaty tampil menurut isian modal - diperiksa ulang SESUDAH kiriman digabung (aksiKomite)
 	"AddKomiteTreatyChild": "BukaKomite",
 }
@@ -126,6 +129,9 @@ func (l *Layanan) Aksi(ctx context.Context, p inti.Pelaku, id string, r Perminta
 			return err
 		}
 		if err := l.siapkan(kt, kasus, h); err != nil {
+			return err
+		}
+		if err := l.tandaiMenunggu(ctx, tx, id, h); err != nil {
 			return err
 		}
 		if err := l.turunkan(ctx, kt, h); err != nil {
@@ -182,12 +188,19 @@ func (l *Layanan) Aksi(ctx context.Context, p inti.Pelaku, id string, r Perminta
 			if err := l.siapkan(kt, k2, h2); err != nil {
 				return err
 			}
+			if err := l.tandaiMenunggu(ctx, tx, id, h2); err != nil { // termasuk kasus komite yang baru lahir
+				return err
+			}
 		}
 		if err := l.turunkan(ctx, kt, h2); err != nil {
 			return err
 		}
 		h2.Pesan = pesan
-		for _, x := range append([]string{"Protect.CARI1", "Protect.CARI2", "ParamInput.CARI1", "IsError"}, models.ModeLayar...) {
+		// properti halaman kerja Pega yang tidak disimpan tetapi dibaca layar sesudah aksi (pop-up PreventRejectClaimProp /
+		// ClaimRejectTreaty: centang Close Without Payment, isian TempCommiteClaim yang diketik, `Komite.CARI1`)
+		for _, x := range append([]string{"Protect.CARI1", "Protect.CARI2", "ParamInput.CARI1", "IsError",
+			models.PropCentangTutupTanpaBayar, models.PropKronologiTutup, "TempCommiteClaim.Remarks",
+			models.PropKomiteBaru}, models.ModeLayar...) {
 			if v := h.Ambil(x); v != "" {
 				h2.Setel(x, v)
 			}
@@ -338,20 +351,22 @@ func init() {
 		"SubmitOutstanding": aksiSubmit,
 		"Simpan":            halamanSaja(func(j *jalanAksi) {}),
 		// akseptasi (tiket 08, 10, 11, 12, 13)
-		"AddAdjustment":          halamanSaja(func(j *jalanAksi) { models.AddAdjustment(j.k, j.h) }),
-		"DeleteAjsutment":        func(j *jalanAksi) error { return models.DeleteAjsutment(j.h, j.r.Indeks) },
-		"SetPayableTreaty":       indeks(models.SetPayableTreaty),
-		"SetNameCurrency":        aksiMataUangAdjustment,
-		"SetDLACedingSOB":        func(j *jalanAksi) error { return models.SetDLACedingSOB(j.h, j.r.Indeks) },
-		"PilihAllocation":        func(j *jalanAksi) error { return models.PilihAllocation(j.h, j.r.Indeks, j.r.Param) },
-		"CountGrossAdjTreaty":    indeks(models.CountGrossAdjTreaty),
-		"PilihRekening":          aksiPilihRekening,
-		"SetKomiteNo":            halamanSaja(func(j *jalanAksi) {}),
-		"BukaKomite":             aksiBukaKomite,
-		"AddKomiteTreatyChild":   aksiKomite,
-		"HitServiceToKasir":      aksiKasir,
-		"PrintDLATreatyIn":       aksiDLA,
-		"CloseClaimProp":         aksiTutupKlaim,
-		"SendCloseClaimToKomite": aksiTutupTanpaBayar,
+		"AddAdjustment":           halamanSaja(func(j *jalanAksi) { models.AddAdjustment(j.k, j.h) }),
+		"DeleteAjsutment":         func(j *jalanAksi) error { return models.DeleteAjsutment(j.h, j.r.Indeks) },
+		"SetPayableTreaty":        indeks(models.SetPayableTreaty),
+		"SetNameCurrency":         aksiMataUangAdjustment,
+		"SetDLACedingSOB":         func(j *jalanAksi) error { return models.SetDLACedingSOB(j.h, j.r.Indeks) },
+		"PilihAllocation":         func(j *jalanAksi) error { return models.PilihAllocation(j.h, j.r.Indeks, j.r.Param) },
+		"CountGrossAdjTreaty":     indeks(models.CountGrossAdjTreaty),
+		"PilihRekening":           aksiPilihRekening,
+		"SetKomiteNo":             halamanSaja(func(j *jalanAksi) {}),
+		"BukaKomite":              aksiBukaKomite,
+		"AddKomiteTreatyChild":    aksiKomite,
+		"HitServiceToKasir":       aksiKasir,
+		"PrintDLATreatyIn":        aksiDLA,
+		"CloseClaimProp":          aksiTutupKlaim,
+		"SendCloseClaimToKomite":  aksiTutupTanpaBayar,
+		"SureRejectClaimT":        aksiYakinTolak,
+		"CheckRejectClaimTreaty2": aksiTolakKlaim,
 	}
 }

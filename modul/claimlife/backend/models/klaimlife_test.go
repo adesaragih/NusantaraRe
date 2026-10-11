@@ -216,7 +216,7 @@ func TestPesertaJSONMembawaTanggalKejadian(t *testing.T) {
 	// "total" masuk 27-09-2026 bersama keputusan bc (enam total peserta,
 	// dihitung saat dibaca). Ia melewati penjaga ini lebih dulu, dan itu
 	// memang tugasnya: medan baru pada marshaller harus DILIHAT orang,
-	// bukan menyelinap. ⛔ Nama orang tetap TIDAK ADA di sini.
+	// bukan menyelinap. (Nama orang: lihat catatan 10-10-2026 di bawah.)
 	// "diagnosa" masuk 27-09-2026 bersama butir bd. Ia daftar, bukan
 	// sepasang kolom: `ClaimLifeDetailGCNM.xml` b3923 menyajikannya
 	// RepeatGrid dengan `Add` b4690 dan `Delete` b6160.
@@ -224,12 +224,19 @@ func TestPesertaJSONMembawaTanggalKejadian(t *testing.T) {
 	// gerbang `pyDisabledWhen` b4682, yang menguji `STS_REJECT` PESERTA.
 	// Tiga tanggal klaim masuk 28-09-2026 bersama dialog Edit Date
 	// (`EditDateClaimLife_Section` b1076, b1387, b1626) - tanggal, bukan nama.
-	mau := []string{"baris", "diagnosa", "dokumen", "id", "isCheck", "kodeStatus",
-		"mataUang", "nomorPolis", "nomorPremiList", "nomorSertifikat",
+	// "idPega" masuk 10-10-2026: kunci header data polis panel Outstanding (keputusan work owner).
+	// "isAccept", "namaTertanggung", "tanggalLahir" masuk 10-10-2026: grid Participant Details layar Outstanding
+	// (InputOSClaimLife b17203/b17380/b17582, permintaan work owner). ⛔ Nama orang kini MENYEBERANG untuk tampilan -
+	// dibaca saat baca dari baris sumber, TIDAK disalin ke tabel klaim (kolomSalin tetap tanpa nama).
+	// 11-10-2026 - rincian peserta layar Outstanding (ClaimLifeDetailGCNM, screenshot Pega): jenisKelamin, plan, umur,
+	// tiga tanggal polis, valuasi, tanggalTerima, stnc, maksKlaimKadaluarsa, catatanAdmin (027), catatanAnalis (NOTES).
+	mau := []string{"baris", "catatanAdmin", "catatanAnalis", "diagnosa", "dokumen", "id", "idPega", "isAccept", "isCheck",
+		"jenisKelamin", "kodeStatus", "maksKlaimKadaluarsa",
+		"mataUang", "namaTertanggung", "nomorPolis", "nomorPremiList", "nomorSertifikat",
 		// Butir bk (28-09-2026): penanda `MAX CLAIM RECEIVED`, dihitung saat baca.
-		"penandaTerimaKlaim", "penandaTerimaKlaimAlasan",
-		"tanggalDokumenLengkap", "tanggalKejadian", "tanggalKonfirmasi",
-		"tanggalTerimaKlaim", "total"}
+		"penandaTerimaKlaim", "penandaTerimaKlaimAlasan", "plan", "rekomendasi", "stnc",
+		"tanggalDokumenLengkap", "tanggalEfektif", "tanggalExpired", "tanggalKejadian", "tanggalKonfirmasi", "tanggalLahir",
+		"tanggalMaksData", "tanggalMulai", "tanggalTerima", "tanggalTerimaKlaim", "total", "umur", "valuasiMulai", "valuasiRetroMulai", "valuasiRetroSelesai", "valuasiSelesai"}
 	if !reflect.DeepEqual(kunci, mau) {
 		t.Errorf("kunci JSON peserta = %v, mau %v; medan baru harus disengaja",
 			kunci, mau)

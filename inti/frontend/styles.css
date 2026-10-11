@@ -6043,6 +6043,10 @@ button.shell__golongan-judul:focus-visible {
 .kelola-user__cari {
   width: min(320px, 100%);
 }
+/* Saring status layar master (template Kelola User, 10-10-2026): sebaris dengan kotak cari, tidak selebar halaman. */
+.master-data__saring {
+  width: min(180px, 100%);
+}
 .kelola-user__status {
   display: inline-flex;
   flex-wrap: wrap;

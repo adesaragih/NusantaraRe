@@ -1,5 +1,7 @@
 # 04: City — EMAIL / MOID keluar dari menu, PROVINCENAME, dan kota baru dari RW (backend sesi c3)
 
+> **RALAT 05-10-2026:** berkas 883 kini **`218_cityinput_provincename`** (bentrok rentang dengan modul `aggregate`); "883" di bawah = nama lama. Penanda data `CREATE_OP = 'MIGRASI-883'` tidak berubah. Langkah `T_MIGRASI` DEV: `modul/masterprovince/MODUL.md` bab "Penomoran ulang (05-10-2026)".
+
 > ⚠️ **Disusun agent sesi c3 atas permintaan sesi `nusantarare-9d` — bukan hasil `/to-tickets`.** Tanpa commit / push.
 
 **Status:** ditulis 04-10-2026, uji Go hijau. ⛔ Migrasi 883 ditulis, **belum dijalankan** (work owner).
@@ -17,7 +19,7 @@
 - `inti/backend/master/models/daftar.go` (TIM INTI): master `city` tanpa `email` / `moId`; `provinceName`
   (`PROVINCENAME`, 4000) kolom biasa sesudah `provinceId`. Kolom DB EMAIL / MOID TETAP: tambah = NULL, ubah = tidak
   disentuh (SQL hanya menyebut kolom yang didefinisikan) — `TestCityTanpaEmailMoID`.
-- `modul/masterprovince/backend/migrations/883_cityinput_provincename.sql` (+ `_down`): ADD → UPDATE → INSERT;
+- `modul/masterprovince/backend/migrations/218_cityinput_provincename.sql` (dulu 883) (+ `_down`): ADD → UPDATE → INSERT;
   `backend/migrasi_test.go` `TestMigrasiProvinceNameCity` (bentuk SQL; uji mutasi: UPPER di UPDATE → merah).
 - `docs/STRUKTUR-TABEL-MASTER-DATA.md` bab CITYINPUT. Label `provinceName` = 'Province Name' di
   `inti/frontend/master/labels.ts` — sesi 9d.

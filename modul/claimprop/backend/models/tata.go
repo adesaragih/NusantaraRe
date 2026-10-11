@@ -66,6 +66,8 @@ type Unsur struct {
 	HanyaBaca Kondisi
 	Nonaktif  Kondisi
 	Wajib     Kondisi
+	// TampilKlien - kondisi tampil yang dievaluasi LAYAR (Pega `pyIsClientWhen = true`); unsur selalu dikirim.
+	TampilKlien *SyaratKlien
 
 	// Kolom grid: kondisi per baris.
 	TampilB    KondisiBaris
@@ -110,6 +112,17 @@ type Tata struct {
 	Ikon      string      `json:"ikon,omitempty"`
 	// PerHalaman - jumlah baris per halaman grid.
 	PerHalaman int `json:"perHalaman,omitempty"`
+	// TampilJika - kondisi tampil yang dievaluasi layar dengan nilai lokalnya (`Unsur.TampilKlien`).
+	TampilJika *SyaratKlien `json:"tampilJika,omitempty"`
+}
+
+// SyaratKlien - kondisi tampil layout yang di Pega berjalan di peramban (`pyIsClientWhen = true`): medan postValue
+// mengubah nilai tanpa memanggil server, layout bertukar seketika. Tampil bila nilai `Jalur` = `Nilai` (`Beda`: bila
+// bukan `Nilai`).
+type SyaratKlien struct {
+	Jalur string `json:"jalur"`
+	Nilai string `json:"nilai"`
+	Beda  bool   `json:"beda,omitempty"`
 }
 
 // SelTata - keadaan satu sel grid pada satu baris (sejajar `Tata.Kolom`).
@@ -143,7 +156,7 @@ func Evaluasi(h *Halaman, defs []Unsur, kunci bool) []Tata {
 		}
 		t := Tata{Jenis: u.Jenis, ID: u.ID, Label: u.Label, Jalur: u.Jalur, Kendali: u.Kendali, Sumber: u.Sumber,
 			Tampilan: u.Tampilan, Aksi: u.Aksi, Catatan: u.Catatan, Bernomor: u.Bernomor, Letak: u.Letak, Ikon: u.Ikon,
-			PerHalaman: u.PerHalaman}
+			PerHalaman: u.PerHalaman, TampilJika: u.TampilKlien}
 		t.HanyaBaca = kunci || ya(u.HanyaBaca, h, false)
 		t.Nonaktif = kunci || ya(u.Nonaktif, h, false)
 		t.Wajib = ya(u.Wajib, h, false)

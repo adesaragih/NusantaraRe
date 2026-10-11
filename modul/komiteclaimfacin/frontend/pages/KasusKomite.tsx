@@ -7,7 +7,8 @@
 // Tata letak pola Komite Claim Prop / Non Prop (keputusan work owner 09-10-2026, disalin bukan impor): judul + ubin
 // ringkasan di kepala; satu kartu berjudul per bagian server (`susunKomite.ts`), teks komite kartu terakhir; DI BAWAH
 // semua rincian langkah tangga ("List of Committee") lalu kartu keputusan - berdampingan di layar lebar, bertumpuk di
-// layar sempit.
+// layar sempit. Lampiran klaim induk (`PanelLampiran`, perintah work owner 11-10-2026) PALING BAWAH, sesudah
+// tangga dan keputusan.
 
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 
@@ -36,6 +37,7 @@ import {
   susunBagian,
   type KeadaanLangkah,
 } from '../susunKomite'
+import PanelLampiran from './PanelLampiran'
 
 /** Pembuka pop-up sel `tautan` (kunci `Layar.modal`). */
 type BukaModal = (kunci: string) => void
@@ -62,10 +64,13 @@ function Nilai({ m }: { m: Medan }) {
   return <>{v}</>
 }
 
-/** Pasangan label-nilai satu bagian; teks panjang selebar kartu. */
-function DaftarNilai({ medan }: { medan: Medan[] }) {
+/**
+ * Pasangan label-nilai satu bagian; teks panjang selebar kartu. `kiri` = satu kolom bertumpuk berlabel kiri (layout lama
+ * Pega "Stacked with labels left", work owner 11-10-2026 "INI LAYOUT LAMA IKUTI DAN RAPIHIN!").
+ */
+function DaftarNilai({ medan, kiri }: { medan: Medan[]; kiri?: boolean }) {
   return (
-    <dl className="komiteclaimfacin__dl">
+    <dl className={kiri ? 'komiteclaimfacin__dl komiteclaimfacin__dl--kiri' : 'komiteclaimfacin__dl'}>
       {medan.map((m, i) => (
         <div
           key={i}
@@ -247,6 +252,13 @@ function BagianIsi({
     <div className="komiteclaimfacin__bagian">
       {b.judul && b.judul !== judulKartu && <h4 className="komiteclaimfacin__subjudul">{b.judul}</h4>}
       {b.medan && b.medan.length > 0 && <DaftarNilai medan={b.medan} />}
+      {b.kolom && b.kolom.length > 0 && (
+        <div className="komiteclaimfacin__dua">
+          {b.kolom.map((k, i) => (
+            <DaftarNilai key={i} medan={k} kiri />
+          ))}
+        </div>
+      )}
       {(b.grid ?? []).map((g, i) => (
         <TabelGrid key={i} g={g} modal={modal} onModal={onModal} />
       ))}
@@ -565,6 +577,8 @@ export default function KasusKomite({
           </section>
         </div>
       </div>
+      {/* lampiran klaim induk, hanya-baca - PALING BAWAH (perintah work owner 11-10-2026) */}
+      <PanelLampiran id={layar.kasus.id} />
 
       {isiModal && (
         // Local action ShowRetro ("View Retro"): reasuradur Fac Retro + Security Reinsurer per baris (expand pane).

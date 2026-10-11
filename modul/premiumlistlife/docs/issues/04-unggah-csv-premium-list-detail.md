@@ -281,3 +281,17 @@ berbentuk `.X = 0` dengan WHEN `@PropertyHasValue(.X)`, dan `pyStepsBlockName`-n
   **masukan** (sel kosong berarti nol), bukan pengisian tabel, sehingga ADR-U-0027 tidak dilanggar.
 
 Uji: `TestIsiNolUangKosongSepertiLangkah2`.
+
+## POLICY_HOLDER dan PLAN peserta dari data polis (keputusan work owner 05-10-2026)
+
+Untuk SEMUA Type, kolom peserta `POLICY_HOLDER` dan `PLAN` **tidak** diambil dari CSV:
+
+- `POLICY_HOLDER` = `T_PREMIUM_LIST.POLICY_HOLDER_NAME` (nama yang tampil di layar, bukan ID);
+- `PLAN` = `T_PREMIUM_LIST.BUSINESS_NAME` (Class of Business).
+
+Nilai CSV diabaikan dan ditimpa setiap baris (TrimSpace), sebelum validasi per baris, di jalan bersama
+Validate CSV / Calculate CSV (`periksaDanHitung` → `periksaBerkas` kait `DataPolisPeserta.Terapkan`,
+`models/polis_pesertapolis.go`). Kolomnya tidak wajib di judul dan isinya tidak divalidasi. Policy Holder
+atau Class of Business polis kosong → seluruh unggahan ditolak 409 berpesan, nol tulisan.
+
+**Beda dari Pega:** Pega menyimpan nilai CSV apa adanya, sehingga peserta dapat berbeda dari polisnya.

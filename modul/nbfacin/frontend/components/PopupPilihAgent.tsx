@@ -20,9 +20,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-import { Field, Gagal, Halaman, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
+import { Field, Gagal, Kosong, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import { cariSOB, type BarisSOB, type HalamanSOB } from '../api'
 import { POPUP_SOB, TEKS_INWARD } from '../labels'
+import HalamanPopup from './HalamanPopup'
 
 /** Jeda sesudah ketikan terakhir sebelum mencari - satu permintaan per jeda ketik, bukan per huruf. */
 export const JEDA_CARI_MS = 400
@@ -76,7 +77,7 @@ export default function PopupPilihAgent({
         <Field label={POPUP_SOB.cari.label} value={kotak} onChange={setKotak} />
       </div>
       {hasil && hasil.baris.length > 0 && (
-        <Halaman halaman={hasil.halaman} ukuran={hasil.ukuran} total={hasil.total} onPindah={(h) => void muat(kunciCari.current, h)} />
+        <HalamanPopup halaman={hasil.halaman} ukuran={hasil.ukuran} total={hasil.total} onPindah={(h) => void muat(kunciCari.current, h)} />
       )}
       <div className="table-wrap">
         <table className="nbf-tabel">
@@ -98,7 +99,7 @@ export default function PopupPilihAgent({
                   <td>{b.clientId}</td>
                   <td>{b.name}</td>
                   <td className="table__actions">
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => onPilih(b)}>
+                    <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={() => onPilih(b)}>
                       {POPUP_SOB.pilih.label}
                     </button>
                   </td>

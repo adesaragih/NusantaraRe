@@ -1,5 +1,7 @@
 # 03: Pemecahan Master Data menjadi delapan modul menu (backend / inti sesi c3)
 
+> **RALAT 05-10-2026:** migrasi 880–883 dipindah ke **215–218** (bentrok rentang dengan modul `aggregate`); nomor 880–883 di bawah = nama lama. Langkah `T_MIGRASI` DEV: `modul/masterprovince/MODUL.md` bab "Penomoran ulang (05-10-2026)".
+
 > ⚠️ **Disusun agent sesi c3 atas permintaan sesi `nusantarare-9d` — bukan hasil `/to-tickets`.** Keputusan di bawah
 > diambil work owner lewat AskUserQuestion sesi 9d (04-10-2026) atas "rancangan 8-modul" sesi c3, diteruskan sesi 9d.
 > Setiap berkas di `inti/` WAJIB ditinjau tim inti sebelum digabung. Tanpa commit / push (aturan work owner terbaru).
@@ -29,7 +31,7 @@ terpisah"** (ditolak: 1 modul dengan 8 menu).
 | Modul | LABEL | Master | Prefix | Rentang | Menu (inti) | URUTAN MASTER |
 | --- | --- | --- | --- | --- | --- | --- |
 | `masternation` | Nation | `nation` | `/api/master-nation` | 884-885 | 912 | 6 |
-| `masterprovince` | Province | `province` | `/api/master-province` | 880-883 | 913 | 7 |
+| `masterprovince` | Province | `province` | `/api/master-province` | 215-219 (dulu 880-883) | 913 | 7 |
 | `mastercity` | City | `city` | `/api/master-city` | 886-887 | 914 | 8 |
 | `masterdistrict` | District | `district` | `/api/master-district` | 888-889 | 915 | 9 |
 | `masterczone` | CZone | `czone` | `/api/master-czone` | 890-891 | 916 | 10 |

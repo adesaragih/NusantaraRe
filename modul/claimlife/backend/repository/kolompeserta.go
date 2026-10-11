@@ -50,7 +50,19 @@ var kolomPeserta = []struct {
 	{"CERTIFICATE_NO", kolomTeks, func(p models.Peserta) string { return p.NomorSertifikat }},
 	{"CURRENCY", kolomTeks, func(p models.Peserta) string { return p.MataUang }},
 	{"SOURCE_ID", kolomTeks, func(p models.Peserta) string { return p.SumberID }},
+	// IDPEGA - migrasi 025 (keputusan work owner 10-10-2026): kunci header data polis klaim.
+	{"IDPEGA", kolomTeks, func(p models.Peserta) string { return p.IdPega }},
 	{"IS_CHECK", kolomTeks, func(p models.Peserta) string { return p.IsCheck }},
+	// Migrasi 026 (10-10-2026): checkbox Accept layar Outstanding. Register menulisnya kosong (NULL).
+	{"IS_ACCEPT", kolomTeks, func(p models.Peserta) string { return p.IsAccept }},
+	// 11-10-2026 - rincian peserta layar Outstanding: ADMIN NOTES (migrasi 027), CLAIM ANALYST (NOTES), RECEIVED DATE.
+	{"ADMIN_NOTES", kolomTeks, func(p models.Peserta) string { return p.CatatanAdmin }},
+	{"NOTES", kolomTeks, func(p models.Peserta) string { return p.CatatanAnalis }},
+	// RECOMMENDATION (migrasi 003) - kotak MEDICAL ADVISOR, ditulis tombol Save Medical Check (11-10-2026).
+	{"RECOMMENDATION", kolomTeks, func(p models.Peserta) string { return p.Rekomendasi }},
+	{"RECEIVED_DATE", kolomTanggal, func(p models.Peserta) string { return p.TanggalTerima }},
+	// Migrasi 028 (11-10-2026): MAX DATA RECEIVED, diisi pemakai.
+	{"MAX_DATA_RECEIVED", kolomTanggal, func(p models.Peserta) string { return p.TanggalMaksData }},
 	{"STS_REJECT", kolomTeks, func(p models.Peserta) string { return p.KodeStatus }},
 	{"STNC_TREATY", kolomTeks, func(p models.Peserta) string { return p.STNC }},
 
@@ -189,7 +201,14 @@ func rakitPeserta(id string, sel []sql.NullString) (models.Peserta, error) {
 	p.NomorSertifikat = teks("CERTIFICATE_NO")
 	p.MataUang = teks("CURRENCY")
 	p.SumberID = teks("SOURCE_ID")
+	p.IdPega = teks("IDPEGA")
 	p.IsCheck = teks("IS_CHECK")
+	p.IsAccept = teks("IS_ACCEPT")
+	p.CatatanAdmin = teks("ADMIN_NOTES")
+	p.CatatanAnalis = teks("NOTES")
+	p.Rekomendasi = teks("RECOMMENDATION")
+	p.TanggalTerima = teks("RECEIVED_DATE")
+	p.TanggalMaksData = teks("MAX_DATA_RECEIVED")
 	p.KodeStatus = teks("STS_REJECT")
 	p.STNC = teks("STNC_TREATY")
 	p.Umur = teks("AGE")

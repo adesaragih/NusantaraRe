@@ -15,16 +15,19 @@
 // tempat sel / tombolnya berada di dalam konteks itu (0 = bukan sel grid, juga tombol Add kepala grid) -
 // `services.PermintaanAksi`.
 
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react'
 
 import { PilihSaring } from '../../../../inti/frontend/components/ui/pilihSaring'
 import type { Halaman, Pilihan, Tata } from '../api'
 import { tampilTanggal } from '../ketikTanggal'
+import { CFI } from '../labels'
 import { ambil, hanyaAngka, jalurBaris, sumberServer, tampilAngka } from '../nilai'
 import InputAngka from './InputAngka'
 import InputTanggal from './InputTanggal'
+import PolisNB, { KENDALI_POLIS_FIRE } from './PolisNB'
 import { barisTerbuka, panelBaris } from './rincian'
 import { jumlahHalaman, potongHalaman, ratakan, susunIsi, susunLayar, type Butir } from './susun'
+import { TabGeser } from './TabGeser'
 import { butirSaring, teksTerpilih } from './tampilanNama'
 
 export interface KonteksTata {
@@ -167,6 +170,21 @@ function Medan({
           onChange={(e) => ganti(e.target.checked ? 'true' : 'false', true)}
         />
       </span>
+    )
+  }
+  // Wilayah bertingkat yang induknya belum dipilih (work owner 11-10-2026 "GIMANA SEHARUSNYA MEMILIH INI"): kotak
+  // nonaktif berpetunjuk dari server ("Choose Province first"), bukan teks kosong - urutan memilih terlihat.
+  if (t.kendali === 'otomatis' && t.nonaktif && !t.hanyaBaca) {
+    return (
+      <input
+        id={id}
+        className={kelas}
+        value={v}
+        placeholder={t.catatan ?? ''}
+        aria-label={t.label || undefined}
+        disabled
+        readOnly
+      />
     )
   }
   if (kunci) {
@@ -408,10 +426,33 @@ function Sebaris({ t, k }: { t: Tata; k: KonteksTata }) {
 }
 
 /** Layout Inline grid double: setiap anak satu sel; bagian tanpa judul = satu kolom. */
-function Dua({ t, k }: { t: Tata; k: KonteksTata }) {
+/**
+ * Inline grid double: setiap anak satu sel, dua sel per baris. `atas` = label di atas isian (`duaAtas`, Input Register
+ * mengikuti screenshot Pega work owner 11-10-2026 "UBAH LAYOUTNYA BEGINI").
+ */
+function Dua({ t, k, atas }: { t: Tata; k: KonteksTata; atas?: boolean }) {
   return (
-    <div className="claimfacin__dua">
+    <div className={atas ? 'claimfacin__dua claimfacin__dua-atas' : 'claimfacin__dua'}>
       {(t.anak ?? []).map((c, i) => (
+        <div key={i} className="claimfacin__sel">
+          <TataView tata={c.jenis === 'bagian' && !c.label && !c.letak ? (c.anak ?? []) : [c]} k={k} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Inline grid triple berlabel di atas (`tiga`) dan kontainer di dalam selnya (`kolom` = medan sejajar berlabel di atas):
+ * rupa layout lama InputAdjustment (screenshot work owner 11-10-2026 "PERBAIKI TAMPILAN ADJUSTMENT"). Setiap anak satu
+ * sel; kontainer yang seluruh isinya tersembunyi tidak memakan sel (Pega tidak merender layout ber-visible-when salah).
+ */
+function Grup({ t, k, kelas }: { t: Tata; k: KonteksTata; kelas: string }) {
+  const sel = (t.anak ?? []).filter((c) => c.jenis !== 'bagian' || (c.anak ?? []).length > 0)
+  if (sel.length === 0) return null
+  return (
+    <div className={kelas}>
+      {sel.map((c, i) => (
         <div key={i} className="claimfacin__sel">
           <TataView tata={c.jenis === 'bagian' && !c.label && !c.letak ? (c.anak ?? []) : [c]} k={k} />
         </div>
@@ -428,23 +469,11 @@ function Tab({ t, k }: { t: Tata; k: KonteksTata }) {
   if (tab.length === 0) return null
   return (
     <div className="claimfacin__tab">
-      <div className="tabs" role="tablist">
-        {tab.map((a, j) => (
-          <button
-            key={j}
-            type="button"
-            role="tab"
-            aria-selected={j === i}
-            className={'tabs__item' + (j === i ? ' tabs__item--aktif' : '')}
-            onClick={() => setAktif(j)}
-          >
-            {a.label}
-          </button>
-        ))}
-      </div>
-      <div role="tabpanel" className="claimfacin__tab-isi">
-        {/* key per tab: grid tab lain (Estimation vs Adjustment, keduanya ObjectList) tidak mewarisi baris terbukanya */}
-        <TataView key={i} tata={tab[i]?.anak ?? []} k={k} />
+      <TabGeser tab={tab.map((_, j) => j)} aktif={i} onPilih={setAktif} label={(j) => tab[j]?.label} />
+      {/* key per tab: grid tab lain (Estimation vs Adjustment, keduanya ObjectList) tidak mewarisi baris terbukanya, dan isi
+          tab baru muncul memudar */}
+      <div key={i} role="tabpanel" className="claimfacin__tab-isi">
+        <TataView tata={tab[i]?.anak ?? []} k={k} />
       </div>
     </div>
   )
@@ -553,8 +582,24 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
   const kolomPanah = adaRinci && !t.bernomor
   const kolomDepan = !!t.bernomor || kolomPanah
   const lebar = kolom.length + (kolomDepan ? 1 : 0) + (selKepalaTambah ? 1 : 0)
+  // Panel baris selebar AREA TERLIHAT grid, bukan selebar tabel lebar yang menggulir (grid item Input Estimasi 12
+  // kolom): isi panel tidak terpotong dan menempel kiri saat tabel digulir (work owner 11-10-2026 "tolong rapihin").
+  // Kaki grid (bilah ringkasan total) juga selebar area terlihat.
+  const adaKaki = (t.kaki ?? []).length > 0
+  const wadah = useRef<HTMLDivElement>(null)
+  const [lebarWadah, setLebarWadah] = useState(0)
+  useEffect(() => {
+    const el = wadah.current
+    if (!el || !(adaRinci || adaKaki) || typeof ResizeObserver === 'undefined') return
+    const ukur = () => setLebarWadah(el.clientWidth)
+    const ro = new ResizeObserver(ukur)
+    ro.observe(el)
+    ukur()
+    return () => ro.disconnect()
+  }, [adaRinci, adaKaki])
+  const gaya = lebarWadah ? ({ '--cfi-lebar-grid': `${lebarWadah}px` } as CSSProperties) : undefined
   return (
-    <div className="claimfacin__grid" title={t.catatan}>
+    <div ref={wadah} className="claimfacin__grid" title={t.catatan} style={gaya}>
       {t.label && <h4 className="claimfacin__subjudul">{t.label}</h4>}
       {t.perHalaman && semua.length > t.perHalaman ? (
         <div className="claimfacin__pager">
@@ -610,7 +655,7 @@ function Grid({ t, k }: { t: Tata; k: KonteksTata }) {
           {baris.length === 0 && (
             <tr>
               <td className="muted" colSpan={lebar}>
-                —
+                {CFI.gridKosong}
               </td>
             </tr>
           )}
@@ -727,11 +772,23 @@ export default function TataView({ tata, k }: { tata: readonly Tata[]; k: Kontek
                 {u.label}
               </h4>
             )
+          case 'polisNB':
+            return <PolisNB key={i} h={k.h} fire={u.t.kendali === KENDALI_POLIS_FIRE} />
           case 'grid':
             // key berjalur + prefiks panel: grid lain di posisi yang sama tidak mewarisi baris terbuka / halamannya
             return <Grid key={kunciGrid(i, u.t)} t={u.t} k={k} />
           case 'letak':
             if (u.t.letak === 'dua') return <Dua key={i} t={u.t} k={k} />
+            if (u.t.letak === 'duaAtas') return <Dua key={i} t={u.t} k={k} atas />
+            if (u.t.letak === 'tiga') return <Grup key={i} t={u.t} k={k} kelas="claimfacin__tiga" />
+            if (u.t.letak === 'kolom') return <Grup key={i} t={u.t} k={k} kelas="claimfacin__kolom" />
+            if (u.t.letak === 'kiri') {
+              return (
+                <div key={i} className="claimfacin__kiri">
+                  <TataView tata={u.t.anak ?? []} k={k} />
+                </div>
+              )
+            }
             if (u.t.letak === 'tab') return <Tab key={i} t={u.t} k={k} />
             if (u.t.letak === 'judul') return <Kepala key={i} t={u.t} k={k} />
             if (u.t.letak === 'tabel') return <TabelTetap key={i} t={u.t} k={k} />

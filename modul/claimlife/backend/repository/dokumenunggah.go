@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/outbox"
 	"nusantarare/modul/claimlife/backend/models"
 )
 
@@ -304,4 +305,160 @@ func (r *KlaimLife) KlaimDokumen(ctx context.Context, id int64) (string, error) 
 		return "", fmt.Errorf("repository: mencari klaim dokumen: %w", err)
 	}
 	return klaim.String, nil
+}
+
+// sqlEfekUnggahAntre - efek outbox "storage-unggah" satu dokumen yang BELUM diproses (status antre). Bentuk baca per
+// rujukan meniru treatycontractout PungutEfekRujukanTCO (tabel outbox bersama, tanpa mengubah inti); FOR UPDATE supaya
+// pekerja tidak memungutnya di tengah pembatalan.
+func sqlEfekUnggahAntre(tabel string) string {
+	return fmt.Sprintf(`SELECT ID FROM %s
+		 WHERE MODUL = :1 AND JENIS_EFEK = :2 AND RUJUKAN = :3 AND STATUS = :4
+		 FOR UPDATE`, tabel)
+}
+
+// EfekUnggahAntre mengembalikan ID baris outbox "storage-unggah" dokumen itu yang masih antre, di transaksi pemanggil.
+func (r *KlaimLife) EfekUnggahAntre(ctx context.Context, tx *db.Tx, modul, jenis, rujukan, status string) ([]string, error) {
+	if tx == nil {
+		return nil, errors.New("repository: membaca efek unggah menuntut transaksi")
+	}
+	tabel, err := r.db.Qualify("T_LOG_SERVICE_RNM")
+	if err != nil {
+		return nil, err
+	}
+	qq := sqlEfekUnggahAntre(tabel)
+	if err := db.PeriksaSQL(qq); err != nil {
+		return nil, err
+	}
+	baris, err := tx.QueryContext(ctx, qq, modul, jenis, rujukan, status)
+	if err != nil {
+		return nil, fmt.Errorf("repository: membaca efek unggah %s: %w", rujukan, err)
+	}
+	defer func() { _ = baris.Close() }()
+	var id []string
+	for baris.Next() {
+		var x string
+		if err := baris.Scan(&x); err != nil {
+			return nil, fmt.Errorf("repository: memindai efek unggah: %w", err)
+		}
+		id = append(id, x)
+	}
+	return id, baris.Err()
+}
+
+// sqlDokumenAda - apakah baris dokumen masih ada (pelaksana efek unggah melewati dokumen yang sudah dihapus).
+func sqlDokumenAda(tabel string) string {
+	return fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE ID = :1`, tabel)
+}
+
+// DokumenAda menjawab apakah dokumen itu masih ada, di transaksi pemanggil.
+func (r *KlaimLife) DokumenAda(ctx context.Context, tx *db.Tx, id int64) (bool, error) {
+	tabel, err := r.db.Qualify("T_CLAIMLF_DOCUMENT")
+	if err != nil {
+		return false, err
+	}
+	qq := sqlDokumenAda(tabel)
+	if err := db.PeriksaSQL(qq); err != nil {
+		return false, err
+	}
+	var n int
+	if err := tx.QueryRowContext(ctx, qq, id).Scan(&n); err != nil {
+		return false, fmt.Errorf("repository: memeriksa dokumen %d: %w", id, err)
+	}
+	return n > 0, nil
+}
+
+// sqlPungutEfekUnggahDokumen - SATU efek "storage-unggah" dokumen itu yang antre dan jatuh tempo, terkunci (pola
+// treatycontractout PungutEfekRujukanTCO: aksi pemakai menjalankan efek MILIKNYA, bukan antrean lain).
+func sqlPungutEfekUnggahDokumen(tabel string) string {
+	return fmt.Sprintf(`SELECT ID, LINI, MODUL, JENIS_EFEK, RUJUKAN, MUATAN, PERCOBAAN
+		  FROM %s
+		 WHERE STATUS = :1 AND JADWAL_BERIKUT <= :2 AND MODUL = :3 AND JENIS_EFEK = :4 AND RUJUKAN = :5
+		 FETCH FIRST 1 ROWS ONLY
+		 FOR UPDATE SKIP LOCKED`, tabel)
+}
+
+// PungutEfekUnggahDokumen memungut efek unggah satu dokumen dan menandainya "jalan", di transaksi pemanggil. ada=false
+// bila tidak ada efek antre untuk dokumen itu.
+func (r *KlaimLife) PungutEfekUnggahDokumen(ctx context.Context, tx *db.Tx, modul, jenis, rujukan string,
+	saat time.Time) (outbox.BarisEfekKeluar, bool, error) {
+
+	if tx == nil {
+		return outbox.BarisEfekKeluar{}, false, errors.New("repository: memungut efek unggah menuntut transaksi")
+	}
+	tabel, err := r.db.Qualify("T_LOG_SERVICE_RNM")
+	if err != nil {
+		return outbox.BarisEfekKeluar{}, false, err
+	}
+	qq := sqlPungutEfekUnggahDokumen(tabel)
+	if err := db.PeriksaSQL(qq); err != nil {
+		return outbox.BarisEfekKeluar{}, false, err
+	}
+	var (
+		b                                    outbox.BarisEfekKeluar
+		lini, modulB, jenisB, rujukanB, muat sql.NullString
+		percobaan                            sql.NullInt64
+	)
+	err = tx.QueryRowContext(ctx, qq, outbox.StatusEfekAntre, saat, modul, jenis, rujukan).Scan(
+		&b.ID, &lini, &modulB, &jenisB, &rujukanB, &muat, &percobaan)
+	if errors.Is(err, sql.ErrNoRows) {
+		return outbox.BarisEfekKeluar{}, false, nil
+	}
+	if err != nil {
+		return outbox.BarisEfekKeluar{}, false, fmt.Errorf("repository: memungut efek unggah %s: %w", rujukan, err)
+	}
+	b.Lini, b.Modul, b.Jenis = lini.String, modulB.String, jenisB.String
+	b.Rujukan, b.Muatan, b.Percobaan = rujukanB.String, muat.String, int(percobaan.Int64)
+	tandai := outbox.SQLTandaiJalan(tabel)
+	if err := db.PeriksaSQL(tandai); err != nil {
+		return outbox.BarisEfekKeluar{}, false, err
+	}
+	hasil, err := tx.ExecContext(ctx, tandai, outbox.StatusEfekJalan, saat, b.ID, outbox.StatusEfekAntre)
+	if err != nil {
+		return outbox.BarisEfekKeluar{}, false, fmt.Errorf("repository: menandai efek unggah jalan: %w", err)
+	}
+	if err := db.PastikanSatuBaris(hasil, "tanda efek unggah jalan"); err != nil {
+		return outbox.BarisEfekKeluar{}, false, err
+	}
+	return b, true, nil
+}
+
+// sqlCacahDokumenPesertaAccept - jumlah dokumen per peserta AKTIF yang di-Accept, SATU kueri berkelompok (keputusan work
+// owner 11-10-2026: proteksi Send to Medical Check). Dokumen berstatus apa pun (termasuk yang masih diproses) dihitung.
+func sqlCacahDokumenPesertaAccept(pes, dok string) string {
+	return fmt.Sprintf(`SELECT p.ID, COUNT(d.ID)
+		  FROM %s p
+		  LEFT JOIN %s d ON d.PREMIUM_LIST_DETAIL_ID = p.ID
+		 WHERE p.CLAIM_ID = :1 AND p.STS_HAPUS IS NULL AND p.IS_ACCEPT = 'true'
+		 GROUP BY p.ID`, pes, dok)
+}
+
+// CacahDokumenPesertaAccept mengembalikan pengenal peserta Accept -> jumlah dokumennya.
+func (r *KlaimLife) CacahDokumenPesertaAccept(ctx context.Context, klaimID string) (map[string]int, error) {
+	pes, err := r.db.Qualify("T_CLAIMLF_PREMIUMLIST_DETAIL")
+	if err != nil {
+		return nil, err
+	}
+	dok, err := r.db.Qualify("T_CLAIMLF_DOCUMENT")
+	if err != nil {
+		return nil, err
+	}
+	qq := sqlCacahDokumenPesertaAccept(pes, dok)
+	if err := db.PeriksaSQL(qq); err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, qq, klaimID)
+	if err != nil {
+		return nil, fmt.Errorf("repository: mencacah dokumen peserta Accept: %w", err)
+	}
+	defer func() { _ = baris.Close() }()
+	hasil := map[string]int{}
+	for baris.Next() {
+		var id string
+		var n int
+		if err := baris.Scan(&id, &n); err != nil {
+			return nil, fmt.Errorf("repository: memindai cacah dokumen: %w", err)
+		}
+		hasil[id] = n
+	}
+	return hasil, baris.Err()
 }

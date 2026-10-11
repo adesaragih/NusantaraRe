@@ -51,6 +51,10 @@ var layananPengubah = map[string][]string{
 	"statusbaris.go": {"ubah"},
 	// GILIRAN-17 (OQ-M6) - tombol `DELETE` `InputOSClaimLife` b17865.
 	"cabutpeserta.go": {"CabutPeserta"},
+	// 10-10-2026 - tombol Save layar Outstanding (InputOSClaimLife b19413).
+	"isianoutstanding.go": {"Simpan"},
+	// 11-10-2026 - tombol Save layar Medical Check (MedicalCheckClaimLife).
+	"medis.go": {"Simpan"},
 }
 
 // tubuhFungsi mengembalikan teks satu fungsi (atau metode) bernama, dari
@@ -131,7 +135,8 @@ func TestDaftarLayananPengubahMencakupSeluruhRutePengubah(t *testing.T) {
 		// Outbox dan pelaksana efek bekerja atas baris antrean, bukan atas
 		// kasus - dan efek yang sudah terlanjur diantre tetap harus selesai
 		// walau kasusnya kemudian ditutup.
-		"antrean.go": "menjalankan antrean efek, bukan mengubah kasus",
+		"antrean.go":           "menjalankan antrean efek, bukan mengubah kasus",
+		"penyimpanangoogle.go": "pelaksana efek penyimpanan dokumen; dipanggil dari unggahan.go (Unggah/Hapus) yang sudah memeriksa kasus terbuka",
 		// Tutup itu sendiri: ia yang MENUTUP, dan ia memeriksa dengan
 		// pembacaan status kerjanya sendiri.
 		"tutup.go": "layanan penutupnya sendiri",
@@ -204,6 +209,8 @@ var rutePengubah = map[string]string{
 	"POST /api/klaim-life/{id}/peserta/{pesertaId}/adjustment/{adjId}/komite": "komite.go",
 	"POST /api/klaim-life/{id}/tahap/{tujuan}":                                "tahap.go",
 	"POST /api/klaim-life/{id}/outstanding":                                   "simpanrnm.go",
+	"PUT /api/klaim-life/{id}/outstanding/isian":                              "isianoutstanding.go",
+	"PUT /api/klaim-life/{id}/medis":                                          "medis.go",
 	"POST /api/klaim-life/{id}/tutup":                                         "tutup.go",
 	"POST /api/klaim-life/{id}/adjustment/{adjId}/tolak":                      "statusbaris.go",
 	"PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian":           "dol.go",
@@ -232,6 +239,13 @@ var rutePengubah = map[string]string{
 	// Tiket 05a bagian 2. Submit summary MENULIS - nomor, rekap, dan salinan
 	// peserta warisan dalam satu transaksi - jadi ia pengubah.
 	"POST /api/polis-life/{id}/summary": "polis_summary.go",
+	// PremiumList Life (keputusan work owner 07-10-2026). Save Offer dan Save Data MENULIS kepala
+	// polis; keduanya menolak kasus tertutup lewat T_WORK_POLIS (`ErrKasusPolisTertutup`, 409 di
+	// handlers/rute_premiumlist.go `jawabGalatPolis`):
+	//   penawaran  - services/polis_isianpenawaran.go:202 `FormPenawaran.Simpan`
+	//   data-polis - services/polis_datapolis.go:151 `FormDataPolis.Simpan`
+	"PUT /api/polis-life/{id}/penawaran":  "polis_isianpenawaran.go",
+	"PUT /api/polis-life/{id}/data-polis": "polis_datapolis.go",
 	// Komite Claim Life tiket 02 - keputusan satu tingkat MENULIS anak tangga
 	// dan kepala kasus.
 	"POST /api/komite/{id}/keputusan": "komite_keputusan.go",
@@ -286,6 +300,9 @@ var penjagaTutup = map[string]string{
 	"polis_nomor.go":     "models.KasusPolisTertutup(keadaanKerja.Status)",
 	"polis_unggah.go":    "models.KasusPolisTertutup(keadaanKerja.Status)",
 	"polis_summary.go":   "models.KasusPolisTertutup(keadaan.Status)",
+	// 07-10-2026 - Save Offer / Save Data PremiumList (lihat rutePengubah).
+	"polis_isianpenawaran.go": "models.KasusPolisTertutup(keadaan.Status)",
+	"polis_datapolis.go":      "models.KasusPolisTertutup(keadaan.Status)",
 }
 
 func TestSetiapRuteNonGETPunyaPenjagaKasusTertutup(t *testing.T) {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { DIAGNOSA } from '../labels'
 import { bolehUbahDiagnosa, type Diagnosa, type Peserta } from '../api'
-import { ringkasanDiagnosa, selDiagnosa } from './GridDiagnosa'
+import { PILIHAN_KELOMPOK_DIAGNOSA, pilihanKelompok, ringkasanDiagnosa, selDiagnosa } from './GridDiagnosa'
 
 // Uji grid diagnosa — butir bd.
 
@@ -77,28 +77,29 @@ describe('selDiagnosa', () => {
   })
 })
 
-describe('ringkasanDiagnosa', () => {
-  it('kosong dan masih boleh: menyebut caranya menambah', () => {
-    expect(ringkasanDiagnosa([], true)).toContain(DIAGNOSA.tambah)
+describe('ringkasanDiagnosa (11-10-2026: English, ringkas)', () => {
+  it('kosong dan boleh: menyebut + Add', () => {
+    expect(ringkasanDiagnosa([], true)).toBe('No diagnosis yet. Click + Add to add a row.')
   })
 
-  it('kosong dan sudah terkunci: menyebut sebabnya', () => {
-    // Layar yang berkata "tekan Add" pada peserta yang tombolnya tidak ada
-    // adalah layar yang menyuruh orang melakukan hal yang mustahil.
-    const s = ringkasanDiagnosa([], false)
-    expect(s).not.toContain(DIAGNOSA.tambah)
-    expect(s).toContain('diputus')
+  it('kosong dan baca saja: tanpa ajakan Add', () => {
+    expect(ringkasanDiagnosa([], false)).toBe('No diagnosis recorded.')
   })
 
-  it('menghitung baris yang belum diisi', () => {
-    const s = ringkasanDiagnosa([baris(1, 'Diabetes'), baris(2), baris(3)], true)
-    expect(s).toContain('3')
-    expect(s).toContain('2')
+  it('ada baris: tanpa kalimat (grid yang berbicara)', () => {
+    expect(ringkasanDiagnosa([baris(1, 'UJI PENYAKIT', 'A00')], true)).toBeNull()
+  })
+})
+
+describe('pilihanKelompok', () => {
+  it('nilai tersimpan di luar daftar tetap tampil di depan; kosong tidak ditambah', () => {
+    expect(pilihanKelompok(['UJI-G1', 'UJI-G2'], 'UJI-LAMA')).toEqual(['UJI-LAMA', 'UJI-G1', 'UJI-G2'])
+    expect(pilihanKelompok(['UJI-G1'], 'UJI-G1')).toEqual(['UJI-G1'])
+    expect(pilihanKelompok([], ' ')).toEqual([])
   })
 
-  it('semua terisi: tidak menyebut yang kosong', () => {
-    const s = ringkasanDiagnosa([baris(1, 'Diabetes', 'E11')], true)
-    expect(s).not.toContain('belum diisi')
+  it('daftar bawaan KOSONG — tidak dikarang (OQ-L)', () => {
+    expect(PILIHAN_KELOMPOK_DIAGNOSA).toEqual([])
   })
 })
 

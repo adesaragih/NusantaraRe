@@ -26,6 +26,7 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
+	"nusantarare/inti/backend/jejak"
 	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/premiumlistlife/backend/models"
 	"nusantarare/modul/premiumlistlife/backend/services"
@@ -160,14 +161,17 @@ func simpanPenawaranPolis(svc *services.Service, stubPelaku bool) http.HandlerFu
 			return
 		}
 		pelaku := inti.PelakuDari(r, stubPelaku)
-		form := svc.FormPenawaran()
-		if err := form.Simpan(r.Context(), pelaku, r.PathValue("id"), isi, time.Now()); jawabGalatPenawaran(w, err) {
+		// Jejak dibutuhkan bila Status Bind/Closed menutup kasus (keputusan work owner 08-10-2026).
+		form := svc.FormPenawaran().DenganJejak(jejak.PerekamJejakOracle(svc))
+		akibat, err := form.Simpan(r.Context(), pelaku, r.PathValue("id"), isi, time.Now())
+		if jawabGalatPenawaran(w, err) {
 			return
 		}
 		hasil, err := form.Baca(r.Context(), pelaku, r.PathValue("id"))
 		if jawabGalatPenawaran(w, err) {
 			return
 		}
+		hasil.StatusTutup = akibat.StatusWork
 		galat.TulisJSON(w, hasil)
 	}
 }
@@ -219,8 +223,13 @@ func jawabGalatPenawaran(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, services.ErrPenawaranBelumLengkap):
 		// 409: keputusannya sah, isian polisnya yang belum siap.
 		galat.Tulis(w, http.StatusConflict, sesudahSebab(err, services.ErrPenawaranBelumLengkap))
+	case errors.Is(err, services.ErrConfirmPenawaranTidakTersedia):
+		// 409: Confirm kasus penawaran bendera "0" (keputusan work owner 08-10-2026).
+		galat.Tulis(w, http.StatusConflict, models.PesanConfirmPenawaranTidakTersedia)
 	case errors.Is(err, services.ErrPenawaranBukanTahapnya):
 		galat.Tulis(w, http.StatusConflict, err.Error())
+	case errors.Is(err, services.ErrPenawaranMelebihiKolom):
+		galat.Tulis(w, http.StatusBadRequest, sesudahSebab(err, services.ErrPenawaranMelebihiKolom))
 	default:
 		return jawabGalatPolis(w, err)
 	}

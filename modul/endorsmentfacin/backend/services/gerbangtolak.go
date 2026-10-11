@@ -130,7 +130,7 @@ func PeriksaGerbangPenolakan(m MasukanGerbang) (HasilGerbang, error) {
 	q := m.Query
 	// 5.1 / 5.10 `InputData.CARI40=="4" && InputData.CARI41=="4"` - EDM RI slip
 	// (CARI40/41 diisi langkah 2 dari `.Quotation.EdmType`/`EdmTypeNew`).
-	riSlip := m.EdmType == models.EdmPerubahan && m.EdmTypeNew == "4"
+	riSlip := m.EdmType == models.EdmPerubahan && m.EdmTypeNew == models.EdmTypeNewRISlip
 
 	// Gerbang 1 (5.2-5.5), dilompati RI slip (5.1 → label `jmp`).
 	if !riSlip {

@@ -27,6 +27,7 @@ import { useEffect, useState } from 'react'
 import { HASIL_NOMOR_PL, KEPUTUSAN_POLIS, KONFIRMASI_KEPUTUSAN } from '../labels'
 import { Gagal, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import {
+  ambilKesiapanConfirm,
   ambilPeriodeProduksi,
   putuskanPenawaran,
   TAHAP_POLIS,
@@ -41,6 +42,16 @@ export function ringkasanAkibat(a: AkibatKeputusanPolis): string {
   if (a.statusWork !== '') return `Case closed — ${a.statusWork}.`
   if (a.tahapTujuan !== '') return `Case moved to ${a.tahapTujuan}.`
   return 'Decision saved.'
+}
+
+/**
+ * Tombol Confirm dirender? (keputusan work owner 08-10-2026) - di tahap penawaran HANYA kasus Input Premium
+ * (bendera '1'); kasus Input Offer (bendera '0') ditutup lewat Status Bind/Closed + Save Offer. Bendera belum
+ * termuat ('') = belum dirender (server tetap menolak Confirm bendera '0'). Tahap lain: selalu.
+ */
+export function confirmTampil(tahap: string, flag: string): boolean {
+  if (tahap !== TAHAP_POLIS.penawaran) return true
+  return flag === '1'
 }
 
 /**
@@ -62,6 +73,7 @@ export default function InputOffer({
   polisID,
   tahap,
   confirmTerkunci = false,
+  versiKesiapan = 0,
   onSelesai,
 }: {
   polisID: string
@@ -73,14 +85,42 @@ export default function InputOffer({
    * TERSIMPAN, jadi perubahan di layar akan diabaikan diam-diam.
    */
   confirmTerkunci?: boolean
+  /** Naik setiap Save Data / Calculate CSV berhasil - kesiapan Confirm dibaca ulang (06-10-2026). */
+  versiKesiapan?: number
   onSelesai: () => void
 }) {
   const [akibat, setAkibat] = useState<AkibatKeputusanPolis | null>(null)
+  // Bendera kasus dari data penawaran (FormPenawaran) - menentukan Confirm di tahap penawaran (08-10-2026).
+  const [flag, setFlag] = useState('')
   const [galat, setGalat] = useState<unknown>(null)
   const [sibuk, setSibuk] = useState(false)
   // Keputusan yang menunggu dikonfirmasi lewat popup (03-10-2026): tombol
   // Decision TIDAK langsung menjalankan apa pun — mencegah tertekan tanpa sengaja.
   const [tanya, setTanya] = useState<typeof KEPUTUSAN_POLIS.confirm | typeof KEPUTUSAN_POLIS.decline | null>(null)
+
+  // Kesiapan Confirm di tahap Input Premium Detail (keputusan work owner 06-10-2026):
+  // Confirm terkunci selama server masih menyebut sesuatu yang kurang.
+  const [alasanBelumSiap, setAlasanBelumSiap] = useState<string[]>([])
+  useEffect(() => {
+    if (tahap !== TAHAP_POLIS.detail) {
+      setAlasanBelumSiap([])
+      return
+    }
+    let hidup = true
+    ambilKesiapanConfirm(polisID).then(
+      (k) => {
+        if (hidup) setAlasanBelumSiap(k.alasan ?? [])
+      },
+      () => {
+        // Gagal membaca kesiapan: Confirm tidak dikunci di layar - server tetap menolak bila belum siap.
+        if (hidup) setAlasanBelumSiap([])
+      },
+    )
+    return () => {
+      hidup = false
+    }
+  }, [polisID, tahap, versiKesiapan])
+  const belumSiap = alasanBelumSiap.length > 0
 
   // PL Number yang baru terbit — popup hasil sebelum kembali ke kotak masuk.
   const [nomorTerbit, setNomorTerbit] = useState<string | null>(null)
@@ -90,7 +130,7 @@ export default function InputOffer({
   function lanjutkan(): void {
     if (tanya === null) return
     // Perubahan belum disimpan muncul SESUDAH popup terbuka: Confirm tetap ditahan.
-    if (tanya === KEPUTUSAN_POLIS.confirm && confirmTerkunci) {
+    if (tanya === KEPUTUSAN_POLIS.confirm && (confirmTerkunci || belumSiap)) {
       setTanya(null)
       return
     }
@@ -179,7 +219,8 @@ export default function InputOffer({
         selama System Reinsurance, Class of Business, dan Comment belum
         tersimpan lewat `Save Offer`.
       */}
-      {tahap === TAHAP_POLIS.penawaran && <FormPenawaran polisID={polisID} />}
+      {/* Save Offer Bind/Closed menutup kasus (08-10-2026) - kembali ke kotak masuk seperti Confirm/Decline. */}
+      {tahap === TAHAP_POLIS.penawaran && <FormPenawaran polisID={polisID} onDitutup={onSelesai} onFlag={setFlag} />}
 
       <section className="panel pl-keputusan">
         <h3 className="panel__title">Decision</h3>
@@ -191,16 +232,19 @@ export default function InputOffer({
         )}
 
         <div className="pl-keputusan__aksi">
-          <button
-            type="button"
-            className="btn btn--primary"
-            disabled={sibuk || confirmTerkunci}
-            onClick={() => {
-              setTanya(KEPUTUSAN_POLIS.confirm)
-            }}
-          >
-            {KEPUTUSAN_POLIS.confirm}
-          </button>
+          {/* Confirm tidak dirender untuk kasus Input Offer (bendera '0') di tahap penawaran - 08-10-2026. */}
+          {confirmTampil(tahap, flag) && (
+            <button
+              type="button"
+              className="btn btn--primary"
+              disabled={sibuk || confirmTerkunci || belumSiap}
+              onClick={() => {
+                setTanya(KEPUTUSAN_POLIS.confirm)
+              }}
+            >
+              {KEPUTUSAN_POLIS.confirm}
+            </button>
+          )}
           {/*
             ⛔ Tombol `Reject` (Transition9, kembali ke Input Offer Life) SENGAJA
             tidak ditampilkan di tahap mana pun — keputusan work owner
@@ -222,6 +266,17 @@ export default function InputOffer({
           <p className="pl-offer__kurang" role="status">
             {KONFIRMASI_KEPUTUSAN.belumTersimpan}
           </p>
+        )}
+        {/* Kesiapan Confirm: seluruh yang masih kurang disebut (06-10-2026). */}
+        {!confirmTerkunci && belumSiap && (
+          <div className="pl-offer__kurang" role="status">
+            <p>{KONFIRMASI_KEPUTUSAN.belumSiap}</p>
+            <ul>
+              {alasanBelumSiap.map((a) => (
+                <li key={a}>{a}</li>
+              ))}
+            </ul>
+          </div>
         )}
       </section>
 

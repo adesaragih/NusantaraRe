@@ -16,34 +16,39 @@ func KunciPolis(nopolis, prodke string) string { return nopolis + "|" + prodke }
 
 // Acuan - acuan tiruan.
 type Acuan struct {
-	Polis      []models.BarisPolisCari
-	Dokumen    map[string][]byte // KunciPolis -> DATA_JSON
-	Riwayat    map[string][]models.RiwayatKlaimPolis
-	Ditolak    map[string]bool
-	Kurs       map[string]string
-	NamaMU     map[string]string
-	JenisReas  map[string]string
-	WilayahPos map[string][]models.BarisWilayah
-	Adjuster   map[string]string
-	Agen       map[string]string
-	Alamat     map[string][4]string
-	Roster     []models.AnggotaKomite
-	Tingkat    map[string]string
-	Nama       map[string]string
-	Email      map[string]string
-	OSKasus    map[string]string
-	OSPolis    map[string]string
-	Batas      map[string]models.BatasTreaty // kodeBisnis|jenis -> batas
-	QS         map[string][]models.BarisQuotaShare
-	Reasuradur map[string][]models.ReasuradurTreaty
-	MO         map[string][6]string
-	Sebab      []repository.BarisSebab
-	Katastrofe []repository.BarisKatastrofe
-	Negara     []models.Pilihan
-	Provinsi   []models.Pilihan
-	Kota       []models.Pilihan
-	Distrik    []models.Pilihan
-	RW         []models.Pilihan
+	Polis   []models.BarisPolisCari
+	Dokumen map[string][]byte // KunciPolis -> DATA_JSON
+	// DokumenDatar - KunciPolis -> dokumen polis tabel datar NB Fac In (DokumenPolisDatar); GagalDatar - galatnya.
+	DokumenDatar map[string][]byte
+	GagalDatar   error
+	Riwayat      map[string][]models.RiwayatKlaimPolis
+	Ditolak      map[string]bool
+	Kurs         map[string]string
+	NamaMU       map[string]string
+	JenisReas    map[string]string
+	WilayahPos   map[string][]models.BarisWilayah
+	Adjuster     map[string]string
+	Agen         map[string]string
+	Alamat       map[string][4]string
+	Roster       []models.AnggotaKomite
+	Tingkat      map[string]string
+	Nama         map[string]string
+	Email        map[string]string
+	OSKasus      map[string]string
+	OSPolis      map[string]string
+	Batas        map[string]models.BatasTreaty // kodeBisnis|jenis -> batas
+	QS           map[string][]models.BarisQuotaShare
+	Reasuradur   map[string][]models.ReasuradurTreaty
+	MO           map[string][6]string
+	Sebab        []repository.BarisSebab
+	Katastrofe   []repository.BarisKatastrofe
+	Negara       []models.Pilihan
+	Provinsi     []models.Pilihan
+	Kota         []models.Pilihan
+	Distrik      []models.Pilihan
+	RW           []models.Pilihan
+	// IndukWilayah - induk (nama provinsi / kota / kecamatan) panggilan daftar wilayah terakhir per jenis.
+	IndukWilayah map[string][]string
 	// Rekening - klien|mata uang -> baris BANKACCOUNT; RekeningMU - mata uang -> baris (Payable 3).
 	Rekening   map[string][]models.RekeningBank
 	RekeningMU map[string][]models.RekeningBank
@@ -58,14 +63,18 @@ type Acuan struct {
 	Proteksi   map[string]bool
 	// Tangga - kasus komite -> anggota (tangga tertulis gudang tiruan dibaca lewat Gudang).
 	Tangga func(komiteID string) []models.AnggotaKomite
+	// Jabatan - akun -> JOB_POSITION; PolisIT - KunciPolis -> isi tab IT tampilan polis NB.
+	Jabatan map[string]string
+	PolisIT map[string]models.PolisNBIT
 }
 
 // AcuanBaru membuat acuan tiruan kosong.
 func AcuanBaru() *Acuan {
-	return &Acuan{Dokumen: map[string][]byte{}, Riwayat: map[string][]models.RiwayatKlaimPolis{}, Ditolak: map[string]bool{},
+	return &Acuan{Dokumen: map[string][]byte{}, DokumenDatar: map[string][]byte{}, Riwayat: map[string][]models.RiwayatKlaimPolis{}, Ditolak: map[string]bool{},
 		Kurs: map[string]string{}, NamaMU: map[string]string{}, JenisReas: map[string]string{},
 		WilayahPos: map[string][]models.BarisWilayah{}, Adjuster: map[string]string{}, Agen: map[string]string{},
-		Alamat: map[string][4]string{}, Tingkat: map[string]string{}, Nama: map[string]string{}, Email: map[string]string{},
+		Alamat: map[string][4]string{}, Tingkat: map[string]string{}, Nama: map[string]string{}, Email: map[string]string{}, Jabatan: map[string]string{},
+		PolisIT: map[string]models.PolisNBIT{},
 		OSKasus: map[string]string{}, OSPolis: map[string]string{}, Batas: map[string]models.BatasTreaty{},
 		QS: map[string][]models.BarisQuotaShare{}, Reasuradur: map[string][]models.ReasuradurTreaty{},
 		MO: map[string][6]string{}, Rekening: map[string][]models.RekeningBank{},
@@ -116,6 +125,15 @@ func (a *Acuan) AdaPolis(_ context.Context, nopolis, prodke string) (bool, error
 // DokumenPolis - DATA_JSON fixture.
 func (a *Acuan) DokumenPolis(_ context.Context, nopolis, prodke string) ([]byte, bool, error) {
 	d, ada := a.Dokumen[KunciPolis(nopolis, prodke)]
+	return d, ada, nil
+}
+
+// DokumenPolisDatar - dokumen polis tabel datar fixture.
+func (a *Acuan) DokumenPolisDatar(_ context.Context, nopolis, prodke, _ string) ([]byte, bool, error) {
+	if a.GagalDatar != nil {
+		return nil, false, a.GagalDatar
+	}
+	d, ada := a.DokumenDatar[KunciPolis(nopolis, prodke)]
 	return d, ada, nil
 }
 
@@ -184,6 +202,20 @@ func (a *Acuan) NamaPelaku(_ context.Context, akun string) (string, error) {
 // EmailPelaku - surel fixture.
 func (a *Acuan) EmailPelaku(_ context.Context, akun string) (string, error) {
 	return a.Email[akun], nil
+}
+
+// JabatanPelaku - JOB_POSITION fixture.
+func (a *Acuan) JabatanPelaku(_ context.Context, akun string) (string, error) {
+	return a.Jabatan[akun], nil
+}
+
+// PolisNBIT - isi tab IT fixture (kosong bila tidak ada).
+func (a *Acuan) PolisNBIT(_ context.Context, nopolis, prodke, _ string) (models.PolisNBIT, error) {
+	if v, ada := a.PolisIT[KunciPolis(nopolis, prodke)]; ada {
+		return v, nil
+	}
+	return models.PolisNBIT{LossRecord: models.LossRecordNB{Baris: []models.BarisLossRecordNB{}},
+		Korespondensi: []models.KorespondensiNB{}}, nil
 }
 
 // EstimasiKasusTerbuka - Σ TRLOSS fixture.
@@ -270,14 +302,24 @@ func (a *Acuan) DaftarKota(_ context.Context, _, cari string) ([]models.Pilihan,
 	return saringPilihan(a.Kota, cari), nil
 }
 
-// DaftarDistrik - distrik fixture.
-func (a *Acuan) DaftarDistrik(_ context.Context, _, cari string) ([]models.Pilihan, error) {
+// DaftarDistrik - distrik fixture (induk dicatat di `IndukWilayah["distrik"]`).
+func (a *Acuan) DaftarDistrik(_ context.Context, provinsi, kota, cari string) ([]models.Pilihan, error) {
+	a.catatInduk("distrik", provinsi, kota)
 	return saringPilihan(a.Distrik, cari), nil
 }
 
-// DaftarRW - RW fixture.
-func (a *Acuan) DaftarRW(_ context.Context, _, cari string) ([]models.Pilihan, error) {
+// DaftarRW - RW fixture (induk dicatat di `IndukWilayah["rw"]`).
+func (a *Acuan) DaftarRW(_ context.Context, provinsi, kota, distrik, cari string) ([]models.Pilihan, error) {
+	a.catatInduk("rw", provinsi, kota, distrik)
 	return saringPilihan(a.RW, cari), nil
+}
+
+// catatInduk - induk terakhir yang dipakai daftar wilayah `jenis`.
+func (a *Acuan) catatInduk(jenis string, induk ...string) {
+	if a.IndukWilayah == nil {
+		a.IndukWilayah = map[string][]string{}
+	}
+	a.IndukWilayah[jenis] = induk
 }
 
 // DaftarSebab - cause of loss fixture.

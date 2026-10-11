@@ -205,6 +205,10 @@ var berkasKlienHTTPDisetujui = map[string]string{
 	"modul/masterproductnamelife/backend/services/mpnl_storage.go": "transport penyimpanan lampiran Master Product Name Life - " +
 		"[keputusan work owner 03-10-2026, OQ-MPNL-10 dibalik: \"ikuti dari XML nya aja\"; entri ini disetujui work owner " +
 		"03-10-2026; \"selalu nyata, ikut XML\" 03-10-2026]; alamat dari M_LINK_SERVICE saat jalan",
+	"modul/nbfacin/backend/services/lampiranpengirim.go": "transport penyimpanan lampiran NB FacIn (tiket 67, DOCUMENT_POLIS / " +
+		"T_STORAGE_IMAGE) - [keputusan work owner 08-10-2026: \"Setuju\" mengirim lampiran ke Google Storage seperti Treaty " +
+		"Contract Out]; alamat dari M_LINK_SERVICE saat jalan; [keputusan work owner 10-10-2026 sesudah merge GitHub 7d627608 " +
+		"(PELAKSANA_STORAGE dihapus): \"Selalu nyata (Google Storage)\"]",
 }
 
 // bolehBacaEnv menyatakan sebuah berkas berhak membaca env var.

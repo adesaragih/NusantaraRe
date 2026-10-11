@@ -27,8 +27,8 @@ describe('PopupCedingCoList', () => {
   it('judul Ceding Co List; kepala Ceding Co bertanda wajib + tombol Add / Select Ceding; Submit di kaki', () => {
     expect(kosong).toContain(`>${POPUP_CEDING.judul}</h3>`)
     expect(kosong).toContain(`${POPUP_CEDING.kolom.label}<span class="field__req">*</span></th>`)
-    expect(kosong).toMatch(new RegExp(`<button type="button" class="btn btn--ghost btn--sm">${POPUP_CEDING.tambah.label}</button>`))
-    expect(kosong).toMatch(new RegExp(`<button type="button" class="btn btn--primary">${POPUP_CEDING.submit.label}</button>`))
+    expect(kosong).toMatch(new RegExp(`<button type="button" class="btn nbf-tema__tombol btn--ghost btn--sm">${POPUP_CEDING.tambah.label}</button>`))
+    expect(kosong).toMatch(new RegExp(`<button type="button" class="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary">${POPUP_CEDING.submit.label}</button>`))
   })
 
   it('daftar kosong = No items (tangkapan layar)', () => {

@@ -51,7 +51,8 @@ const baseURL: string = import.meta.env.VITE_API_BASE_URL ?? ''
 export const BATAS_WAKTU_MS = 30_000
 
 interface OpsiMinta {
-  metode?: 'GET' | 'POST' | 'PUT' | 'DELETE'
+  /** PATCH: aditif 10-10-2026 (NB FacIn tiket 75 F3 - simpan perubahan objek per halaman). */
+  metode?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   /** Badan permintaan; di-JSON-kan. `undefined` berarti tanpa badan. */
   badan?: unknown
   /** Parameter kueri; nilai `undefined` dilewati. */
@@ -356,11 +357,16 @@ export interface PenghalangTutup {
  * yang satu akan diam-diam kalah — pelajaran yang sudah tertulis di kepala
  * bagian ini.
  */
-export async function mintaFormulir<T>(jalur: string, isi: FormData): Promise<T> {
+export async function mintaFormulir<T>(
+  jalur: string,
+  isi: FormData,
+  /** Opsional, aditif (10-10-2026): batas waktu sendiri untuk berkas besar (unggah CSV tanpa batas baris). Bawaan tetap. */
+  batasWaktuMs?: number,
+): Promise<T> {
   const kendali = new AbortController()
   const jam = setTimeout(() => {
     kendali.abort()
-  }, BATAS_WAKTU_MS)
+  }, batasWaktuMs ?? BATAS_WAKTU_MS)
   let jawab: Response
   try {
     jawab = await fetch(rakitURL(jalur), {

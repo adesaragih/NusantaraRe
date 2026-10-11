@@ -10,7 +10,7 @@ export const UKURAN_HALAMAN = 50
 /** Grid Rate Detail `pyPageSizeOther` 20 (View Detail.xml b10206) - sama dengan backend `models.UkuranHalamanRate`. */
 export const UKURAN_HALAMAN_RATE = 20
 
-/** Pilihan GENDER (radio `.GENDER` b1938; nilainya dari isi RATE_LIFE DEV, sama dengan backend `models.Gender`). */
+/** Pilihan GENDER (radio `.GENDER` b1938; nilainya dari isi M_RATE_LIFE DEV, sama dengan backend `models.Gender`). */
 export const GENDER = ['U', 'M', 'F'] as const
 
 /** Form Rate Detail kosong (Clear Field `clearInputFieldRIRate_act` b1142 / Cancel `NewData_DT` b3497). */

@@ -176,6 +176,14 @@ func tipeCocok(struktur, ddl string) bool {
 	return false
 }
 
+// kolomMigrasiModulLain - kolom tabel PremiumList yang DIBUAT migrasi modul lain
+// (penjaga ini hanya membaca migrasi 050-099 modul ini). Tipe dan nullable-nya
+// dijaga penjaga inti `TestKolomDDLCocokDenganStruktur` yang membaca semua migrasi.
+var kolomMigrasiModulLain = map[string]string{
+	"T_PREMIUM_LIST.EDM_TYPE_PERUBAHAN_DATA": "endorsementlife 483 (07-10-2026), sub-jenis EDM Type",
+	"T_PREMIUM_LIST.EDM_TYPE_BATAL":          "endorsementlife 483 (07-10-2026), sub-jenis EDM Type",
+}
+
 func TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur(t *testing.T) {
 	struktur := bacaStrukturPolis(t)
 	ddl, fk, idx := bacaDDLPolis(t)
@@ -190,12 +198,14 @@ func TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur(t *testing.T) {
 	// (8 di 059 isian, 7 di 060, JENIS_ASURANSI 061, STATUS_PENAWARAN 062).
 	// ⛔ 243 sejak 064 (03-10-2026): T_PREMIUM_LIST_SUMMARY.PL_NUMBER.
 	// ⛔ 244 sejak claimprop 532 (07-10-2026): T_VIEW_SUGGEST.CLAIM_ID (kolomModulLain).
+	// ⛔ 245 sejak 483 Endorsement Life (07-10-2026): T_PREMIUM_LIST.EDM_TYPE_PERUBAHAN_DATA / EDM_TYPE_BATAL.
+	// ⛔ 246 sesudah gabung dev 11-10-2026: kedua tambahan di atas (244 + EDM_TYPE_PERUBAHAN_DATA / EDM_TYPE_BATAL).
 	total := 0
 	for _, k := range struktur {
 		total += len(k)
 	}
-	if len(struktur) != 7 || total != 244 {
-		t.Fatalf("STRUKTUR terbaca %d tabel / %d kolom, mau 7 / 244; pengurainya rusak, "+
+	if len(struktur) != 7 || total != 246 {
+		t.Fatalf("STRUKTUR terbaca %d tabel / %d kolom, mau 7 / 246; pengurainya rusak, "+
 			"atau STRUKTUR berubah - perbarui angka ini dengan sadar", len(struktur), total)
 	}
 	for tab, kol := range struktur {
@@ -215,6 +225,9 @@ func TestMigrasi050Sampai056TipeNullFKIndexSesuaiStruktur(t *testing.T) {
 			}
 			k, ada := d[c]
 			if !ada {
+				if _, lain := kolomMigrasiModulLain[tab+"."+c]; lain {
+					continue
+				}
 				t.Errorf("%s.%s ada di STRUKTUR, tidak di DDL", tab, c)
 				continue
 			}

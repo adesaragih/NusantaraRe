@@ -3,7 +3,7 @@
 // (`InputRetroLimitReinsurers.xml` b14034 + `CountingPercentShare_Act`).
 //
 // Kepala b1029/b1245/b1446 (⚠️ `ID Reins Type` berisi ID KONTRAK - label VERBATIM). Grid RD
-// `BrowseDetailTreatyReisurerLife_RD` (dua saringan induk, urut `.ID DESC` - server). Form (wadah
+// `BrowseDetailTreatyReisurerLife_RD` (dua saringan induk, urut ID menaik - server, 06-10-2026). Form (wadah
 // b1972): `REINSURER NAME` autocomplete b3746 (`REINS ID` b4570 MATI `1 = 2` - tidak dirender; nilainya
 // diisi autocomplete), `(%) SHARE` b4784, `(%) DISCOUNT` b5072, `(%) OVR COMM` b5364, `Save` b5656,
 // `Cancel` b5942. Baris: `Edit` b12099, `Security Reinsurer` b12441, `Delete` b13422. `Add` b8689.

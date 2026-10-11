@@ -512,6 +512,9 @@ func aksiDLA(j *jalanAksi) error {
 // aksiTutupKlaim - tombol "Yes" PreventRejectClaimProp (tanpa centang Close Without Payment) -> `CloseClaimProp`.
 func aksiTutupKlaim(j *jalanAksi) error {
 	h := j.h
+	if err := belumDiajukan(j); err != nil { // perintah work owner 10-10-2026
+		return err
+	}
 	if err := wajibTerisi(j, models.Evaluasi(h, models.LayarTutupKlaim(), false)); err != nil {
 		return err
 	}
@@ -551,7 +554,10 @@ func aksiTutupKlaim(j *jalanAksi) error {
 // (perintah work owner 10-10-2026): kasus komite TKMT- satu tingkat tanpa adjustment, TRANSFER_TYPE 4. Klaim tetap
 // terbuka; Komite Claim Prop menutupnya bila disetujui (`KomitePost_Close`).
 func aksiTutupTanpaBayar(j *jalanAksi) error {
-	h, k := j.h, j.k
+	h := j.h
+	if err := belumDiajukan(j); err != nil {
+		return err
+	}
 	if err := wajibTerisi(j, models.Evaluasi(h, models.LayarTutupKlaim(), false)); err != nil {
 		return err
 	}
@@ -563,12 +569,34 @@ func aksiTutupTanpaBayar(j *jalanAksi) error {
 	if !models.PeriksaTutupTanpaBayar(h) {   // 3-4
 		return validasi(h)
 	}
-	if n, err := j.l.g.KomiteTutupTerbuka(j.ctx, j.tx, j.kasus.ID); err != nil {
+	return lahirkanKomiteTanpaAdj(j, models.TransferTutup, models.TeksMintaTutupTanpaBayar, "tutup")
+}
+
+// belumDiajukan - `[tidak ada di XML]` penjaga kiriman ganda (perintah work owner 10-10-2026 "jika sudah ada
+// pengajuan reject / close dan belum di aksep komite ... munculin sudah pernah di ajukan tkmt-xxx"): Reject Claim,
+// Close Claim, dan Close Without Payment ditolak selama klaim ini masih punya kasus komite tanpa adjustment yang
+// menunggu keputusan; pesan menyebut jenis dan nomornya.
+func belumDiajukan(j *jalanAksi) error {
+	id, tt, err := j.l.g.KomiteTanpaAdjTerbuka(j.ctx, j.tx, j.kasus.ID)
+	if err != nil {
 		return err
-	} else if n > 0 {
-		return &GalatValidasi{Pesan: []string{models.PesanTutupTanpaBayarBerjalan}}
 	}
-	roster, err := j.l.a.RosterKomite(j.ctx, models.BatasRosterSemua, models.STSKlaimProp) // 5.2-5.3
+	if id != "" {
+		return &GalatValidasi{Pesan: []string{models.PesanSudahDiajukan(tt, id)}}
+	}
+	return nil
+}
+
+// lahirkanKomiteTanpaAdj - langkah bersama SendCloseClaimToKomite 5.1-5.9 dan CheckRejectClaimTreaty2 7.1-7.9: kasus
+// komite TKMT- satu tingkat tanpa adjustment (`transfer` 4 / 3), penyetuju baris roster PROP "Claim Dept. Head" (XML
+// menanam akun orang - diganti workbasket), `Komite.CARI1`, riwayat `teks` + ID komite, Obj-Save, email
+// SendEmailKlaimRejectClose (`jenis` MUATAN). Penjaga kiriman ganda: `belumDiajukan`.
+func lahirkanKomiteTanpaAdj(j *jalanAksi, transfer, teks, jenis string) error {
+	h, k := j.h, j.k
+	if err := belumDiajukan(j); err != nil {
+		return err
+	}
+	roster, err := j.l.a.RosterKomite(j.ctx, models.BatasRosterSemua, models.STSKlaimProp) // 5.2-5.3 / 7.2-7.3
 	if err != nil {
 		return err
 	}
@@ -583,17 +611,45 @@ func aksiTutupTanpaBayar(j *jalanAksi) error {
 	}
 	anggota := []repository.AnggotaTangga{{Urut: 1, OperatorID: pemutus.OperatorID, Jabatan: pemutus.Jabatan,
 		Email: pemutus.Email}}
-	komite, err := j.l.g.BuatKasusKomiteTutup(j.ctx, j.tx, j.kasus.ID, h.Ambil(models.PropKronologiTutup), k.Pelaku,
-		nama, anggota, k.Sekarang) // 5.4 pxAddChildWork
+	komite, err := j.l.g.BuatKasusKomiteTutup(j.ctx, j.tx, j.kasus.ID, transfer, h.Ambil(models.PropKronologiTutup),
+		k.Pelaku, nama, anggota, k.Sekarang) // 5.4 / 7.4 pxAddChildWork
 	if err != nil {
 		return err
 	}
-	k.Riwayat(h, models.TeksMintaTutupTanpaBayar+komite)                    // 5.6-5.7
-	if err := j.l.g.SimpanHalaman(j.ctx, j.tx, j.kasus.ID, h); err != nil { // 5.8 Obj-Save
+	h.Setel(models.PropKomiteBaru, komite)                                  // 5.5 / 7.5 (pop-up: pesan sukses)
+	k.Riwayat(h, teks+komite)                                               // 5.6-5.7 / 7.6-7.7
+	if err := j.l.g.SimpanHalaman(j.ctx, j.tx, j.kasus.ID, h); err != nil { // 5.8 / 7.8 Obj-Save
 		return err
 	}
 	return j.antre(JenisEfekEmailKomite, komite, map[string]string{"klaim": j.kasus.ID, "komite": komite,
-		"jenis": "tutup"}) // 5.9 SendEmailKlaimRejectClose
+		"jenis": jenis}) // 5.9 / 7.9 SendEmailKlaimRejectClose
+}
+
+// aksiYakinTolak - tombol Submit ClaimRejectTreaty -> local action `SureRejectClaimT` (konfirmasi): isian wajib
+// (Remarks) diperiksa seperti Submit local action; layar lalu membuka pop-up SureRejectClaimTreaty.
+func aksiYakinTolak(j *jalanAksi) error {
+	if err := belumDiajukan(j); err != nil {
+		return err
+	}
+	return wajibTerisi(j, models.Evaluasi(j.h, models.LayarTolakKlaim(), false))
+}
+
+// aksiTolakKlaim - tombol "Yes" SureRejectClaimTreaty -> `CheckRejectClaimTreaty2` (perintah work owner 10-10-2026):
+// kasus komite TKMT- satu tingkat tanpa adjustment, TRANSFER_TYPE 3. Klaim tetap terbuka; Komite Claim Prop menutupnya
+// bila disetujui (`KomitePost_Reject`).
+func aksiTolakKlaim(j *jalanAksi) error {
+	h := j.h
+	if err := belumDiajukan(j); err != nil {
+		return err
+	}
+	if err := wajibTerisi(j, models.Evaluasi(h, models.LayarTolakKlaim(), false)); err != nil {
+		return err
+	}
+	models.TandaiTutupTanpaBayar(h, h.Ambil("TempCommiteClaim.Remarks")) // 2 Remark / Remark_Close
+	if !models.PeriksaTolak(h) {                                         // 4-6
+		return validasi(h)
+	}
+	return lahirkanKomiteTanpaAdj(j, models.TransferTolak, models.TeksMintaTolak, "tolak")
 }
 
 // ---------------------------------------------------------------- efek keluar

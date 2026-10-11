@@ -10,6 +10,19 @@ type Kasus struct {
 	Opportunity Opportunity
 	InsuredName string
 	General     General
+	// RiskScoring - Scoring Risk TERSIMPAN (T_SCORINGRISK, tiket 54) untuk kolom "Risk Scoring" General; kosong bila belum
+	// pernah disimpan.
+	RiskScoring RingkasanScoring
+}
+
+// TahapKasus - T_WORK_POLIS.POSITION / FLAG_ONGOING_POLICY (penentu baca-saja, services/bacasaja.go).
+type TahapKasus struct {
+	Position, FlagOnGoingPolicy string
+	// ConfirmBinding - T_GENERAL_POLIS.CONFIRM_BINDING (migrasi 213, tiket 64): "1" = tombol Binding sudah ditekan.
+	ConfirmBinding string
+	// StatusWork - T_WORK_POLIS.STATUS_WORK: "Resolved-…" = case selesai, baca-saja (tiket 69a-2: selesai Policy tidak mengubah
+	// POSITION).
+	StatusWork string
 }
 
 // General - isian blok General (section Periode) sebagaimana TERSIMPAN. Tanggal = teks
@@ -52,6 +65,29 @@ type BarisPortal struct {
 	InsuredName   string // T_M_ACCOUNT.INSUREDNAME lewat ACCOUNT_ID
 	Marketing     string // MARKETINGOFFICER.CLIENTNAME lewat T_QUOTATIONDATA.MOID; kosong bila belum ada
 	Status        string // T_WORK_POLIS.STATUS_WORK
+	NBStatus      string // T_GENERAL_POLIS.NB_STATUS (migrasi 208, tiket 57); kosong = belum pernah Submit
+	// NoPolis / TglProduksi - JSON_POLIS case (NOPOLIS / TGL_PROD DD-MM-YYYY, IDPEGA dua bentuk, TGL_INPUT terbaru); kosong bila
+	// belum selesai Policy (permintaan work owner 11-10-2026: tab Resolved seperti NB Treaty In).
+	NoPolis, TglProduksi string
+}
+
+// BarisKotakMasuk - satu baris daftar kotak masuk Beranda (inbox "New Business", permintaan work owner 07-10-2026; kolom
+// dari gambar layar Pega - report inbox tidak ada di korpus). Teks mentah dari basis data; services memformat tanggal.
+type BarisKotakMasuk struct {
+	CaseID, InsuredName        string
+	BusinessName               string // T_NB_OPPORTUNITY.CLASS_OF_BUSINESS
+	SourceOfBusiness           string // T_QUOTATIONDATA.SOB_NAME
+	CedingCompany              string // T_QUOTATIONDATA.CEDING_CO_NAME (gabungan ";", seperti General)
+	StartDateTime              string // T_GENERAL_POLIS.START_DATE_TIME teks Pega DateTime
+	ShareRNM                   string // T_GENERAL_POLIS.PERCENT_SHARE teks desimal
+	Marketing                  string // MARKETINGOFFICER.CLIENTNAME lewat MOID
+	FlagOnGoingPolicy          string // T_WORK_POLIS.FLAG_ONGOING_POLICY (kolom "Status" = padanan .IsCedingConfirm)
+	CreatedDate                string // T_WORK_POLIS.TGL_CREATE DD-MM-YYYY
+	OfferingDate               string // T_GENERAL_POLIS.OFFERING_DATE teks Pega YYYYMMDD
+	NBStatus                   string // T_GENERAL_POLIS.NB_STATUS
+	ApprovalTerakhir, PICAkhir string // HISTORYAKSEPTASIPRODUCTION baris terakhir (APPROVAL, PIC)
+	TglUpdate                  string // T_WORK_POLIS.TGL_UPDATE YYYY-MM-DD HH24:MI:SS
+	SubmitToUW                 string // T_GENERAL_POLIS.SUBMIT_TO_UW teks Pega DateTime (210; Accept Team Leader pertama)
 }
 
 // SOB - satu pilihan popup Change SOB (tiket 33): baris tabel AGENT.

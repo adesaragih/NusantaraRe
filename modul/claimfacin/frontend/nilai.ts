@@ -156,10 +156,18 @@ export function hanyaAngka(v: string): string {
 /** Desimal tampilan angka (work owner 08-10-2026: "separator indonesia, 4 angka belakang koma"). */
 export const DESIMAL_TAMPIL = 4
 
+/** Hasil `formatNumber` yang berupa angka (titik ribuan, koma desimal opsional). */
+const ANGKA_TAMPIL = /^-?\d{1,3}(\.\d{3})*(,\d+)?$/
+
 /**
- * Tampilan angka: titik ribuan, koma desimal, paling banyak 4 desimal (dibulatkan setengah ke atas pada digit, bukan
- * float), nol ekor dibuang - inti `formatNumber`. Bukan angka = apa adanya. Nilai tersimpan tidak disentuh.
+ * Tampilan angka: titik ribuan, koma desimal, SELALU 4 desimal (work owner 11-10-2026 "UNTUK CLAIM FACIN DAN KOMITE
+ * FACIN ... TAMPILAN 4 DIGIT BELAKANG KOMA"; `20000000` -> `20.000.000,0000`, rupa pxNumber DecimalPlaces=4 Pega).
+ * Dibulatkan setengah ke atas pada digit, bukan float (inti `formatNumber`), lalu nol ekor dilengkapi. Bukan angka = apa
+ * adanya. Nilai tersimpan tidak disentuh.
  */
 export function tampilAngka(v: string): string {
-  return formatNumber(v, DESIMAL_TAMPIL)
+  const s = formatNumber(v, DESIMAL_TAMPIL)
+  if (!ANGKA_TAMPIL.test(s)) return s
+  const [bulat, pecahan = ''] = s.split(',')
+  return `${bulat},${pecahan.padEnd(DESIMAL_TAMPIL, '0')}`
 }

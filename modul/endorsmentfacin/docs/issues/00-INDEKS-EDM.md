@@ -24,6 +24,12 @@ work owner"): `../LAPORAN-IMPLEMENTASI-EDM-01-10-2026.md`. Jalur `internal/…`,
 > `services/…`, dan `pkg/…` di berkas ini adalah tata letak lama; kodenya kini di
 > `modul/endorsmentfacin/backend/`.
 
+> 🔁 **Pembaruan 11-10-2026.** Urutan "NB → RNW → EDM" **tidak lagi menghalangi**: NB FacIn berjalan
+> end-to-end di DEV dan dipakai sebagai **contoh pola** (bukan pustaka; impor `modul/nbfacin` tetap
+> terlarang). Irisan vertikal yang berjalan — I0 pendaftaran modul + menu 966, I1 form *Create
+> Addendum*, I2 periksa gerbang/tanggal — dan keputusan work owner yang mendasarinya:
+> `../KEPUTUSAN-WORK-OWNER-EDM.md` (W-EDM-01…04).
+
 `[terverifikasi]` **Nol berkas `.go` ada di repositori.** Tidak ada `go.mod`, `cmd/`, `internal/`,
 `pkg/`, maupun `services/`. Ketujuh belas tiket NB dan sembilan tiket RNW **sudah tertulis tetapi
 belum dikerjakan**.

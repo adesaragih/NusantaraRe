@@ -75,3 +75,16 @@ func PeriksaTahunTreaty(t TahunTreaty) error {
 	}
 	return PeriksaPeriodeTCO(t.StartDate, t.EndDate, "StartDate", "EndDate")
 }
+
+// SaringTahunTreaty - saringan per kolom inbox tahun treaty (work owner 11-10-2026 "SEMUA HEADER BUAT FILTERNYA").
+// Teks: Contains tidak peka huruf; tanggal (`STARTDATE` / `ENDDATE` VARCHAR2 `YYYYMMDD`, tco4) dicocokkan atas bentuk
+// TAMPIL `DD-MM-YYYY`, jadi "2024", "07-2024", atau "12-07-2024" sama-sama kena; grup dan jenis reasuransi sama persis
+// (dipilih dari daftar). Kosong = tanpa saringan.
+type SaringTahunTreaty struct {
+	UnderwritingYear string // UNDERWRITINGYEAR - kolom grid "Underwriting Year"
+	TreatyYear       string // TREATYYEAR - kolom grid "Transaction Year" (OQ-TCO-05)
+	StartDate        string
+	EndDate          string
+	TreatyGroupID    string
+	Proportion       string
+}

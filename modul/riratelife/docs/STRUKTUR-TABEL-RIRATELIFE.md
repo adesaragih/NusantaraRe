@@ -7,6 +7,11 @@ disimpan di **SATU tabel flat `M_RATE_LIFE`** berkolom ID, IDUSEDBY, USEDBY, TYP
 migrasi inti `929` + `930`); JSONDATA rincian dan view `RATE_LIFE` dibuang. Nama objek dan kolom ditulis SEKALI di
 `backend/repository/rirl_tabel.go`.
 
+**RALAT R7 (10-10-2026, `MODUL.md`)** - keputusan work owner *"view rate_life sudah tidak digunakan, sekarang gunakan tabel
+M_RATE_LIFE"*: view `RATE_LIFE` **dibuang di DEV** (ORA-00942) dan `M_RATE_LIFE` kini **tabel FLAT 8 kolom tanpa JSONDATA**
+(ALL_TAB_COLUMNS DEV dikirim work owner 10-10-2026 = bentuk sesudah 929/930). Rincian dibaca DAN ditulis di kolom
+`M_RATE_LIFE` (INSERT / UPDATE kolom biasa); nol JSON. Penjaga lintas modul: `TestTidakAdaViewRateLifeDiKodeProduksi`.
+
 | Objek | Jenis | Ditulis | Dibaca | Pembaca lain |
 | --- | --- | --- | --- | --- |
 | `M_RATE_LIFE_SUMMARY` | tabel, PK `ID`, 5 kolom (sesudah 928) | Add, Edit, Delete, Simpan Upload, Rate Detail Save (OPERATORID/MODIFIEDDATE) | grid, nama kembar, ID terpakai / ID tertinggi | `mastercontractretrolife`, `masterproductnamelife` (`SELECT ID, USEDBY`, baca-saja) |
@@ -84,7 +89,7 @@ JSONDATA APA ADANYA (98.306 baris DEV, termasuk 539 yatim); semua teks, semua NU
 | `ID` | VARCHAR2(10) NOT NULL, PK | **[terverifikasi data DEV 07-10-2026]** panjang maksimum isi 7 byte. `SEQ_M_RATE_LIFE` (923; terakhir 1117016 di DEV 07-10-2026), nomor terpakai dilewati |
 | `JSONDATA` | CLOB, constraint `ENSURE_M_RATE_LIFE_JSON` (IS JSON) | **DIBUANG 930** (bersama constraint-nya). Ketujuh kunci view sudah di kolom; `FLAG` (tidak digunakan, RALAT R5) hanya di cadangan CSV `ID + JSONDATA` (`LANGKAH-WO-RIRATELIFE-DETAIL-FLAT.md` (a)) |
 
-## RATE_LIFE
+## Riwayat — view RATE_LIFE (dibuang di DEV 10-10-2026, RALAT R7)
 
 RIWAYAT - view warisan Pega `SELECT a.ID, a.JSONDATA.IDUSEDBY, a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.GENDER,
 a.JSONDATA.CONTRACT, a.JSONDATA.AGE, a.JSONDATA.RATE FROM M_RATE_LIFE a`, DIBUANG `930_m_rate_life_satu_tabel.sql`

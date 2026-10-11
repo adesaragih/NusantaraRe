@@ -1,0 +1,197 @@
+-- 214 - tab Object keluarga Aneka (tiket 73 P1 + P2): T_ANEKALIST, T_MARINEHULL, T_AVIATIONHULL, T_VEHICLEHE,
+-- T_MEMORANDUMACCEPT, dan kolom coverage Aneka di T_COVERAGELIST. Nomor terakhir rentang nbfacin 180-214 - SEMUA skema
+-- Aneka P1+P2 di sini (kontrak sesi 9d 09-10-2026).
+--
+-- Bukti `[terverifikasi]` (`NB\` = `D:\migrasi\RNM\NB FacIn\`): form `NB\Section\InputDtlObjectAneka_FacIn.xml` (9 kontainer,
+-- 84 FIELD + SUB_SECTION Memorandum), `NB\Section\InputDtlMemorandumAccept.xml` (15 FIELD, L1068-3633),
+-- `NB\Activity\InputDtlObjectAneka_PreAct.xml` (.MemorandumAccept.SuretyType). Jalur rancangan `loader/skema_gen.go`:
+-- non-Golf `LocationList/Property/RiskLocation/OccupationList/AnekaList` (induk T_OCCUPATIONLIST - okupasi Aneka berinduk
+-- T_RISKLOCATION, bukan T_PROPERTY seperti FIRE), Golf `LocationList/Property/RiskLocation/AnekaList` (induk T_RISKLOCATION).
+--
+-- T_ANEKALIST = rancangan 27 kolom (tanpa penunjuk IDX_ANEKA / IDX_LOCATION / IDX_OCCUPATION butir 72 - milik loader, pola 198;
+-- berinduk JAMAK: PARENT_TABLE / SRC_PATH, PARENT_ID TANPA FK, indeks
+-- (PARENT_TABLE, PARENT_ID) - pola 189 / 193) + kolom form yang tidak ada di rancangan (amandemen loader `amandemenAneka`):
+--   - NO_KONTRAK, NO_KTP, NO_NPWP, INVOICE_NO (pxTextInput, VARCHAR2(50) = kolom saudara); OTHERS (pxTextArea, 500, pola V-6);
+--   - MAINTENANCE_PERIOD, NO_OF_TREE, AREA_HECTAR, LIMIT_IDEMNITY_DAY / MONTH NUMBER(38,8) (K73-6); LIMIT_OF_LIABILITY
+--     (grid okupasi `NB\Section\InputOkupasiAneka_FacIn.xml` L5858), TSI_OLD (grid Golf `InputDtlObjectLocation_FacIn.xml`
+--     L13568) NUMBER(38,8) (ADR-0016); FLAG_DELETE (`.FlagDelete`, ADR-0031) teks VARCHAR2(10) pola IS_OLD_DATA;
+--   - Briguna (K73-7 disimpan): LOAN_ACCOUNT_NUMBER, DEPOSIT_ACCOUNT_NO, ID_CARD_NO, LOAN_TYPE VARCHAR2(50); LOAN_NAME, JOB,
+--     INSTITUTION VARCHAR2(500) (nama / teks bebas); DATE_OF_BIRTH VARCHAR2(30) (pola START_DATE); SALARY NUMBER(38,8);
+--   - ALM_RISK_ID VARCHAR2(100) - `.AlmRiskID` di-SET lookup kapal (`BrowseShip_RD` .ID, sel L10329); lebar = POOLDATA.SHIP.ID
+--     (`DDL\SHIP.txt`) = T_PROPERTY.ALM_RISK_ID (192). `[keputusan agent]` di luar daftar kontrak, dilaporkan ke 9d.
+-- Lebar mengikuti sumber (pola butir 80, `[keputusan agent]`): OCCUPATION_ID VARCHAR2(1000) (= 189); FLAG VARCHAR2(1000)
+-- (SHIP.FLAGNAME); OBJECT_NAME VARCHAR2(4000) (SHIP.NAME 1000, dan SetObjectDescHE_DT menyambung tiga medan 500).
+-- TSI rancangan NUMBER -> NUMBER(38,8) (ADR-0016). CURRENCY_CODE rancangan K-069 `DEFAULT 'UNKNOWN' NOT NULL` (aplikasi tidak
+-- menulis 'UNKNOWN', K-012).
+--
+-- Anak satu halaman per objek (UNIQUE PARENT_ID, FK ke T_ANEKALIST - pola 186):
+--   - T_MARINEHULL rancangan + LENGTHM / BREADTHM / DEPTHM VARCHAR2(50); CLASSIFICATION / CONSTRUCTION / DWTRT / GRTRT / NRTRT
+--     VARCHAR2(1000) = SHIP.CLASSIFICATION / CONSTRUCTION / DWT / GRT / NRT (di-SET lookup kapal);
+--   - T_AVIATIONHULL rancangan apa adanya;
+--   - T_VEHICLEHE rancangan + CHASSIS_NUMBER / ENGINE_NUMBER VARCHAR2(50) + OBJECT_ID_HE VARCHAR2(50) (`.VehicleHE.ObjectIdHE`,
+--     di-SET `BrowseObject_RD` sel L24970; dibaca prakondisi proteksi HE) - OBJECT_ID_HE `[keputusan agent]`, dilaporkan;
+--   - T_MEMORANDUMACCEPT BARU (tidak di rancangan): SURETY_TYPE (PreAct; nilai terpanjang "SB-PayB") + 15 medan layar. pxTextInput
+--     VARCHAR2(500), pxTextArea VARCHAR2(4000) (narasi) - `[keputusan agent]`; ORIGINAL_RATE / PRINCIPALS_OUT_GO teks (pxTextInput).
+--
+-- T_COVERAGELIST (coverage Aneka P2, induk PARENT_TABLE 'T_ANEKALIST' - tanpa perubahan struktur induk): CALCULATE_METHOD /
+-- CALCULATE_METHOD_FAC_IN VARCHAR2(50), SUB_LIMIT_NOTE VARCHAR2(500), IS_OLD_DATA VARCHAR2(10) = rancangan; PCT_SHORT_PERIOD
+-- NUMBER(38,8) (K73-6; rancangan VARCHAR2(30)); LOADING / MIN_PREMIUM NUMBER(38,8) (ADR-0016; rancangan NUMBER);
+-- TYPE_OF_DISCOUNT VARCHAR2(10) - rancangan NUMBER, tetapi isi sampel `D:\migrasi\RNM\DDL\CONTOH\*.xml` = "true" 95 dari 95
+-- (dua cara: grep -o | uniq dan regex Python, 6 berkas) `[terverifikasi]`.
+-- ID / PARENT_ID NUMBER(19) (A92). Ditulis, TIDAK dijalankan agent. Nol COMMIT (ADR-U-0029).
+CREATE TABLE {skema}.T_ANEKALIST (
+  ID                        NUMBER(19) NOT NULL,
+  IDPEGA                    VARCHAR2(50),
+  COB_GROUP                 VARCHAR2(20),
+  PARENT_ID                 NUMBER(19) NOT NULL,
+  PARENT_TABLE              VARCHAR2(30),
+  SRC_PATH                  VARCHAR2(200),
+  SEQ_NO                    NUMBER(5) NOT NULL,
+  ROW_UID                   VARCHAR2(36) NOT NULL,
+  BUILT_IN                  VARCHAR2(50),
+  DRAFT_WORDING_ID          VARCHAR2(50),
+  END_DATE                  VARCHAR2(30),
+  FLAG                      VARCHAR2(1000),
+  GEOGRAPHICAL_LIMITS       VARCHAR2(50),
+  IS_OLD_DATA               VARCHAR2(10),
+  LOCATION_ID               VARCHAR2(50),
+  OBJECT_NAME               VARCHAR2(4000),
+  OCCUPATION_ID             VARCHAR2(1000),
+  QUANTITY                  VARCHAR2(50),
+  START_DATE                VARCHAR2(30),
+  SECTION                   VARCHAR2(50),
+  SELECTED_LOCATION_ADDRESS VARCHAR2(50),
+  SELECTED_OBJECT_ITEM      VARCHAR2(50),
+  SERIAL_NO                 VARCHAR2(50),
+  TSI                       NUMBER(38,8),
+  UNIT_QUANTITY             VARCHAR2(50),
+  YEAR                      VARCHAR2(50),
+  CURRENCY_CODE             VARCHAR2(10) DEFAULT 'UNKNOWN' NOT NULL,
+  NO_KONTRAK                VARCHAR2(50),
+  NO_KTP                    VARCHAR2(50),
+  NO_NPWP                   VARCHAR2(50),
+  OTHERS                    VARCHAR2(500),
+  INVOICE_NO                VARCHAR2(50),
+  MAINTENANCE_PERIOD        NUMBER(38,8),
+  NO_OF_TREE                NUMBER(38,8),
+  AREA_HECTAR               NUMBER(38,8),
+  LIMIT_IDEMNITY_DAY        NUMBER(38,8),
+  LIMIT_IDEMNITY_MONTH      NUMBER(38,8),
+  LIMIT_OF_LIABILITY        NUMBER(38,8),
+  TSI_OLD                   NUMBER(38,8),
+  FLAG_DELETE               VARCHAR2(10),
+  ALM_RISK_ID               VARCHAR2(100),
+  LOAN_ACCOUNT_NUMBER       VARCHAR2(50),
+  LOAN_NAME                 VARCHAR2(500),
+  JOB                       VARCHAR2(500),
+  DEPOSIT_ACCOUNT_NO        VARCHAR2(50),
+  ID_CARD_NO                VARCHAR2(50),
+  INSTITUTION               VARCHAR2(500),
+  LOAN_TYPE                 VARCHAR2(50),
+  DATE_OF_BIRTH             VARCHAR2(30),
+  SALARY                    NUMBER(38,8),
+  CONSTRAINT PK_T_ANEKALIST PRIMARY KEY (ID)
+)
+/
+CREATE INDEX {skema}.IX_T_ANEKALIST_PARENT ON {skema}.T_ANEKALIST (PARENT_TABLE, PARENT_ID)
+/
+CREATE SEQUENCE {skema}.SEQ_T_ANEKALIST START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+/
+CREATE TABLE {skema}.T_MARINEHULL (
+  ID             NUMBER(19) NOT NULL,
+  IDPEGA         VARCHAR2(50),
+  COB_GROUP      VARCHAR2(20),
+  PARENT_ID      NUMBER(19) NOT NULL,
+  CLASSIFICATION VARCHAR2(1000),
+  CONSTRUCTION   VARCHAR2(1000),
+  DWTRT          VARCHAR2(1000),
+  GRTRT          VARCHAR2(1000),
+  NRTRT          VARCHAR2(1000),
+  TYPE_OF_VESSEL VARCHAR2(50),
+  LENGTHM        VARCHAR2(50),
+  BREADTHM       VARCHAR2(50),
+  DEPTHM         VARCHAR2(50),
+  CONSTRAINT PK_T_MARINEHULL PRIMARY KEY (ID),
+  CONSTRAINT UQ_T_MARINEHULL_PARENT UNIQUE (PARENT_ID),
+  CONSTRAINT FK_MARINEHULL_ANEKALIST FOREIGN KEY (PARENT_ID) REFERENCES {skema}.T_ANEKALIST (ID)
+)
+/
+CREATE SEQUENCE {skema}.SEQ_T_MARINEHULL START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+/
+CREATE TABLE {skema}.T_AVIATIONHULL (
+  ID                  NUMBER(19) NOT NULL,
+  IDPEGA              VARCHAR2(50),
+  COB_GROUP           VARCHAR2(20),
+  PARENT_ID           NUMBER(19) NOT NULL,
+  MAX_PASSENGERS      VARCHAR2(50),
+  PILOTS              VARCHAR2(50),
+  REGISTRATION_MARKS  VARCHAR2(50),
+  SPECIAL_RENTAL_USES VARCHAR2(50),
+  SPECIAL_USES        VARCHAR2(50),
+  STANDARD_USES       VARCHAR2(50),
+  CONSTRAINT PK_T_AVIATIONHULL PRIMARY KEY (ID),
+  CONSTRAINT UQ_T_AVIATIONHULL_PARENT UNIQUE (PARENT_ID),
+  CONSTRAINT FK_AVIATIONHULL_ANEKALIST FOREIGN KEY (PARENT_ID) REFERENCES {skema}.T_ANEKALIST (ID)
+)
+/
+CREATE SEQUENCE {skema}.SEQ_T_AVIATIONHULL START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+/
+CREATE TABLE {skema}.T_VEHICLEHE (
+  ID             NUMBER(19) NOT NULL,
+  IDPEGA         VARCHAR2(50),
+  COB_GROUP      VARCHAR2(20),
+  PARENT_ID      NUMBER(19) NOT NULL,
+  BRAND          VARCHAR2(50),
+  BRAND_NAME     VARCHAR2(500),
+  OBJECT_NAME_HE VARCHAR2(500),
+  TYPE           VARCHAR2(50),
+  TYPE_NAME      VARCHAR2(500),
+  CHASSIS_NUMBER VARCHAR2(50),
+  ENGINE_NUMBER  VARCHAR2(50),
+  OBJECT_ID_HE   VARCHAR2(50),
+  CONSTRAINT PK_T_VEHICLEHE PRIMARY KEY (ID),
+  CONSTRAINT UQ_T_VEHICLEHE_PARENT UNIQUE (PARENT_ID),
+  CONSTRAINT FK_VEHICLEHE_ANEKALIST FOREIGN KEY (PARENT_ID) REFERENCES {skema}.T_ANEKALIST (ID)
+)
+/
+CREATE SEQUENCE {skema}.SEQ_T_VEHICLEHE START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+/
+CREATE TABLE {skema}.T_MEMORANDUMACCEPT (
+  ID                    NUMBER(19) NOT NULL,
+  IDPEGA                VARCHAR2(50),
+  COB_GROUP             VARCHAR2(20),
+  PARENT_ID             NUMBER(19) NOT NULL,
+  SURETY_TYPE           VARCHAR2(50),
+  APPLICATION_NUMBER    VARCHAR2(500),
+  ACCUMULATION          VARCHAR2(500),
+  COLLATERAL            VARCHAR2(500),
+  INSURED_SIUP          VARCHAR2(500),
+  KEY_PERSON            VARCHAR2(500),
+  ORIGINAL_RATE         VARCHAR2(500),
+  PRINCIPALS_OUT_GO     VARCHAR2(500),
+  TYPE_OF_WORDING       VARCHAR2(500),
+  BUILDING_STATUS       VARCHAR2(4000),
+  SUPPORTING_DOCUMENT   VARCHAR2(4000),
+  PRINCIPALS_DATA       VARCHAR2(4000),
+  CONCLUSIONS_PROPOSALS VARCHAR2(4000),
+  PRINCIPALS_BACKGROUND VARCHAR2(4000),
+  SUMMARY_FINANCIAL     VARCHAR2(4000),
+  PRINCIPALS_GUARANTEE  VARCHAR2(4000),
+  CONSTRAINT PK_T_MEMORANDUMACCEPT PRIMARY KEY (ID),
+  CONSTRAINT UQ_T_MEMORANDUMACCEPT_PARENT UNIQUE (PARENT_ID),
+  CONSTRAINT FK_MEMORANDUMACCEPT_ANEKALIST FOREIGN KEY (PARENT_ID) REFERENCES {skema}.T_ANEKALIST (ID)
+)
+/
+CREATE SEQUENCE {skema}.SEQ_T_MEMORANDUMACCEPT START WITH 1 INCREMENT BY 1 NOCACHE NOCYCLE
+/
+ALTER TABLE {skema}.T_COVERAGELIST ADD (
+  CALCULATE_METHOD        VARCHAR2(50),
+  CALCULATE_METHOD_FAC_IN VARCHAR2(50),
+  PCT_SHORT_PERIOD        NUMBER(38,8),
+  LOADING                 NUMBER(38,8),
+  SUB_LIMIT_NOTE          VARCHAR2(500),
+  MIN_PREMIUM             NUMBER(38,8),
+  TYPE_OF_DISCOUNT        VARCHAR2(10),
+  IS_OLD_DATA             VARCHAR2(10)
+)
+/

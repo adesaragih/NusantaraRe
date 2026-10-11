@@ -63,6 +63,12 @@ func TestSisipKerugianMenurutKolom(t *testing.T) {
 			t.Errorf("%s kosong = %v", kolom[4+i], a)
 		}
 	}
+	// tiket 42b: CURRENCY kosong -> NULL (bukan "" / 'UNKNOWN').
+	for i, a := range argKerugian(models.CatatanKerugian{}) {
+		if a != nil {
+			t.Errorf("%s kosong = %v, mau NULL", kolom[4+i], a)
+		}
+	}
 }
 
 // TestSisipLokasiLossRatio - loss ratio hasil hitung ditulis ke T_LOCATIONLIST: amount lewat TO_NUMBER (:5, :7),

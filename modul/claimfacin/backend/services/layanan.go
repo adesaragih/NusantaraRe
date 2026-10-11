@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -246,9 +247,12 @@ func (l *Layanan) muat(ctx context.Context, tx *db.Tx, id string) (models.Kasus,
 func (l *Layanan) muatPolis(ctx context.Context, h *models.Halaman) error {
 	nopolis, prodke := h.Ambil(models.JalurNoPolis), h.Ambil(models.JalurProdke)
 	if nopolis != "" {
-		dok, ada, err := l.a.DokumenPolis(ctx, nopolis, prodke)
+		dok, ada, err := l.dokumenPolis(ctx, nopolis, prodke)
 		if err != nil {
-			return err
+			// Halaman polis gagal disusun (mis. tabel datar tak terbaca): kasus tetap dapat dibuka tanpa halaman polis,
+			// seperti dokumen penunjuk sebelum perintah 10-10-2026; sebabnya dicatat (Choose Polis tetap menolak terang).
+			log.Printf("claimfacin: halaman polis %s/%s: %v", nopolis, prodke, err)
+			ada = false
 		}
 		if ada {
 			if err := models.TerapkanPolisTersimpan(h, dok); err != nil {
@@ -264,6 +268,24 @@ func (l *Layanan) muatPolis(ctx context.Context, h *models.Halaman) error {
 	models.LengkapiObjek(h)
 	models.LengkapiCedant(h)
 	return nil
+}
+
+// dokumenPolis = GetCopyNBForClaim (JSON_POLIS.DATA_JSON); perintah work owner 10-10-2026 "pertama cek json_polis, jika
+// json nya kosong ambil dari flat nya": DATA_JSON tanpa isi polis (kosong / penunjuk kasus NB Fac In sistem baru) ->
+// dokumen disusun dari tabel datar NB Fac In (`DokumenPolisDatar`).
+func (l *Layanan) dokumenPolis(ctx context.Context, nopolis, prodke string) ([]byte, bool, error) {
+	dok, ada, err := l.a.DokumenPolis(ctx, nopolis, prodke)
+	if err != nil {
+		return nil, false, err
+	}
+	if ada && models.DokumenPolisBerisi(dok) {
+		return dok, true, nil
+	}
+	kasus := ""
+	if ada {
+		kasus = models.KasusPenunjukPolis(dok)
+	}
+	return l.a.DokumenPolisDatar(ctx, nopolis, prodke, kasus)
 }
 
 // turunkan menyusun medan TURUNAN halaman (tidak disimpan): indeks dan nomor baris, grid Claim Status (kronologi urut

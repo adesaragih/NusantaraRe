@@ -15,7 +15,11 @@ korpus**. Struktur tabelnya tidak dapat diketahui dari korpus dan **tidak diteba
 
 **Blocked by:** ⛔ **seam repository** (belum ada)
 
-**Status:** blocked — dilewati atas perintah work owner 01-10-2026 (seam repository belum ada). Query
+**Pembaruan 11-10-2026:** paket `backend/repository/` lahir untuk irisan I2 (BACA saja): `GetEDMStatus_SQL`,
+`GetBusinessType_Sql`, `GetDataClaim_SQL`, `SearcStatusBayarArasaps_SQL`, `GetListRNWbyNopolis_SQL`,
+`GetFacoutList_SQL`, `GetStartDate` + tabel 261. Query EDM lain tetap menunggu irisannya.
+
+**Status:** sebagian — 11-10-2026 (7 query alur masuk, lihat pembaruan di atas). Status sebelumnya: blocked — dilewati atas perintah work owner 01-10-2026 (seam repository belum ada). Query
 yang kini menjadi MASUKAN seam lain dan menunggu pelaksana di sini: `GetEDMOldData_SQL` (E06),
 `GetEDMStatus_SQL`, `GetListEdm`, `GetDataClaim_SQL`, `SearcStatusBayarArasaps_SQL`,
 `GetListRNWbyNopolis_SQL`, `GetFacoutList_SQL`, `BrowseOpenProteksiEdm_RD`, `GetBusinessType_Sql` (E04),

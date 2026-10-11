@@ -9,7 +9,10 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"nusantarare/inti/backend/db"
@@ -63,10 +66,10 @@ const panjangTeksKomite = 4000
 // sqlKomiteTutupTerbuka - kasus komite Close Without Payment klaim `:1` yang masih menunggu (LINI PROP, belum selesai).
 // Dikenali dari ADJUSTMENT_ID kosong (Claim Prop tanpa penulis TT 3), sehingga kueri tidak bergantung kolom
 // TRANSFER_TYPE.
-func sqlKomiteTutupTerbuka(work, gen string) string {
-	return fmt.Sprintf(`SELECT COUNT(*) FROM %s w JOIN %s g ON g.ID = w.ID
-		 WHERE w.COVER_KEY = :1 AND w.LINI = :2 AND w.TAHAP = :3 AND w.STATUS_WORK IS NULL AND g.ADJUSTMENT_ID IS NULL`,
-		work, gen)
+func sqlKomiteTanpaAdjTerbuka(work, gen string) string {
+	return fmt.Sprintf(`SELECT g.ID, g.TRANSFER_TYPE FROM %s w JOIN %s g ON g.ID = w.ID
+		 WHERE w.COVER_KEY = :1 AND w.LINI = :2 AND w.TAHAP = :3 AND w.STATUS_WORK IS NULL AND g.ADJUSTMENT_ID IS NULL
+		 ORDER BY g.ID FETCH FIRST 1 ROWS ONLY`, work, gen)
 }
 
 // sqlTutupKomiteTerbuka - `ASMForceCaseClose` / `pxForceCaseClose` `CloseAllSubCases true` (CloseClaimProp 10,
@@ -115,10 +118,10 @@ func (g *Gudang) BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID,
 	})
 }
 
-// BuatKasusKomiteTutup = SendCloseClaimToKomite langkah 5.1-5.4 (Close Without Payment): kasus komite TKMT- tanpa
-// adjustment, TRANSFER_TYPE 4, satu tingkat (`KomiteLoop 1`, `KomiteCount 1`), teks Chronology pop-up. Mengembalikan
-// ID kasus komite.
-func (g *Gudang) BuatKasusKomiteTutup(ctx context.Context, tx *db.Tx, klaimID, kronologi, pembuat, namaPembuat string,
+// BuatKasusKomiteTutup = SendCloseClaimToKomite 5.1-5.4 (Close Without Payment, TRANSFER_TYPE 4) /
+// CheckRejectClaimTreaty2 7.1-7.4 (Reject Claim, TRANSFER_TYPE 3): kasus komite TKMT- tanpa adjustment, satu tingkat
+// (`KomiteLoop 1`, `KomiteCount 1`), teks Chronology pop-up. Mengembalikan ID kasus komite.
+func (g *Gudang) BuatKasusKomiteTutup(ctx context.Context, tx *db.Tx, klaimID, transfer, kronologi, pembuat, namaPembuat string,
 	anggota []AnggotaTangga, saat time.Time) (string, error) {
 	kron, err := nilaiTulis(models.Kolom{Properti: models.PropKronologiTutup, Golongan: models.GolTeks,
 		Panjang: panjangTeksKomite}, kronologi)
@@ -126,7 +129,7 @@ func (g *Gudang) BuatKasusKomiteTutup(ctx context.Context, tx *db.Tx, klaimID, k
 		return "", err
 	}
 	return g.lahirkanKomite(ctx, tx, klaimID, pembuat, namaPembuat, anggota, saat, func(gen, id string) (string, []any) {
-		return sqlSisipKepalaKomiteTutup(gen), append([]any{id, len(anggota), 1, models.TransferTutup}, kron...)
+		return sqlSisipKepalaKomiteTutup(gen), append([]any{id, len(anggota), 1, transfer}, kron...)
 	})
 }
 
@@ -195,25 +198,36 @@ func (g *Gudang) lahirkanKomite(ctx context.Context, tx *db.Tx, klaimID, pembuat
 	return id, nil
 }
 
-// KomiteTutupTerbuka - cacah kasus komite Close Without Payment klaim `klaimID` yang masih menunggu keputusan.
-func (g *Gudang) KomiteTutupTerbuka(ctx context.Context, tx *db.Tx, klaimID string) (int, error) {
+// KomiteTanpaAdjTerbuka - kasus komite tanpa adjustment (TT 3 Reject Claim / TT 4 Close Without Payment) klaim
+// `klaimID` yang masih menunggu keputusan: ID dan TRANSFER_TYPE; kosong = tidak ada. `tx` nil = di luar transaksi.
+func (g *Gudang) KomiteTanpaAdjTerbuka(ctx context.Context, tx *db.Tx, klaimID string) (string, string, error) {
 	work, err := g.db.Qualify("T_WORK_CLAIM")
 	if err != nil {
-		return 0, err
+		return "", "", err
 	}
 	gen, err := g.db.Qualify("T_GENERAL_KOMITE")
 	if err != nil {
-		return 0, err
+		return "", "", err
 	}
-	q := sqlKomiteTutupTerbuka(work, gen)
+	q := sqlKomiteTanpaAdjTerbuka(work, gen)
 	if err := db.PeriksaSQL(q); err != nil {
-		return 0, err
+		return "", "", err
 	}
-	var n int
-	if err := tx.QueryRowContext(ctx, q, klaimID, models.LiniProp, models.TahapKomiteTreaty).Scan(&n); err != nil {
-		return 0, fmt.Errorf("repository: menghitung kasus komite close klaim: %w", err)
+	args := []any{klaimID, models.LiniProp, models.TahapKomiteTreaty}
+	var baris *sql.Row
+	if tx == nil { // buka kasus (tanpa transaksi)
+		baris = g.db.QueryRowContext(ctx, q, args...)
+	} else {
+		baris = tx.QueryRowContext(ctx, q, args...)
 	}
-	return n, nil
+	var id, tt sql.NullString
+	if err := baris.Scan(&id, &tt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", "", nil
+		}
+		return "", "", fmt.Errorf("repository: membaca kasus komite tanpa adjustment klaim: %w", err)
+	}
+	return id.String, strings.TrimSpace(tt.String), nil
 }
 
 // TutupKomiteTerbuka = `CloseAllSubCases true`: kasus komite klaim `klaimID` yang masih terbuka ditutup Resolved-Completed,

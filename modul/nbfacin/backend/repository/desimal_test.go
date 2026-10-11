@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -49,5 +50,21 @@ func TestDesimalPulangPergi(t *testing.T) {
 		if !strings.HasPrefix(u.ekspresi, u.harus) {
 			t.Errorf("konversi NLS satu tempat berubah: %s", u.ekspresi)
 		}
+	}
+}
+
+// TestPolaAngkaMasuk - pola teks bind = mask fmtAngkaMasuk: dua cara (jawaban yang diketahui + jumlah digit di format).
+func TestPolaAngkaMasuk(t *testing.T) {
+	for s, mau := range map[string]bool{"50000000000": true, "7962413.4520277": true, "0": true, "-0.5": true, "12.12345678": true,
+		strings.Repeat("9", 30): true, "50000000000.00000000000000000000": false, "7962413.45202770000000000000": false,
+		"12.123456789": false, strings.Repeat("9", 31): false, "1E+11": false, "1e11": false, "": false, ".5": false, "1,5": false} {
+		if PolaAngkaMasuk.MatchString(s) != mau {
+			t.Errorf("%q: mau %v", s, mau)
+		}
+	}
+	// Cara kedua: digit bulat / desimal yang diizinkan pola = jumlah '9' sebelum / sesudah 'D' di mask.
+	m := regexp.MustCompile(`'FM(9+)D(9+)'`).FindStringSubmatch(fmtAngkaMasuk)
+	if m == nil || len(m[1]) != 30 || len(m[2]) != 8 || PolaAngkaMasuk.String() != `^-?[0-9]{1,30}(\.[0-9]{1,8})?$` {
+		t.Errorf("mask %v / pola %s", m, PolaAngkaMasuk)
 	}
 }

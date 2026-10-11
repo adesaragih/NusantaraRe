@@ -26,8 +26,8 @@ const (
 	SumberNegara    = "negara"    // BrowseCountry_RD
 	SumberProvinsi  = "provinsi"  // BrowseProvince_RD (RW.PROVINCENAME menurut negara)
 	SumberKota      = "kota"      // BrowseCity_RD (RW.CITYNAME menurut provinsi)
-	SumberDistrik   = "distrik"   // BrowseDistrictInputC_RD (DISTRICT menurut CityID)
-	SumberRW        = "rw"        // BrowseRWInput_RD (RW menurut DistrictID)
+	SumberDistrik   = "distrik"   // BrowseDistrictInputC_RD (RW.DISTRICTNAME menurut provinsi + kota, 11-10-2026)
+	SumberRW        = "rw"        // BrowseRWInput_RD (RW.NOTE menurut provinsi + kota + kecamatan, 11-10-2026)
 	SumberJenisReas = "jenisReas" // BrowseReinsuranceType_RD
 	SumberOkupasi   = "okupasi"   // D_OccupationList (halaman polis)
 	SumberItemProp  = "itemProp"  // D_FilteredPropertyItemList
@@ -56,6 +56,9 @@ var KodePilihan = map[string][]string{
 // SearchType: kolom yang dicari SearchPolis_act langkah 1-4 dengan judul kolom grid ViewPolis.
 var LabelKode = map[string]map[string]string{
 	"ReportType": {"1": "Direct", "2": "Via Email", "3": "Via Fax", "4": "via Postal Mail/Courier", "5": "Via Telephone"},
+	// Prompt values property `ASM-FW-GCNMFW-Data-ClaimData.InsuredRelationship` "Hubungan Pelapor" (screenshot work owner
+	// 11-10-2026, OQ-CFI-18).
+	"InsuredRelationship": {"1": "Ceding Co Name", "2": "Broker Name", "3": "Others"},
 	"SearchType": {CariNoPolis: "Policy Number", CariCeding: "Ceding Co Name", CariInsured: "Name of Insured",
 		CariQQ: "QQ Name"},
 }
@@ -69,7 +72,6 @@ var (
 	bukanEstimasi   = beda(JalurIsEstimation, "1")
 	kunciAkseptasi  = adaAkseptasi
 	adaPolis        = terisi(JalurNoPolis)
-	tanpaPolis      = sama(JalurNoPolis, "")
 	negaraIndonesia = sama(CD+"Country", "INDONESIA")
 )
 
@@ -95,10 +97,12 @@ func LayarRegister() []Unsur {
 		letak(LetakTab,
 			bagian("Register", detailRegister()...),
 			bagian("Policy Detail & Claims History", tabRiwayat()...),
-			bagian("Progress Claim", tabProgres()...),
+			tampil(bagian("Progress Claim", tabProgres()...), TabProgresTampil),
 		),
+		// Save di samping Submit SELALU (perintah work owner 11-10-2026 "SAVE NYA PINDAH KE SAMPING SUBMIT"; XML sel 31 / 33
+		// hanya bila Policy No kosong). Tombol Save panel Lampiran dibuang (pindah ke sini).
 		sebaris("",
-			tampil(tombol("Simpan", "Save", "Simpan"), tanpaPolis),
+			tombol("Simpan", "Save", "Simpan"),
 			tampil(tombol("SubmitDOL", "Submit", "BukaProtectDOL"), dan(errorDOL, adaPolis)),
 			tampil(tombol("Submit", "Submit", "Submit"), dan(errorNol, adaPolis)),
 		),
@@ -111,33 +115,38 @@ func detailRegister() []Unsur {
 	roPolis := terisi(JalurNoPolis)
 	dateRO := kunciAkseptasi
 	return []Unsur{
-		dua(
-			bagian("",
-				sebaris("",
-					ro(medan(JalurNoPolis, "Policy No", KTampil)),
-					naJika(tombol("BukaPolis", "Choose Polis", "BukaPolis"), isEstimasi),
-				),
-				wajibU(roJika(medan(OQ+"InsuredName", "Insured Name", KTeks), roPolis)),
-				// change SetQQName (`.Quotation.QQName := .OfferFacIn.QuotationData.QQName`): Quotation = halaman yang
-				// sama di sini, nilai ketikan langsung tersimpan (QQ_NAME) - tanpa aksi.
-				roJika(medan(OQ+"QQName", "QQ Name", KTeks), terisi(OQ+"QQName")),
-				wajibU(roJika(medan(OQ+"CedingCoName", "Ceding Co Name", KTeks), roPolis)),
-				wajibU(roJika(medan(OQ+"SobName", "Source Of Business", KTeks), roPolis)),
-				aksi(wajibU(roJika(medan(CD+"DateOfLoss", "Date of Loss", KTanggal), dateRO)), "CheckDate"),
-				aksi(wajibU(roJika(medan(CD+"ReportDate", "Report Date", KTanggal), dateRO)), "CheckDateReport"),
-				aksi(wajibU(roJika(medan(CD+"DateReceived", "Received Date", KTanggal), dateRO)), "CheckDateReceived"),
-				wajibU(roJika(medan(CD+"ReporterName", "Reporter Name", KTeks), dateRO)),
-				wajibU(roJika(medan(CD+"ReporterTelp", "Reporter Phone Number", KTelepon), dateRO)),
-				sebaris("",
-					naJika(tombol("ChooseCauseOfLoss", "Choose Cause of Loss", "BukaSebab"), kunciAkseptasi),
-					ro(medan(CD+"CauseOfLoss", "Cause of Loss", KTampil)),
-				),
-				blokKatastrofe(),
+		// Urutan sel = Section InputRegisterDetail: kontainer 650 (sel 652-673) dan 674 (sel 676 / 681) diisi per baris dua
+		// kolom berlabel di atas, 713 (sel 715 / 716) dua kolom - rupa Pega pada screenshot work owner 11-10-2026 ("UBAH
+		// LAYOUTNYA BEGINI"). Dulu sel 650 ditumpuk di kolom kiri dan 674 di kolom kanan.
+		duaAtas(
+			sebaris("", // 652
+				ro(medan(JalurNoPolis, "Policy No", KTampil)),
+				naJika(tombol("BukaPolis", "Choose Polis", "BukaPolis"), isEstimasi),
 			),
-			bagian("",
+			wajibU(roJika(medan(OQ+"InsuredName", "Insured Name", KTeks), roPolis)), // 660
+			// change SetQQName (`.Quotation.QQName := .OfferFacIn.QuotationData.QQName`): Quotation = halaman yang sama
+			// di sini, nilai ketikan langsung tersimpan (QQ_NAME) - tanpa aksi.
+			roJika(medan(OQ+"QQName", "QQ Name", KTeks), terisi(OQ+"QQName")),                           // 661
+			wajibU(roJika(medan(OQ+"CedingCoName", "Ceding Co Name", KTeks), roPolis)),                  // 662
+			wajibU(roJika(medan(OQ+"SobName", "Source Of Business", KTeks), roPolis)),                   // 663
+			aksi(wajibU(roJika(medan(CD+"DateOfLoss", "Date of Loss", KTanggal), dateRO)), "CheckDate"), // 664
+			aksi(wajibU(roJika(medan(CD+"ReportDate", "Report Date", KTanggal), dateRO)), "CheckDateReport"),
+			aksi(wajibU(roJika(medan(CD+"DateReceived", "Received Date", KTanggal), dateRO)), "CheckDateReceived"),
+			wajibU(roJika(medan(CD+"ReporterName", "Reporter Name", KTeks), dateRO)),
+			wajibU(roJika(medan(CD+"ReporterTelp", "Reporter Phone Number", KTelepon), dateRO)), // 668
+			sebaris("", // 669
+				naJika(tombol("ChooseCauseOfLoss", "Choose Cause of Loss", "BukaSebab"), kunciAkseptasi),
+				ro(medan(CD+"CauseOfLoss", "Cause of Loss", KTampil)),
+			),
+			blokKatastrofe(), // 673
+		),
+		duaAtas(
+			duaAtas( // 676
 				roJika(medan(CD+"PlaNoCeding", "PLA No Ceding", KTeks), dateRO),
 				sumber(roJika(medan(CD+"ReportType", "Report Type", KPilih), dateRO), kode("ReportType")),
 				roJika(medan(CD+"PlaNoSOB", "PLA No SOB", KTeks), dateRO),
+			),
+			bagian("", // 681
 				sebaris("",
 					aksi(sumber(roJika(medan(CD+"InsuredRelationship", "Reporter Status", KPilih), isEstimasi),
 						kode("InsuredRelationship")), "GetReportStatus"),
@@ -148,7 +157,7 @@ func detailRegister() []Unsur {
 					func(h *Halaman) bool { return AmbilJalur(h, JalurBaris(DaftarCedingCo, 1)+".CedingCoName") != "" })),
 			),
 		),
-		bagian("",
+		duaAtas( // 713
 			roJika(medan(CD+"ReportDescription", "Description Report", KArea), dateRO),
 			wajibU(roJika(medan(CD+"ReportAddress", "Reporter Address", KArea),
 				atau(dateRO, beda(CD+"InsuredRelationship", "3")))),
@@ -175,10 +184,10 @@ func detailRegister() []Unsur {
 		aksi(wajibU(naJika(medan(CD+"Location", "Location of Loss", KArea), kunciAkseptasi)), "SetTempLocation"),
 		bagian("",
 			aksi(sumber(roJika(medan(CD+"Country", "Country", KOtomatis), isEstimasi), SumberNegara), "PilihNegara"),
-			tampil(aksi(sumber(roJika(medan(CD+"Province", "Province", KOtomatis), isEstimasi), SumberProvinsi), "PilihProvinsi"), negaraIndonesia),
-			tampil(aksi(sumber(roJika(medan(CD+"City", "City", KOtomatis), isEstimasi), SumberKota), "PilihKota"), negaraIndonesia),
-			tampil(aksi(sumber(roJika(medan(CD+"District", "District", KOtomatis), isEstimasi), SumberDistrik), "PilihDistrik"), negaraIndonesia),
-			tampil(aksi(sumber(roJika(medan(CD+"RW", "Region", KOtomatis), isEstimasi), SumberRW), "PilihRW"), negaraIndonesia),
+			tampil(medanWilayah(CD+"Province", "Province", SumberProvinsi, "PilihProvinsi", CD+"Country", "Country"), negaraIndonesia),
+			tampil(medanWilayah(CD+"City", "City", SumberKota, "PilihKota", CD+"Province", "Province"), negaraIndonesia),
+			tampil(medanWilayah(CD+"District", "District", SumberDistrik, "PilihDistrik", CD+"City", "City"), negaraIndonesia),
+			tampil(medanWilayah(CD+"RW", "Region", SumberRW, "PilihRW", CD+"District", "District"), negaraIndonesia),
 			tampil(aksi(roJika(medan(CD+"PostalCode", "Zip Code", KTeks), isEstimasi), "InputKodePos1"), negaraIndonesia),
 		),
 		dua(
@@ -192,6 +201,19 @@ func detailRegister() []Unsur {
 		tampil(ro(medan(CD+"DollarCurrencyVal", "Value in IDR", KAngka)), sama(CD+"PostalCode", "1")),
 	}
 }
+
+// medanWilayah - autocomplete wilayah bertingkat (sel 925-928): dapat dipilih hanya bila tingkat induknya terisi
+// (perintah work owner 11-10-2026 "GIMANA SEHARUSNYA MEMILIH INI"); induk kosong = isian nonaktif berpetunjuk
+// ("Choose Province first") tanpa aksi - server pun menolak aksinya (`AksiTerbuka`).
+func medanWilayah(jalur, label, sumberWil, aksiWil, induk, labelInduk string) Unsur {
+	buka := aksi(sumber(roJika(medan(jalur, label, KOtomatis), isEstimasi), sumberWil), aksiWil)
+	kunci := sumber(roJika(naJika(medan(jalur, label, KOtomatis), selalu), isEstimasi), sumberWil)
+	kunci.Catatan = PetunjukWilayah(labelInduk)
+	return bagian("", tampil(buka, terisi(induk)), tampil(kunci, sama(induk, "")))
+}
+
+// PetunjukWilayah - petunjuk isian wilayah yang induknya belum dipilih.
+func PetunjukWilayah(labelInduk string) string { return "Choose " + labelInduk + " first" }
 
 // OQTambahAdjuster - ikon tambah Consultant / Adjuster (harness MstAdjusterConsultant, kelas Data-Portal). Claim Prop
 // menyimpan master barunya lewat rute pinjaman `POST /api/adjuster-consultant`, yang di `cmd/api/rakit.go`
@@ -272,27 +294,22 @@ func tabRiwayat() []Unsur {
 // DaftarKronologiTampil - salinan Chronology untuk grid "Claim Status" (urut menurun, `TampilKronologi`).
 const DaftarKronologiTampil = "ClaimStatus"
 
-// detailPolis - Section InputInwardFacultativeDtl (layout "General").
+// detailPolis - Section InputInwardFacultativeDtl: isinya kini tampilan polis NB Fac In hanya-baca (`JenisPolisNB`,
+// perintah work owner 10-10-2026) - blok "General" Pega diganti; tombol View Retro List section itu tetap di bawahnya.
+// Seperti layar NB, isi tab detail hanya untuk kasus FIRE: When `IsFire` dievaluasi di sini (`KPolisFire`). Tombol
+// dibungkus baris Inline supaya tidak terbawa ke kaki modal Choose Polis bersama Cancel / Submit (`pisahKakiModal`).
 func detailPolis() Unsur {
-	return bagian("General",
-		ro(medan(OQ+"NoOfferSlip", "Offer  Slip Number", KTeks)),
-		ro(medan(JalurNoPolis, "Policy No", KTeks)),
-		ro(medan(OQ+"BusinessName", "Class Of Business", KTampil)),
-		ro(medan(OQ+"StatusBusiness", "Business Status", KTampil)),
-		ro(medan(OQ+"SobName", "Source Of Business", KTampil)),
-		ro(medan(OQ+"InsuredName", "Insured Name", KTeks)),
-		ro(medan(OQ+"CedingCoName", "Ceding Co Name", KTampil)),
-		ro(medan(OQ+"QQName", "QQ Name", KTampil)),
-		ro(medan(JalurMulaiPolis, "Begin date", KTanggal)),
-		ro(medan(JalurAkhirPolis, "End Date", KTanggal)),
-		ro(medan(AwalanPolis+".PolicyData.OfferingDate", "Offering date", KTanggal)),
-		tampilIsi(ro(medan(OQ+"Period", "Period", KTeks))),
-		ro(medan(AwalanPolis+".IsProRate", "Prorate / Short period", KTampil)),
-		ro(medan(OQ+"MarketingName", "Marketing Name", KTeks)),
-		tampil(tombol("ViewRetroList", "View Retro List", "BukaRetroList"),
+	return bagian("",
+		tampil(Unsur{Jenis: JenisPolisNB, Kendali: KPolisFire}, IsFire),
+		tampil(Unsur{Jenis: JenisPolisNB}, func(h *Halaman) bool { return !IsFire(h) }),
+		tampil(sebaris("", tombol("ViewRetroList", "View Retro List", "BukaRetroList")),
 			func(h *Halaman) bool { return AmbilJalur(h, JalurBaris(DaftarFacRetro, 1)+".ReinsurerName") != "" }),
 	)
 }
+
+// TabProgresTampil - tab "Progress Claim" (Input Register / Input Estimasi / Choose Surveyor) DISEMBUNYIKAN: perintah work
+// owner 11-10-2026 "TAB PROGRESS CLAIM HIDE AJA! GA KEPAKE JUGA". PROGRESSCLAIM tetap ditulis aksi (`tulisProgres`).
+func TabProgresTampil(*Halaman) bool { return false }
 
 // tabProgres - Section ProgresClaim_Sec (GetProgresClaim_ACT: PROGRESSCLAIM kasus + SUBPROGRESSCLAIM per posisi).
 func tabProgres() []Unsur {

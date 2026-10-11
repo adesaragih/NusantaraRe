@@ -70,7 +70,7 @@ func aksiPilihPolis(j *jalanAksi) error {
 	if !ada {
 		return fmt.Errorf("%w: polis %q prodke %q tidak ada di FACINPRODUCTION", ErrPermintaanTidakSah, nopolis, prodke)
 	}
-	dok, ada, err := j.l.a.DokumenPolis(j.ctx, nopolis, prodke)
+	dok, ada, err := j.l.dokumenPolis(j.ctx, nopolis, prodke)
 	if err != nil {
 		return err
 	}
@@ -81,8 +81,8 @@ func aksiPilihPolis(j *jalanAksi) error {
 	return models.PilihPolis(j.h, nopolis, prodke, dok)
 }
 
-// OQPolisTanpaJSON - polis FACINPRODUCTION tanpa dokumen JSON_POLIS (NB Fac In sistem baru tidak menulis JSON_POLIS).
-const OQPolisTanpaJSON = "OQ-CFI-11: polis ini tidak punya dokumen JSON_POLIS - halaman polis (OfferFacIn) tidak dapat disalin"
+// OQPolisTanpaJSON - polis FACINPRODUCTION tanpa dokumen JSON_POLIS berisi DAN tanpa kasus tabel datar NB Fac In.
+const OQPolisTanpaJSON = "OQ-CFI-11: polis ini tidak punya dokumen JSON_POLIS maupun data datar NB Fac In - halaman polis (OfferFacIn) tidak dapat disalin"
 
 // aksiPilihCeding - tombol Choose grid CedingCoList (`GetCeding_act` Param.Ceding = .CedingCoName baris).
 func aksiPilihCeding(j *jalanAksi) error {
@@ -94,35 +94,39 @@ func aksiPilihCeding(j *jalanAksi) error {
 }
 
 // aksiPilihWilayah - autocomplete Country / Province / City / District / Region (`isi .ID -> ...ID`): pilihan dibaca
-// ULANG dari master menurut induknya, nama + ID ditulis.
+// ULANG dari master menurut induk TERPILIH (nama), nama + ID ditulis. Perintah work owner 11-10-2026 ("PERBAIKI DEPAN
+// DAN BELAKANG. PERBAIKI LOGIC NYA. GIMANA SEHARUSNYA MEMILIH INI"): wilayah dipilih berurutan dari atas, dan memilih
+// tingkat yang BERBEDA dari sebelumnya mengosongkan semua tingkat di bawahnya (`TingkatWilayah`) - kota provinsi lama
+// tidak tertinggal di bawah provinsi baru. Section Pega hanya `refresh` (tanpa pengosongan).
 func aksiPilihWilayah(sumber string) penanganAksi {
 	return func(j *jalanAksi) error {
 		h, a, ctx, nilai := j.h, j.l.a, j.ctx, strings.TrimSpace(j.r.Param)
+		prov, kota, distrik := h.Ambil(models.CD+"Province"), h.Ambil(models.CD+"City"), h.Ambil(models.CD+"District")
 		var opsi []models.Pilihan
 		var err error
-		jalur := ""
 		switch sumber {
 		case models.SumberNegara:
-			jalur = models.CD + "Country"
 			opsi, err = a.DaftarNegara(ctx, nilai)
 		case models.SumberProvinsi:
-			jalur = models.CD + "Province"
 			opsi, err = a.DaftarProvinsi(ctx, h.Ambil(models.CD+"Country"), nilai)
 		case models.SumberKota:
-			jalur = models.CD + "City"
-			opsi, err = a.DaftarKota(ctx, h.Ambil(models.CD+"Province"), nilai)
+			opsi, err = a.DaftarKota(ctx, prov, nilai)
 		case models.SumberDistrik:
-			jalur = models.CD + "District"
-			opsi, err = a.DaftarDistrik(ctx, h.Ambil(models.CD+"CityID"), nilai)
+			opsi, err = a.DaftarDistrik(ctx, prov, kota, nilai)
 		case models.SumberRW:
-			jalur = models.CD + "RW"
-			opsi, err = a.DaftarRW(ctx, h.Ambil(models.CD+"DistrictID"), nilai)
+			opsi, err = a.DaftarRW(ctx, prov, kota, distrik, nilai)
 		}
 		if err != nil {
 			return err
 		}
+		jalur := models.JalurWilayah(sumber)
 		for _, o := range opsi {
 			if o.Nilai == nilai {
+				// dibandingkan dengan nilai TERSIMPAN: kiriman layar sudah membawa nilai baru ini (temuan work owner
+				// 11-10-2026: Province BALI + City JAKARTA TIMUR + District CENGKARENG - tingkat bawah tidak pernah kosong)
+				if j.nilaiTersimpan(jalur) != o.Nilai {
+					models.KosongkanWilayahBawah(h, sumber)
+				}
 				h.Setel(jalur, o.Nilai)
 				for p, v := range o.Tambahan {
 					h.Setel(models.CD+p, v)
@@ -201,12 +205,25 @@ func aksiSubmitRegister(j *jalanAksi) error {
 
 // ---------------------------------------------------------------- Input Estimasi
 
+// tahanItemKembar - Download Claim Face Sheet / Print PLA objek j.o ditolak selama objek itu masih punya item kembar yang
+// terlanjur tersimpan (perintah work owner 11-10-2026 "TAMBAHKAN"; XML hanya menonaktifkan tombol bila IsError > 1,
+// sedangkan satu pasang kembar = IsError 1): outstanding / PLA tidak tercatat dobel.
+func tahanItemKembar(j *jalanAksi) error {
+	if models.TandaiItemKembarObjek(j.h, j.o) {
+		return validasi(j.h)
+	}
+	return nil
+}
+
 // aksiCFS - tombol "Download Claim Face Sheet" baris objek (`CLaimFaceSheet_Act`, `models` berkas cfs.go).
 func aksiCFS(j *jalanAksi) error {
 	if err := j.butuh(true, false, false); err != nil {
 		return err
 	}
 	h, k := j.h, j.k
+	if err := tahanItemKembar(j); err != nil { // item kembar objek ini (work owner 11-10-2026)
+		return err
+	}
 	if err := models.ProtectDownloadFaceClaim(k, h, j.o, j.kasus.ID); err != nil { // 1
 		return err
 	}
@@ -270,6 +287,9 @@ func aksiBukaPLA(j *jalanAksi) error {
 	if err := j.butuh(true, false, false); err != nil {
 		return err
 	}
+	if err := tahanItemKembar(j); err != nil { // item kembar objek ini (work owner 11-10-2026)
+		return err
+	}
 	if err := models.BukaPLA(j.h, j.o); err != nil {
 		return err
 	}
@@ -285,6 +305,9 @@ func aksiPLA(j *jalanAksi) error {
 	}
 	if !pembukaTerbuka(j, "", "BukaPLA", j.o) { // modal pla:o lahir untuk setiap objek; pembukanya yang menyaring
 		return fmt.Errorf("%w: Print PLA objek %d tertutup", ErrAksiTertutup, j.o)
+	}
+	if err := tahanItemKembar(j); err != nil {
+		return err
 	}
 	if err := wajibTerisi(j, models.Evaluasi(j.h, models.LayarPLA(j.o), false)); err != nil {
 		return err

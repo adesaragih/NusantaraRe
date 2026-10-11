@@ -1,0 +1,7 @@
+-- Jalur mundur 259 - indeks FK anak objek FIRE.
+DROP INDEX {skema}.IX_T_FEALIST_PARENT
+/
+DROP INDEX {skema}.IX_T_LISTCAUSEOFLOSS_PARENT
+/
+DROP INDEX {skema}.IX_T_PROPERTYITEMLIST_PARENT
+/

@@ -12,6 +12,7 @@ import (
 	"nusantarare/modul/claimfacin/backend/handlers"
 	"nusantarare/modul/claimfacin/backend/models"
 	"nusantarare/modul/claimfacin/backend/services"
+	"nusantarare/modul/claimfacin/backend/tiruan"
 )
 
 const perTeknik = models.WorkbasketSurveyor
@@ -233,5 +234,100 @@ func TestAdjustmentHapusDanKembaliEstimasi(t *testing.T) {
 	}
 	if v := u.g.Halaman(id).Ambil(models.JalurIsAdjustment); v != "" {
 		t.Fatalf("IsAdjustment %q sesudah Back", v)
+	}
+}
+
+func TestAdjustmentBaruExGratiaBawaanNO(t *testing.T) {
+	// Section InputAdjustment LS41 `.ExGratia` pyDefaultValue 0; layout lama "Ex Gratia NO" (work owner 11-10-2026).
+	u := baruUji(t)
+	id := u.adjustmentFinal()
+	rows := u.g.Halaman(id).AmbilDaftar(models.DaftarAdj(1, 1))
+	if len(rows) != 1 {
+		t.Fatalf("adjustment %d baris, mau 1", len(rows))
+	}
+	if rows[0]["ExGratia"] != "0" {
+		t.Fatalf("adjustment baru ExGratia %q, mau \"0\"", rows[0]["ExGratia"])
+	}
+}
+
+func TestIsianAngkaHanyaDesimal(t *testing.T) {
+	// Work owner 11-10-2026 "UNTUK ANGKA PROTEKSI INPUTAN HANYA DECIMAL": kiriman medan angka terbuka yang bukan bilangan
+	// desimal mentah (huruf, ribuan berformat, lebih dari 4 desimal) ditolak 422 berpesan di medannya, tidak disimpan.
+	u := baruUji(t)
+	id := u.adjustmentFinal()
+	jalur := jAdj(1, "GrossAdjustment")
+	for _, v := range []string{"12abc", "20.000.000", "1.23456", "1,5", "--1"} {
+		kode, out := u.aksiT(id, services.PermintaanAksi{Aksi: "SetGrossAdjustment", Konteks: panelAdj(1),
+			Masukan: map[string]string{jalur: v}})
+		if kode != http.StatusUnprocessableEntity {
+			t.Fatalf("%q: HTTP %d, mau 422: %v", v, kode, out)
+		}
+		layar, _ := out["layar"].(map[string]any)
+		pm, _ := layar["pesanMedan"].(map[string]any)
+		if p, _ := pm[jalur].([]any); len(p) == 0 || p[0] != models.PesanBukanDesimal {
+			t.Fatalf("%q: pesan medan %v, mau %q", v, pm[jalur], models.PesanBukanDesimal)
+		}
+		if got := u.g.Halaman(id).AmbilDaftar(models.DaftarAdj(1, 1))[0]["GrossAdjustment"]; got != "20000000" {
+			t.Fatalf("%q tersimpan: GrossAdjustment %q", v, got)
+		}
+	}
+	kode, out := u.aksiT(id, services.PermintaanAksi{Aksi: "SetGrossAdjustment", Konteks: panelAdj(1),
+		Masukan: map[string]string{jalur: "20000000.5"}})
+	u.wajib(kode, http.StatusOK, out, "desimal sah")
+}
+
+func TestBackSurveyorDitolakSesudahAkseptasi(t *testing.T) {
+	// Tombol Back tersembunyi sesudah akseptasi -> aksinya pun ditolak server (kasus tetap di Choose Surveyor).
+	u := baruUji(t)
+	id := u.adjustmentFinal()
+	h := u.g.Halaman(id)
+	rows := h.AmbilDaftar(models.DaftarAdj(1, 1))
+	rows[0]["AcceptanceStatus"], rows[0]["AcceptedNo"] = "1", "UJI-A.001"
+	h.SetelDaftar(models.DaftarAdj(1, 1), rows)
+	u.g.SetelHalaman(id, h)
+	kode, out := u.aksiT(id, services.PermintaanAksi{Aksi: "BackToEstimasi"})
+	if kode == http.StatusOK {
+		t.Fatalf("Back sesudah akseptasi diterima: %v", out)
+	}
+	if k := u.g.Kasus[id]; k.Tahap != models.TahapSurveyor {
+		t.Fatalf("tahap %q, mau tetap %q", k.Tahap, models.TahapSurveyor)
+	}
+}
+
+func TestChoosePayableToCedingLain(t *testing.T) {
+	// Work owner 11-10-2026 "CHOOSENYA INI GA BERFUNGSI!": tombol Choose grid Ceding Co Name (Payable To = Ceding Co
+	// Name) = SetPayableTo_act langkah 1-3 yang ber-remark di Pega (pembaruan 08-01-2025) - Specify = ceding baris itu,
+	// rekening pertama ceding itu (GetDataBankAccount_sql: klien + mata uang adjustment) ke baris adjustment. Daftar
+	// Name of Bank sesudahnya = rekening ceding terpilih.
+	u := baruUji(t)
+	u.a.Dokumen[tiruan.KunciPolis(polisUji, "1")] = []byte(strings.Replace(polisFire,
+		`"CedingCoList": [{"CedingCoName": "UJI CEDING"}]`, `"CedingCo": "UJI-CC1", "CedingCoList": [`+
+			`{"CedingCo": "UJI-CC1", "CedingCoName": "UJI CEDING"}, {"CedingCo": "UJI-CC2", "CedingCoName": "UJI CEDING DUA"}]`, 1))
+	u.a.Rekening["UJI-CC1|"+idr] = []models.RekeningBank{{NameOfBank: "UJI BANK SATU", AccountNo: "UJI-111",
+		BranchOfBank: "UJI CABANG 1"}}
+	u.a.Rekening["UJI-CC2|"+idr] = []models.RekeningBank{{NameOfBank: "UJI BANK DUA", AccountNo: "UJI-222",
+		BranchOfBank: "UJI CABANG 2"}}
+	id := u.adjustmentFinal()
+	kode, out := u.aksiT(id, services.PermintaanAksi{Aksi: "SetPayable", Konteks: panelAdj(1),
+		Masukan: map[string]string{models.CD + "Payable": "1"}})
+	u.wajib(kode, http.StatusOK, out, "Payable To ceding")
+	b := u.g.Halaman(id).AmbilDaftar(models.DaftarAdj(1, 1))[0]
+	if b["PayableTo"] != "UJI CEDING" || b["NameOfBank"] != "UJI BANK SATU" {
+		t.Fatalf("Payable To ceding: Specify %q bank %q", b["PayableTo"], b["NameOfBank"])
+	}
+	kode, out = u.aksiT(id, services.PermintaanAksi{Aksi: "SetPayableTo", Konteks: panelAdj(1), Indeks: 2})
+	u.wajib(kode, http.StatusOK, out, "Choose ceding baris 2")
+	h := u.g.Halaman(id)
+	b = h.AmbilDaftar(models.DaftarAdj(1, 1))[0]
+	if b["PayableTo"] != "UJI CEDING DUA" || h.Ambil(models.CD+"PayableTo") != "UJI CEDING DUA" {
+		t.Fatalf("Choose: Specify baris %q klaim %q, mau UJI CEDING DUA", b["PayableTo"], h.Ambil(models.CD+"PayableTo"))
+	}
+	if b["NameOfBank"] != "UJI BANK DUA" || b["NoAccount"] != "UJI-222" || b["BranchOfBank"] != "UJI CABANG 2" {
+		t.Fatalf("Choose: rekening %q %q %q, mau rekening ceding baris 2", b["NameOfBank"], b["NoAccount"],
+			b["BranchOfBank"])
+	}
+	kode, daftar := u.mintaDaftar("/kasus/"+id+"/pilihan/"+models.SumberRekening+"?konteks="+panelAdj(1), teknik)
+	if kode != http.StatusOK || !strings.Contains(daftar, "UJI BANK DUA") || strings.Contains(daftar, "UJI BANK SATU") {
+		t.Fatalf("pilihan Name of Bank sesudah Choose: HTTP %d %s", kode, daftar)
 	}
 }

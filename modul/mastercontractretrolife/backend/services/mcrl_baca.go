@@ -49,6 +49,12 @@ type Gudang interface {
 	// Penulis tahun treaty (paket 2). `USERID` dari model, `TGLUPDATE` =
 	// SYSDATE, ID baru dari sequence - ketiganya di dalam gudang.
 	SisipTahun(ctx context.Context, tx *db.Tx, t models.TahunTreaty) (string, error)
+	// KunciTahunTreaty mengunci TREATYYEAR_LIFE sampai tx selesai (`LOCK TABLE … IN
+	// EXCLUSIVE MODE`): dua simpan bersamaan tidak dapat sama-sama lolos pemeriksaan
+	// tabrakan periode / tahun ganda lalu menyisip (keputusan work owner 06-10-2026).
+	KunciTahunTreaty(ctx context.Context, tx *db.Tx) error
+	// DaftarTahunTx - seluruh tahun treaty dibaca DI DALAM tx (sesudah kunci).
+	DaftarTahunTx(ctx context.Context, tx *db.Tx) ([]models.TahunTreaty, error)
 	PerbaruiTahun(ctx context.Context, tx *db.Tx, t models.TahunTreaty) error
 	// SalinTahunKeAnak menulis salinan tahun (K4) ke anaknya yang berbeda:
 	// business `TREATYYEAR`, kontrak `TREATYSTARTDATE`/`TREATYENDDATE`; baris

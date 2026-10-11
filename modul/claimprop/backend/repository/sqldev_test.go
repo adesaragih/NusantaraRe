@@ -124,7 +124,7 @@ func TestSQLDiDEV(t *testing.T) {
 	// Close Without Payment (10-10-2026): kolom TRANSFER_TYPE / KOMITE_CIRCUM_CAUSE_OF_LOSS dan ADJUSTMENT_ID nullable
 	// = migrasi komiteclaimfacin 641-643 (BELUM sampai -migrate work owner).
 	tulis["SisipKepalaKomiteTutup T_GENERAL_KOMITE"] = sqlSisipKepalaKomiteTutup(q("T_GENERAL_KOMITE"))
-	tulis["KomiteTutupTerbuka (SELECT)"] = sqlKomiteTutupTerbuka(q("T_WORK_CLAIM"), q("T_GENERAL_KOMITE"))
+	tulis["KomiteTanpaAdjTerbuka (SELECT)"] = sqlKomiteTanpaAdjTerbuka(q("T_WORK_CLAIM"), q("T_GENERAL_KOMITE"))
 	tulis["TutupKomiteTerbuka T_WORK_CLAIM"] = sqlTutupKomiteTerbuka(q("T_WORK_CLAIM"))
 	tulis["TanggaKomite (SELECT)"] = sqlTanggaKomite(q(tabelTanggaKomite), q("T_GENERAL_KOMITE"), q("T_WORK_CLAIM"))
 	tulis["SisipRiwayat T_VIEW_SUGGEST"] = sqlSisipRiwayat(q("T_VIEW_SUGGEST"))

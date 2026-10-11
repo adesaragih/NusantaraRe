@@ -3,7 +3,7 @@ package models
 // Upload CSV (container "Upload CSV" b2949 -> local action `UploadCSV_RIRATE` b3019; "View Upload" b3467 -> popup
 // `ViewCSVResult_RIRate` b3486; "Simpan Upload" b4511 -> `SubmitRIRate_Act` b4535). Rule ketiganya TIDAK ada di XML
 // (K3 keputusan work owner 05-10-2026): yang ada hanya label `Format excel : USEDBY, CONTRACT, GENDER, AGE, RATE`
-// b5305. Seluruh aturan di bawah dirancang dari label itu dan dari isi `RATE_LIFE` DEV - ASUMSI, tabel "Asumsi
+// b5305. Seluruh aturan di bawah dirancang dari label itu dan dari isi `M_RATE_LIFE` DEV - ASUMSI, tabel "Asumsi
 // terbuka" MODUL.md.
 //
 // Aturan pemisah yang tidak ambigu: pemisah dibaca dari baris kepala - ada `;` = pemisah `;` (RATE boleh berkoma
@@ -33,13 +33,16 @@ const (
 	MaksBytesCSV = 4 << 20
 	// MaksRingkasanCSV - R/I RATE NAME berbeda paling banyak sekali unggah (satu daftar IN Oracle <= 1000).
 	MaksRingkasanCSV = 100
-	// UmurMaks - AGE dan CONTRACT 0-120 (`RATE_LIFE` DEV).
+	// UmurMaks - AGE dan CONTRACT 0-120 (`M_RATE_LIFE` DEV).
 	UmurMaks = 120
 	// batasRate - panjang teks RATE (DEV: 1-20).
 	batasRate = 30
+	// LebarRate - lebar kolom M_RATE_LIFE.RATE (VARCHAR2(50), ALL_TAB_COLUMNS DEV 10-10-2026): RATE tersimpan tidak
+	// boleh melebihinya (byte).
+	LebarRate = 50
 )
 
-// Gender sah (`RATE_LIFE` DEV: U 98.004, M 201, F 99).
+// Gender sah (`M_RATE_LIFE` DEV: U 98.004, M 201, F 99).
 var Gender = []string{"U", "M", "F"}
 
 // ErrCSV - berkas tidak dapat dipakai seluruhnya (kepala, kosong, terlalu besar); pesannya untuk pengguna.
@@ -88,7 +91,11 @@ func NormalRate(s string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("RATE must be a number (got %q)", s)
 	}
-	return strings.Replace(utils.FormatDecimal(d), ".", ",", 1), nil
+	hasil := strings.Replace(utils.FormatDecimal(d), ".", ",", 1)
+	if len(hasil) > LebarRate {
+		return "", fmt.Errorf("RATE is longer than %d characters (got %q)", LebarRate, s)
+	}
+	return hasil, nil
 }
 
 // normalBulat - bilangan bulat 0..UmurMaks tanpa nol depan; kosong = "" bila boleh.

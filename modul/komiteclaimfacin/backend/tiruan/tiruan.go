@@ -472,6 +472,9 @@ func (k *klaimTiruan) salin() *klaimTiruan {
 type KlaimPalsu struct {
 	mu    sync.Mutex
 	klaim map[string]*klaimTiruan
+	// lampiran / isiLampiran - dokumen klaim per kasus klaim dan isi berkasnya per ID dokumen (`lampiran.go`).
+	lampiran    map[string]kontrak.DaftarLampiranKlaim
+	isiLampiran map[string]string
 	// Dikunci - klaim yang pernah dikunci.
 	Dikunci []string
 }

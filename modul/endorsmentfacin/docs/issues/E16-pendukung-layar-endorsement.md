@@ -18,7 +18,14 @@ bernama "RDBList" ternyata bertipe rule SQL — itu aturan di korpus ini, bukan 
 
 **Blocked by:** E01 · E03
 
-**Status:** blocked — 01-10-2026. Penghalang E01 gugur (registry EDM ada). Tetap ter-block: 350
+**Status:** sebagian — 11-10-2026. Modul **terdaftar** (W-EDM-01): `backend/modul.go`, slot menu 966,
+`frontend/{menu.ts,rute.tsx}`. Layar pertama yang diport: harness `SFAPortalEndorsement` +
+`SFAPortal_EndorsementHeader` (`frontend/pages/PortalEndorsement.tsx`, tanpa grid — sumbernya tidak ada di korpus) dan
+`WorkPrimaryDetails` + `EdmType1/2/3` + `crmNewHarnessButtons` (`frontend/pages/FormAddendum.tsx`; OK mati sampai I3).
+Label diuji terhadap korpus (`frontend/endorsmentfacin.test.tsx`). Sisa 350 berkas layar menyusul per irisan.
+Riwayat status sebelumnya:
+
+> **Status (01-10-2026):** blocked — 01-10-2026. Penghalang E01 gugur (registry EDM ada). Tetap ter-block: 350
 berkas layar butuh pendaftaran modul (`backend/modul.go`, migrasi, menu) — pemegang modul memilih
 **belum** didaftarkan pada awal sesi.
 

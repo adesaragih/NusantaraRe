@@ -180,6 +180,11 @@ var (
 		"T_WORK_POLIS.STATUS_WORK": "V-48a: tidak punya sumber di bahan mana pun - belum terverifikasi (STATUS_PROSES rancangan, digabung butir 76.4)",
 		"T_WORK_POLIS.TGL_CREATE":  "V-48: POOLDATA.JSON_POLIS (TGL_INPUT rancangan, digabung butir 76.4)",
 		"T_WORK_POLIS.CREATE_OP":   "V-48: POOLDATA.JSON_POLIS (USERNAME rancangan, digabung butir 76.4)",
+		// Tiket 58: ditulis Submit Team Leader (IsJuniorUW_B); FIELD ASLI rancangannya milik T_WORK_POLIS (V-48).
+		"T_GENERAL_POLIS.DATE_TO_UW":   "tiket 58: ditulis aplikasi saat Accept Team Leader (IsJuniorUW_B), bukan dari dokumen",
+		"T_GENERAL_POLIS.SUBMIT_TO_UW": "tiket 58: ditulis aplikasi saat Accept Team Leader bila kosong, bukan dari dokumen",
+		// Tiket 73 P1: grid Golf TSI Old (`InputDtlObjectLocation_FacIn.xml` L13568); medan TSIOld dibuang loader (V-28b).
+		"T_ANEKALIST.TSI_OLD": "tiket 73: ditulis aplikasi (PUT objek-aneka, grid Golf TSI Old); medan dokumen TSIOld terkena V-28b",
 	}
 	// kolomFKV47 - V-47 "IdxLocation jadi LOCATION_ID ke T_LOCATIONLIST, IndexProperty
 	// jadi PROPERTY_ID, IndexAneka jadi ANEKA_ID, dan seterusnya". ⛔ Belum diisi:
@@ -201,7 +206,7 @@ var (
 )
 
 // kolomTeksMenyimpang - ⛔ PENYIMPANGAN SADAR dari DDL draf (keputusan work owner
-// 02-10-2026, butir 68.1): delapan kolom yang DDL beri NUMBER tetapi isinya teks
+// 02-10-2026, butir 68.1; + tiket 51 K51-3): sembilan kolom yang DDL beri NUMBER tetapi isinya teks
 // disimpan sebagai TEKS APA ADANYA - "9%" tidak ditafsirkan, koma desimal tidak
 // dinormalkan, spasi di ujung PctLimit tidak dipangkas. Nilai peta = baris DDL draf
 // (`08-flat\DDL-tabel-flat-draf.sql`) yang disimpangi. Panjang VARCHAR2-nya
@@ -215,6 +220,9 @@ var kolomTeksMenyimpang = map[string]string{
 	"T_TABLEOFLIMIT.PCT_LIMIT":          "L914: PCT_LIMIT NUMBER",
 	"T_FR_PRINTRISLIP.WARR_PAYMENT":     "L1151: WARR_PAYMENT NUMBER",
 	"T_FR_TABLEOFLIMIT.PCT_LIMIT":       "L1519: PCT_LIMIT NUMBER",
+	// Tiket 51 (K51-3, keputusan agent menunggu konfirmasi): persen cicilan berskala 20 ("33.33333333333333333333"),
+	// NUMBER(38,8) membuat jumlahnya bukan 100 - migrasi 201 VARCHAR2(50).
+	"T_LISTINSTALLMENT.INSTALLMENT_PERCENTAGE": "L299: INSTALLMENT_PERCENTAGE NUMBER",
 }
 
 // kodeDariCurrency - keputusan work owner 02-10-2026: CURRENCY_CODE tabel (kunci)

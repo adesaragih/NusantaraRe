@@ -371,6 +371,10 @@ func (p *Penyerahan) DenganJejak(j jejak.Jejak) *Penyerahan {
 // Sesudahnya keadaan baris, lalu rekening, baru roster - sebab memanggil
 // roster untuk baris yang tidak boleh diserahkan adalah pekerjaan sia-sia yang
 // menyentuh tabel produksi.
+// ErrSerahkanBukanClaimAnalis - Send Claim to Committee hanya tersedia di tahap Claim Analis (keputusan work owner
+// 11-10-2026).
+var ErrSerahkanBukanClaimAnalis = errors.New("services: Send Claim to Committee hanya tersedia pada tahap Claim Analis")
+
 func (p *Penyerahan) Serahkan(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, pesertaID, adjID string, saat time.Time) error {
 
@@ -406,6 +410,15 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku inti.Pelaku,
 	}
 	if err := WajibWewenangKomite(pelaku, tipe); err != nil {
 		return err
+	}
+	// Keputusan work owner 11-10-2026 ("iya itu hanya di claim analis saja"): penyerahan ke Komite hanya dari tahap
+	// Claim Analis - 409 di tahap lain (Outstanding, Medical Check, ...).
+	tahap, err := tahapKasus(ctx, baca, klaimID)
+	if err != nil {
+		return err
+	}
+	if tahap != models.TahapClaimAnalis {
+		return fmt.Errorf("%w: tahap %s", ErrSerahkanBukanClaimAnalis, tahap)
 	}
 
 	perBaris, err := baca.AmbilBaris(ctx, klaimID)

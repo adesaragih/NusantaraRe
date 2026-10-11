@@ -19,6 +19,10 @@ type barisPortal struct {
 	InsuredName   string `json:"insuredName"`
 	Marketing     string `json:"marketing"`
 	Status        string `json:"status"`
+	NBStatus      string `json:"nbStatus"`
+	// NoPolis / TglProduksi - JSON_POLIS case (tab Resolved, permintaan work owner 11-10-2026); "" bila belum selesai Policy.
+	NoPolis     string `json:"noPolis"`
+	TglProduksi string `json:"tglProduksi"`
 }
 
 func cariPortal(svc *services.Service, stubPelaku bool) http.HandlerFunc {
@@ -33,7 +37,7 @@ func cariPortal(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			}
 			halaman = n
 		}
-		hasil, err := svc.CariPortal(r.Context(), inti.PelakuDari(r, stubPelaku), r.URL.Query().Get("cari"), halaman)
+		hasil, err := svc.CariPortal(r.Context(), inti.PelakuDari(r, stubPelaku), r.URL.Query().Get("cari"), r.URL.Query().Get("selesai"), halaman)
 		if err != nil {
 			tulisGalat(w, err)
 			return
@@ -41,7 +45,8 @@ func cariPortal(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		baris := make([]barisPortal, 0, len(hasil.Baris))
 		for _, b := range hasil.Baris {
 			baris = append(baris, barisPortal{CaseID: b.CaseID, Name: b.Name, GroupBusiness: b.GroupBusiness,
-				InsuredName: b.InsuredName, Marketing: b.Marketing, Status: b.Status})
+				InsuredName: b.InsuredName, Marketing: b.Marketing, Status: b.Status, NBStatus: b.NBStatus, NoPolis: b.NoPolis,
+				TglProduksi: b.TglProduksi})
 		}
 		galat.TulisJSON(w, struct {
 			Baris   []barisPortal `json:"baris"`

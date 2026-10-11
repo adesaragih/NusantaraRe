@@ -27,7 +27,10 @@
 5. **Tiga jalur** — TT 2 (ADJUSTMENT) dibangun; TT 3 (`KomitePost_Reject`) tanpa penulis `TransferType = 3` di
    korpus Claim Prop (hanya dibaca `SendEmailKlaimRejectClose`) — tak terjangkau; TT 4 (`KomitePost_Close`) ditunda
    **OQ-CP-06** (keputusan work owner 08-10-2026). **RALAT 10-10-2026:** TT 4 dibangun (OQ-CP-06 selesai,
-   `docs/PARITAS.md` §3a); PDF / email S12 menunggu stream `CommitteCloseClaim` (OQ-KCP-08).
+   `docs/PARITAS.md` §3a); PDF S12 dibangun 10-10-2026 (stream `CommitteCloseClaim` diekspor work owner); email S12.8 belum (OQ-KCP-08).
+   **RALAT 10-10-2026:** TT 3 dibangun (penulis Claim Prop `CheckRejectClaimTreaty2` diekspor work owner, tombol Reject
+   Claim posisi admin; `docs/PARITAS.md` §3b); PDF S12 dibangun 10-10-2026 (stream `CommitteReject_CC` ClaimTreaty diekspor work owner); email S12.8 belum
+   (OQ-KCP-09).
 6. **Nomor akseptasi** — rujukan ke `GenerateNoAcceptTreaty` / `GENERATE_NOACCEPTTREATYIN` adalah jalur ter-remark
    (S16.1-S16.4); yang hidup S16.5-S16.9 lewat `inti/backend/penomor`.
 7. **Ketelitian kolom** — *"20 digit seluruhnya, 8 di belakang koma"* → DDL yang ada `NUMBER(38,10)` (keputusan

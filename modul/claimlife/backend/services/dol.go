@@ -43,46 +43,20 @@ const (
 	TypeTP = "TP"
 )
 
-// ⛔ DUA ASUMSI PUSTAKA PEGA, bukan fakta korpus. Keduanya diberi nama supaya
-// terlihat, dapat dicari, dan dapat diubah dalam satu baris disertai testnya.
+// ⛔ JENDELA DOL — KEPUTUSAN WORK OWNER 11-10-2026, MENYIMPANG SADAR dari Pega: "tanggal awal valuation masih
+// termasuk". Jendelanya INKLUSIF di kedua ujung dan SAMA untuk semua jalur (Save grid, Edit Date, Save to RNM 11.7-11.8)
+// dan kedua cabang:
 //
-// ⛔ RALAT A0 — 27-09-2026. Ronde pertama menebak tanda tangannya dari CACAH
-// ARGUMEN saja: `(tanggal, tahun, bulan, hari, jam, menit, detik, milidetik)`,
-// yang menaruh JAM di posisi keempat - dan karena itu membaca
-// `(.DATE_OF_LOSS,0,0,0,1,0,0,0)` sebagai satu JAM.
+//	QR/QP : GROSS_VALUATION_BEGIN <= DOL <= GROSS_VALUATION_EXPIRED
+//	TR/TP : RETRO_VALUATION_BEGIN <= DOL <= RETRO_VALUATION_EXPIRED
 //
-// Korpus sendiri menentukannya, dan itu terlewat: `[terverifikasi]`
-// `Claim Life/Activity/LoadDataPeserta_Act.xml` pecahan baris 1097, 1143,
-// 1163, 1183, 1203, 1223, 1243, dan 1263 memuat kedelapan tanggal peserta
-// lewat `@addCalendar(<tanggal>,0,0,0,0,7,0,0)` - angka **7** di posisi
-// KELIMA. Tujuh menit tidak menggeser apa pun yang berarti pada tanggal lahir,
-// dan tujuh minggu memindahkannya ke bulan lain; tujuh JAM adalah WIB (UTC+7).
-// Maka posisi kelima JAM, posisi keempat HARI - tanda tangan baku
-// `(tanggal, tahun, bulan, minggu, hari, jam, menit, detik)`.
+// dibandingkan per TANGGAL kalender (jam diabaikan). Frontend `galatDOL` (RincianPeserta.tsx) cermin aturan ini.
 //
-// `[terverifikasi - turunan]` `pergeseranDOLRetro`: `ValidasiDOL_Act` baris
-// 698 menggeser DOL **SATU HARI** sebelum dibandingkan dengan jendela
-// RETROCESSION (baris 719, 746). Cabang jendela GROSS di baris 458 memakai
-// seluruh argumen nol - tidak bergeser sama sekali (baris 486, 526).
-//
-// `[dugaan - Product+UW]` `bandingKetat`: `@CompareDates(a,b)` bernilai benar
-// bila `a` SESUDAH `b`, ketat. Korpus tidak memuat definisinya.
-//
-// Akibat kedua asumsi itu, jendelanya ASIMETRIS - dan asimetri itu memang
-// berasal dari argumen yang BERBEDA di kedua cabang, bukan dari kami:
-//
-//	QP/QR : (BEGIN, EXPIRED]
-//	TP/TR : [BEGIN, EXPIRED)
-//
-// Daftar LENGKAP kasus yang berbalik bila salah satu asumsi diputuskan lain
-// ada di bab "Pembacaan ulang XML" tiket 06 - satu tempat, supaya tiga salinan
-// tidak berjalan sendiri-sendiri. Ringkasnya: mengubah `bandingKetat` membalik
-// batas di KEDUA ujung dan pada KEDUA cabang, bukan hanya satu kasus.
-const (
-	// Satu HARI, bukan satu jam - lihat ralat di atas.
-	pergeseranDOLRetro = 24 * time.Hour
-	bandingKetat       = true
-)
+// Yang DIBUANG (catatan sejarah, lihat PARITAS 11-10-2026 lanjutan 9):
+//   - ValidasiDOL_Act b698 menggeser DOL retro SATU HARI (`@addCalendar(.DATE_OF_LOSS,0,0,0,1,0,0,0)`, posisi keempat =
+//     hari - jangkar angka 7 = WIB di LoadDataPeserta_Act), sedang langkah 11.8 Save to RNM (b4464) tidak menggeser:
+//     tanggal yang lolos Save grid dapat ditolak Save to RNM. Kini tanpa geser di mana pun.
+//   - `@CompareDates` ketat (dugaan) membuat jendela gross (BEGIN, EXPIRED] dan retro [BEGIN, EXPIRED). Kini [BEGIN, EXPIRED].
 
 var (
 	// ErrDOLTidakSah - pesannya PERSIS `local.errmsg` di XML, tanpa tambahan.
@@ -105,7 +79,40 @@ var (
 // tiket 03.
 type GalatDOL struct {
 	PesertaID string
+	// Nomor urut peserta di klaim (1..n), diisi pemanggil; 0 = tidak diketahui.
+	Nomor int
+	// Awal / Akhir - tanggal valuasi jendela yang dipakai (dd/mm/yyyy), untuk kalimat layar.
+	Awal, Akhir string
 }
+
+// KalimatDOLDiLuar - kalimat DOL di luar jendela valuasi yang DITAMPILKAN (keputusan work owner 11-10-2026: "date of loss
+// harus ada di periode valuation date ... jika di luar tidak bisa lanjut dan ada pesan"). SAMA dengan frontend
+// `galatDOL` (RincianPeserta.tsx). "Invalid DOL" (`local.errmsg` XML) tetap menjadi KODE (Error(), medan `kode`).
+func KalimatDOLDiLuar(awal, akhir string) string {
+	return fmt.Sprintf("Date of Loss must be within the valuation period (%s – %s).", awal, akhir)
+}
+
+// Kalimat - kalimat layar yang menyebut peserta: "Insured number N: Date of Loss must be within …".
+func (e GalatDOL) Kalimat() string {
+	k := KalimatDOLDiLuar(e.Awal, e.Akhir)
+	if e.Nomor > 0 {
+		return fmt.Sprintf("Insured number %d: %s", e.Nomor, k)
+	}
+	return k
+}
+
+// BeriNomorDOL - menempelkan nomor urut peserta pada GalatDOL; galat lain dikembalikan apa adanya.
+func BeriNomorDOL(err error, nomor int) error {
+	var g GalatDOL
+	if errors.As(err, &g) {
+		g.Nomor = nomor
+		return g
+	}
+	return err
+}
+
+// tanggalLayar - dd/mm/yyyy, bentuk tanggal layar (tanggalTampil frontend).
+func tanggalLayar(t time.Time) string { return t.Format("02/01/2006") }
 
 // Error menulis kalimat XML, tanpa tambahan apa pun.
 func (e GalatDOL) Error() string { return ErrDOLTidakSah.Error() }
@@ -118,8 +125,8 @@ func (e GalatDOL) Unwrap() error { return ErrDOLTidakSah }
 //
 // Meniru `Claim Life/Activity/ValidasiDOL_Act.xml` langkah 2, 3, dan 4:
 //
-//	langkah 2  Type QR atau QP -> jendela GROSS_VALUATION_*, tanpa pergeseran
-//	langkah 3  Type TR atau TP -> jendela RETROCESSION_VALUATION_*, digeser
+//	langkah 2  Type QR atau QP -> jendela GROSS_VALUATION_*
+//	langkah 3  Type TR atau TP -> jendela RETROCESSION_VALUATION_* (geser +1 hari b698 DIBUANG, keputusan WO 11-10-2026)
 //	langkah 4  galat bila `local.Begin==false || local.Expired==true`
 //
 // ⛔ Type di luar keempat nilai itu adalah GALAT, bukan izin lewat. Di Pega
@@ -127,7 +134,6 @@ func (e GalatDOL) Unwrap() error { return ErrDOLTidakSah }
 // tanggal apa pun lolos; diam seperti itu adalah lubang, bukan aturan.
 func ValidasiDOL(tipe string, dol time.Time, p models.Peserta) error {
 	var gross bool
-	var geser time.Duration
 
 	if !TypeDikenal(tipe) {
 		return fmt.Errorf("%w: %q; yang dikenal hanya %s, %s, %s, dan %s",
@@ -137,7 +143,7 @@ func ValidasiDOL(tipe string, dol time.Time, p models.Peserta) error {
 	case TypeQR, TypeQP:
 		gross = true
 	case TypeTR, TypeTP:
-		geser = pergeseranDOLRetro
+		gross = false
 	}
 
 	// ⛔ DOL kosong ditolak TERPISAH. Waktu nol adalah tahun 1 Masehi, yang
@@ -153,25 +159,24 @@ func ValidasiDOL(tipe string, dol time.Time, p models.Peserta) error {
 		return err
 	}
 
-	// `local.DOL = @addCalendar(...)` - satu-satunya beda kedua cabang.
-	dolGeser := dol.Add(geser)
-
-	// `local.Begin` dan `local.Expired`, lalu gerbang langkah 4:
-	// galat bila `Begin==false || Expired==true`.
-	begin := sesudah(dolGeser, awal)
-	expired := sesudah(dolGeser, akhir)
-	if !begin || expired {
-		return GalatDOL{PesertaID: p.ID}
+	// Keputusan work owner 11-10-2026: [BEGIN, EXPIRED] inklusif, tanpa geser (lihat catatan di atas konstanta Type).
+	if !DOLDalamJendela(dol, awal, akhir) {
+		return GalatDOL{PesertaID: p.ID, Awal: tanggalLayar(awal), Akhir: tanggalLayar(akhir)}
 	}
 	return nil
 }
 
-// sesudah meniru `@CompareDates(a, b)`.
-func sesudah(a, b time.Time) bool {
-	if bandingKetat {
-		return a.After(b)
-	}
-	return a.After(b) || a.Equal(b)
+// DOLDalamJendela - SATU-SATUNYA aturan jendela DOL (Save grid, Edit Date, Save to RNM): awal <= DOL <= akhir, per
+// tanggal kalender, inklusif di kedua ujung (keputusan work owner 11-10-2026).
+func DOLDalamJendela(dol, awal, akhir time.Time) bool {
+	d, a, z := hariSaja(dol), hariSaja(awal), hariSaja(akhir)
+	return !d.Before(a) && !d.After(z)
+}
+
+// hariSaja - tanggal kalender (jam, menit, detik dibuang) pada zona waktu nilainya sendiri.
+func hariSaja(t time.Time) time.Time {
+	y, m, d := t.Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
 }
 
 // ContentNoteDari menurunkan jenis klaim dari kode produk.
@@ -255,9 +260,11 @@ func (t *TanggalKejadian) Set(ctx context.Context, pelaku inti.Pelaku,
 		return err
 	}
 	var target *models.Peserta
+	nomor := 0
 	for i := range peserta {
 		if peserta[i].ID == pesertaID {
 			target = &peserta[i]
+			nomor = i + 1
 			break
 		}
 	}
@@ -266,7 +273,7 @@ func (t *TanggalKejadian) Set(ctx context.Context, pelaku inti.Pelaku,
 			galat.ErrPermintaanTidakSah, pesertaID, klaimID)
 	}
 	if err := ValidasiDOL(tipe, dol, *target); err != nil {
-		return err
+		return BeriNomorDOL(err, nomor)
 	}
 	return t.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		return baca.PerbaruiTanggalKejadian(ctx, tx, pesertaID, dol)
@@ -369,10 +376,3 @@ func gerbangTahapDialogTanggal(ctx context.Context, baca *repository.KlaimLife, 
 	}
 	return nil
 }
-
-// PergeseranDOLRetro membuka pergeseran itu untuk diuji.
-//
-// ⚠️ Fungsi, bukan konstanta yang diekspor: nilainya hasil pembacaan korpus
-// dan boleh berubah bila bacaan itu diralat lagi - dan bila berubah, testnya
-// yang menyebut jangkarnya ikut merah.
-func PergeseranDOLRetro() time.Duration { return pergeseranDOLRetro }

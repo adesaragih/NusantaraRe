@@ -134,6 +134,38 @@ func (l *Layanan) SusunDokumenAkseptasi(ctx context.Context, komiteID, pelaku st
 		Isi: isiPDF}, nil
 }
 
+// SusunDokumenTutup = KomitePost_Close / KomitePost_Reject S5-S6 + S12.2-S12.5 (PDF CommitteCloseClaim /
+// CommitteReject_CC) kasus komite TT 4 / TT 3 `komiteID` yang baru diputus; `saat` = DateApprove Submit itu.
+func (l *Layanan) SusunDokumenTutup(ctx context.Context, komiteID string, saat time.Time) (DokumenAkseptasi, error) {
+	k, kl, err := l.muat(ctx, nil, komiteID, false)
+	if err != nil {
+		return DokumenAkseptasi{}, err
+	}
+	var putus *models.Anggota // KomiteList(Local.Count): Count sebelum S16 (+1 sudah tersimpan)
+	for i := range k.Tangga {
+		if k.Tangga[i].Urut == k.Count-1 {
+			putus = &k.Tangga[i]
+		}
+	}
+	if putus == nil {
+		return DokumenAkseptasi{}, fmt.Errorf("%w: baris tangga ke-%d kasus %s", ErrKasusTidakAda, k.Count-1, komiteID)
+	}
+	d, nama := models.SusunDataTutup(kl, k, *putus, saat), models.NamaBerkasTutup
+	if k.Tolak() { // KomitePost_Reject S12.2-S12.5: CommitteReject_CC
+		if d, err = models.SusunDataTolak(kl, k, *putus, saat); err != nil {
+			return DokumenAkseptasi{}, err
+		}
+		nama = models.NamaBerkasTolak
+	}
+	isiPDF, err := models.PDFTutupKlaim(d, saat)
+	if err != nil {
+		return DokumenAkseptasi{}, err
+	}
+	return DokumenAkseptasi{IDPega: models.KunciInstans(k.KlaimID), NamaBerkas: nama(d.NoClaim),
+		Kategori: models.KategoriDokumenTutup, Folder: models.FolderDokumenKlaim, MIME: MIMEDokumenAkseptasi,
+		Isi: isiPDF}, nil
+}
+
 // simpanDokumenAkseptasi = PrintFileAcceptance_TKMT S9-S13 sesudah Submit tersimpan: PDF -> InsertGoogleStorage_Act
 // (Folder "Claim", Durasi 1800, Ext = MIME) -> Insert_T_Storage_SQL + DOCUMENT_CLAIM di SATU transaksi.
 func (l *Layanan) simpanDokumenAkseptasi(ctx context.Context, komiteID, akun string, saat time.Time) error {
@@ -144,6 +176,24 @@ func (l *Layanan) simpanDokumenAkseptasi(ctx context.Context, komiteID, akun str
 	if err != nil {
 		return err
 	}
+	return l.simpanDokumen(ctx, komiteID, akun, d)
+}
+
+// simpanDokumenTutup = KomitePost_Close S12.2-S12.7 sesudah Submit tersimpan (InsertDocument_Act sama dengan
+// PrintFileAcceptance_TKMT S13).
+func (l *Layanan) simpanDokumenTutup(ctx context.Context, komiteID, akun string, saat time.Time) error {
+	if l.berkas == nil {
+		return ErrPenyimpananBelumDipasang
+	}
+	d, err := l.SusunDokumenTutup(ctx, komiteID, saat)
+	if err != nil {
+		return err
+	}
+	return l.simpanDokumen(ctx, komiteID, akun, d)
+}
+
+// simpanDokumen - InsertDocument_Act S3-S5: unggah `d` lalu T_STORAGE_IMAGE + DOCUMENT_CLAIM di SATU transaksi.
+func (l *Layanan) simpanDokumen(ctx context.Context, komiteID, akun string, d DokumenAkseptasi) error {
 	o, err := l.berkas.Unggah(ctx, penyimpanan.MasukUnggah{Folder: d.Folder, NamaFile: d.NamaBerkas, Isi: d.Isi,
 		Durasi: models.DurasiDokumenKlaim, Ext: d.MIME, Pengguna: akun})
 	if err != nil {
@@ -168,8 +218,8 @@ func (l *Layanan) simpanDokumenAkseptasi(ctx context.Context, komiteID, akun str
 	})
 	if err != nil {
 		// Objeknya sudah di penyimpanan tanpa catatan - dicatat di log untuk dibersihkan (pola Bordereaux).
-		log.Printf("komiteclaimprop: dokumen akseptasi %s kasus %s tidak tercatat, objek penyimpanan tertinggal",
-			o.ImageID, komiteID)
+		log.Printf("komiteclaimprop: dokumen %s %s kasus %s tidak tercatat, objek penyimpanan tertinggal",
+			d.Kategori, o.ImageID, komiteID)
 	}
 	return err
 }

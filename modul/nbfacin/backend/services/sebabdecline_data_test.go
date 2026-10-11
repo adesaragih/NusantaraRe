@@ -1,0 +1,50 @@
+package services
+
+// Berkas BANGKITAN (tiket 57): 41 baris POOLDATA.CAUSEOFDECLINE dari D:\migrasi\RNM\DDL\CAUSEOFDECLINE.csv (urut berkas;
+// ID 10 berakhiran baris baru apa adanya). Jangan disunting tangan.
+
+import "nusantarare/modul/nbfacin/backend/models"
+
+var barisCauseOfDeclineCSV = []models.BarisCauseOfDecline{
+	{ID: "1", TermCondition: "Rate", Description: "", TermCondition2: ""},
+	{ID: "2", TermCondition: "R/I Comm, Deduction", Description: "", TermCondition2: ""},
+	{ID: "3", TermCondition: "OJK Discount", Description: "", TermCondition2: ""},
+	{ID: "4", TermCondition: "Loss Ratio (net)", Description: "", TermCondition2: ""},
+	{ID: "5", TermCondition: "Occupancy", Description: "", TermCondition2: ""},
+	{ID: "6", TermCondition: "Period Of Insurance (POI)", Description: "", TermCondition2: ""},
+	{ID: "7", TermCondition: "TSI (in IDR)", Description: "", TermCondition2: ""},
+	{ID: "8", TermCondition: "Limit Of Liability (LOL)", Description: "", TermCondition2: ""},
+	{ID: "9", TermCondition: "Deductible", Description: "", TermCondition2: ""},
+	{ID: "10", TermCondition: "Clauses\n", Description: "", TermCondition2: ""},
+	{ID: "11", TermCondition: "Extension of coverage", Description: "", TermCondition2: ""},
+	{ID: "12", TermCondition: "Risk Exposure", Description: "", TermCondition2: ""},
+	{ID: "13", TermCondition: "Lack of data for acceptance", Description: "", TermCondition2: ""},
+	{ID: "14", TermCondition: "Others T/C", Description: "", TermCondition2: ""},
+	{ID: "15", TermCondition: "Backdated", Description: "Period Of Insurance (POI)", TermCondition2: ""},
+	{ID: "16", TermCondition: "Short Period", Description: "Period Of Insurance (POI)", TermCondition2: ""},
+	{ID: "17", TermCondition: "> 12 months (Non CAR/EAR)", Description: "Period Of Insurance (POI)", TermCondition2: ""},
+	{ID: "18", TermCondition: "> 60 months (CAR/EAR)", Description: "Period Of Insurance (POI)", TermCondition2: ""},
+	{ID: "19", TermCondition: "Terrorism and Sabotage", Description: "Extension of coverage", TermCondition2: ""},
+	{ID: "20", TermCondition: "Sub Limit MB", Description: "Extension of coverage", TermCondition2: ""},
+	{ID: "21", TermCondition: "Overseas Jurisdiction", Description: "Extension of coverage", TermCondition2: ""},
+	{ID: "22", TermCondition: "Others", Description: "Extension of coverage", TermCondition2: ""},
+	{ID: "23", TermCondition: "Flood prone", Description: "Risk Exposure", TermCondition2: ""},
+	{ID: "24", TermCondition: "Earthquake prone", Description: "Risk Exposure", TermCondition2: ""},
+	{ID: "25", TermCondition: "Building under construction", Description: "Risk Exposure", TermCondition2: ""},
+	{ID: "26", TermCondition: "Wet Risk", Description: "Risk Exposure", TermCondition2: ""},
+	{ID: "27", TermCondition: "Minning risk", Description: "Risk Exposure", TermCondition2: ""},
+	{ID: "28", TermCondition: "Offshore risk", Description: "Risk Exposure", TermCondition2: ""},
+	{ID: "29", TermCondition: "Oil and gas", Description: "Risk Exposure", TermCondition2: ""},
+	{ID: "30", TermCondition: "Power plant", Description: "Risk Exposure", TermCondition2: ""},
+	{ID: "31", TermCondition: "Progress of Work > 30%  (CAR/EAR)", Description: "Risk Exposure", TermCondition2: ""},
+	{ID: "32", TermCondition: "Conveyange (MC)", Description: "Risk Exposure", TermCondition2: ""},
+	{ID: "33", TermCondition: "Interest Insured (MC)", Description: "Risk Exposure", TermCondition2: ""},
+	{ID: "34", TermCondition: "Accumulation / Capacity", Description: "Accumulation / Capacity", TermCondition2: "Accumulation / Capacity"},
+	{ID: "35", TermCondition: "SOB lost business", Description: "SOB lost business", TermCondition2: "SOB lost business"},
+	{ID: "36", TermCondition: "No response from SOB", Description: "No response from SOB", TermCondition2: "No response from SOB"},
+	{ID: "37", TermCondition: "Cancel - double input", Description: "Cancel - double input", TermCondition2: "Cancel - double input"},
+	{ID: "38", TermCondition: "Cancel - incorect main data", Description: "Cancel - incorect main data", TermCondition2: "Cancel - incorect main data"},
+	{ID: "39", TermCondition: "Retain by cedant", Description: "Retain by cedant", TermCondition2: "Retain by cedant"},
+	{ID: "41", TermCondition: "Others", Description: "Risk Exposure", TermCondition2: ""},
+	{ID: "40", TermCondition: "Late confirmation", Description: "Late confirmation", TermCondition2: "Late confirmation"},
+}

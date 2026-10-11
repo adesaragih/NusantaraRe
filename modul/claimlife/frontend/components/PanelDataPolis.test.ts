@@ -8,11 +8,12 @@ import { medanPolis } from './PanelDataPolis'
 describe('himpunan medan PERSIS section', () => {
   const medan = medanPolis({})
 
-  it('dua puluh medan bagi non-treaty (21 ikatan tanpa dua medan retro, + nama tertanggung)', () => {
+  // ⛔ 10-10-2026 (keputusan work owner): System Reinsurance dan Premium Method TIDAK ditampilkan - cacah turun 20 -> 18.
+  it('delapan belas medan bagi non-treaty (tanpa dua medan retro, tanpa System Reinsurance / Premium Method)', () => {
     // ⛔ Medan yang DIHILANGKAN dari layar sama merusaknya dengan medan yang
     // dikarang - dan yang pertama tidak berbunyi sama sekali. Cacahnya
     // dikunci supaya menghilangkan satu menjadi kegagalan uji.
-    expect(medan).toHaveLength(20)
+    expect(medan).toHaveLength(18)
   })
 
   it('setiap label datang dari REGISTER, bukan diketik ulang', () => {
@@ -32,7 +33,7 @@ describe('himpunan medan PERSIS section', () => {
     // ⛔ SEBELAS, bukan sepuluh: `Type` ikut menunggu sejak ralat
     // pembacaan 27-09-2026 - ia `pyReadOnly` true di Pega dan terikat
     // `.PolicyDataLife.Type`, bukan isian bebas.
-    expect(belum).toHaveLength(19)
+    expect(belum).toHaveLength(17) // 19 - System Reinsurance - Premium Method (10-10-2026)
     for (const m of belum) {
       expect(m.nilai).toBe('—')
     }
@@ -100,7 +101,7 @@ describe('butir av — delapan medan bersumber, tiga tidak', () => {
     expect(isi.get(REGISTER.ceding)).toBe('UJI CEDING')
     expect(isi.get(REGISTER.pemegangPolis)).toBe('UJI HOLDER')
     expect(isi.get(REGISTER.kelasBisnis)).toBe('UJI COB')
-    expect(isi.get(REGISTER.tanggalEmail)).toBe('2026-01-15')
+    expect(isi.get(REGISTER.tanggalEmail)).toBe('15/01/2026') // dd/mm/yyyy sejak 10-10-2026
     expect(isi.get(REGISTER.status)).toBe('UJI-STATUS')
     expect(isi.get(REGISTER.statusDiperbarui)).toBe('UJI-STATUS-BARU')
   })
@@ -119,18 +120,18 @@ describe('butir av — delapan medan bersumber, tiga tidak', () => {
     ])
   })
 
-  it('himpunan medannya TIDAK bergantung isi — dua puluh bagi non-treaty', () => {
+  it('himpunan medannya TIDAK bergantung isi — delapan belas bagi non-treaty (10-10-2026)', () => {
     // ⛔ Paritas dengan `InputRegisterClaimLife.xml` diukur dari HIMPUNAN
     // medannya, bukan dari berapa yang terisi.
-    expect(medanPolis({ polis: POLIS_UJI })).toHaveLength(20)
-    expect(medanPolis({})).toHaveLength(20)
+    expect(medanPolis({ polis: POLIS_UJI })).toHaveLength(18)
+    expect(medanPolis({})).toHaveLength(18)
   })
 
-  it('av-2 — tujuh medan baru terisi dari polis', () => {
+  it('av-2 — medan terisi dari polis; System Reinsurance / Premium Method tidak ditampilkan (10-10-2026)', () => {
     const isi = new Map(medanPolis({ polis: POLIS_UJI }).map((m) => [m.label, m.nilai]))
-    expect(isi.get(REGISTER.sistemReasuransi)).toBe('UJI QS')
-    expect(isi.get(REGISTER.metodePremi)).toBe('UJI-PRORATA')
-    expect(isi.get(REGISTER.wpc)).toBe('2026-02-01')
+    expect(isi.has(REGISTER.sistemReasuransi)).toBe(false)
+    expect(isi.has(REGISTER.metodePremi)).toBe(false)
+    expect(isi.get(REGISTER.wpc)).toBe('01/02/2026') // dd/mm/yyyy
     expect(isi.get(REGISTER.sob)).toBe('UJI SOB')
     expect(isi.get(REGISTER.idProduk)).toBe('UJI-PROD-1')
     expect(isi.get(REGISTER.namaProduk)).toBe('UJI PRODUK')
@@ -139,7 +140,7 @@ describe('butir av — delapan medan bersumber, tiga tidak', () => {
   it('av-2 — medan retro HANYA bagi TP/TR (pyCondition b10541/b10824)', () => {
     const treaty = medanPolis({ polis: { ...POLIS_UJI, type: 'TP' } })
     const isi = new Map(treaty.map((m) => [m.label, m.nilai]))
-    expect(treaty).toHaveLength(22)
+    expect(treaty).toHaveLength(20) // 22 - System Reinsurance - Premium Method (10-10-2026)
     expect(isi.get(REGISTER.retroName)).toBe('UJI RETRO')
     expect(isi.get(REGISTER.securityReinsurer)).toBe('UJI SECURITY')
     const labelQR = medanPolis({ polis: POLIS_UJI }).map((m) => m.label)
@@ -147,11 +148,10 @@ describe('butir av — delapan medan bersumber, tiga tidak', () => {
     expect(labelQR).not.toContain(REGISTER.securityReinsurer)
   })
 
-  it('av-2 — kode System Reinsurance dipakai bila katanya kosong', () => {
-    const isi = new Map(
-      medanPolis({ polis: { ...POLIS_UJI, typeCedingName: '' } }).map((m) => [m.label, m.nilai]),
-    )
-    expect(isi.get(REGISTER.sistemReasuransi)).toBe('1')
+  it('tanggal tak terurai / kosong tampil tanda pisah (dd/mm/yyyy, 10-10-2026)', () => {
+    const isi = new Map(medanPolis({ polis: { ...POLIS_UJI, wpc: '', dateReceived: 'bukan-tanggal' } }).map((m) => [m.label, m.nilai]))
+    expect(isi.get(REGISTER.wpc)).toBe('—')
+    expect(isi.get(REGISTER.tanggalEmail)).toBe('—')
   })
 
   it('tanpa polis, Type jatuh kembali ke pilihan pemakai', () => {

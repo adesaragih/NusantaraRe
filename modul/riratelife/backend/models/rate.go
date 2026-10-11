@@ -81,7 +81,8 @@ type HasilHapus struct {
 	RateTerhapus int    `json:"rateTerhapus"`
 }
 
-// BatasNama - panjang R/I RATE NAME (byte). ASUMSI: kolom JSON tanpa batas; 200 cukup untuk nama DEV.
+// BatasNama - panjang R/I RATE NAME (byte). ASUMSI 200 cukup untuk nama DEV; muat di M_RATE_LIFE.USEDBY VARCHAR2(500)
+// dan M_RATE_LIFE_SUMMARY.USEDBY (500).
 const BatasNama = 200
 
 // BatasID - `M_RATE_LIFE_SUMMARY.ID` dan `M_RATE_LIFE.ID` VARCHAR2(10).

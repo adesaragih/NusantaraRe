@@ -26,6 +26,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -62,6 +63,10 @@ type CalonPeserta struct {
 	NamaTertanggung string `json:"namaTertanggung"`
 	MataUang        string `json:"mataUang"`
 	EDMStatus       string `json:"edmStatus"`
+	// IdPega - M_LIFE_PREMIUM_DETAIL.IDPEGA (pengenal kasus versi polis), kunci data polis sejak 10-10-2026.
+	IdPega string `json:"idPega"`
+	// TanggalLahir - DOB teks ISO YYYY-MM-DD ("" = kosong), kolom layar Find Insured / Selected insured (10-10-2026).
+	TanggalLahir string `json:"tanggalLahir"`
 }
 
 // penyaringHidup menyingkirkan peserta yang sudah batal atau dihapus lunak.
@@ -109,7 +114,13 @@ const peringkatVersi = `ROW_NUMBER() OVER (PARTITION BY CERTIFICATE_NO ORDER BY 
 const pilihVersiHidup = `RN_VERSI = 1 AND ` + penyaringHidup
 
 // kolomCari - daftar pilih `Find Insured` (kontrak kolom `TestKolomBacaClaimLifeDiisiPenulisPremiumList`).
-const kolomCari = `PL_NUMBER, POLICY_NO, CERTIFICATE_NO, NAME_OF_INSURED, CURRENCY, EDMSTATUS`
+// IDPEGA (10-10-2026): pengenal kasus versi polis peserta - kunci header data polis (services/kuncipolis.go).
+// DOB (10-10-2026, keputusan work owner "policy no ini ganti saja dengan dob"): tanggal lahir untuk kolom layar Find
+// Insured, TEKS ISO lewat TO_CHAR (kebal NLS) - dibaca dari baris versi terpilih, sama dengan nama tertanggung.
+const kolomCari = `PL_NUMBER, POLICY_NO, CERTIFICATE_NO, NAME_OF_INSURED, CURRENCY, IDPEGA, TO_CHAR(DOB, 'YYYY-MM-DD'), EDMSTATUS`
+
+// kolomMentahCari - kolom mentah subkueri peringkat sqlCariPeserta, DITURUNKAN dari kolomCari (pola kolomMentahSalin).
+var kolomMentahCari = strings.Join(namaKolomDaftarPilih(kolomCari), ", ")
 
 // sqlCariPeserta menyusun query pencarian peserta beserta nilai bind-nya.
 //
@@ -158,7 +169,7 @@ func sqlCariPeserta(tabel, nomorPremiList, sertifikat, nama string, batas int) (
 	}
 
 	q := `SELECT ` + kolomCari + `
-		        FROM (SELECT ` + kolomCari + `, ` + peringkatVersi + ` AS RN_VERSI
+		        FROM (SELECT ` + kolomMentahCari + `, ` + peringkatVersi + ` AS RN_VERSI
 		                FROM ` + tabel + `
 		               WHERE ` + strings.Join(dalam, " AND ") + `)
 		        WHERE ` + strings.Join(luar, " AND ") + `
@@ -220,8 +231,8 @@ func (r *PesertaPolis) Cari(ctx context.Context, nomorPremiList, sertifikat, nam
 
 	var out []CalonPeserta
 	for baris.Next() {
-		var pl, polis, sertifikat, nama, mataUang, edm sql.NullString
-		if err := baris.Scan(&pl, &polis, &sertifikat, &nama, &mataUang, &edm); err != nil {
+		var pl, polis, sertifikat, nama, mataUang, idPega, dob, edm sql.NullString
+		if err := baris.Scan(&pl, &polis, &sertifikat, &nama, &mataUang, &idPega, &dob, &edm); err != nil {
 			return nil, fmt.Errorf("repository: membaca peserta %s: %w", nomorPremiList, err)
 		}
 		// ⛔ Disaring DUA KALI dengan sengaja, dan itu bukan pemborosan.
@@ -237,6 +248,8 @@ func (r *PesertaPolis) Cari(ctx context.Context, nomorPremiList, sertifikat, nam
 			NomorPolis:      polis.String,
 			NomorSertifikat: sertifikat.String,
 			NamaTertanggung: nama.String,
+			IdPega:          strings.TrimSpace(idPega.String),
+			TanggalLahir:    dob.String,
 			MataUang:        mataUang.String,
 			EDMStatus:       edm.String,
 		})
@@ -316,11 +329,14 @@ const kolomSalin = `ID, PL_NUMBER, POLICY_NO, CERTIFICATE_NO, CURRENCY, ` +
 	// sumber ke peserta DAN ke baris adjustment pertamanya. `[terverifikasi]`
 	// kolom 67 katalog M_LIFE_PREMIUM_DETAIL; penulis PremiumList mengisinya
 	// (`polis_warisan.go`).
-	`TO_CHAR(CLAIM_AMOUNT, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')`
+	`TO_CHAR(CLAIM_AMOUNT, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,'''), ` +
+	// ⭐ 10-10-2026 (keputusan work owner) - di EKOR, nol posisi lain bergeser: IDPEGA = pengenal kasus versi polis
+	// (pzInsKey -> NBLF-/EDML-), kunci header T_PREMIUM_LIST data polis klaim (services/kuncipolis.go).
+	`IDPEGA`
 
 // cacahKolomSalin adalah cacah ekspresi kolomSalin - posisi yang dibaca
 // salinKePeserta. Dikunci TestUrutanKolomSalinDikunci.
-const cacahKolomSalin = 29
+const cacahKolomSalin = 30
 
 // NamaKolomSalinPeserta mengeluarkan nama kolom yang dibaca kolomSalin.
 //
@@ -364,6 +380,10 @@ func namaKolomDaftarPilih(daftar string) []string {
 	return keluar
 }
 
+// ErrPesertaKlaimTidakAda - sertifikat terpilih tidak ada pada premium list itu atau versi terakhirnya batal/delete
+// (10-10-2026: sentinel, supaya pendaftaran banyak case menjawab 422 berpesan, bukan 500).
+var ErrPesertaKlaimTidakAda = errors.New("repository: peserta tidak dapat diklaim")
+
 // AmbilUntukKlaim membaca peserta terpilih dan menyiapkannya untuk disalin.
 //
 // ⛔ Kenapa server membaca ulang alih-alih memercayai badan permintaan: nilai
@@ -405,8 +425,8 @@ func (r *PesertaPolis) AmbilUntukKlaim(ctx context.Context, nomorPremiList strin
 		if err := baris.Scan(tujuan...); err != nil {
 			if err == sql.ErrNoRows {
 				return nil, fmt.Errorf(
-					"repository: peserta sertifikat %q pada premium list %q tidak ada "+
-						"atau sudah batal/delete", no, nomorPremiList)
+					"%w: peserta sertifikat %q pada premium list %q tidak ada "+
+						"atau sudah batal/delete", ErrPesertaKlaimTidakAda, no, nomorPremiList)
 			}
 			return nil, fmt.Errorf("repository: membaca peserta %q: %w", no, err)
 		}
@@ -447,6 +467,7 @@ func salinKePeserta(sel []sql.NullString) (models.Peserta, error) {
 		TanggalEfektif:      teks(12),
 		TanggalLapse:        teks(13),
 		TanggalExpired:      teks(14),
+		IdPega:              strings.TrimSpace(teks(29)),
 		Baris:               []models.BarisAdjustment{},
 	}
 	// ⛔ Share dipilih SEBAGAI TEKS, sebelum diurai jadi Money. XML

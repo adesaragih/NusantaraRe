@@ -1,5 +1,5 @@
 // Paritas layar portal Opportunity dengan harness Pega `SFAPortalOpportunities` - tiket 25; daftar case NB tiket 32.
-// Halaman DIRENDER (react-dom/server), bukan dibaca sebagai teks sumber.
+// Tata letak = halaman depan NB Treaty In (work owner 11-10-2026). Halaman DIRENDER (react-dom/server).
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -7,25 +7,20 @@ import { join } from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
-import { KEPALA_PORTAL, KOLOM_PORTAL, SARING_PORTAL } from '../labels'
+import { KEPALA_PORTAL, KOLOM_PORTAL, KOLOM_PORTAL_SELESAI, SARING_PORTAL, STATUS_PORTAL } from '../labels'
 import PortalOpportunity from './PortalOpportunity'
 
 const HTML = renderToStaticMarkup(<PortalOpportunity onBuat={() => {}} onBuka={() => {}} />)
+const HTML_SELESAI = renderToStaticMarkup(<PortalOpportunity onBuat={() => {}} onBuka={() => {}} status="Resolved" onStatus={() => {}} />)
 const SUMBER = readFileSync(join(__dirname, 'PortalOpportunity.tsx'), 'utf8').replace(/\r\n/g, '\n')
+const RUTE = readFileSync(join(__dirname, '..', 'rute.tsx'), 'utf8').replace(/\r\n/g, '\n')
 
 /** Teks setiap `<th>` berurutan. */
-const judulKolom = [...HTML.matchAll(/<th[^>]*>([^<]*)<\/th>/g)].map((m) => m[1])
+const judulKolom = (h: string) => [...h.matchAll(/<th[^>]*>([^<]*)<\/th>/g)].map((m) => m[1])
 
 describe('PortalOpportunity = unsur yang TAMPIL di Pega', () => {
   it('akar halaman memasang kelas modul (gaya terisolasi)', () => {
     expect(HTML.startsWith('<div class="nbfacin">')).toBe(true)
-  })
-
-  it('judul dan tombol Create opportunity, berurutan', () => {
-    const judul = HTML.indexOf(`<h2 class="inbox__judul">${KEPALA_PORTAL.judul.label}</h2>`)
-    const tombol = HTML.indexOf(`>${KEPALA_PORTAL.buat.label}</button>`)
-    expect(judul).toBeGreaterThan(-1)
-    expect(tombol).toBeGreaterThan(judul)
   })
 
   it('kotak saring: placeholder korpus, label sebagai nama aksesibel (pyIncludeLabel=false)', () => {
@@ -34,64 +29,76 @@ describe('PortalOpportunity = unsur yang TAMPIL di Pega', () => {
     expect(HTML).not.toContain(`>${SARING_PORTAL.label.label}<`)
   })
 
-  it('judul kolom = grid GetListOpportunityF, berurutan, kolom 3 dan 7 kosong', () => {
-    expect(judulKolom).toEqual(KOLOM_PORTAL.map((k) => k.label))
-    expect(judulKolom).toEqual(['Offer No', 'Name', '', 'Group Business', 'Insured Name', 'Marketing', '', 'Status'])
+  it('judul kolom In Progress = grid GetListOpportunityF, berurutan, kolom 3 kosong', () => {
+    expect(judulKolom(HTML)).toEqual(KOLOM_PORTAL.map((k) => k.label))
+    expect(judulKolom(HTML)).toEqual(['Offer No', 'Name', '', 'Group Business', 'Insured Name', 'Marketing', 'NB Status', 'Status'])
   })
 
-  it('unsur tersembunyi permanen di Pega TIDAK dirender', () => {
-    for (const t of ['Stage view', 'List view', '>All<', 'Individual', 'Corporate', 'Phase :', 'Proposal', 'Closed', 'Export', 'Refresh']) {
+  it('tab Resolved: Policy Number sesudah Offer No, Production Date di akhir (pola NB Treaty In)', () => {
+    expect(judulKolom(HTML_SELESAI)).toEqual([
+      'Offer No', KOLOM_PORTAL_SELESAI.noPolis, 'Name', '', 'Group Business', 'Insured Name', 'Marketing', 'NB Status', 'Status',
+      KOLOM_PORTAL_SELESAI.tglProduksi,
+    ])
+  })
+
+  it('unsur tersembunyi permanen di Pega TIDAK dirender; Copy Old NB Treaty In tidak dibawa', () => {
+    for (const t of ['Stage view', 'List view', '>All<', 'Individual', 'Corporate', 'Phase :', 'Proposal', 'Closed', 'Export', 'Refresh', 'Copy Old']) {
       expect(HTML).not.toContain(t)
     }
-    // `Create Opportunity` (O besar, sel 71) tersembunyi; yang tampil `Create opportunity` (sel 72).
     expect(HTML).not.toContain('Create Opportunity')
   })
 
-  it('daftar case NB dimuat saat dibuka; belum ada baris sebelum jawaban datang (tiket 32)', () => {
+  it('daftar case NB dimuat saat dibuka dengan saringan switch; belum ada baris sebelum jawaban datang', () => {
     expect(SUMBER).toMatch(/useEffect\(\(\) => \{\s*void muat\('', 1\)/)
-    expect(SUMBER).toContain('daftarCaseNB(cari, halaman)')
+    expect(SUMBER).toContain('daftarCaseNB(cari, halaman, sudahSelesai)')
     expect(HTML).not.toContain('<tbody')
     expect(HTML).not.toContain('tidak dapat dimuat')
   })
 
-  it('kotak saring dapat diisi; Filter / Enter mencari dari halaman 1; ✕ mengosongkan dan memuat ulang', () => {
-    const saring = HTML.slice(HTML.indexOf('class="toolbar"'), HTML.indexOf('class="toolbar__spacer"'))
-    expect(saring).not.toContain('disabled')
-    expect(saring).toContain(`<button type="submit" class="btn btn--sm">${SARING_PORTAL.tombol.label}</button>`)
-    expect(SUMBER).toContain('void muat(kotak, 1)')
-    expect(SUMBER).toMatch(/setKotak\(''\)\s*void muat\('', 1\)/)
-    expect(SUMBER).toContain('onPindah={(h) => void muat(kunciCari.current, h)}')
-  })
-
-  it('baris: Offer No = case id, Name tautan pembuka case, kolom 3 dan 7 kosong, Status (permintaan work owner)', () => {
-    const baris = SUMBER.slice(SUMBER.indexOf('hasil.baris.map((b) =>'), SUMBER.indexOf('</tbody>'))
-    const sel = [...baris.matchAll(/<td \/>|<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => (m[1] ?? '').trim())
-    expect(sel).toHaveLength(8)
-    expect(sel[0]).toBe('{b.caseId}')
-    expect(sel[1]).toContain('onBuka(b.caseId)')
-    expect(sel[1]).toContain('e.stopPropagation()')
-    expect(SUMBER).toContain('<tr key={b.caseId} className="inbox__baris" onClick={() => onBuka(b.caseId)}>')
-    expect(sel[2]).toBe('')
-    expect(sel.slice(3, 6)).toEqual(['{b.groupBusiness}', '{b.insuredName}', '{b.marketing}'])
-    expect(sel[6]).toBe('')
-    expect(sel[7]).toBe('{b.status}')
-  })
-
-  it('jawaban lama dibuang; kosong = pesan, bukan tabel kosong tanpa keterangan; galat apa adanya', () => {
+  it('jawaban lama dibuang; kosong = pesan; galat apa adanya', () => {
     expect(SUMBER).toContain('if (nomor === nomorPermintaan.current) setHasil(h)')
     expect(SUMBER).toContain('<Kosong pesan={TEKS_PORTAL.tanpaCase} />')
     expect(SUMBER).toContain('<Gagal galat={galat} />')
   })
+})
 
-  it('tombol Create opportunity hidup (membuka form, tiket 26)', () => {
-    expect(HTML).toMatch(new RegExp(`<button type="button" class="btn btn--primary">${KEPALA_PORTAL.buat.label}</button>`))
+describe('PortalOpportunity = tata letak NB Treaty In (work owner 11-10-2026)', () => {
+  it('kepala: judul kiri, Create opportunity di kanan kepala', () => {
+    const kepala = HTML.slice(HTML.indexOf('<header'), HTML.indexOf('</header>'))
+    expect(kepala).toContain(`<h2 class="inbox__judul nbf-tema__judul">${KEPALA_PORTAL.judul.label}</h2>`)
+    expect(kepala).toContain(
+      `<div class="nbf-portal__aksi"><button type="button" class="btn btn--primary nbf-tema__tombol nbf-tema__tombol--utama">${KEPALA_PORTAL.buat.label}</button></div>`,
+    )
   })
 
-  it('templat = menu Kelola User: kepala inbox, toolbar (saring kiri, Create opportunity kanan), tabel inbox', () => {
-    expect(HTML).toContain('<section class="inbox"><header class="inbox__kepala"><h2 class="inbox__judul">')
-    const bilah = HTML.slice(HTML.indexOf('<form class="toolbar"'), HTML.indexOf('</form>'))
-    expect(bilah.indexOf('type="search"')).toBeLessThan(bilah.indexOf('toolbar__spacer'))
-    expect(bilah.indexOf('toolbar__spacer')).toBeLessThan(bilah.indexOf(`>${KEPALA_PORTAL.buat.label}</button>`))
-    expect(HTML).toContain('<table class="inbox__tabel">')
+  it('switch In Progress / Resolved sesudah kepala, bawaan In Progress; posisinya dipegang rute', () => {
+    expect(STATUS_PORTAL).toEqual(['In Progress', 'Resolved'])
+    const kepala = HTML.indexOf('</header>')
+    for (const t of STATUS_PORTAL) expect(HTML.indexOf(`>${t}<`)).toBeGreaterThan(kepala)
+    expect(SUMBER).toContain('void muat(kunciCari.current, 1, s === STATUS_PORTAL[1])')
+    expect(RUTE).toContain('status={statusPortal}')
+    expect(RUTE).toContain('onStatus={setStatusPortal}')
+  })
+
+  it('saringan SATU kapsul: ikon, isian, pengosong (tersembunyi saat kosong), Filter; Enter / Escape / ✕', () => {
+    const kapsul = HTML.slice(HTML.indexOf('<form class="nbf-saring" role="search">'), HTML.indexOf('</form>'))
+    expect(kapsul).toContain('<svg class="nbf-saring__ikon"')
+    expect(kapsul).toContain('class="nbf-saring__isian"')
+    expect(kapsul).toContain('class="nbf-saring__hapus" aria-label="Hapus isian saring" disabled=""')
+    expect(kapsul).toContain(`<button type="submit" class="nbf-saring__tombol">${SARING_PORTAL.tombol.label}</button>`)
+    expect(SUMBER).toContain('void muat(kotak, 1)')
+    expect(SUMBER).toMatch(/if \(e\.key === 'Escape'\) \{\s*setKotak\(''\)\s*void muat\('', 1\)/)
+    expect(SUMBER).toContain('onPindah={(h) => void muat(kunciCari.current, h)}')
+  })
+
+  it('baris: nomor case = tautan pembuka case, status = chip, baris dapat diklik', () => {
+    const baris = SUMBER.slice(SUMBER.indexOf('hasil.baris.map((b) =>'), SUMBER.indexOf('</tbody>'))
+    expect(baris).toContain('className="nbf-tautan nbf-portal__nomor"')
+    expect(baris).toContain('e.stopPropagation()')
+    expect(SUMBER).toContain('<tr key={b.caseId} className="inbox__baris" onClick={() => onBuka(b.caseId)}>')
+    expect(baris).toContain('<span className="nbf-portal__status">{b.nbStatus}</span>')
+    expect(baris).toContain('<span className="nbf-portal__status">{b.status}</span>')
+    expect(baris).toContain("{selesai && <td>{b.noPolis ?? ''}</td>}")
+    expect(baris).toContain("{selesai && <td>{b.tglProduksi ?? ''}</td>}")
   })
 })

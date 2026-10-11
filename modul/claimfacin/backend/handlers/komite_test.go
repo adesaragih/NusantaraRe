@@ -320,3 +320,81 @@ func TestCloseClaimMenutupKomiteAnak(t *testing.T) {
 		t.Fatalf("kasus komite TT4 %s tidak ikut ditutup: %+v", kmt, k)
 	}
 }
+
+func TestSendKomiteDitahanProteksiNilaiAdjustment(t *testing.T) {
+	// Work owner 11-10-2026 "INI KENA PROTEK, TAPI KLIK SEND KOMITE MASA BISA!. LOGIC PROTEKSINYA PERBAIKI": Gross
+	// Adjustment yang ditolak proteksi (422, tidak disimpan) TETAP tampil di isian layar dan ikut terkirim bersama aksi
+	// berikutnya; dahulu server menggabungnya tanpa menjalankan aksi medannya (tanpa hitung ulang, tanpa proteksi) sehingga
+	// Send to Committe membuka pop-up komite. Kini medan berkalkulasi yang berubah tanpa aksinya sendiri dijalankan dulu
+	// aksinya: proteksi menolak seluruh permintaan.
+	u := baruUji(t)
+	u.a.Roster = []models.AnggotaKomite{{ID: "1", OperatorID: "UJI-K1", Jabatan: "UJI SPV", Degree: "1",
+		LimitBottom: "-9999999999999", LimitTop: "999999999999"}}
+	id := u.adjustmentFinal()
+	modal := models.KunciPanel(models.ModalKomite, models.DaftarAdj(1, 1), 1)
+	u.lampirkan(id, "LOD", "DLA", "SPGR")
+	h := u.g.Halaman(id)
+	b := h.AmbilDaftar(models.DaftarAdj(1, 1))[0]
+	b["NameOfBank"], b["NoAccount"], b["IDOfBank"] = "UJI BANK", "0001", "UJI-B1"
+	u.g.SetelHalaman(id, h)
+	gross := jAdj(1, "GrossAdjustment")
+	tersimpan := func(p string) string { return u.g.Halaman(id).AmbilDaftar(models.DaftarAdj(1, 1))[0][p] }
+	pesanDi := func(out map[string]any, jalur, pesan string) bool {
+		pm, _ := out["pesanMedan"].(map[string]any)
+		if l, _ := out["layar"].(map[string]any); l != nil {
+			pm, _ = l["pesanMedan"].(map[string]any)
+		}
+		p, _ := pm[jalur].([]any)
+		for _, x := range p {
+			if x == pesan {
+				return true
+			}
+		}
+		return false
+	}
+	// Gross 50 jt -> Adjustment RNM 12,5 jt > Estimation RNM 10 jt: ditolak saat diisi (SetNilaiResikoSendiri 17)
+	kode, out := u.aksiT(id, services.PermintaanAksi{Aksi: "SetGrossAdjustment", Konteks: panelAdj(1),
+		Masukan: map[string]string{gross: "50000000"}})
+	if kode != http.StatusUnprocessableEntity || !pesanDi(out, jAdj(1, "AdjustmentValue"), models.PesanAdjLebihEstimasi) {
+		t.Fatalf("gross melebihi estimasi: HTTP %d", kode)
+	}
+	// isian layar masih 50 jt: Send to Committe / Save / Send Claim to Committee ikut membawanya -> ditolak berpesan sama
+	for _, p := range []services.PermintaanAksi{
+		{Aksi: "SendPICProtect", Konteks: panelAdj(1), Masukan: map[string]string{gross: "50000000"}},
+		{Aksi: "SimpanAdjustment", Konteks: panelAdj(1), Masukan: map[string]string{gross: "50000000"}},
+		{Aksi: "KirimKomite", Konteks: modal, Mode: map[string]string{models.JalurProtect1: "1", models.JalurProtect2: "1"},
+			Masukan: map[string]string{gross: "50000000", jAdj(1, "DataCommitteFacin.Remarks"): "UJI"}},
+	} {
+		kode, out = u.aksiT(id, p)
+		if kode == http.StatusOK {
+			t.Fatalf("%s dengan Gross berproteksi diterima (pop-up %v)", p.Aksi, out["bukaModal"])
+		}
+		if p.Aksi != "KirimKomite" && !pesanDi(out, jAdj(1, "AdjustmentValue"), models.PesanAdjLebihEstimasi) {
+			t.Fatalf("%s: HTTP %d tanpa pesan proteksi", p.Aksi, kode)
+		}
+		if g := tersimpan("GrossAdjustment"); g != "20000000" || len(u.g.Komite) != 0 {
+			t.Fatalf("%s: Gross tersimpan %q, komite %d", p.Aksi, g, len(u.g.Komite))
+		}
+	}
+	// nilai sah yang belum sempat diproses aksinya (30 jt -> RNM 7,5 jt): dihitung dulu seperti medan ditinggalkan
+	// (SetGrossAdjustment 14 SetPayable_Act ikut berjalan - rekening dipilih ulang, sama dengan mengubah Gross biasa)
+	kode, out = u.aksiT(id, services.PermintaanAksi{Aksi: "SendPICProtect", Konteks: panelAdj(1),
+		Masukan: map[string]string{gross: "30000000"}})
+	u.wajib(kode, http.StatusOK, out, "send to committe gross sah tertunda")
+	if g, v := tersimpan("GrossAdjustment"), tersimpan("AdjustmentValue"); g != "30000000" || v != "7500000" {
+		t.Fatalf("gross tertunda tidak dihitung: Gross %q, Adjustment RNM %q", g, v)
+	}
+	if pesanDi(out, jAdj(1, "AdjustmentValue"), models.PesanAdjLebihEstimasi) {
+		t.Fatal("gross sah tertunda berpesan proteksi")
+	}
+	h = u.g.Halaman(id)
+	b = h.AmbilDaftar(models.DaftarAdj(1, 1))[0]
+	b["NameOfBank"], b["NoAccount"], b["IDOfBank"] = "UJI BANK", "0001", "UJI-B1"
+	u.g.SetelHalaman(id, h)
+	kode, out = u.aksiT(id, services.PermintaanAksi{Aksi: "SendPICProtect", Konteks: panelAdj(1),
+		Masukan: map[string]string{gross: "30000000"}})
+	u.wajib(kode, http.StatusOK, out, "send to committe sesudah rekening")
+	if out["bukaModal"] != modal {
+		t.Fatalf("modal %v, mau %q (pesan %v)", out["bukaModal"], modal, out["pesanMedan"])
+	}
+}

@@ -16,6 +16,11 @@ pengecualiannya tetap sama persis.
 
 **Blocked by:** E03
 
+**Pembaruan 11-10-2026 (irisan I2, W-EDM-01/03):** validasi dijalankan dari layar lewat `POST
+/api/endorsmentfacin/periksa`; periode dari `GetStartDate` (`POOLDATA.FACINPRODUCTION`), pengecualian dari tabel
+konfigurasi `M_EDM_PENGECUALIAN_POLIS` (migrasi 261, `JENIS='TANGGAL'`, diisi DBA). Zona jam DATE dibaca GMT =
+A25 `[dugaan]`; periode tidak ditemukan = A26. `../LAPORAN-IMPLEMENTASI-EDM-11-10-2026.md`.
+
 **Status:** sebagian — 01-10-2026, `backend/services/validasitanggal.go` (`ValidasiTanggalEndorsemen`); test
 `validasitanggal_test.go`. Query `GetStartDate` milik repository (E17). Tiga `[dugaan]` dari bentuk
 aturannya sendiri — format teks DateTime Pega, `@CompareDates(a,b)` = a sesudah b, `@toDate` = tanggal

@@ -34,7 +34,7 @@ import {
 /** Ringkasan satu tinjauan, dalam satu kalimat. */
 export function ringkasanTinjau(h: HasilTinjauUnggah): string {
   if (h.lolos) {
-    return `${String(h.cacahBaris)} rows read, all passed.`
+    return UNGGAH_CSV.lolosSemua(h.cacahBaris)
   }
   const baris = new Set(h.ditolak.map((p) => p.baris)).size
   return (

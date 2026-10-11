@@ -2,7 +2,10 @@
 // gambar layar Pega DEV (work owner 05-10-2026: "sama seperti dipega. awalnya pembuatan otomatis saat di isi % Share RNM
 // (seprti dipega skrng), namun bisa juga dibuat manual, dengan klik add"):
 // - % Share RNM (sel 80, `.OfferFacIn.PercentShare`): diubah -> `POST …/spreading/hitung-share` (CountPremiAndTSINusantaraRe_ACT
-//   + GetKapasitasTreaty: TSI / premi Nusantara Re per coverage dan baris spreading otomatis QS / SPL) - TIDAK menyimpan;
+//   + GetKapasitasTreaty: TSI / premi Nusantara Re per coverage dan baris spreading otomatis QS / SPL) - TIDAK menyimpan.
+//   ⚠️ RALAT 08-10-2026 (work owner "spreading terbentuk otomatis juga hanya terbentuk di uw"; korpus: langkah 4
+//   `Call GetKapasitasTreaty` berprekondisi `Param.spread=="Spreading"`, param `spread` hanya dikirim section _IsUW):
+//   spreading otomatis hanya di tahap UW - di marketing / Team Leader backend hanya menghitung TSI / premi Nusantara Re;
 // - Copy Spreading: template Type Treaty / % Share (Add / Delete, Σ % Share <= 100 seperti `cekSpreadingFactIn_Act`),
 //   Copy To All Spreading -> `POST …/spreading/salin` (CopyToAllSpreadingFire_ACT);
 // - lokasi -> item -> coverage -> detail (TSI 100% … Premium Nusantara Re) + baris spreading (baca-saja, seperti pengguna
@@ -10,9 +13,17 @@
 // - Save (`IsThereAnyObjectLocation_Act`) -> `PUT …/spreading`: hitung ulang lalu simpan.
 // Seluruh hitungan di backend (desimal eksak, ADR-0034); layar hanya menampilkan.
 //
-// Keputusan agent (tiket 48): S-1 Copy Spreading tampil untuk semua pengguna (Pega: hanya IsGroup / user tertentu) - kata
-// work owner "bisa juga dibuat manual, dengan klik add". S-2 baris spreading per coverage baca-saja (grid editable Pega hanya
-// untuk user ID tertentu). S-3 Total Accumulation = tahap berikut. S-4 hitung-share berjeda 500 ms; jawaban lama dibuang.
+// Tiket 59 (work owner 07-10-2026: "di uw bisa ubah % Share RNM dan add delete ubah spreading"; 08-10-2026: "spreading hanya
+// bisa di copy atau add yg masuk ke when IsUW, di marketing tidak bisa add spreading"): `tahapUw` = tahap Underwriting (When
+// `IsUWSpread`, backend `KasusNB.ubahBarisSpreading`). Copy Spreading hanya tampil di tahap ini (Pega: layout "Copy Spreading"
+// `pyContainerVisibleWhen=IsUWSpread`, InputInwardFacultativeDtl_IsUW baris ~29414). Grid spreading per coverage seperti
+// `Section\InputDtlSpreadingCoverage_FacIn_IsUW.xml` cabang IsUWSpread: Add, hapus baris, Type Treaty (dropdown treaty yang
+// sama) dan % Share dapat diubah; TSI / Premium Spreaded tetap baca-saja (Pega: hanya satu user ID ter-hardcode). Perubahan
+// -> `POST …/spreading/hitung-baris` berjeda (preDT `SetTSIPremiSpreaded_FacIn` Type=percent + `cekSpreadingFactIn`).
+//
+// Keputusan agent (tiket 48): S-1 Copy Spreading tampil untuk semua pengguna - ⚠️ RALAT 08-10-2026 (work owner, di atas):
+// hanya tahap UW; marketing / Team Leader tidak dapat Copy / Add spreading, dan spreading otomatis pun hanya di UW (RALAT di
+// atas). S-2 baris spreading per coverage baca-saja di luar UW (grid editable Pega hanya untuk user ID tertentu). S-3 Total Accumulation = tahap berikut. S-4 hitung-share berjeda 500 ms; jawaban lama dibuang.
 //
 // Proteksi template Copy Spreading (work owner 05-10-2026: "kalo spreadingnya langsung spl tidak boleh, harus ada QS nya")
 // = `NB FacIn\Activity\CalcultePersentageSpeading_Act.xml`, dipanggil saat Type Treaty grid Copy Spreading berubah
@@ -25,19 +36,25 @@ import { useEffect, useRef, useState } from 'react'
 
 import { Field, Gagal, Kosong, Memuat, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import { desimalSah, jumlahDesimal } from '../../../../inti/frontend/lib/desimal'
-import { formatNumber } from '../../../../inti/frontend/lib/format'
+import { angka4 } from '../angka4'
 import {
   ambilSpreading,
+  hitungBarisSpreading,
   hitungShareSpreading,
+  periksaTemplateSpreading,
+  salinLokasiSpreading,
   salinSpreading,
   simpanSpreading,
+  type BarisSpreading,
+  type LokasiSpreading,
   type TampilanSpreading,
   type TemplateSpreading,
   type TotalSpreading,
 } from '../api'
 import { SPREADING as S, TEKS_OBJEK, TEKS_SPREADING as T } from '../labels'
+import CopySpreadingLokasi from './CopySpreadingLokasi'
+import PagerLokasi, { potongHalaman } from './PagerLokasi'
 
-const DESIMAL = 4
 const JEDA_MS = 500
 
 /** Angka sah: kosong atau desimal bertitik. */
@@ -60,7 +77,50 @@ export function treatyKembar(t: TemplateSpreading[]): boolean {
   return new Set(dipilih).size !== dipilih.length
 }
 
-const angka = (v: string | undefined) => formatNumber(v ?? '', DESIMAL)
+const angka = (v: string | undefined) => angka4(v ?? '')
+
+/** Baris spreading kosong (Add grid coverage tahap UW, `addRow`). */
+export const barisSpreadingKosong = (): BarisSpreading => ({
+  treatyType: '',
+  treatyName: '',
+  sharePercentage: '',
+  tsiGrossSpreaded: '',
+  tsiSpreaded: '',
+  claimEstimation: '',
+  premiumSpreaded: '',
+})
+
+/** Ganti baris spreading satu coverage (lokasi o, item i, coverage n) tanpa mengubah masukan. */
+export function gantiBarisCoverage(lokasi: LokasiSpreading[], o: number, i: number, n: number, baris: BarisSpreading[]): LokasiSpreading[] {
+  return lokasi.map((l, a) =>
+    a !== o
+      ? l
+      : {
+          ...l,
+          items: l.items.map((it, b) =>
+            b !== i ? it : { ...it, coverages: it.coverages.map((c, d) => (d !== n ? c : { ...c, spreading: baris })) },
+          ),
+        },
+  )
+}
+
+/** Σ % Share baris spreading satu coverage > 100 (`cekSpreadingFactIn`). */
+export const barisLebih = (b: BarisSpreading[]) => lebihDari100(jumlahDesimal(b.map((x) => x.sharePercentage)).total)
+
+/** Setiap baris spreading seluruh coverage ber-Type Treaty dan % Share angka sah. */
+export function barisLengkap(lokasi: LokasiSpreading[]): boolean {
+  return lokasi.every((l) =>
+    l.items.every((it) =>
+      it.coverages.every((c) =>
+        c.spreading.every((b) => b.treatyType.trim() !== '' && b.sharePercentage.trim() !== '' && desimalSah(b.sharePercentage.trim())),
+      ),
+    ),
+  )
+}
+
+/** Baris spreading sah untuk dihitung / disimpan: lengkap dan tidak ada coverage dengan Σ % Share > 100. */
+export const barisSah = (lokasi: LokasiSpreading[]) =>
+  barisLengkap(lokasi) && lokasi.every((l) => l.items.every((it) => it.coverages.every((c) => !barisLebih(c.spreading))))
 
 function Buka({ buka, onKlik }: { buka: boolean; onKlik: () => void }) {
   return (
@@ -114,7 +174,62 @@ function TabelTotal({ kolom, baris, firstLoss }: { kolom: readonly string[]; bar
   )
 }
 
-export default function TabSpreading({ caseId }: { caseId: string }) {
+/**
+ * Ringkasan Spreading (`SummarySpreading_Section`) - dipakai juga tab Premium Deduction / Brokerage Fee (tiket 50).
+ * `hanyaMataUang` = grid `TotalSpreadAll.pxResults` saja: tab Inw Fac Cedant Panels FIRE (Dtl layout S62 `IsFire`, tiket 49).
+ */
+export function RingkasanSpreading({
+  v,
+  hanyaMataUang = false,
+  tanpaTopRisk = false,
+}: {
+  v: Pick<TampilanSpreading, 'ringkasanTreaty' | 'ringkasanMataUang'>
+  hanyaMataUang?: boolean
+  /**
+   * Tiket 73 P3: grid `TotalSpreadAll.pxResults` versi `!IsFire` (`InputInwardFacultativeDtl.xml` L71388-72464: Currency `.Name` ·
+   * Total TSI Spreaded `.TSI` · Total Limit of Liability `.OldTSI` · Total Premium Spreaded `.Premium`) - tanpa kolom Total TSI Top
+   * Risk Spreaded. Bawaan false = FIRE apa adanya.
+   */
+  tanpaTopRisk?: boolean
+}) {
+  const kolomMataUang = tanpaTopRisk ? S.kolomRingkasanMataUang.filter((_, i) => i !== 1) : S.kolomRingkasanMataUang
+  return (
+    <section className="nbf-spread__ringkasan">
+      {!hanyaMataUang && <TabelTotal kolom={S.kolomRingkasanTreaty} baris={v.ringkasanTreaty} firstLoss />}
+      <div className="nbf-cov-wrap">
+        <table className="nbf-tabel">
+          <thead>
+            <tr>
+              {kolomMataUang.map((k) => (
+                <th key={k} scope="col">
+                  {k}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {v.ringkasanMataUang.length === 0 && (
+              <tr>
+                <td colSpan={kolomMataUang.length}>{T.kosong}</td>
+              </tr>
+            )}
+            {v.ringkasanMataUang.map((r) => (
+              <tr key={r.currency}>
+                <td>{r.currency}</td>
+                {!tanpaTopRisk && <td className="nbf-angka">{angka(r.tsiTopRisk)}</td>}
+                <td className="nbf-angka">{angka(r.tsi)}</td>
+                <td className="nbf-angka">{angka(r.lol)}</td>
+                <td className="nbf-angka">{angka(r.premium)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )
+}
+
+export default function TabSpreading({ caseId, tahapUw = false }: { caseId: string; tahapUw?: boolean }) {
   const [v, setV] = useState<TampilanSpreading | null>(null)
   const [share, setShare] = useState('')
   const [galat, setGalat] = useState<unknown>(null)
@@ -122,7 +237,11 @@ export default function TabSpreading({ caseId }: { caseId: string }) {
   const [menyimpan, setMenyimpan] = useState(false)
   const [tersimpan, setTersimpan] = useState(false)
   const [terbuka, setTerbuka] = useState<string[]>([])
+  const [halLokasi, setHalLokasi] = useState(1)
   const nomor = useRef(0)
+  // Pesan proteksi template Copy Spreading dari server (QS / Type Treaty kembar).
+  const [pesanTemplate, setPesanTemplate] = useState<string[]>([])
+  const nomorTemplate = useRef(0)
   const jadwal = useRef<number | undefined>(undefined)
 
   useEffect(() => {
@@ -173,9 +292,40 @@ export default function TabSpreading({ caseId }: { caseId: string }) {
     jadwal.current = window.setTimeout(() => hitung(() => hitungShareSpreading(caseId, nilai.trim())), JEDA_MS)
   }
 
-  function ubahTemplate(template: TemplateSpreading[]) {
+  /** Baris spreading satu coverage diubah (tahap UW): jawaban hitung yang masih berjalan dibuang, lalu hitung-baris berjeda. */
+  function ubahBarisCoverage(o: number, i: number, n: number, baris: BarisSpreading[]) {
+    if (v === null) return
+    const berikut = { ...v, lokasi: gantiBarisCoverage(v.lokasi, o, i, n, baris), percentShare: share.trim() }
+    setV(berikut)
+    setTersimpan(false)
+    nomor.current++
+    setMenghitung(false)
+    window.clearTimeout(jadwal.current)
+    if (!barisSah(berikut.lokasi) || !angkaSah(share) || share.trim() === '' || lebihDari100(share)) return
+    jadwal.current = window.setTimeout(() => hitung(() => hitungBarisSpreading(caseId, berikut)), JEDA_MS)
+  }
+
+  /**
+   * Template Copy Spreading berubah. `periksa` = Type Treaty berubah / baris dihapus: proteksi template diperiksa server
+   * seperti Pega (CalcultePersentageSpeading_Act saat .TreatyType berubah); jawaban lama dibuang.
+   */
+  function ubahTemplate(template: TemplateSpreading[], periksa = false) {
     setV((x) => (x ? { ...x, template } : x))
     setTersimpan(false)
+    if (!periksa) return
+    const n = ++nomorTemplate.current
+    if (template.every((x) => x.treatyType.trim() === '')) {
+      setPesanTemplate([])
+      return
+    }
+    periksaTemplateSpreading(caseId, template).then(
+      (h) => {
+        if (n === nomorTemplate.current) setPesanTemplate(h.pesan)
+      },
+      (err: unknown) => {
+        if (n === nomorTemplate.current) setGalat(err)
+      },
+    )
   }
 
   async function simpan() {
@@ -199,6 +349,7 @@ export default function TabSpreading({ caseId }: { caseId: string }) {
   const opsiTreaty = v.treaty.map((t) => ({ value: t.id, label: t.name }))
   const lebih = templateLebih(v.template)
   const kembar = treatyKembar(v.template)
+  const barisTidakSah = tahapUw && !barisSah(v.lokasi)
 
   return (
     <div className="nbf-objek nbf-cov-tab nbf-spread">
@@ -222,6 +373,7 @@ export default function TabSpreading({ caseId }: { caseId: string }) {
           />
           {menghitung && <span className="muted">{T.menghitung}</span>}
         </div>
+        {tahapUw && (
         <div className="nbf-spread__copy">
           <h5 className="nbf-akum__kartu-judul">{S.judulCopy}</h5>
           <div className="nbf-cov-wrap">
@@ -236,7 +388,7 @@ export default function TabSpreading({ caseId }: { caseId: string }) {
                   <th scope="col" className="table__actions">
                     <button
                       type="button"
-                      className="btn btn--sm"
+                      className="btn nbf-tema__tombol btn--sm"
                       onClick={() => ubahTemplate([...v.template, { treatyType: '', treatyName: '', sharePercentage: '' }])}
                     >
                       {S.tambah}
@@ -263,6 +415,7 @@ export default function TabSpreading({ caseId }: { caseId: string }) {
                             v.template.map((x, k) =>
                               k === i ? { ...x, treatyType: id, treatyName: v.treaty.find((y) => y.id === id)?.name ?? '' } : x,
                             ),
+                            true,
                           )
                         }
                       />
@@ -278,8 +431,8 @@ export default function TabSpreading({ caseId }: { caseId: string }) {
                     <td className="table__actions">
                       <button
                         type="button"
-                        className="btn btn--sm"
-                        onClick={() => ubahTemplate(v.template.filter((_, k) => k !== i))}
+                        className="btn nbf-tema__tombol btn--sm"
+                        onClick={() => ubahTemplate(v.template.filter((_, k) => k !== i), true)}
                       >
                         {S.hapus}
                       </button>
@@ -291,20 +444,29 @@ export default function TabSpreading({ caseId }: { caseId: string }) {
           </div>
           {lebih && <div className="field__error">{T.shareLebih}</div>}
           {kembar && <div className="field__error">{T.treatySama}</div>}
+          {pesanTemplate
+            .filter((p) => !(kembar && p === T.treatySama))
+            .map((p) => (
+              <div key={p} className="field__error">
+                {p}
+              </div>
+            ))}
           <div>
             <button
               type="button"
-              className="btn btn--primary btn--sm"
-              disabled={lebih || kembar || v.template.length === 0 || menghitung}
+              className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary btn--sm"
+              disabled={lebih || kembar || pesanTemplate.length > 0 || v.template.length === 0 || menghitung}
               onClick={() => hitung(() => salinSpreading(caseId, share.trim(), v.template))}
             >
               {S.salinSemua}
             </button>
           </div>
         </div>
+        )}
       </section>
 
-      {/* Lokasi -> item -> coverage -> spreading */}
+      {/* Lokasi -> item -> coverage -> spreading; 10 lokasi per halaman (work owner 11-10-2026) */}
+      <PagerLokasi total={v.lokasi.length} halaman={halLokasi} onPindah={setHalLokasi} />
       <div className="nbf-cov-wrap">
         <table className="nbf-tabel">
           <thead>
@@ -325,7 +487,7 @@ export default function TabSpreading({ caseId }: { caseId: string }) {
                 </td>
               </tr>
             )}
-            {v.lokasi.map((l, o) => [
+            {potongHalaman(v.lokasi, halLokasi).map(([l, o]) => [
               <tr key={`o${o}`} className={terbuka.includes(`o${o}`) ? 'nbf-baris--terbuka' : undefined}>
                 <td>
                   <Buka buka={terbuka.includes(`o${o}`)} onKlik={() => balik(`o${o}`)} />
@@ -338,6 +500,16 @@ export default function TabSpreading({ caseId }: { caseId: string }) {
                 <tr key={`od${o}`} className="nbf-objek__detail">
                   <td colSpan={4}>
                     <div className="nbf-lapis nbf-lapis--objek">
+                      {/* Tiket 73 P5 (K73-40): Copy Spreading per lokasi, tahap UW - template case di layar dipertahankan. */}
+                      {tahapUw && (
+                        <CopySpreadingLokasi
+                          treaty={v.treaty}
+                          menghitung={menghitung}
+                          onSalin={(t) =>
+                            hitung(() => salinLokasiSpreading(caseId, share.trim(), o + 1, t).then((h) => ({ ...h, template: v.template })))
+                          }
+                        />
+                      )}
                       <div className="nbf-cov-wrap">
                         <table className="nbf-tabel">
                           <thead>
@@ -422,27 +594,85 @@ export default function TabSpreading({ caseId }: { caseId: string }) {
                                                                     {k}
                                                                   </th>
                                                                 ))}
+                                                                {tahapUw && (
+                                                                  <th scope="col" className="table__actions">
+                                                                    <button
+                                                                      type="button"
+                                                                      className="btn nbf-tema__tombol btn--sm"
+                                                                      onClick={() => ubahBarisCoverage(o, i, n, [...c.spreading, barisSpreadingKosong()])}
+                                                                    >
+                                                                      {S.tambah}
+                                                                    </button>
+                                                                  </th>
+                                                                )}
                                                               </tr>
                                                             </thead>
                                                             <tbody>
                                                               {c.spreading.length === 0 && (
                                                                 <tr>
-                                                                  <td colSpan={6}>{T.kosong}</td>
+                                                                  <td colSpan={tahapUw ? 7 : 6}>{T.kosong}</td>
                                                                 </tr>
                                                               )}
                                                               {c.spreading.map((b, k) => (
-                                                                <tr key={`${b.treatyType}-${k}`}>
-                                                                  <td>{b.treatyName || b.treatyType}</td>
-                                                                  <td className="nbf-angka">{angka(b.sharePercentage)}</td>
+                                                                <tr key={tahapUw ? k : `${b.treatyType}-${k}`}>
+                                                                  {tahapUw ? (
+                                                                    <>
+                                                                      <td>
+                                                                        <Pilih
+                                                                          label={S.kolomSpreading[0]}
+                                                                          value={b.treatyType}
+                                                                          kosong={T.pilihTreaty}
+                                                                          opsi={opsiTreaty}
+                                                                          onChange={(id) =>
+                                                                            ubahBarisCoverage(
+                                                                              o,
+                                                                              i,
+                                                                              n,
+                                                                              c.spreading.map((x, m) =>
+                                                                                m === k ? { ...x, treatyType: id, treatyName: v.treaty.find((y) => y.id === id)?.name ?? '' } : x,
+                                                                              ),
+                                                                            )
+                                                                          }
+                                                                        />
+                                                                      </td>
+                                                                      <td>
+                                                                        <Field
+                                                                          label={S.kolomSpreading[1]}
+                                                                          value={b.sharePercentage}
+                                                                          onChange={(s) =>
+                                                                            ubahBarisCoverage(o, i, n, c.spreading.map((x, m) => (m === k ? { ...x, sharePercentage: s } : x)))
+                                                                          }
+                                                                          error={angkaSah(b.sharePercentage) ? undefined : T.angka}
+                                                                        />
+                                                                      </td>
+                                                                    </>
+                                                                  ) : (
+                                                                    <>
+                                                                      <td>{b.treatyName || b.treatyType}</td>
+                                                                      <td className="nbf-angka">{angka(b.sharePercentage)}</td>
+                                                                    </>
+                                                                  )}
                                                                   <td className="nbf-angka">{angka(b.tsiGrossSpreaded)}</td>
                                                                   <td className="nbf-angka">{angka(b.tsiSpreaded)}</td>
                                                                   <td className="nbf-angka">{angka(b.claimEstimation)}</td>
                                                                   <td className="nbf-angka">{angka(b.premiumSpreaded)}</td>
+                                                                  {tahapUw && (
+                                                                    <td className="table__actions">
+                                                                      <button
+                                                                        type="button"
+                                                                        className="btn nbf-tema__tombol btn--sm"
+                                                                        onClick={() => ubahBarisCoverage(o, i, n, c.spreading.filter((_, m) => m !== k))}
+                                                                      >
+                                                                        {S.hapus}
+                                                                      </button>
+                                                                    </td>
+                                                                  )}
                                                                 </tr>
                                                               ))}
                                                             </tbody>
                                                           </table>
                                                         </div>
+                                                        {tahapUw && barisLebih(c.spreading) && <div className="field__error">{T.shareBarisLebih}</div>}
                                                       </div>
                                                     </td>
                                                   </tr>
@@ -473,41 +703,16 @@ export default function TabSpreading({ caseId }: { caseId: string }) {
       </div>
 
       {/* Ringkasan (SummarySpreading_Section) */}
-      <section className="nbf-spread__ringkasan">
-        <TabelTotal kolom={S.kolomRingkasanTreaty} baris={v.ringkasanTreaty} firstLoss />
-        <div className="nbf-cov-wrap">
-          <table className="nbf-tabel">
-            <thead>
-              <tr>
-                {S.kolomRingkasanMataUang.map((k) => (
-                  <th key={k} scope="col">
-                    {k}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {v.ringkasanMataUang.length === 0 && (
-                <tr>
-                  <td colSpan={5}>{T.kosong}</td>
-                </tr>
-              )}
-              {v.ringkasanMataUang.map((r) => (
-                <tr key={r.currency}>
-                  <td>{r.currency}</td>
-                  <td className="nbf-angka">{angka(r.tsiTopRisk)}</td>
-                  <td className="nbf-angka">{angka(r.tsi)}</td>
-                  <td className="nbf-angka">{angka(r.lol)}</td>
-                  <td className="nbf-angka">{angka(r.premium)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <RingkasanSpreading v={v} />
 
+      {barisTidakSah && !barisLengkap(v.lokasi) && <div className="field__error">{T.barisBelumLengkap}</div>}
       <div className="nbf-objek__kaki">
-        <button type="button" className="btn btn--primary" onClick={() => void simpan()} disabled={menyimpan || !angkaSah(share) || lebihDari100(share)}>
+        <button
+          type="button"
+          className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary"
+          onClick={() => void simpan()}
+          disabled={menyimpan || !angkaSah(share) || lebihDari100(share) || barisTidakSah}
+        >
           {menyimpan ? T.menghitung : S.simpan}
         </button>
       </div>

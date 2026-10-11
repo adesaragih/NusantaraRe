@@ -128,7 +128,9 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, m Masu
 		if !ada {
 			return fmt.Errorf("%w: no current version of %q", ErrVersiBerubah, k.NomorPolis)
 		}
-		nomor, prodKe, err := models.NomorEndorsement(k.NomorPolis, v)
+		// PRODKE baru = PRODKE versi terbesar + 1 - SATU hitungan untuk versi dan nomor (08-10-2026).
+		prodKe := v.ProdKe + 1
+		nomor, err := models.NomorEndorsement(k.NomorPolis, prodKe)
 		if err != nil {
 			return err
 		}
@@ -147,13 +149,44 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, m Masu
 		if dobel {
 			return fmt.Errorf("%w: %s version %d exists", ErrVersiBerubah, k.NomorPolis, prodKe)
 		}
+		// Kasus lama (lahir sebelum ANNUITY_INTEREST / PREMIUM_REFUND_FACTOR disalin, 09-10-2026): cadangan dari
+		// kepala versi yang di-endorse (`v`, sumber yang sama dengan BuatKasus). Versi tak terbaca = tanpa cadangan.
+		var cadangan map[string]string
+		if k.Kepala["ANNUITY_INTEREST"] == "" || k.Kepala["PREMIUM_REFUND_FACTOR"] == "" {
+			kp, _, err := l.gudang.KepalaSumber(ctx, tx, v, k.NomorPolis)
+			if err != nil && !errors.Is(err, repository.ErrTidakAda) {
+				return err
+			}
+			cadangan = kp
+		}
+		// DESCRIPTION ← Comment keputusan (keputusan work owner 09-10-2026).
 		if _, err := l.gudang.TulisProduksiWarisan(ctx, tx, repository.ProduksiWarisanTulis{
-			KasusID: id, NomorPolis: k.NomorPolis, Nomor: nomor,
+			KasusID: id, NomorPolis: k.NomorPolis, Nomor: nomor, Komentar: komentar,
+			CadanganAnnuity: cadangan["ANNUITY_INTEREST"], CadanganRefund: cadangan["PREMIUM_REFUND_FACTOR"],
 		}); err != nil {
 			return err
 		}
 		if hasil.Peserta, err = l.gudang.Resmikan(ctx, tx, models.ResmiKasus{
 			ID: id, NomorPolis: k.NomorPolis, ProdKe: prodKe, Nomor: nomor, StatusJenis: models.StatusJenis(k.Kepala["TYPE"]),
+		}); err != nil {
+			return err
+		}
+		// JSON_POLIS - sesudah kepala diresmikan dan NO_ENDORS terbit (keputusan work owner 08-10-2026).
+		// TGL_PROD dari periode produksi TANGGAL_CLOSING saat Confirm (`models.TanggalProduksi`).
+		hari, err := l.gudang.HariClosing(ctx, tx)
+		if err != nil {
+			return err
+		}
+		periode, err := penomor.HitungPeriodeNomor(waktu, hari)
+		if err != nil {
+			return err
+		}
+		tglProd, err := models.TanggalProduksi(waktu, periode.MMYYYY)
+		if err != nil {
+			return err
+		}
+		if _, err := l.gudang.TulisJSONPolis(ctx, tx, repository.JSONPolisTulis{
+			KasusID: id, NomorPolis: k.NomorPolis, ProdKe: prodKe, Nomor: nomor, TglProd: tglProd,
 		}); err != nil {
 			return err
 		}
@@ -163,7 +196,7 @@ func (l *Layanan) Putuskan(ctx context.Context, p inti.Pelaku, id string, m Masu
 			return err
 		}
 		if hasil.RekapWarisan, err = l.gudang.TulisRekapWarisan(ctx, tx, repository.RekapWarisanTulis{
-			KasusID: id, NomorPolis: k.NomorPolis, Nomor: nomor, COB: k.Kepala["BUSINESS_NAME"],
+			KasusID: id, NomorPolis: k.NomorPolis, Nomor: nomor, COB: k.Kepala["BUSINESS_NAME"], Tipe: k.Kepala["TYPE"],
 		}); err != nil {
 			return err
 		}

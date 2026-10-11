@@ -38,7 +38,7 @@ inti 919.
 
 ## Tabel
 
-Menulis isi `OBJECTITEMTYPE` (tabel warisan POOLDATA, dinyatakan `masterprovince`; strukturnya tidak diubah, status di kolomnya sendiri `ISACTIVE`). Jejak ubahnya di `T_MASTER_STATUS` (`masterprovince` 881 / 882).
+Menulis isi `OBJECTITEMTYPE` (tabel warisan POOLDATA, dinyatakan `masterprovince`; strukturnya tidak diubah, status di kolomnya sendiri `ISACTIVE`). Jejak ubahnya di `T_MASTER_STATUS` (`masterprovince` 216 / 217).
 
 ## Rute
 

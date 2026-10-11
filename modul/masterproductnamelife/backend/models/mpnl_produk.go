@@ -36,6 +36,8 @@ type Produk struct {
 	SalinanDari string `json:"salinanDari,omitempty"`
 	// HitungOutward - checkbox `On Retention` b47312 diubah dalam sesi sunting
 	// ini: `GetReinsTypeOR_Life` b47488 mengisi ulang `OutwardList` (OQ-MPNL-09).
+	// ⚠️ Sejak 05-10-2026 checkbox-nya TIDAK dirender (keputusan work owner) -
+	// layar tidak pernah mengirim true; dukungan API dibiarkan (tes paket 9).
 	HitungOutward bool `json:"hitungOutward,omitempty"`
 }
 
@@ -57,7 +59,9 @@ type ProdukUmum struct {
 	PolicyHolderName string `json:"policyHolderName"` // JSON `POLICYHODERNAME` - salinan inward
 	CreateOp         string `json:"createOp"`         // `SaveProductName_Act` 6 b1370
 	UpdateOp         string `json:"updateOp"`         // `SaveProductName_Act` 1 b361
-	// IsORS - checkbox `On Retention` b47312 (RALAT R9).
+	// IsORS - checkbox `On Retention` b47312 (RALAT R9). ⚠️ Checkbox tidak dirender
+	// sejak 05-10-2026 (keputusan work owner); nilai tersimpan dibiarkan dan
+	// dikirim kembali apa adanya saat Save.
 	IsORS bool `json:"isOrs"`
 	// Comment - area teks `Comment` popup `SaveProductName_Confirm` b1025.
 	Comment string `json:"comment"`

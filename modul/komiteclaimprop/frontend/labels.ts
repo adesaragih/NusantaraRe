@@ -47,3 +47,32 @@ export const TATA_KCP = {
   langkahMenunggu: 'Waiting',
   tanpaData: 'No data',
 } as const
+
+/**
+ * Panel lampiran klaim induk (perintah work owner 11-10-2026 "TAMBAHKAN ATTACHMENT ... KLAIM PROP KE KOMITE KLAIM
+ * PROP"): teks sama dengan tab lampiran Claim Prop (screenshot Pega 09-10-2026), judul `[tidak ada di korpus]`. Hanya
+ * kategori yang berisi; tombol attach nonaktif ("TOMBOL ATTACHNYA DI KOMITE DI DISABLE AJA").
+ */
+export const LAMPIRAN_KCP = {
+  judul: 'Attachment',
+  tambah: 'Add attachment',
+  muatUlang: 'Refresh',
+  menampilkan: 'Showing',
+  dari: 'of',
+  semua: 'Show All',
+  kategori: 'Category',
+  cacah: 'Count Attach',
+  unggah: 'Upload File',
+  lihat: 'View File',
+  kosong: 'No attachment.',
+  nama: 'File Name',
+  tanggal: 'Create Date',
+  oleh: 'Attached By',
+  view: 'View',
+  viewOffice: 'View Office Online',
+  aksi: 'Action',
+  unduhPilih: 'Download Selected',
+  tutup: 'Close',
+  /** `[tidak ada di korpus]` - keterangan tombol attach yang nonaktif. */
+  hanyaDiKlaim: 'Attachments are added from the claim screen.',
+} as const

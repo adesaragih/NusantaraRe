@@ -48,6 +48,11 @@ type paramAkumulasi struct {
 
 // periksaParamAkumulasi - pangkas setiap nilai; > 255 karakter -> 400 (pesan urut parameter).
 func periksaParamAkumulasi(param ...paramAkumulasi) error {
+	return periksaParamKueri(ErrMasukanAkumulasi, param...)
+}
+
+// periksaParamKueri - periksaParamAkumulasi dengan galat dasar pilihan (juga saran zona tiket 52).
+func periksaParamKueri(dasar error, param ...paramAkumulasi) error {
 	var masalah []string
 	for _, p := range param {
 		*p.nilai = strings.TrimSpace(*p.nilai)
@@ -56,7 +61,7 @@ func periksaParamAkumulasi(param ...paramAkumulasi) error {
 		}
 	}
 	if len(masalah) > 0 {
-		return fmt.Errorf("%w: %s", ErrMasukanAkumulasi, strings.Join(masalah, "; "))
+		return fmt.Errorf("%w: %s", dasar, strings.Join(masalah, "; "))
 	}
 	return nil
 }

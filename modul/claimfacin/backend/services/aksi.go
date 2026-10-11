@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -65,6 +66,17 @@ type jalanAksi struct {
 	tanpaProgres bool
 	// dokumen - bahan PDF akseptasi yang diproses SESUDAH aksi tersimpan (SaveAcceptation 12).
 	dokumen *dokumenTunda
+	// tersimpan - nilai TERSIMPAN jalur kiriman layar SEBELUM `GabungMasukan` (`nilaiTersimpan`): kiriman layar sudah
+	// membawa nilai baru medan yang memicu aksi, sehingga "nilai berubah?" tidak dapat dibaca dari halaman sesudah gabung.
+	tersimpan map[string]string
+}
+
+// nilaiTersimpan - nilai jalur `j` sebelum kiriman layar digabung (bukan kiriman: nilai halaman).
+func (j *jalanAksi) nilaiTersimpan(jalur string) string {
+	if v, ada := j.tersimpan[jalur]; ada {
+		return v
+	}
+	return j.h.Ambil(jalur)
 }
 
 type penanganAksi func(j *jalanAksi) error
@@ -139,7 +151,26 @@ func (l *Layanan) Aksi(ctx context.Context, p inti.Pelaku, id string, r Perminta
 		if !aksiPascaGabung[nama] && !aksiTerbuka(konteks, utama, nama, r.Aksi, r.Indeks) {
 			return fmt.Errorf("%w: %q", ErrAksiTertutup, r.Aksi)
 		}
-		models.GabungMasukan(h, r.Masukan, models.MedanTerbuka(semuaTata(utama, panel, modal)))
+		j.tersimpan = make(map[string]string, len(r.Masukan))
+		for jalur := range r.Masukan {
+			j.tersimpan[jalur] = models.AmbilJalur(h, jalur) // sel baris juga (h.Ambil hanya jalur halaman)
+		}
+		semua := semuaTata(utama, panel, modal)
+		// isian angka hanya bilangan desimal (work owner 11-10-2026 "UNTUK ANGKA PROTEKSI INPUTAN HANYA DECIMAL"):
+		// kiriman lain ditolak berpesan di medannya, tidak ada yang digabung
+		if salah := models.AngkaTidakSah(r.Masukan, models.MedanAngkaTerbuka(semua)); len(salah) > 0 {
+			for _, jalur := range salah {
+				h.TambahPesan(jalur, models.PesanBukanDesimal)
+			}
+			gagal = &GalatValidasi{Pesan: h.SemuaPesan()}
+			models.HitungTurunan(h)
+			gagal.Layar = l.layar(kasus, h, true)
+			return gagal
+		}
+		terbuka := models.MedanTerbuka(semua)
+		models.BuangWilayahPilihan(terbuka)
+		tunda := medanTertunda(r, nama, j.tersimpan, utama, panel, modal)
+		models.GabungMasukan(h, r.Masukan, terbuka)
 		if param != "" && r.Param == "" {
 			r.Param = param
 		}
@@ -151,7 +182,11 @@ func (l *Layanan) Aksi(ctx context.Context, p inti.Pelaku, id string, r Perminta
 		// dan SEBELUM penangan mengubahnya (mis. baris yang dihapus), ditambah pesannya - layar = keadaan tersimpan +
 		// isian layar (temuan review 10-10-2026: dahulu dari halaman yang sudah diubah penangan).
 		sebelum := h.Salin()
-		if err := f(j); err != nil {
+		err = j.jalankanTertunda(tunda)
+		if err == nil {
+			err = f(j)
+		}
+		if err != nil {
 			var gv *GalatValidasi
 			if errors.As(err, &gv) {
 				gagal = gv
@@ -308,6 +343,111 @@ func (j *jalanAksi) sasaran() error {
 	return nil
 }
 
+// tolakKembar - pemilih item (Object Name Fire, Coverage Fire, Object Id / Coverage Aneka, Coverage ID MBU / PA / Travel)
+// yang menghasilkan item ganda (`ProtectionObjectItem_Act` / `ProtectCoverage_Act`, pesan `PesanItemKembar`) DIBATALKAN:
+// pilihan tidak disimpan dan pesannya tampil. XML hanya memasang pesan (item kedua tetap), dan pesan itu hilang di aksi
+// berikutnya sehingga input berlanjut - temuan work owner 11-10-2026 "INI DI INPUT DOUBLE ... TETEP BISA! KENAPA GITU?".
+// MBU / PA / Travel ("PERBAIKI JUGA UNTUK BISNIS LAIN!" 11-10-2026): `ProtectCoverage_Act` membuang item TERAKHIR
+// ber-coverage sama - bila yang diubah bukan baris terakhir, item LAIN yang hilang; pembatalan menjaga keduanya.
+func tolakKembar(f penanganAksi) penanganAksi {
+	return func(j *jalanAksi) error {
+		if err := f(j); err != nil {
+			return err
+		}
+		for _, p := range j.h.SemuaPesan() {
+			if p == models.PesanItemKembar {
+				return validasi(j.h)
+			}
+		}
+		return nil
+	}
+}
+
+// medanTertunda - medan beraksi yang nilainya di kiriman layar BERBEDA dari nilai tersimpan padahal permintaan ini bukan
+// aksinya sendiri. Terjadi bila aksi medan itu ditolak (422 - isian lokal tetap di layar dan ikut terkirim bersama aksi
+// berikutnya). Temuan work owner 11-10-2026 ("INI KENA PROTEK, TAPI KLIK SEND KOMITE MASA BISA!"): Gross Adjustment yang
+// ditolak proteksi tergabung lewat Send to Committe tanpa hitung ulang dan tanpa proteksi.
+func medanTertunda(r PermintaanAksi, nama string, tersimpan map[string]string, utama []models.Tata,
+	panel, modal map[string][]models.Tata) []tertunda {
+	var out []tertunda
+	lihat := map[string]bool{}
+	periksa := func(konteks string, ts []models.Tata) {
+		for _, m := range models.DaftarMedanBeraksi(ts) {
+			v, dikirim := r.Masukan[m.Jalur]
+			if !dikirim || lihat[m.Jalur] || v == tersimpan[m.Jalur] {
+				continue
+			}
+			lihat[m.Jalur] = true
+			if dasarAksi(m.Aksi) == nama && konteks == r.Konteks && m.Indeks == r.Indeks {
+				continue // aksinya sendiri
+			}
+			out = append(out, tertunda{MedanBeraksi: m, konteks: konteks})
+		}
+	}
+	periksa("", utama)
+	for _, peta := range []map[string][]models.Tata{panel, modal} {
+		kunci := make([]string, 0, len(peta))
+		for k := range peta {
+			kunci = append(kunci, k)
+		}
+		sort.Strings(kunci)
+		for _, k := range kunci {
+			periksa(k, peta[k])
+		}
+	}
+	return out
+}
+
+// tertunda - medan beraksi bernilai baru yang aksinya belum berjalan, beserta konteks (panel / modal) tempatnya.
+type tertunda struct {
+	models.MedanBeraksi
+	konteks string
+}
+
+// aksiSaatDitinggal - kendali ketik yang aksinya berjalan saat kursor meninggalkan medan (param kosong): aksi tertundanya
+// dijalankan LEBIH DAHULU, seperti bila medan ditinggalkan sebelum tombol diklik - proteksi dan hitung ulangnya berlaku.
+// Kendali lain (pilihan, tanggal, centang, autocomplete) tetap digabung seperti semula.
+var aksiSaatDitinggal = map[string]bool{models.KAngka: true, models.KTeks: true, models.KArea: true, models.KTelepon: true}
+
+// dasarAksi - nama aksi tanpa ":param".
+func dasarAksi(a string) string {
+	if i := strings.Index(a, ":"); i >= 0 {
+		return a[:i]
+	}
+	return a
+}
+
+// jalankanTertunda - aksi medan tertunda (`aksiSaatDitinggal`) dijalankan berurutan sebelum aksi permintaan; galatnya
+// (termasuk GalatValidasi proteksi) membatalkan seluruh permintaan.
+func (j *jalanAksi) jalankanTertunda(tunda []tertunda) error {
+	for _, m := range tunda {
+		if !aksiSaatDitinggal[m.Kendali] {
+			continue
+		}
+		nama, param := m.Aksi, ""
+		if i := strings.Index(nama, ":"); i >= 0 {
+			nama, param = nama[:i], nama[i+1:]
+		}
+		f, ada := penangan[nama]
+		if !ada {
+			return fmt.Errorf("%w: aksi medan %q", ErrPermintaanTidakSah, m.Aksi)
+		}
+		sub := &jalanAksi{l: j.l, ctx: j.ctx, tx: j.tx, k: j.k, kasus: j.kasus, p: j.p, h: j.h, tersimpan: j.tersimpan,
+			r: PermintaanAksi{Aksi: m.Aksi, Konteks: m.konteks, Indeks: m.Indeks, Param: param, Tahap: j.r.Tahap,
+				Masukan: j.r.Masukan, Mode: j.r.Mode}}
+		if err := sub.sasaran(); err != nil {
+			return err
+		}
+		if err := f(sub); err != nil {
+			return err
+		}
+		if sub.selesai {
+			return fmt.Errorf("%w: aksi medan %q memindah kasus", ErrPermintaanTidakSah, m.Aksi)
+		}
+	}
+	return nil
+}
+
 // validasi mengubah pesan halaman menjadi GalatValidasi (aksi dibatalkan).
 func validasi(h *models.Halaman) error {
 	if !h.AdaPesan() {
@@ -395,8 +535,12 @@ func init() {
 		"BukaSebab":                      halamanSaja(func(*jalanAksi) {}),
 		"GetNameCauseofLoss":             aksiPilihSebab,
 		"Simpan":                         halamanSaja(func(*jalanAksi) {}),
-		"BukaProtectDOL":                 bukaModal(func(*jalanAksi) string { return ModalProtectDOL }),
-		"Submit":                         aksiSubmitRegister,
+		// change:postValue / change:refresh tanpa activity (medan pengendali tampil: Deductible Info, Format, Send Email,
+		// Message PLA): isian digabung, layar dievaluasi ulang (work owner 11-10-2026 "CETANGAN Deductible Info TIDAK
+		// BERFUNGSI!" - tanpa aksi nilai hanya berubah di layar).
+		"PostValue":      halamanSaja(func(*jalanAksi) {}),
+		"BukaProtectDOL": bukaModal(func(*jalanAksi) string { return ModalProtectDOL }),
+		"Submit":         aksiSubmitRegister,
 		// estimasi - panel objek (grid item)
 		"TambahItem": func(j *jalanAksi) error {
 			if err := j.butuh(true, false, false); err != nil {
@@ -406,12 +550,12 @@ func init() {
 			return err
 		},
 		"HapusItem":          diItem(func(j *jalanAksi) error { return models.HapusItem(j.k, j.h, j.o, j.i) }),
-		"SetObjectItem":      diItem(func(j *jalanAksi) error { return models.PilihItemProperti(j.k, j.h, j.o, j.i, j.r.Param) }),
+		"SetObjectItem":      diItem(tolakKembar(func(j *jalanAksi) error { return models.PilihItemProperti(j.k, j.h, j.o, j.i, j.r.Param) })),
 		"PilihOkupasi":       diItem(func(j *jalanAksi) error { return models.PilihOkupasi(j.h, j.o, j.i, j.r.Param) }),
-		"PilihCoverageFire":  diItem(func(j *jalanAksi) error { return models.PilihCoverageFire(j.h, j.o, j.i, j.r.Param) }),
-		"PilihAneka":         diItem(func(j *jalanAksi) error { return models.PilihAneka(j.k, j.h, j.o, j.i, j.r.Param) }),
-		"PilihCoverageAneka": diItem(func(j *jalanAksi) error { return models.PilihCoverageAneka(j.k, j.h, j.o, j.i, j.r.Param) }),
-		"PilihCoverageObjek": diItem(func(j *jalanAksi) error { return models.PilihCoverageObjek(j.k, j.h, j.o, j.i, j.r.Param) }),
+		"PilihCoverageFire":  diItem(tolakKembar(func(j *jalanAksi) error { return models.PilihCoverageFire(j.h, j.o, j.i, j.r.Param) })),
+		"PilihAneka":         diItem(tolakKembar(func(j *jalanAksi) error { return models.PilihAneka(j.k, j.h, j.o, j.i, j.r.Param) })),
+		"PilihCoverageAneka": diItem(tolakKembar(func(j *jalanAksi) error { return models.PilihCoverageAneka(j.k, j.h, j.o, j.i, j.r.Param) })),
+		"PilihCoverageObjek": diItem(tolakKembar(func(j *jalanAksi) error { return models.PilihCoverageObjek(j.k, j.h, j.o, j.i, j.r.Param) })),
 		// estimasi - panel item (grid estimasi, deductible)
 		"ValidateInputEstimate": diItem(func(j *jalanAksi) error { return models.TambahEstimasi(j.k, j.h, j.o, j.i) }),
 		"CheckEstimateValue":    diItem(func(j *jalanAksi) error { return models.CheckEstimateValue(j.k, j.h, j.o, j.i) }),

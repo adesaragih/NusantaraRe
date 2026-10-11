@@ -26,6 +26,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"text/tabwriter"
 	"time"
 
 	inti "nusantarare/inti/backend"
@@ -53,6 +54,10 @@ func main() {
 	flag.StringVar(&mn, "menu", "", "KODE menu dipisah koma, mis. claimlife,kelolauser (-buat-pengguna); kosong = tanpa layar")
 	sandiStdin := flag.Bool("sandi-dari-stdin", false,
 		"-buat-pengguna dengan sandi dari baris pertama stdin (tidak dicetak, tidak wajib diganti) alih-alih sandi sementara")
+	muatLogin := flag.String("muat-pengguna", "",
+		"CSV sheet LOGIN ekspor operator Pega: buat akun bersandi bawaan 123456 (tidak wajib ganti) lalu keluar; uji-kering kecuali -jalankan")
+	muatKontak := flag.String("muat-kontak", "", "CSV sheet CONTACT (CONTACT, NAMA, AKSES LOGIN): CONTACT_ID tetap untuk -muat-pengguna")
+	jalankanMuat := flag.Bool("jalankan", false, "-muat-pengguna: benar-benar menulis akun (tanpa ini = uji-kering)")
 	flag.Parse()
 
 	cfg, err := config.Load()
@@ -99,6 +104,10 @@ func main() {
 	}
 	if *migrasi {
 		jalankanMigrasi(dasar, cfg)
+		return
+	}
+	if *muatLogin != "" {
+		muatPengguna(dasar, *muatLogin, *muatKontak, *jalankanMuat)
 		return
 	}
 	if baru.ID != "" {
@@ -205,6 +214,58 @@ func buatPengguna(svc *inti.Dasar, a login.AkunBaru, dariStdin bool) {
 		log.Fatalf("buat-pengguna: %v", err)
 	}
 	fmt.Printf("akun %s dibuat. Sandi sementara (tampil SEKALI, wajib diganti saat login pertama): %s\n", a.ID, sandi)
+}
+
+// muatPengguna adalah titik masuk `-muat-pengguna` (perintah work owner 11-10-2026): akun dari sheet LOGIN ekspor
+// operator Pega (disimpan sebagai CSV), CONTACT_ID tetap dari sheet CONTACT (`-muat-kontak`). Uji-kering bawaan;
+// `-jalankan` menulis - setiap akun transaksinya sendiri, akun yang sudah ada dilewati, jadi aman dijalankan ulang.
+func muatPengguna(svc *inti.Dasar, berkasLogin, berkasKontak string, jalankan bool) {
+	if !svc.PunyaDatabase() {
+		log.Fatal("muat-pengguna: ORACLE_DSN wajib terisi")
+	}
+	baca := func(jalur string) []map[string]string {
+		f, err := os.Open(jalur)
+		if err != nil {
+			log.Fatalf("muat-pengguna: %v", err)
+		}
+		defer f.Close()
+		b, err := login.BacaCSV(f)
+		if err != nil {
+			log.Fatalf("muat-pengguna: %s: %v", jalur, err)
+		}
+		return b
+	}
+	barisLogin := baca(berkasLogin)
+	kontak := map[string]string{}
+	if berkasKontak != "" {
+		k, err := login.PetaKontak(baca(berkasKontak))
+		if err != nil {
+			log.Fatalf("muat-pengguna: %v", err)
+		}
+		kontak = k
+	}
+	lay := login.NewLayanan(login.NewGudangOracle(svc.DB()), nil)
+	hasil, err := lay.MuatPengguna(context.Background(), login.SusunMuat(barisLogin, kontak), jalankan)
+	w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
+	fmt.Fprintln(w, "BARIS\tUSERNAME\tSTATUS\tCONTACT_ID\tCATATAN")
+	jumlah := map[string]int{}
+	for _, h := range hasil {
+		id := h.IDKontak
+		if id == "" {
+			id = "(sequence)"
+		}
+		fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\n", h.Baris, h.ID, h.Status, id, strings.Join(h.Catatan, "; "))
+		jumlah[h.Status]++
+	}
+	_ = w.Flush()
+	fmt.Printf("\nringkasan: %d baris - siap %d, dibuat %d, sudah ada %d, gagal %d\n", len(hasil),
+		jumlah[login.StatusMuatSiap], jumlah[login.StatusMuatDibuat], jumlah[login.StatusMuatSudahAda], jumlah[login.StatusMuatGagal])
+	if !jalankan {
+		fmt.Println("uji-kering: tidak ada yang ditulis. Tambahkan -jalankan untuk membuat akun (password awal 123456).")
+	}
+	if err != nil {
+		log.Fatalf("muat-pengguna: berhenti: %v", err)
+	}
 }
 
 // bongkarMigrasi adalah titik masuk `-migrate-down`.

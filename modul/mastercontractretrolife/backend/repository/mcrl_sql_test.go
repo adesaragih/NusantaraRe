@@ -25,8 +25,9 @@ func TestSQLGridMengikutiRD(t *testing.T) {
 		{"kontrak BrowseTreatyContract_Life_RD b628/b940", sqlPilih(KolomKontrak, "IDTREATYYEAR = :1", "ID ASC")("S.TREATYCONTRACT_LIFE"),
 			[]string{"WHERE IDTREATYYEAR = :1", "ORDER BY ID ASC"}},
 		{"reinsurer BrowseDetailTreatyReisurerLife_RD b613/b631/b896",
-			sqlPilih(KolomReinsurer, "TREATYYEARID = :1 AND TREATYCONTRACTID = :2", "ID DESC")("S.TREATYREINSURER_LIFE"),
-			[]string{"TREATYYEARID = :1 AND TREATYCONTRACTID = :2", "ORDER BY ID DESC"}},
+			sqlPilih(KolomReinsurer, "TREATYYEARID = :1 AND TREATYCONTRACTID = :2", UrutReinsurer)("S.TREATYREINSURER_LIFE"),
+			// urut ID menaik (keputusan work owner 06-10-2026)
+			[]string{"TREATYYEARID = :1 AND TREATYCONTRACTID = :2", "ORDER BY ID ASC"}},
 		{"jenis BrowseReinsuranceTypeLimit_RD b578/b765", sqlJenisReasuransi("S.REINSURANCETYPE"),
 			[]string{"WHERE FLAG = :1", "ORDER BY ID DESC"}},
 		{"reinsurer master BrowseCedingCoLife_RD b565/b584/b601/b745", sqlCariReinsurer("S.AGENT"),

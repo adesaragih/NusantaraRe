@@ -29,7 +29,7 @@ func TestCariMasterHurufBesarDanRIRateDibaca(t *testing.T) {
 	}
 }
 
-// View Rate (K1 01-10-2026): view `RATE_LIFE` satu RIRATEID, urut `ID DESC, RATE ASC`, RATE teks apa
+// View Rate (K1 01-10-2026): tabel `M_RATE_LIFE` satu RIRATEID, urut `ID DESC, RATE ASC`, RATE teks apa
 // adanya, 500 baris + terpotong; tanpa RIRATEID ditolak (nol pembacaan tanpa kunci).
 func TestDaftarRateDariViewRate(t *testing.T) {
 	l, g := layananUji()

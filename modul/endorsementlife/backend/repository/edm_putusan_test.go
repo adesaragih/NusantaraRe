@@ -41,10 +41,26 @@ func TestSQLPutusan(t *testing.T) {
 	if q := sqlHapusRekapWarisan(uRekapW); penampungUnik(t, "sqlHapusRekapWarisan", q) != 2 || !strings.Contains(q, "w.PL_NUMBER = :1 AND w.IDPEGA = :2") {
 		t.Errorf("hapus rekap warisan: %s", q)
 	}
-	s := sqlSisipRekapWarisan(uRekapW, "UJISKEMA.M_LIFE_PREMIUM_SUMMARY_SEQ", uRekap)
-	if penampungUnik(t, "sqlSisipRekapWarisan", s) != 5 || !strings.Contains(s, "TO_CHAR(UJISKEMA.M_LIFE_PREMIUM_SUMMARY_SEQ.NEXTVAL)") ||
-		!strings.HasSuffix(s, "WHERE r.PREMIUM_LIST_ID = :5") || strings.Contains(s, "COMMIT") {
+	s := sqlSisipRekapWarisan(uRekapW, "UJISKEMA.M_LIFE_PREMIUM_SUMMARY_SEQ", uRekap, uPeserta, models.TypeQR)
+	if penampungUnik(t, "sqlSisipRekapWarisan", s) != 7 || !strings.Contains(s, "TO_CHAR(UJISKEMA.M_LIFE_PREMIUM_SUMMARY_SEQ.NEXTVAL)") ||
+		!strings.HasSuffix(s, "WHERE r.PREMIUM_LIST_ID = :7") || strings.Contains(s, "COMMIT") {
 		t.Errorf("sisip rekap warisan: %s", s)
+	}
+	// PREMIUM_SELISIH / BALANCE_SELISIH (09-10-2026): kolom sesudah daftar prosedur; nilai = rekap peserta D∪N
+	// bermata uang sama, ekspresi rumusPremiBalance yang sama dengan Summary Comparison.
+	if !strings.Contains(s, ", IDPEGA, PREMIUM_SELISIH, BALANCE_SELISIH) SELECT ") {
+		t.Errorf("kolom selisih: %s", s)
+	}
+	premi, balance := rumusPremiBalance(models.TypeQR)
+	for i, e := range []string{premi, balance} {
+		mau := sqlSelisihRekap(uPeserta, e, []string{":5", ":6"}[i])
+		if !strings.Contains(s, mau) || !strings.Contains(mau, kelompokStatus()+" IN ('D', 'N')") ||
+			!strings.Contains(mau, "DECODE(d.CURRENCY, r.CURRENCY, 1, 0) = 1") || !strings.Contains(mau, "d.PREMIUM_LIST_ID = "+[]string{":5", ":6"}[i]) {
+			t.Errorf("selisih %d: %s", i, mau)
+		}
+	}
+	if sqlSelisihRekap(uPeserta, "0", ":5") != "0" {
+		t.Error("tipe lain: selisih 0")
 	}
 	if strings.Count(s, "NVL(r.") != len(KolomRekapWarisan)-5 || strings.Contains(s, "TO_CHAR(r.") {
 		t.Errorf("uang rekap warisan harus NUMBER langsung ber-NVL 0 (kebal NLS)")
@@ -133,19 +149,28 @@ const uProduksiW = "UJISKEMA.LIFEINPRODUCTION"
 // `pyWorkPage.*` langkah 8 b1805), nol `COMMIT`.
 func TestSQLProduksiWarisan(t *testing.T) {
 	q := sqlSisipProduksiWarisan(uProduksiW, uPolis)
-	if penampungUnik(t, "sqlSisipProduksiWarisan", q) != 4 || !strings.HasSuffix(q, "FROM "+uPolis+" p WHERE p.ID = :4") ||
+	if penampungUnik(t, "sqlSisipProduksiWarisan", q) != 9 || !strings.HasSuffix(q, "FROM "+uPolis+" p WHERE p.ID = :9") ||
 		strings.Contains(q, "COMMIT") {
 		t.Errorf("sisip produksi warisan: %s", q)
+	}
+	// DESCRIPTION ← Comment keputusan (09-10-2026): kolom tambahan sesudah 27 kolom korpus, penampung :4.
+	// WPC / PRODUCTNAMEID / PRODUCTNAME ← kepala kasus (09-10-2026): ekspresi kolom, bukan penampung.
+	// ANNUITYINTEREST / PREMIUMREFUNDFACTOR ← kepala kasus, cadangan versi yang di-endorse (09-10-2026).
+	if strings.Join(KolomProduksiTambahanEDM, ",") != "DESCRIPTION,WPC,PRODUCTNAMEID,PRODUCTNAME,ANNUITYINTEREST,PREMIUMREFUNDFACTOR" ||
+		!strings.Contains(q, ", TGL_INPUT, DESCRIPTION, WPC, PRODUCTNAMEID, PRODUCTNAME, ANNUITYINTEREST, PREMIUMREFUNDFACTOR) SELECT ") ||
+		!strings.Contains(q, ", SYSDATE, :4, TRUNC(p.WPC), p.PRODUCT_NAME_ID, p.PRODUCT_NAME, "+
+			"NVL(p.ANNUITY_INTEREST, TO_NUMBER(:5) / POWER(10, :6)), NVL(p.PREMIUM_REFUND_FACTOR, TO_NUMBER(:7) / POWER(10, :8)) FROM ") {
+		t.Errorf("kolom tambahan: %s", q)
 	}
 	if len(KolomProduksiWarisan) != 27 || KolomProduksiWarisan[0] != "IDPEGA" || KolomProduksiWarisan[26] != "TGL_INPUT" {
 		t.Fatalf("27 kolom VERBATIM: %v", KolomProduksiWarisan)
 	}
-	if !strings.Contains(q, "INSERT INTO "+uProduksiW+" ("+strings.Join(KolomProduksiWarisan, ", ")+")") {
+	if !strings.Contains(q, "INSERT INTO "+uProduksiW+" ("+strings.Join(KolomProduksiWarisan, ", ")+", DESCRIPTION, WPC, PRODUCTNAMEID, PRODUCTNAME, ANNUITYINTEREST, PREMIUMREFUNDFACTOR)") {
 		t.Errorf("daftar kolom bukan urutan korpus: %s", q)
 	}
 	for _, w := range []string{"SELECT :1, :2, :3, p.BUSINESS_CODE,", "TRUNC(p.DATE_RECEIVED)", "p.CREATE_OP_NAME",
 		"CASE p.TYPE_CEDING WHEN '1' THEN 'QS' WHEN '2' THEN 'SURPLUS' WHEN '3' THEN 'QS + SURPLUS' WHEN '4' THEN 'XOL' END",
-		"p.SECURITY_REINSURER_ID, p.SECURITY_REINSURER, SYSDATE FROM"} {
+		"p.SECURITY_REINSURER_ID, p.SECURITY_REINSURER, SYSDATE, :4, TRUNC(p.WPC), p.PRODUCT_NAME_ID, p.PRODUCT_NAME, NVL("} {
 		if !strings.Contains(q, w) {
 			t.Errorf("sisip produksi warisan tanpa %q:\n%s", w, q)
 		}

@@ -10,6 +10,7 @@
 //	GET  /api/claim-fac-in/kasus/{id}/pilihan/{jenis}?konteks=&indeks=&cari=&jenisCari=   isi pop-up / autocomplete
 //	GET  /api/claim-fac-in/acuan                                            daftar pilihan bersama
 //	GET  /api/claim-fac-in/hak                                              tab workbasket (anggota ReasKlaimTeknik)
+//	GET  /api/claim-fac-in/kasus/{id}/polis-nb-it                           tab Loss Record / Correspondence polis (akun IT)
 //	GET  /api/claim-fac-in/kasus/{id}/lampiran                              kategori + dokumen klaim (lampiran.go)
 //	POST /api/claim-fac-in/kasus/{id}/lampiran                              unggah lampiran (GCNMSaveAttachments)
 //	GET  /api/claim-fac-in/kasus/{id}/lampiran/{lid}/isi                    View File
@@ -49,6 +50,7 @@ func DaftarkanRute(mux *http.ServeMux, l *services.Layanan, stubPelaku bool) {
 	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/pilihan/{jenis}", h.pilihan)
 	mux.HandleFunc("GET "+Prefix+"/acuan", h.acuan)
 	mux.HandleFunc("GET "+Prefix+"/hak", h.hak)
+	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/polis-nb-it", h.polisNBIT)
 	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/lampiran", h.lampiran)
 	mux.HandleFunc("POST "+Prefix+"/kasus/{id}/lampiran", h.unggahLampiran)
 	mux.HandleFunc("GET "+Prefix+"/kasus/{id}/lampiran/{lid}/isi", h.unduhLampiran)
@@ -123,6 +125,15 @@ func tulisGalat(w http.ResponseWriter, err error) {
 // hak - tab workbasket halaman awal (anggota ReasKlaimTeknik).
 func (h *rute) hak(w http.ResponseWriter, r *http.Request) {
 	out, err := h.l.Hak(r.Context(), h.pelaku(r))
+	if err != nil {
+		tulisGalat(w, err)
+		return
+	}
+	tulisJSON(w, http.StatusOK, out)
+}
+
+func (h *rute) polisNBIT(w http.ResponseWriter, r *http.Request) {
+	out, err := h.l.PolisNBIT(r.Context(), h.pelaku(r), r.PathValue("id"))
 	if err != nil {
 		tulisGalat(w, err)
 		return

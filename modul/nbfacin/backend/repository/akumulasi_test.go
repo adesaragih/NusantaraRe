@@ -32,7 +32,7 @@ func TestSQLCariAkumulasi(t *testing.T) {
 }
 
 // TestSQLAkumulasiSQL - jalur RDB-List: kota / kecamatan persis SQL korpus (CARI2 = ACCUMULATIONTYPE), nomor polis lewat
-// JSON_TABLE jalur korpus tanpa prosedur.
+// TABEL FACINPRODUCTION (work owner 09-10-2026: tanpa DATA_JSON) tanpa prosedur.
 func TestSQLAkumulasiSQL(t *testing.T) {
 	if q := sqlAkumulasiWilayah("UJI.A", "UJI.R", false); q != "SELECT ID, ACCUMULATIONTYPE, NOTE FROM UJI.A WHERE STS_AKTIF = '1' AND ZIPCODE IN (SELECT ZIPCODE FROM UJI.R WHERE CITYID = :1) ORDER BY ID, NOTE FETCH FIRST :2 ROWS ONLY" {
 		t.Errorf("kota: %q", q)
@@ -40,14 +40,16 @@ func TestSQLAkumulasiSQL(t *testing.T) {
 	if q := sqlAkumulasiWilayah("UJI.A", "UJI.R", true); !strings.Contains(q, "WHERE DISTRICTID = :1)") {
 		t.Errorf("kecamatan: %q", q)
 	}
-	q := sqlAkumulasiPolis("UJI.J", "UJI.A")
-	for _, harus := range []string{"FROM UJI.J p, JSON_TABLE(p.DATA_JSON, '$.LocationList[*]'", "NESTED PATH '$.Property.PropertyItemList[*]'",
-		"NESTED PATH '$.CoverageList[*]'", "PATH '$.AccumulationCode'", "WHERE p.NOPOLIS = :1 AND jt.ACCUMULATIONCODE IS NOT NULL",
-		"AND EXISTS (SELECT 1 FROM UJI.A x WHERE x.ID = jt.ACCUMULATIONCODE AND x.STS_AKTIF = '1')",
-		"SELECT MAX(x.ACCUMULATIONNAME) FROM UJI.A x WHERE x.ID = j.ACCUMULATIONCODE", "FETCH FIRST :2 ROWS ONLY"} {
+	q := sqlAkumulasiPolis("UJI.P", "UJI.A")
+	for _, harus := range []string{"(SELECT DISTINCT p.ACCUMULATIONCODE FROM UJI.P p WHERE p.NOPOLIS = :1 AND p.ACCUMULATIONCODE IS NOT NULL",
+		"AND EXISTS (SELECT 1 FROM UJI.A x WHERE x.ID = p.ACCUMULATIONCODE AND x.STS_AKTIF = '1')",
+		"SELECT MAX(x.ACCUMULATIONNAME) FROM UJI.A x WHERE x.ID = j.ACCUMULATIONCODE", "ORDER BY j.ACCUMULATIONCODE FETCH FIRST :2 ROWS ONLY"} {
 		if !strings.Contains(q, harus) {
 			t.Errorf("polis tanpa %q: %s", harus, q)
 		}
+	}
+	if strings.Contains(strings.ToUpper(q), "JSON") || bindBerurutan(t, "polis", q) != 2 {
+		t.Errorf("polis tanpa DATA_JSON / dua bind: %s", q)
 	}
 	if strings.Contains(strings.ToUpper(q), "CALL ") || strings.Contains(strings.ToUpper(q), "BEGIN") {
 		t.Error("ADR-0043: nol prosedur")

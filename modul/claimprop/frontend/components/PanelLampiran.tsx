@@ -1,4 +1,5 @@
-// Tab "Lampiran" - susunan layar Pega (screenshot work owner 09-10-2026): judul (tanpa jumlah - work owner 09-10-2026),
+// Panel "Lampiran" (pil tab di atasnya dihapus - work owner 11-10-2026) - susunan layar Pega (screenshot work owner
+// 09-10-2026): judul (tanpa jumlah - work owner 09-10-2026),
 // tombol Add attachment / Refresh / Save, grid Category - Count Attach - Upload File - View File (5 baris, "Show All"). Isinya
 // `AttachCategory.pxResults` = master T_KATEGORI_DOC_KLAIM PROP x cacah dokumen klaim. Upload File / Add attachment =
 // `GCNMSaveAttachments` (kategori baris = TempInputParam.pyCategory; Add attachment = kategori PER BERKAS `.pyCategory`,
@@ -8,7 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { Gagal, Memuat, Modal, StripTab } from '../../../../inti/frontend/components/ui/dasar'
+import { Gagal, Memuat, Modal } from '../../../../inti/frontend/components/ui/dasar'
 import { ApiFailure } from '../../../../inti/frontend/klien'
 import {
   ambilIsiLampiran,
@@ -43,8 +44,6 @@ interface BerkasPilihan {
   file: File
   kategori: string
 }
-
-const TAB_LAMPIRAN = ['lampiran'] as const
 
 function IkonUnggah() {
   return (
@@ -183,7 +182,7 @@ export default function PanelLampiran({
   const pesanGalat = galat instanceof ApiFailure ? galat.detail.message : null
   return (
     <div>
-      <StripTab tab={TAB_LAMPIRAN} aktif="lampiran" onPilih={() => undefined} label={() => CP.lampiran} />
+      {/* pil tab tunggal "Lampiran" di atas panel dihapus (perintah work owner 11-10-2026); judul panel tetap */}
       <section className="panel">
         <h3 className="panel__title">{CP.lampiran}</h3>
         {galat !== null &&

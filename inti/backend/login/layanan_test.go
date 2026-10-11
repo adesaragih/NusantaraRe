@@ -57,12 +57,14 @@ func gudangUji(t *testing.T) *gudangTiruan {
 	}
 }
 
+// AmbilAkun - seperti Oracle `LOWER(LOGIN_ID) = LOWER(:1)`: username tanpa beda huruf (perintah work owner 11-10-2026).
 func (g *gudangTiruan) AmbilAkun(_ context.Context, id string) (Akun, error) {
-	a, ada := g.akun[id]
-	if !ada {
-		return Akun{}, ErrAkunTidakAda
+	for k, a := range g.akun {
+		if strings.EqualFold(k, id) {
+			return *a, nil
+		}
 	}
-	return *a, nil
+	return Akun{}, ErrAkunTidakAda
 }
 
 // Workbasket - seperti Oracle: hanya yang AKTIF di master (bukan nonaktif).
@@ -142,6 +144,9 @@ func (g *gudangTiruan) BuatAkun(_ context.Context, a AkunBaru, hash string, waji
 		g.idKontak = map[string]string{}
 	}
 	g.idKontak[a.ID] = fmt.Sprintf("%s%d", AwalanIDKontak, 1001+len(g.idKontak))
+	if a.IDKontak != "" {
+		g.idKontak[a.ID] = a.IDKontak
+	}
 	return nil
 }
 
@@ -158,6 +163,16 @@ func (g *gudangTiruan) PemakaiUsername(_ context.Context, id string) ([]string, 
 }
 func (g *gudangTiruan) PemakaiEmail(_ context.Context, email string) ([]string, error) {
 	return g.pemakai(func(akun string) string { return g.kontak[akun].Email }, email), nil
+}
+func (g *gudangTiruan) PemakaiKontak(_ context.Context, id string) ([]string, error) {
+	var out []string
+	for akun, k := range g.idKontak {
+		if k == id {
+			out = append(out, akun)
+		}
+	}
+	sort.Strings(out)
+	return out, nil
 }
 func (g *gudangTiruan) pemakai(nilaiAkun func(string) string, cari string) []string {
 	cari = strings.TrimSpace(cari)
@@ -280,11 +295,9 @@ func TestGantiSandi(t *testing.T) {
 	if _, _, err := l.GantiSandi(context.Background(), tok, "Sandi-Salah-01", "Sandi-Baru-0001"); !errors.Is(err, ErrKredensial) {
 		t.Errorf("sandi lama salah: %v", err)
 	}
-	if _, _, err := l.GantiSandi(context.Background(), tok, "Sandi-Benar-01", "pendek"); !errors.Is(err, ErrSandiTerlaluPendek) {
-		t.Errorf("sandi baru pendek: %v", err)
-	}
-	if _, _, err := l.GantiSandi(context.Background(), tok, "Sandi-Benar-01", "Sandi-Benar-01"); !errors.Is(err, ErrSandiSama) {
-		t.Errorf("sandi baru sama: %v", err)
+	// tanpa batasan (perintah work owner 11-10-2026): hanya sandi kosong yang ditolak
+	if _, _, err := l.GantiSandi(context.Background(), tok, "Sandi-Benar-01", ""); !errors.Is(err, ErrSandiTerlaluPendek) {
+		t.Errorf("sandi baru kosong: %v", err)
 	}
 	p, baru, err := l.GantiSandi(context.Background(), tok, "Sandi-Benar-01", "Sandi-Baru-0001")
 	if err != nil || p.WajibGantiSandi {
@@ -351,8 +364,8 @@ func TestLayananTanpaRahasiaTidakMenerbitkanSesi(t *testing.T) {
 func TestBuatPenggunaDenganSandi(t *testing.T) {
 	g := gudangUji(t)
 	l := NewLayanan(g, rahasiaUji)
-	if err := l.BuatPenggunaDenganSandi(context.Background(), AkunBaru{ID: "UJI-C1", Nama: "Uji C1"}, "pendek"); !errors.Is(err, ErrSandiTerlaluPendek) {
-		t.Errorf("sandi pendek: %v", err)
+	if err := l.BuatPenggunaDenganSandi(context.Background(), AkunBaru{ID: "UJI-C1", Nama: "Uji C1"}, ""); !errors.Is(err, ErrSandiTerlaluPendek) {
+		t.Errorf("sandi kosong: %v", err)
 	}
 	if len(g.dibuat) != 0 {
 		t.Fatal("akun dibuat walau sandinya ditolak")

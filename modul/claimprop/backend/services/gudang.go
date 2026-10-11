@@ -44,9 +44,9 @@ type Gudang interface {
 	SisipKatastrofe(ctx context.Context, tx *db.Tx, k models.KatastrofeBaru, saat time.Time) error
 	BuatKasusKomite(ctx context.Context, tx *db.Tx, klaimID, adjID, pembuat, namaPembuat string,
 		anggota []repository.AnggotaTangga, saat time.Time) (string, error)
-	BuatKasusKomiteTutup(ctx context.Context, tx *db.Tx, klaimID, kronologi, pembuat, namaPembuat string,
+	BuatKasusKomiteTutup(ctx context.Context, tx *db.Tx, klaimID, transfer, kronologi, pembuat, namaPembuat string,
 		anggota []repository.AnggotaTangga, saat time.Time) (string, error)
-	KomiteTutupTerbuka(ctx context.Context, tx *db.Tx, klaimID string) (int, error)
+	KomiteTanpaAdjTerbuka(ctx context.Context, tx *db.Tx, klaimID string) (id, transfer string, err error)
 	TutupKomiteTerbuka(ctx context.Context, tx *db.Tx, klaimID, kecuali string, saat time.Time) error
 	AntreEfek(ctx context.Context, tx *db.Tx, jenis, rujukan, muatan string, saat time.Time) (string, error)
 

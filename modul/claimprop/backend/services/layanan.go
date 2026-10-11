@@ -131,6 +131,14 @@ func tataKasus(k models.Kasus, h *models.Halaman, kunci bool) ([]models.Tata, ma
 	case models.TahapOutstanding:
 		utama = models.Evaluasi(h, models.LayarOutstanding(), kunci)
 		modal["pla"] = models.Evaluasi(h, models.LayarPLA(), kunci)
+		// posisi admin: Reject Claim (Claim No kosong) / Close Claim (Claim No ada) - perintah work owner 10-10-2026.
+		// Hanya pop-up tombol yang tampil dirakit: tombol di dalam pop-up ikut membuka aksinya (`AksiTerbuka`).
+		if models.NomorKlaimKosong(h) {
+			modal["tolakKlaim"] = models.Evaluasi(h, models.LayarTolakKlaim(), kunci)
+			modal["yakinTolak"] = models.Evaluasi(h, models.LayarYakinTolak(), kunci)
+		} else {
+			modal["tutupKlaim"] = models.Evaluasi(h, models.LayarTutupKlaim(), kunci)
+		}
 	default:
 		utama = models.Evaluasi(h, models.LayarAkseptasi(), kunci)
 		modal["pla"] = models.Evaluasi(h, models.LayarPLA(), kunci)
@@ -243,11 +251,27 @@ func (l *Layanan) turunkan(ctx context.Context, k *models.Konteks, h *models.Hal
 //
 // ⚠️ Pega menjalankan DT pra-proses setiap assignment dibuka; di sini tanggalnya hanya diisi bila masih kosong
 // (penyimpangan sadar - jejak waktu mulai tahap tidak bergeser setiap kali berkas dibuka; PARITAS).
+// tandaiMenunggu - pengajuan Reject / Close Without Payment klaim `id` yang masih menunggu komite (ID dan
+// TRANSFER_TYPE) ke halaman, dibaca pop-up Close Claim / Reject Claim (perintah work owner 10-10-2026). Tidak
+// disimpan; `tx` nil = buka kasus.
+func (l *Layanan) tandaiMenunggu(ctx context.Context, tx *db.Tx, id string, h *models.Halaman) error {
+	kid, tt, err := l.g.KomiteTanpaAdjTerbuka(ctx, tx, id)
+	if err != nil {
+		return err
+	}
+	h.Setel(models.PropKomiteMenunggu, kid)
+	h.Setel(models.PropJenisKomiteMenunggu, tt)
+	return nil
+}
+
 func (l *Layanan) siapkan(k *models.Konteks, kasus models.Kasus, h *models.Halaman) error {
 	switch kasus.Tahap {
 	case models.TahapOutstanding:
 		if h.Ambil("StartDateEstimation") == "" {
 			h.Setel("StartDateEstimation", k.Waktu())
+		}
+		if err := models.SiapkanTolak(k, h); err != nil { // isian hanya-baca pop-up Reject Claim
+			return err
 		}
 		return models.CheeckNoRNM(k, h)
 	case models.TahapAcceptation:
@@ -283,6 +307,9 @@ func (l *Layanan) BukaKasus(ctx context.Context, p inti.Pelaku, id string, lihat
 	boleh := Pemegang(p, k) && !lihat
 	if boleh {
 		if err := l.siapkan(kt, k, h); err != nil {
+			return nil, err
+		}
+		if err := l.tandaiMenunggu(ctx, nil, id, h); err != nil {
 			return nil, err
 		}
 		h.BersihkanPesan()

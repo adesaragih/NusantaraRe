@@ -56,8 +56,15 @@ func TestKodeStatusLiteralHanyaDiModels(t *testing.T) {
 			return nil
 		}
 		bersih := polaKomentar.ReplaceAllString(string(isi), "")
+		// ⛔ Lingkup 10-10-2026 (pindai_bantu_test.go): kode status yang dijaga adalah kode status KLAIM
+		// (kontrak.KodeOutstanding/KodeAksep/KodeDitolak). Modul lain hanya diperiksa bila kodenya menyentuh
+		// tabel Claim Life - mis. Komite menulis STS_REJECT T_GENERAL_CLAIM. `inti/backend/master` dkk. punya
+		// kode statusnya sendiri dan bukan urusan penjaga ini.
+		if !dalamLingkupClaimLife(jalur, bersih) {
+			return nil
+		}
 		if polaKodeLiteral.MatchString(bersih) {
-			temuan = append(temuan, rel)
+			temuan = append(temuan, relAkar(jalur))
 		}
 		diperiksa++
 		return nil

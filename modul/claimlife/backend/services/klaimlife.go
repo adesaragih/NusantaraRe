@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"nusantarare/inti/backend/db"
@@ -85,7 +86,18 @@ func (k *KlaimLife) Ambil(ctx context.Context, id string) (*models.Klaim, error)
 		return nil, err
 	}
 
+	// Nama dan tanggal lahir peserta - grid Participant Details layar Outstanding (10-10-2026). Dibaca dari baris
+	// sumber, tidak disimpan di tabel klaim.
+	tertanggung, err := k.repo.TertanggungPeserta(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
 	for i := range peserta {
+		if t, ada := tertanggung[peserta[i].ID]; ada {
+			peserta[i].NamaTertanggung, peserta[i].TanggalLahir = t.Nama, t.TanggalLahir
+			peserta[i].JenisKelamin, peserta[i].Plan = t.JenisKelamin, t.Plan
+		}
 		if b, ada := baris[peserta[i].ID]; ada {
 			peserta[i].Baris = b
 		}
@@ -129,7 +141,21 @@ func (k *KlaimLife) Ambil(ctx context.Context, id string) (*models.Klaim, error)
 	// ⭐ BUTIR bk - `.MAXCLAIM_RECEIVED` DIHITUNG saat baca, di jalur yang
 	// sama dengan total dan pengenal mata uang: di Pega ia hanya Property-Set
 	// halaman (ValidasiClaimReceived_Act b582), nol penulis tabel.
-	ambang, alasan, err := k.ambangTerimaKlaim(ctx, klaim.NomorPolis)
+	// Kunci polis = IDPEGA peserta (kuncipolis.go, 10-10-2026): kolom tersimpan (migrasi 025). ⚠️ Cadangan lewat
+	// SOURCE_ID HANYA bila kolomnya NULL - baris yang tidak terjangkau backfill 025 (SOURCE_ID kosong / baris sumber
+	// tidak ada) atau klaim yang didaftarkan sebelum -migrate. Cadangan tidak dibuang: backfill tidak menjamin terisi.
+	for i := range peserta {
+		if strings.TrimSpace(peserta[i].IdPega) != "" {
+			continue
+		}
+		id, err := k.repo.IdPegaSumber(ctx, repository.KunciPesertaSumber{PLNumber: peserta[i].NomorPremiList,
+			Sertifikat: peserta[i].NomorSertifikat, SumberID: peserta[i].SumberID})
+		if err != nil {
+			return nil, err
+		}
+		peserta[i].IdPega = id
+	}
+	ambang, alasan, err := k.ambangTerimaKlaim(ctx, IdPegaPeserta(peserta))
 	if err != nil {
 		return nil, err
 	}
@@ -211,18 +237,23 @@ func (k *KlaimLife) lengkapiPengenalMataUang(ctx context.Context,
 // Polis atau produk yang TIDAK DITEMUKAN bukan kerusakan layar Detail: ia
 // menjadi ALASAN (penanda tidak dihitung, dan itu dinyatakan). Galat basis
 // data lain tetap menggagalkan pembacaan.
-func (k *KlaimLife) ambangTerimaKlaim(ctx context.Context, nomorPolis string) (
+func (k *KlaimLife) ambangTerimaKlaim(ctx context.Context, idPega []string) (
 	ambang, alasan string, err error) {
 
-	if strings.TrimSpace(nomorPolis) == "" {
-		return "", "klaim tanpa nomor polis; ambang MAXEXPIREDCLAIM tidak dapat dibaca", nil
+	if len(idPega) == 0 {
+		return "", "peserta klaim tanpa IDPEGA; ambang MAXEXPIREDCLAIM tidak dapat dibaca", nil
 	}
-	polis, err := k.polis.Ringkas(ctx, nomorPolis)
+	polis, _, err := RingkasPolisIdPega(ctx, k.polis, idPega)
 	if errors.Is(err, kontrak.ErrPolisNomorTakDitemukan) {
 		return "", "polis belum ada di PremiumList Life; ambang MAXEXPIREDCLAIM tidak dapat dibaca", nil
 	}
 	if err != nil {
-		return "", "", err
+		// ⛔ 10-10-2026 (laporan WO "gagal membaca klaim" untuk case hasil Register): sejak kunci polis = IDPEGA, polis
+		// BENAR-BENAR ditemukan dan pembacaan ambang produk berjalan untuk pertama kalinya di detail klaim. Penanda
+		// `MAX CLAIM RECEIVED` hanya informasi - galatnya (dicatat di log) menjadi ALASAN, tidak lagi menggagalkan
+		// seluruh layar Detail.
+		log.Printf("claimlife: ambang MAXEXPIREDCLAIM: membaca polis IDPEGA %v: %v", idPega, err)
+		return "", "data polis tidak dapat dibaca; ambang MAXEXPIREDCLAIM tidak dihitung", nil
 	}
 	if strings.TrimSpace(polis.ProductNameID) == "" {
 		return "", "polis tidak menyebut produk; ambang MAXEXPIREDCLAIM tidak dapat dibaca", nil
@@ -232,7 +263,9 @@ func (k *KlaimLife) ambangTerimaKlaim(ctx context.Context, nomorPolis string) (
 		return "", "produk polis tidak ada di view produk; ambang MAXEXPIREDCLAIM tidak dapat dibaca", nil
 	}
 	if err != nil {
-		return "", "", err
+		// Alasan yang sama (lihat di atas): view produk yang tidak terbaca tidak boleh mematikan layar Detail.
+		log.Printf("claimlife: ambang MAXEXPIREDCLAIM: membaca produk %q: %v", polis.ProductNameID, err)
+		return "", "ambang produk tidak dapat dibaca; ambang MAXEXPIREDCLAIM tidak dihitung", nil
 	}
 	return a.MaxExpiredClaim, "", nil
 }
@@ -243,6 +276,8 @@ func (k *KlaimLife) ambangTerimaKlaim(ctx context.Context, nomorPolis string) (
 // dan alasannya ditulis - kosong tanpa alasan akan terbaca "sah".
 func isiPenandaTerimaKlaim(peserta []models.Peserta, maxExpiredClaim, alasan string) {
 	for i := range peserta {
+		// MAX EXPIRED CLAIM b11921 (11-10-2026): nilai ambang produk itu sendiri, ValidasiClaimReceived_Act b540.
+		peserta[i].MaksKlaimKadaluarsa = maxExpiredClaim
 		if alasan != "" {
 			peserta[i].PenandaTerimaKlaimAlasan = alasan
 			continue
@@ -254,4 +289,38 @@ func isiPenandaTerimaKlaim(peserta []models.Peserta, maxExpiredClaim, alasan str
 		}
 		peserta[i].PenandaTerimaKlaim = penanda
 	}
+}
+
+// SpreadingPolis - spreading PremiumList Life satu peserta klaim (keputusan work owner 11-10-2026: "ambil saja dari premium
+// list, tidak perlu perhitungan lagi"). Kunci: IDPEGA peserta (kolom tersimpan, cadangan lewat SOURCE_ID seperti Ambil) +
+// nomor sertifikat. Baca saja; tidak menghitung, tidak menulis.
+func (k *KlaimLife) SpreadingPolis(ctx context.Context, klaimID, pesertaID string) (models.SpreadingLayar, error) {
+	if k == nil || k.repo == nil {
+		return models.SpreadingLayar{}, db.ErrTanpaOracle
+	}
+	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" {
+		return models.SpreadingLayar{}, fmt.Errorf("%w: pengenal klaim dan peserta wajib diisi", ErrWajibIsi)
+	}
+	peserta, err := k.repo.AmbilPeserta(ctx, klaimID)
+	if err != nil {
+		return models.SpreadingLayar{}, err
+	}
+	for _, p := range peserta {
+		if p.ID != pesertaID {
+			continue
+		}
+		idPega := strings.TrimSpace(p.IdPega)
+		if idPega == "" {
+			if idPega, err = k.repo.IdPegaSumber(ctx, repository.KunciPesertaSumber{PLNumber: p.NomorPremiList,
+				Sertifikat: p.NomorSertifikat, SumberID: p.SumberID}); err != nil {
+				return models.SpreadingLayar{}, err
+			}
+		}
+		lapisan, err := k.repo.SpreadingPolisPeserta(ctx, strings.TrimSpace(idPega), strings.TrimSpace(p.NomorSertifikat))
+		if err != nil {
+			return models.SpreadingLayar{}, err
+		}
+		return models.SusunSpreading(lapisan), nil
+	}
+	return models.SpreadingLayar{}, ErrKlaimTidakAda
 }

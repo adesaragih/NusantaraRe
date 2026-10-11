@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -43,6 +44,18 @@ func (s *spreadingTiruanH) BacaSpreading(_ context.Context, _ *db.Tx, id string)
 }
 
 func (s *spreadingTiruanH) TulisSpreading(_ context.Context, _ *db.Tx, _ string, k models.KasusSpreading, ubah bool) error {
+	// Mask angkaMasuk (repository.PolaAngkaMasuk): nilai skala 20 = ORA-01722 di Oracle (bug DEV 08-10-2026).
+	for _, l := range k.Lokasi {
+		for _, it := range l.Items {
+			for _, c := range it.Coverages {
+				for _, x := range []*apd.Decimal{c.TSINusantaraRe, c.PremiNusantaraRe} {
+					if x != nil && !repository.PolaAngkaMasuk.MatchString(utils.FormatDecimal(x)) {
+						return fmt.Errorf("UJI mask angkaMasuk NR %s: %q", c.OldID, utils.FormatDecimal(x))
+					}
+				}
+			}
+		}
+	}
 	s.tulis++
 	if ubah {
 		s.tersimpan.PercentShare = k.PercentShare
@@ -99,7 +112,7 @@ func TestSpreadingKasus(t *testing.T) {
 		t.Fatalf("hitung-share: %d %s (tulis %d)", kode, isi, src.tulis)
 	}
 	kode, isi = minta(t, svc, "POST", "/api/nbfacin/kasus/S1/spreading/salin",
-		`{"percentShare":"50","template":[{"treatyType":"10015","treatyName":"FACOUT","sharePercentage":"100"}]}`, "")
+		`{"percentShare":"50","template":[{"treatyType":"10015","treatyName":"FACOUT","sharePercentage":"100"}]}`, "UJI-USER")
 	if kode != 200 || !strings.Contains(isi, `"template":[{"treatyType":"10015","treatyName":"FACOUT","sharePercentage":"100"}]`) ||
 		!strings.Contains(isi, `"tsiSpreaded":"500"`) || src.tulis != 0 {
 		t.Fatalf("salin: %d %s", kode, isi)
@@ -128,7 +141,7 @@ func TestSpreadingKasus(t *testing.T) {
 		"share > 100":         {"/api/nbfacin/kasus/S1/spreading", strings.Replace(badan, `"sharePercentage":"40"`, `"sharePercentage":"140"`, 1), "UJI-USER", "paling besar 100", 400},
 		"tanpa identitas":     {"/api/nbfacin/kasus/S1/spreading", badan, "", "", 401},
 		"case tidak ada":      {"/api/nbfacin/kasus/K404/spreading", badan, "UJI-USER", "", 404},
-		"salin tanpa templat": {"/api/nbfacin/kasus/S1/spreading/salin", `{"percentShare":"50","template":[]}`, "", "template", 400},
+		"salin tanpa templat": {"/api/nbfacin/kasus/S1/spreading/salin", `{"percentShare":"50","template":[]}`, "UJI-USER", "template", 400},
 	} {
 		metode := "PUT"
 		if strings.HasSuffix(c.jalur, "/salin") {

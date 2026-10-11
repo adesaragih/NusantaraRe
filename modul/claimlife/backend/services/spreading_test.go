@@ -73,7 +73,7 @@ func treatyUji(t *testing.T) []services.TahunTreaty {
 
 func rateUji(t *testing.T) []services.BarisRate {
 	t.Helper()
-	// Koma sengaja: 90.436 dari 98.305 baris RATE_LIFE memakai desimal
+	// Koma sengaja: 90.436 dari 98.305 baris M_RATE_LIFE memakai desimal
 	// Indonesia, dan Pega menguraikannya lewat replaceAll koma-ke-titik.
 	return []services.BarisRate{
 		{ID: "UJI-1", Umur: "30", Kontrak: "10", JenisKel: "U", Rate: rasio(t, "2.5")},

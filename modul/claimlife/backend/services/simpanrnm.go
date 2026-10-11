@@ -32,7 +32,7 @@ package services
 //	7-9     periode penomoran                              milik penomor (tiket 02)
 //	10      Business per BusinessCode                      ContentNoteDari
 //	11.1-6  klaim ganda DEATH / HEALTH (tabel warisan)      gerbang 2 - BACA SAJA; 11.3 `//`
-//	11.7-10 DOL dalam jendela, TANPA geser retro            gerbang 3
+//	11.7-10 DOL dalam [BEGIN, EXPIRED] inklusif (WO 11-10-2026) gerbang 3
 //	11.9/11 STNC                                           `//` - TIDAK ditiru
 //	11.12-17 DOB, BEGIN, EXPIRED, POLICY, CERT, CLAIM_GROSS gerbang 4
 //	12      dokumen LENGKAP                                 `//` - TIDAK ditiru
@@ -40,9 +40,10 @@ package services
 //	16-20   nomor klaim bila CLAIM_NO kosong                penomor yang sama dengan pendaftaran
 //	21, 24  bendera `pyWorkPage.Save`                       ⚠️ TANPA kolom - OQ-N1
 //	22      insert baris warisan + STS_REJECT=0             STS_REJECT hanya baris tanpa status
-//	                                                        (tiket 04); cermin `OS_AKSEPTASI_KLAIM_LIFE`
-//	                                                        disetel '0' (b176, OQ-N13 GILIRAN-18) -
-//	                                                        kolom lain warisan tetap BACA SAJA
+//	                                                        (tiket 04); baris datar `OS_AKSEPTASI_KLAIM_LIFE`
+//	                                                        LAHIR di sini (RALAT 10-10-2026, TulisCerminSaveRNM:
+//	                                                        UPDATE bila ada, INSERT bila baris belum disimpan)
+//	                                                        lalu disetel '0' (b176, OQ-N13 GILIRAN-18)
 //	23      enam total peserta                              `//` - totalnya dari SavePesertaClaim
 //	                                                        langkah 8 (HitungTotalPeserta, saat baca)
 //	25      InsertJsonClaimLife_Act: 1-2 salin + TUKAR      tukarnya dibaca langkah 27 - PolisRetro
@@ -62,6 +63,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cockroachdb/apd/v3"
+
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
 	"nusantarare/inti/backend/galat"
@@ -69,6 +72,7 @@ import (
 	"nusantarare/inti/backend/kontrak"
 	"nusantarare/inti/backend/layanan"
 	"nusantarare/inti/backend/outbox"
+	"nusantarare/inti/backend/uang"
 	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/claimlife/backend/models"
 	"nusantarare/modul/claimlife/backend/repository"
@@ -86,6 +90,19 @@ type PelanggaranRNM struct {
 	// Langkah XML asal pesannya, untuk yang menelusuri.
 	Langkah string
 	Pesan   string
+	// Kekurangan - SELURUH kolom wajib yang kosong / tidak sah, semua peserta (keputusan work owner 11-10-2026). Kosong
+	// untuk gerbang yang berhenti dini (klaim ganda). Pesan = gabungan baris Pesan tiap kekurangan.
+	Kekurangan []KekuranganRNM
+}
+
+// KekuranganRNM - satu kolom wajib yang belum terisi / tidak sah. NomorPeserta 0 = tingkat klaim (mis. Is KPR).
+type KekuranganRNM struct {
+	NomorPeserta int    `json:"nomorPeserta"`
+	PesertaID    string `json:"pesertaId"`
+	Sertifikat   string `json:"sertifikat"`
+	Nama         string `json:"nama"`
+	Kolom        string `json:"kolom"`
+	Pesan        string `json:"pesan"`
 }
 
 func (p *PelanggaranRNM) Error() string { return p.Pesan }
@@ -116,6 +133,8 @@ type PesertaRNM struct {
 type MasukanRNM struct {
 	// Tipe - `PolicyDataLife.Type`.
 	Tipe string
+	// IsKPR - header klaim (wajib sebelum Save to RNM, keputusan work owner 11-10-2026).
+	IsKPR string
 	// ContentNote - `Business.pxResults(1).ContentNote` (langkah 10).
 	ContentNote string
 	Peserta     []PesertaRNM
@@ -138,7 +157,22 @@ const (
 	formatPolisKosong   = "Policy No cannnot be blank No %d, please contact IT"
 	formatSertKosong    = "Certificate No cannnot be blank No %d, please contact IT"
 	formatGrossKosong   = "Claim Gross No %d can't null"
+	// Keputusan work owner 11-10-2026: DATE OF LOSS, CLAIM RECEIVED DATE, CONFIRMATION DATE WAJIB sebelum Save to RNM.
+	// DOL kosong sudah ditolak langkah 11.10 (formatDOLDiLuar, kalimat XML); dua lainnya aturan baru aplikasi.
+	formatTerimaKlaimKosong = "Claim Received Date is required for insured number %d"
+	formatKonfirmasiKosong  = "Confirmation Date is required for insured number %d"
+	// Keputusan work owner 11-10-2026: Claim RNM WAJIB (> 0) menggantikan 11.17.1 formatGrossKosong (yang hanya menolak
+	// kosong); Is KPR (header) wajib.
+	formatClaimRNMKosong = "Claim RNM is required for insured number %d"
+	pesanIsKPRKosong     = "Is KPR is required."
+	// Claim RNM > Share Nusantara Re (11-10-2026, dipindah dari Save grid) - kalimat layar galatClaimRNM + nomor peserta.
+	formatClaimRNMMelebihi = "Insured number %d: Claim RNM cannot be greater than Share Nusantara Re (%s)."
 )
+
+// KlaimRNMMinimal - Claim RNM harus LEBIH BESAR dari nilai ini (keputusan work owner 11-10-2026: wajib; 0 belum boleh).
+// ⚠️ Pega hanya menolak kosong (11.17.1 "Claim Gross No N can't null") dan Register 7.8 mengisi 0 - bila work owner
+// kelak membolehkan 0, ubah aturan di bawah (claimRNMTerisi) menjadi >= 0.
+const KlaimRNMMinimal = "0"
 
 // contentNoteDeath - langkah 11.2-11.4 `ContentNote = "DEATH"`; 11.5-11.6 `!=`.
 const contentNoteDeath = "DEATH"
@@ -153,45 +187,155 @@ func kosongTeks(s string) bool { return strings.TrimSpace(s) == "" }
 // dilaporkan - kecuali gerbang 1, yang menumpuk pesannya untuk seluruh peserta
 // lebih dulu (langkah 3 berputar, langkah 4 keluar).
 func PeriksaSimpanRNM(m MasukanRNM) error {
-	peserta := make([]models.Peserta, len(m.Peserta))
-	for i, p := range m.Peserta {
-		peserta[i] = p.Peserta
-	}
-
-	// Gerbang 1 - langkah 3, 3.1, 4.
-	if !tipeTanpaGerbangDokumen[strings.ToUpper(strings.TrimSpace(m.Tipe))] {
-		kurang := nomorPesertaYangGagal(peserta, func(p models.Peserta) bool { return len(p.Dokumen) == 0 })
-		if len(kurang) > 0 {
-			baris := make([]string, len(kurang))
-			for i, n := range kurang {
-				baris[i] = pesanDokumenBelumDiunggah + strconv.Itoa(n)
-			}
-			return tolakRNM("4", strings.Join(baris, "\n"))
-		}
-	}
-
-	// Langkah 11.7/11.8 hanya punya cabang untuk keempat Type ini.
+	// Urutan (11-10-2026, keputusan work owner "pastikan semua kolom wajib harus diisi untuk semua peserta"):
+	//  1. Type harus dikenal (cabang DOL 11.7/11.8) - berhenti dini, galat aplikasi.
+	//  2. Klaim ganda 11.2-11.6 (bukan "kolom kosong") - berhenti dini pada peserta pertama, kalimat XML.
+	//  3. SELURUH kekurangan kolom wajib semua peserta dikumpulkan lalu dikembalikan SEKALIGUS (422):
+	//     dokumen peserta di-Accept (langkah 3-4), Is KPR (header), DOL (kosong / di luar jendela 11.10), DOB 11.12,
+	//     Begin 11.13, Expired 11.14, Policy 11.15, Certificate 11.16, Claim Received, Confirmation, Claim RNM tiap baris
+	//     (11.17.1, kini > 0).
+	// ⛔ MENYIMPANG dari Pega, yang berhenti di pelanggaran pertama. Nomor klaim tetap diambil SESUDAH seluruh gerbang lolos.
 	if !TypeDikenal(m.Tipe) {
 		return fmt.Errorf("%w: %q", ErrTypeTidakDikenal, m.Tipe)
 	}
 	gross := m.Tipe == TypeQR || m.Tipe == TypeQP
 
 	for i, p := range m.Peserta {
-		if err := periksaPesertaRNM(m, p, i+1, gross); err != nil {
+		if err := periksaGandaRNM(m, p, i+1); err != nil {
 			return err
 		}
 	}
-	// ⛔ Langkah 12 "Proteksi Attachment Harus Lengkap" ter-remark (b6178):
-	// Save to RNM TIDAK menuntut dokumen lengkap - dan `GetCategoryLife_SQL`
-	// tidak disebut rule lain mana pun di seluruh korpus, jadi sistem lama
-	// tidak menegakkannya di tempat lain pula.
+
+	var kurang []KekuranganRNM
+	tambah := func(idx int, p *PesertaRNM, kolom, pesan string) {
+		k := KekuranganRNM{NomorPeserta: idx, Kolom: kolom, Pesan: pesan}
+		if p != nil {
+			k.PesertaID, k.Sertifikat, k.Nama = p.ID, p.NomorSertifikat, p.NamaTertanggung
+		}
+		kurang = append(kurang, k)
+	}
+	if kosongTeks(m.IsKPR) {
+		tambah(0, nil, "Is KPR", pesanIsKPRKosong)
+	}
+	dokumenWajib := !tipeTanpaGerbangDokumen[strings.ToUpper(strings.TrimSpace(m.Tipe))]
+	for i := range m.Peserta {
+		p := &m.Peserta[i]
+		idx := i + 1
+		// Langkah 3-4: peserta di-Accept tanpa dokumen (kalimat XML).
+		if dokumenWajib && diterimaDiOutstanding(p.Peserta) && len(p.Dokumen) == 0 {
+			tambah(idx, p, "Document", pesanDokumenBelumDiunggah+strconv.Itoa(idx))
+		}
+		// DOL kosong: kalimat XML 11.10; DOL TERISI di luar jendela: kalimat layar yang sama dengan Save grid, dengan
+		// rentang valuasi (11-10-2026).
+		// Jendela [BEGIN, EXPIRED] inklusif, SAMA dengan Save grid (DOLDalamJendela, keputusan work owner 11-10-2026).
+		if !dolDalamJendelaRNM(p.Peserta, gross) {
+			k, ok := kalimatDOLRNM(p.Peserta, gross, idx)
+			if !ok {
+				k = fmt.Sprintf(formatDOLDiLuar, idx)
+			}
+			tambah(idx, p, "Date of Loss", k)
+		}
+		// ⛔ 11.9 dan 11.11 (STNC) ter-remark (b4632, b5009) - tidak ada gerbang.
+		if p.DOBKosong {
+			tambah(idx, p, "DOB", fmt.Sprintf(formatDOBKosong, idx))
+		}
+		if kosongTeks(p.TanggalMulai) {
+			tambah(idx, p, "Begin Date", fmt.Sprintf(formatBeginKosong, idx))
+		}
+		if kosongTeks(p.TanggalExpired) {
+			tambah(idx, p, "Expired Date", fmt.Sprintf(formatExpiredKosong, idx))
+		}
+		if kosongTeks(p.NomorPolis) {
+			tambah(idx, p, "Policy No", fmt.Sprintf(formatPolisKosong, idx))
+		}
+		if kosongTeks(p.NomorSertifikat) {
+			tambah(idx, p, "Certificate No", fmt.Sprintf(formatSertKosong, idx))
+		}
+		if kosongTeks(p.TanggalTerimaKlaim) {
+			tambah(idx, p, "Claim Received Date", fmt.Sprintf(formatTerimaKlaimKosong, idx))
+		}
+		if kosongTeks(p.TanggalKonfirmasi) {
+			tambah(idx, p, "Confirmation Date", fmt.Sprintf(formatKonfirmasiKosong, idx))
+		}
+		for _, b := range p.Baris {
+			// `.CLAIM_GROSS` = kolom CLAIM_AMOUNT = Claim RNM (tiket 03 catatan 7). Satu kekurangan per peserta cukup.
+			if !claimRNMTerisi(b) {
+				tambah(idx, p, "Claim RNM", fmt.Sprintf(formatClaimRNMKosong, idx))
+				break
+			}
+			// Claim RNM <= Share Nusantara Re - dipindah dari Save grid (keputusan work owner 11-10-2026: Save = simpan
+			// progres); kalimat SAMA dengan layar (galatClaimRNM). Baris berstatus sudah lolos saat tersimpan.
+			if strings.TrimSpace(b.KodeStatus) == "" && claimRNMMelebihiShare(b) {
+				tambah(idx, p, "Claim RNM", fmt.Sprintf(formatClaimRNMMelebihi, idx, angkaLayar(b.ShareNusantaraRe)))
+				break
+			}
+		}
+	}
+	if len(kurang) > 0 {
+		baris := make([]string, len(kurang))
+		for i, k := range kurang {
+			baris[i] = k.Pesan
+		}
+		return &PelanggaranRNM{Langkah: "wajib", Pesan: strings.Join(baris, "\n"), Kekurangan: kurang}
+	}
+	// ⛔ Langkah 12 "Proteksi Attachment Harus Lengkap" ter-remark (b6178): Save to RNM TIDAK menuntut dokumen lengkap.
 	// Butir bl (OQ-N6 ditutup): gerbang itu dibuang, bukan ditunda.
 	return nil
 }
 
-// periksaPesertaRNM adalah langkah 11 untuk satu peserta (`local.idx`).
-func periksaPesertaRNM(m MasukanRNM, p PesertaRNM, idx int, gross bool) error {
-	// Gerbang 2 - klaim ganda, 11.2-11.6.
+// claimRNMTerisi - Claim RNM terisi dan > KlaimRNMMinimal (keputusan work owner 11-10-2026).
+func claimRNMTerisi(b models.BarisAdjustment) bool {
+	if b.JumlahKlaim.Kosong() {
+		return false
+	}
+	batas, _, err := apd.NewFromString(KlaimRNMMinimal)
+	if err != nil {
+		return false
+	}
+	return b.JumlahKlaim.Amount.Cmp(batas) > 0
+}
+
+// claimRNMMelebihiShare - Claim RNM > Share Nusantara Re (aturan models.PeriksaClaimGrossTerhadapShare tanpa pengecualian
+// kode bisnis, keputusan work owner 11-10-2026). Mata uang baris = mata uang share.
+func claimRNMMelebihiShare(b models.BarisAdjustment) bool {
+	// Share kosong: tidak dibandingkan (sama dengan layar galatClaimRNM, yang melewati share tak terbaca).
+	if b.JumlahKlaim.Kosong() || b.ShareNusantaraRe.Kosong() {
+		return false
+	}
+	share := b.ShareNusantaraRe
+	share.Currency = b.JumlahKlaim.Currency
+	return errors.Is(models.PeriksaClaimGrossTerhadapShare(b.JumlahKlaim, share, ""), models.ErrClaimGrossMelebihiShare)
+}
+
+// angkaLayar - angka bergaya Indonesia seperti layar (formatNumber tanpa batas desimal): "5.077.429,5"; kosong = "0".
+func angkaLayar(m uang.Money) string {
+	if m.Kosong() {
+		return "0"
+	}
+	t := m.Amount.Text('f')
+	neg := strings.HasPrefix(t, "-")
+	t = strings.TrimPrefix(t, "-")
+	bulat, pecahan, _ := strings.Cut(t, ".")
+	pecahan = strings.TrimRight(pecahan, "0")
+	var sb strings.Builder
+	for i, c := range bulat {
+		if i > 0 && (len(bulat)-i)%3 == 0 {
+			sb.WriteByte('.')
+		}
+		sb.WriteRune(c)
+	}
+	out := sb.String()
+	if pecahan != "" {
+		out += "," + pecahan
+	}
+	if neg {
+		out = "-" + out
+	}
+	return out
+}
+
+// periksaGandaRNM - gerbang 2 klaim ganda, 11.2-11.6, satu peserta (`local.idx`). Berhenti dini (bukan kolom kosong).
+func periksaGandaRNM(m MasukanRNM, p PesertaRNM, idx int) error {
 	if strings.TrimSpace(m.ContentNote) == contentNoteDeath {
 		// 11.4: `CARI1=="" || ==2` lewati; `==0 || ==1` pesan.
 		if s := strings.TrimSpace(p.StatusWarisanTerakhir); s == "0" || s == "1" {
@@ -199,38 +343,6 @@ func periksaPesertaRNM(m MasukanRNM, p PesertaRNM, idx int, gross bool) error {
 		}
 	} else if p.AdaKlaimSehatSamaDOL {
 		return tolakRNM("11.6", fmt.Sprintf(formatSudahDiaksep, idx))
-	}
-
-	// Gerbang 3 - DOL, 11.7/11.8 lalu 11.10. ⛔ TANPA pergeseran retro: b4464
-	// `@addCalendar(.DATE_OF_LOSS,0,0,0,0,0,0,0)`, beda dengan ValidasiDOL_Act.
-	if !dolDalamJendelaRNM(p.Peserta, gross) {
-		return tolakRNM("11.10", fmt.Sprintf(formatDOLDiLuar, idx))
-	}
-
-	// ⛔ 11.9 dan 11.11 (STNC) ter-remark (b4632, b5009) - tidak ada gerbang.
-
-	// Gerbang 4 - medan kosong, 11.12-11.17, urut.
-	switch {
-	case p.DOBKosong:
-		return tolakRNM("11.12", fmt.Sprintf(formatDOBKosong, idx))
-	case kosongTeks(p.TanggalMulai):
-		return tolakRNM("11.13", fmt.Sprintf(formatBeginKosong, idx))
-	case kosongTeks(p.TanggalExpired):
-		return tolakRNM("11.14", fmt.Sprintf(formatExpiredKosong, idx))
-	case kosongTeks(p.NomorPolis):
-		return tolakRNM("11.15", fmt.Sprintf(formatPolisKosong, idx))
-	case kosongTeks(p.NomorSertifikat):
-		return tolakRNM("11.16", fmt.Sprintf(formatSertKosong, idx))
-	}
-	for _, b := range p.Baris {
-		// `.CLAIM_GROSS` - kolom kita `CLAIM_AMOUNT` (tiket 03 catatan 7).
-		// ⚠️ [sementara - menunggu OQ-N11 pemilik ekspor] OQ-N12 (a), work owner
-		// 29-09-2026: korpus tanpa penulis `.CLAIM_GROSS` (4 pembaca, 0 penulis;
-		// dugaan Declare Expression yang tidak diekspor). Karena 7.8 membaca sumber
-		// kosong sebagai 0, gerbang ini praktis tidak menolak baris Register.
-		if b.JumlahKlaim.Kosong() {
-			return tolakRNM("11.17.1", fmt.Sprintf(formatGrossKosong, idx))
-		}
 	}
 	return nil
 }
@@ -240,6 +352,22 @@ func periksaPesertaRNM(m MasukanRNM, p PesertaRNM, idx int, gross bool) error {
 // DOL kosong ditolak (kalimatnya sendiri "cannot be blank"), begitu pula
 // jendela yang tidak terbaca: `@CompareDates` atas nilai kosong tidak pernah
 // benar, jadi `local.Begin` salah dan pesannya keluar.
+// kalimatDOLRNM - kalimat "Insured number N: Date of Loss must be within the valuation period (…)" untuk DOL TERISI di luar
+// jendela; false bila DOL kosong / tak terurai atau jendela tidak terbaca (kalimat XML 11.10 yang dipakai).
+func kalimatDOLRNM(p models.Peserta, gross bool, nomor int) (string, bool) {
+	if kosongTeks(p.TanggalKejadian) {
+		return "", false
+	}
+	if _, err := utils.ParseTanggal(strings.TrimSpace(p.TanggalKejadian)); err != nil {
+		return "", false
+	}
+	awal, akhir, err := p.JendelaValuasi(gross)
+	if err != nil {
+		return "", false
+	}
+	return GalatDOL{PesertaID: p.ID, Nomor: nomor, Awal: tanggalLayar(awal), Akhir: tanggalLayar(akhir)}.Kalimat(), true
+}
+
 func dolDalamJendelaRNM(p models.Peserta, gross bool) bool {
 	if kosongTeks(p.TanggalKejadian) {
 		return false
@@ -252,7 +380,8 @@ func dolDalamJendelaRNM(p models.Peserta, gross bool) bool {
 	if err != nil {
 		return false
 	}
-	return sesudah(dol, awal) && !sesudah(dol, akhir)
+	// Aturan yang SAMA dengan Save grid (ValidasiDOL): [BEGIN, EXPIRED] inklusif, tanpa geser (keputusan WO 11-10-2026).
+	return DOLDalamJendela(dol, awal, akhir)
 }
 
 // PolisRetro adalah medan polis yang menentukan gerbang langkah 27.
@@ -316,6 +445,8 @@ type HasilSimpanRNM struct {
 	BarisDitandai int `json:"barisDitandai"`
 	// CerminDisetel - baris cermin warisan yang kini '0' (b176, OQ-N13).
 	CerminDisetel int `json:"cerminDisetel"`
+	// CerminDitulis - baris datar OS_AKSEPTASI_KLAIM_LIFE yang ditulis/diperbarui Save to RNM (RALAT 10-10-2026).
+	CerminDitulis int `json:"cerminDitulis"`
 	// Arasapas - keadaan efek langkah 28, sebagai KATA.
 	Arasapas string `json:"arasapas"`
 }
@@ -441,7 +572,8 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 	if err != nil {
 		return hasil, err
 	}
-	polis, err := x.svc.PembacaPolis().Ringkas(ctx, klaim.NomorPolis)
+	// Kunci polis = IDPEGA peserta (kuncipolis.go, 10-10-2026); KlaimLife().Ambil sudah menurunkannya dari SOURCE_ID.
+	polis, kunciPolis, err := RingkasPolisIdPega(ctx, x.svc.PembacaPolis(), IdPegaPeserta(klaim.Peserta))
 	if err != nil {
 		return hasil, err
 	}
@@ -449,7 +581,7 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 	if err != nil {
 		return hasil, err
 	}
-	m := MasukanRNM{Tipe: tipe, ContentNote: note}
+	m := MasukanRNM{Tipe: tipe, ContentNote: note, IsKPR: klaim.IsKPR}
 	// OQ-N2 (GILIRAN-17): baris cermin klaim ini sendiri dikecualikan dari
 	// pemeriksaan klaim ganda - di Pega ia belum ada saat langkah 11.x.
 	// CASEID klaim = ID klaim (butir ae1; kolom CASE_ID dibuang migrasi 023,
@@ -483,9 +615,16 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 	}
 
 	hasil.NomorKlaim = klaim.NomorKlaim
-	err = x.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
-		// Langkah 16-20 (13-15 ter-remark) - hanya bila CLAIM_NO masih kosong.
-		if strings.TrimSpace(klaim.NomorKlaim) == "" {
+	// Langkah 16-20 (13-15 ter-remark) - hanya bila CLAIM_NO masih kosong; sejak 10-10-2026 SATU-SATUNYA tempat nomor
+	// klaim lahir (Register tidak lagi menomori - keputusan work owner).
+	//
+	// ⛔ TRANSAKSI PENOMORAN TERSENDIRI, di-commit segera (AC tiket 02 "commit terjadi segera setelah nomor terbentuk,
+	// sehingga lock `SELECT … FOR UPDATE` pada `GENERATE_SEQUENCE_NUMBER` tidak menahan pendaftar lain"): nomor DAN
+	// CLAIM_NO-nya ditulis bersama lalu di-commit, sebelum transaksi Save to RNM. Bila transaksi utama kemudian gagal,
+	// klaim TETAP bernomor dan Save berikutnya tidak menomori ulang (`IsiNomorKlaimKosong` hanya mengisi yang kosong) -
+	// tanpa nomor hangus. Seluruh gerbang Save to RNM (langkah 1-11) sudah lolos di atas.
+	if strings.TrimSpace(klaim.NomorKlaim) == "" {
+		if err := x.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 			nomor, err := x.penomor.NomorBerikut(ctx, tx, polis.BusinessCode, saat)
 			if err != nil {
 				return err
@@ -494,7 +633,47 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 				return err
 			}
 			hasil.NomorKlaim, hasil.NomorBaru = nomor, true
+			return nil
+		}); err != nil {
+			return hasil, err
 		}
+	}
+	// ⛔ RALAT 10-10-2026 (keputusan work owner "saat register claim, data peserta belum di insert ke tabel
+	// os_akseptasi_klaim_life; itu hanya terjadi saat save to rnm bersamaan dengan no klaim dan no akseptasi"): baris
+	// datar disusun dari klaim yang SUDAH bernomor (transaksi penomoran di atas) dan ditulis di transaksi UTAMA di
+	// bawah - bila transaksi utama gagal, tidak ada baris datar setengah jadi. Nomor akseptasi TIDAK lahir di Save to
+	// RNM (ia lahir di Akseptasi / Komite); NO_ACCEPTATION diisi TANGGAL OUTSTANDING (keputusan work owner 11-10-2026).
+	pembuat, err := baca.NamaPembuatKlaim(ctx, klaimID)
+	if err != nil {
+		return hasil, err
+	}
+	klaimDatar := *klaim
+	klaimDatar.NomorKlaim = hasil.NomorKlaim
+	klaimDatar.Type = tipe
+	// SOB id polis (OS_AKSEPTASI_KLAIM_LIFE.SOB) - kunci IDPEGA yang sama dengan header polis di atas.
+	sob, err := baca.SOBPolis(ctx, kunciPolis)
+	if err != nil {
+		return hasil, err
+	}
+	dasar := map[string]repository.BarisLama{}
+	for _, b := range repository.BarisLamaDari(models.PohonKlaim{
+		Work: models.WorkClaim{ID: caseID, CreateOpName: pembuat}, Klaim: klaimDatar}) {
+		// Status cermin hanya lewat SetelCerminOutstanding (satu jalur, '0' b176).
+		b.STS_REJECT = ""
+		dasar[b.ID] = b
+	}
+	// Keputusan work owner 11-10-2026: nilai polis, peserta, dan baris ikut ditulis (SusunCerminSaveRNM); NO_ACCEPTATION =
+	// tanggal outstanding (saat Save to RNM, waktu yang sama dengan jejak OutStanding Date).
+	datar := map[string]repository.BarisLama{}
+	for _, p := range klaim.Peserta {
+		for _, b := range p.Baris {
+			if d, ada := dasar[b.ID]; ada {
+				datar[b.ID] = SusunCerminSaveRNM(d, p, b, polis, sob, saat)
+			}
+		}
+	}
+	pohon := repository.NewPohonKlaim(x.svc.DB())
+	err = x.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		// Langkah 22.1.3.2 - `.STS_REJECT = 0` bagi baris yang BELUM pernah
 		// tersimpan. ⛔ Baris berstatus TIDAK ditimpa: tanpa bendera `Save`
 		// (OQ-N1) tombolnya dapat ditekan lagi, dan menimpa baris yang sudah
@@ -515,6 +694,19 @@ func (x *SimpanRNM) Simpan(ctx context.Context, pelaku inti.Pelaku, klaimID stri
 					if err := baca.TandaiBarisOutstanding(ctx, tx, b.ID); err != nil {
 						return err
 					}
+				}
+				// Langkah 22.1.3.1 `InsertJsonKlaimLife_sql` - baris datar baris ini (RALAT 10-10-2026): UPDATE bila
+				// sudah ada (klaim lama yang sempat ditulis Register, atau tombol ditekan ulang), INSERT hanya bila
+				// baris BELUM pernah disimpan. Idempoten: kunci ID + CASEID.
+				kunci := repository.KunciPesertaSumber{PLNumber: p.NomorPremiList,
+					Sertifikat: p.NomorSertifikat, SumberID: p.SumberID}
+				ada, err := pohon.TulisCerminSaveRNM(ctx, tx, datar[b.ID], kunci,
+					repository.CerminBolehDisisip(b.KodeStatus))
+				if err != nil {
+					return err
+				}
+				if ada {
+					hasil.CerminDitulis++
 				}
 				// OQ-N13 (GILIRAN-18) - langkah 22.1.3.1 `InsertJsonKlaimLife_sql`
 				// b176: cermin baris ini '0', supaya klaim ganda antarklaim baru

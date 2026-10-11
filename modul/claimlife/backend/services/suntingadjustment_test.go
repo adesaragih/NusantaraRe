@@ -15,6 +15,10 @@ package services_test
 // ✅ Keputusan work owner 29-09-2026 (GILIRAN-15): vonis DITERIMA - br dan OQ-N8
 // ditutup, ikut XML. Uji ini tetap sebagai penjaganya.
 //
+// ⚠️ DIUBAH keputusan work owner 11-10-2026: Claim RNM (`.CLAIM_GROSS` = CLAIM_AMOUNT) DAPAT diisi SEBELUM Save to RNM
+// (lewat tombol Save grid `PUT …/outstanding/isian`, services.PeriksaIsianBaris); Percent Claim dan Claim Paid diturunkan, tidak
+// disunting. Menyimpang dari `pyEditOptions Read-only` XML - keputusan tercatat di PARITAS 11-10-2026.
+//
 // Cara membaca (sensus §4a CLAUDE.md - wadah dinamai, kunci dipasang):
 //   - WADAH: grid dibatasi rentang b17126 (`pyPageListProperty
 //     .AdjustmentList`) sampai b19583 (`pyEditAction` grid itu); panel adalah

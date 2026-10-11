@@ -24,6 +24,10 @@
 //
 // ⚠️ OQ-TCO-05: label tahun bersilang antara grid dan form di korpus; keduanya
 // dibawa apa adanya.
+//
+// [keputusan work owner 11-10-2026 "SEMUA HEADER BUAT FILTERNYA"] Baris saringan
+// di bawah keenam kepala kolom, disaring SERVER (daftar berhalaman): tahun dan
+// tanggal diketik (Contains), Treaty Group dan Reinsurance Type dipilih.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -41,6 +45,7 @@ import {
   simpanTahunTreaty,
   type GrupTreaty,
   type HalamanTahunTreaty,
+  type SaringTahunTreaty,
   type TahunTreaty,
   type TahunTreatyMasuk,
 } from '../api'
@@ -130,6 +135,27 @@ export function namaGrup(daftar: readonly GrupTreaty[], id: string): string {
 
 const UKURAN = 20
 
+/** Saringan kosong - semua baris. */
+export const SARING_KOSONG: SaringTahunTreaty = {
+  underwritingYear: '', treatyYear: '', startDate: '', endDate: '', treatyGroupId: '', proportion: '',
+}
+
+/** Ada isian saringan terisi. */
+export function adaSaring(s: SaringTahunTreaty): boolean {
+  return Object.values(s).some((v) => v.trim() !== '')
+}
+
+/** Jeda sesudah ketikan terakhir sebelum daftar dimuat ulang. */
+const JEDA_SARING_MS = 300
+
+/** Isian saringan ketik, urut kolom grid (tahun: angka; tanggal: bentuk tampil DD-MM-YYYY). */
+const SARING_KETIK = [
+  { k: 'underwritingYear', kolom: TAHUN_TCO.kolomUnderwritingYear, isi: TAHUN_TCO.saring, angka: true },
+  { k: 'treatyYear', kolom: TAHUN_TCO.kolomTransactionYear, isi: TAHUN_TCO.saring, angka: true },
+  { k: 'startDate', kolom: TAHUN_TCO.kolomStartDate, isi: TAHUN_TCO.saringTanggal, angka: false },
+  { k: 'endDate', kolom: TAHUN_TCO.kolomEndDate, isi: TAHUN_TCO.saringTanggal, angka: false },
+] as const
+
 /** Panel yang dibuka dari satu baris tahun — `ReinsType` atau `List Description`. */
 export type RinciTahun = { jenis: 'kontrak' | 'klausul'; tahun: TahunTreaty }
 
@@ -154,24 +180,58 @@ export default function InboxTreatyContract() {
   const gulirTabel = useRef(0)
   // Urutan permintaan End Date bawaan - jawaban basi dibuang.
   const urutanAkhir = useRef(0)
+  // Saringan per kolom: `saring` = isian layar, `saringKirim` = yang dimuat (sesudah jeda ketik).
+  const [saring, setSaring] = useState<SaringTahunTreaty>(SARING_KOSONG)
+  const [saringKirim, setSaringKirim] = useState<SaringTahunTreaty>(SARING_KOSONG)
+  // Urutan permintaan daftar - jawaban basi (saringan yang sudah diganti) dibuang.
+  const urutanMuat = useRef(0)
 
-  const muat = useCallback(async (h: number) => {
+  const muat = useCallback(async (h: number, s: SaringTahunTreaty) => {
+    const ke = ++urutanMuat.current
     setSibuk(true)
     setGalat(null)
     try {
-      setHal(await ambilTahunTreaty(h, UKURAN))
+      const d = await ambilTahunTreaty(h, UKURAN, s)
+      if (ke === urutanMuat.current) setHal(d)
     } catch (e) {
       // ⛔ Galat DINYATAKAN, bukan menjadi daftar kosong.
+      if (ke !== urutanMuat.current) return
       setGalat(e)
       setHal(null)
     } finally {
-      setSibuk(false)
+      if (ke === urutanMuat.current) setSibuk(false)
     }
   }, [])
 
   useEffect(() => {
-    void muat(halaman)
-  }, [halaman, muat])
+    void muat(halaman, saringKirim)
+  }, [halaman, saringKirim, muat])
+
+  // Saringan berganti: dimuat sesudah jeda ketik, mulai dari halaman pertama.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSaringKirim(saring)
+      setHalaman(1)
+    }, JEDA_SARING_MS)
+    return () => clearTimeout(t)
+  }, [saring])
+
+  // Master grup treaty untuk pilihan saringan Treaty Group (form memuatnya ulang saat dibuka).
+  useEffect(() => {
+    let hidup = true
+    ambilGrupTreaty()
+      .then((d) => {
+        if (hidup) setGrup(d.daftar)
+      })
+      .catch((e: unknown) => {
+        if (hidup) setGalatGrup(e)
+      })
+    return () => {
+      hidup = false
+    }
+  }, [])
+
+  const ubahSaring = (k: keyof SaringTahunTreaty, v: string) => setSaring((s) => ({ ...s, [k]: v }))
 
   // Master grup treaty dimuat saat form dibuka — kosong dinyatakan (503).
   useEffect(() => {
@@ -198,7 +258,7 @@ export default function InboxTreatyContract() {
       await simpanTahunTreaty(keMasuk(form))
       setForm(null)
       setInfo(TAHUN_TCO.tersimpan)
-      await muat(halaman)
+      await muat(halaman, saringKirim)
     } catch (e) {
       setGalatSimpan(e)
     } finally {
@@ -328,10 +388,12 @@ export default function InboxTreatyContract() {
         </section>
       )}
 
-      {sibuk && <Memuat />}
+      {sibuk && hal === null && <Memuat />}
       {galat !== null && <Gagal galat={galat} />}
-      {hal !== null && hal.baris.length === 0 && <Kosong pesan={TAHUN_TCO.kosong} />}
-      {hal !== null && hal.baris.length > 0 && (
+      {hal !== null && hal.baris.length === 0 && !adaSaring(saring) && !adaSaring(saringKirim) && (
+        <Kosong pesan={TAHUN_TCO.kosong} />
+      )}
+      {hal !== null && (hal.baris.length > 0 || adaSaring(saring) || adaSaring(saringKirim)) && (
         <div className="tco-tabel">
           <table className="inbox__tabel">
             <thead>
@@ -344,8 +406,66 @@ export default function InboxTreatyContract() {
                 <th>{TAHUN_TCO.kolomReinsuranceType}</th>
                 <th className="table__actions" />
               </tr>
+              <tr className="tco-saring">
+                {SARING_KETIK.map((c) => (
+                  <th key={c.k}>
+                    <input
+                      className="field__input"
+                      inputMode={c.angka ? 'numeric' : undefined}
+                      value={saring[c.k]}
+                      placeholder={c.isi}
+                      aria-label={`${TAHUN_TCO.saring} ${c.kolom}`}
+                      onChange={(e) => ubahSaring(c.k, e.target.value)}
+                    />
+                  </th>
+                ))}
+                <th>
+                  <select
+                    className="field__input"
+                    value={saring.treatyGroupId}
+                    aria-label={`${TAHUN_TCO.saring} ${TAHUN_TCO.kolomTreatyGroup}`}
+                    onChange={(e) => ubahSaring('treatyGroupId', e.target.value)}
+                  >
+                    <option value="">{TAHUN_TCO.saringSemua}</option>
+                    {grup.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.treatyGroupName}
+                      </option>
+                    ))}
+                  </select>
+                </th>
+                <th>
+                  <select
+                    className="field__input"
+                    value={saring.proportion}
+                    aria-label={`${TAHUN_TCO.saring} ${TAHUN_TCO.kolomReinsuranceType}`}
+                    onChange={(e) => ubahSaring('proportion', e.target.value)}
+                  >
+                    <option value="">{TAHUN_TCO.saringSemua}</option>
+                    {PROPORSI_TCO.map((p) => (
+                      <option key={p.value} value={p.value}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                </th>
+                <th className="table__actions">
+                  {adaSaring(saring) && (
+                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => setSaring(SARING_KOSONG)}>
+                      {TAHUN_TCO.saringHapus}
+                    </button>
+                  )}
+                </th>
+              </tr>
             </thead>
             <tbody>
+              {hal.baris.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="tco-saring-kosong">
+                    {TAHUN_TCO.saringKosong}
+                  </td>
+                </tr>
+              )}
               {hal.baris.map((b) => (
                 <tr key={b.id} className="inbox__baris">
                   <td>{selTahun(b.underwritingYear)}</td>

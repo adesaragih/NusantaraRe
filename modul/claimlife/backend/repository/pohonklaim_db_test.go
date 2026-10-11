@@ -208,8 +208,9 @@ func TestJalurMundurDiuji(t *testing.T) {
 	}
 }
 
-// Satu pohon utuh ditulis dalam SATU transaksi, ke tabel relasional DAN ke
-// baris datar warisan.
+// Satu pohon utuh ditulis dalam SATU transaksi ke tabel relasional - TANPA baris datar warisan (RALAT 10-10-2026:
+// Register tidak menulis OS_AKSEPTASI_KLAIM_LIFE). Baris datar lahir di jalur Save to RNM, sekali per baris
+// adjustment, dan Save to RNM yang diulang tidak menggandakannya.
 func TestSimpanPohonMenulisDuaTempatDalamSatuTransaksi(t *testing.T) {
 	db, repo, bersihkan := siapkanPohon(t)
 	defer bersihkan()
@@ -228,13 +229,24 @@ func TestSimpanPohonMenulisDuaTempatDalamSatuTransaksi(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Penulisan kedua benar-benar terjadi: satu baris datar per baris adjustment.
+	// Register (Simpan): nol baris datar.
 	n, err := repo.CacahBarisLama(ctx, p.Work.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if n != p.Klaim.CacahBaris() {
-		t.Errorf("baris datar %d, mau %d", n, p.Klaim.CacahBaris())
+	if n != 0 {
+		t.Errorf("Simpan (Register) menulis %d baris datar, mau 0", n)
+	}
+	// Save to RNM: satu baris datar per baris adjustment; diulang = tetap sekali (idempoten, kunci ID + CASEID).
+	for putaran := 1; putaran <= 2; putaran++ {
+		ditulis := tulisCerminSepertiSaveRNM(t, ctx, db, p.Work.ID)
+		n, err := repo.CacahBarisLama(ctx, p.Work.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if n != p.Klaim.CacahBaris() || ditulis != p.Klaim.CacahBaris() {
+			t.Errorf("Save to RNM ke-%d: baris datar %d (ditulis %d), mau %d", putaran, n, ditulis, p.Klaim.CacahBaris())
+		}
 	}
 }
 
@@ -336,6 +348,8 @@ func TestHapusMengkaskadeSampaiCicit(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = tx.Commit()
+	// Baris datar lahir di Save to RNM (RALAT 10-10-2026) - dibuat supaya penghapusannya tetap teruji.
+	tulisCerminSepertiSaveRNM(t, ctx, db, p.Work.ID)
 
 	// ⭐ Dampak dihitung SEBELUM menghapus, lalu dibandingkan dengan yang
 	// benar-benar hilang. Itulah satu-satunya cara membuktikan AC "jumlah yang

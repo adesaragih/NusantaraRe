@@ -50,6 +50,50 @@ func tambahEksak(a, b *apd.Decimal) (*apd.Decimal, error) {
 	return d, nil
 }
 
+func kurangEksak(a, b *apd.Decimal) (*apd.Decimal, error) {
+	d := new(apd.Decimal)
+	cond, err := utils.DecimalContext().Sub(d, a, b)
+	if err != nil {
+		return nil, err
+	}
+	if cond.Inexact() {
+		return nil, ErrPresisiPremi
+	}
+	return d, nil
+}
+
+// rumus - penghitung bergalat-lengket untuk ekspresi Pega bersuku banyak:
+// operasi sesudah galat pertama tidak dijalankan, dan galat pertama yang
+// dilaporkan. Membuat rumus panjang (netto, cicilan) terbaca satu baris.
+type rumus struct{ err error }
+
+func (r *rumus) jalan(f func() (*apd.Decimal, error)) *apd.Decimal {
+	if r.err != nil {
+		return nil
+	}
+	d, err := f()
+	if err != nil {
+		r.err = err
+	}
+	return d
+}
+
+func (r *rumus) kali(a, b *apd.Decimal) *apd.Decimal {
+	return r.jalan(func() (*apd.Decimal, error) { return kaliEksak(a, b) })
+}
+
+func (r *rumus) tambah(a, b *apd.Decimal) *apd.Decimal {
+	return r.jalan(func() (*apd.Decimal, error) { return tambahEksak(a, b) })
+}
+
+func (r *rumus) kurang(a, b *apd.Decimal) *apd.Decimal {
+	return r.jalan(func() (*apd.Decimal, error) { return kurangEksak(a, b) })
+}
+
+func (r *rumus) bagi(a, b *apd.Decimal, n int32) *apd.Decimal {
+	return r.jalan(func() (*apd.Decimal, error) { return bagiHalfUp(a, b, n) })
+}
+
 // bagiHalfUp - `@Math.divide(a, b, n)`: HALF_UP pada n desimal (A37,
 // dikonfirmasi work owner), dihitung eksak lewat bilangan bulat lalu dijaga
 // tidak melampaui presisi aplikasi (utils.DecimalPrecision, 38 digit).

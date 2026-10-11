@@ -48,7 +48,7 @@ func init() {
 // gridKomite - grid "Committee Accept Status" (InputAdjustment LS52-LS53, hanya-baca).
 func gridKomite(daftar string) Unsur {
 	return Unsur{Jenis: JenisGrid, Jalur: daftar, Label: "Committee Accept Status", Kolom: []Unsur{
-		kRO(kol(PropNomorBaris, "", KTampil)),
+		kRO(kol(PropNomorBaris, JudulNomorBaris, KTampil)),
 		kRO(kol("IDKomite", "Committee Name", KTampil)),
 		kSumber(kRO(kol(PropKeputusanAnggota, "Status", KPilih)), kode(PropKeputusanAnggota)),
 		kRO(kol(PropTanggalKeputusan, "Date Approve", KWaktu)),
@@ -247,26 +247,18 @@ func KunciPremi(h *Halaman, b Baris) (invoice, cur, nopolis string) {
 
 // LayarKomite - Section ClaimComite (harness Comittee) untuk adjustment a. `boleh` = `Protect.CARI1 = 1 &&
 // Protect.CARI2 = 1` dihitung server (SendPICProtect_Act) setiap evaluasi.
+//
+// Work owner 11-10-2026 ("RAPIHKAN DAN TOMBOL SEND NYA GA ADA!"): VIS LS7 tombol Send Claim to Committee (Remarks -
+// dan Salvage / Adjuster Fee menurut Payment Type - terisi) dievaluasi server, sedangkan mengetik di pop-up tidak
+// memanggil server, jadi tombol tak pernah muncul. Kini tombol tampil selama `boleh`; isian wajibnya (REQ yang sama)
+// ditegakkan server saat diklik (`aksiKirimKomite` -> wajibTerisi, "Value cannot be blank"). Isian berlabel di atas,
+// dua kolom (Chronology | Extent of Loss, Legal Liability | Remarks), urutan XML.
 func LayarKomite(o, i, a int, boleh Kondisi) []Unsur {
 	p := JalurAdj(o, i, a) + "."
 	j := func(prop string) string { return p + "DataCommitteFacin." + prop }
 	pt := func(h *Halaman) string { return AmbilJalur(h, p+"PaymentType") }
 	salvage := func(h *Halaman) bool { return pt(h) == BayarSalvage }
 	fee := func(h *Halaman) bool { t := pt(h); return t == BayarFee || t == BayarExpense }
-	isi := func(prop string) func(h *Halaman) bool {
-		return func(h *Halaman) bool { return AmbilJalur(h, j(prop)) != "" }
-	}
-	adaRemarks := isi("Remarks")
-	kirim := func(h *Halaman) bool { // LS7 `[r1]` VIS
-		t := pt(h)
-		switch {
-		case t == BayarSalvage:
-			return isi("Salvage")(h) && adaRemarks(h)
-		case t == BayarFee || t == BayarExpense:
-			return isi("AdjusterFee")(h) && adaRemarks(h)
-		}
-		return adaRemarks(h)
-	}
 	return []Unsur{
 		sebaris("",
 			naJika(medan(JalurTanggalKomite, "Date", KTanggal), selalu),
@@ -278,13 +270,15 @@ func LayarKomite(o, i, a int, boleh Kondisi) []Unsur {
 		}),
 		tampil(label("Salvage"), salvage),
 		tampil(label("Adjuster / Consultant Fee"), fee),
-		medan(j("CircumCauseOfLoss"), "Chronology", KArea),
-		medan(j("ExtentOfLoss"), "Extent of Loss", KArea),
-		medan(j("LegalLiability"), "Legal Liability", KArea),
-		tampil(wajibU(medan(j("Salvage"), "Salvage", KArea)), salvage),
-		tampil(wajibU(medan(j("AdjusterFee"), "Adjuster / Consultant Fee", KArea)), fee),
-		wajibU(medan(j("Remarks"), "Remarks", KArea)),
-		tampil(tampil(tombol("KirimKomite", "Send Claim to Committee", "KirimKomite"), kirim), boleh),
+		duaAtas(
+			medan(j("CircumCauseOfLoss"), "Chronology", KArea),
+			medan(j("ExtentOfLoss"), "Extent of Loss", KArea),
+			medan(j("LegalLiability"), "Legal Liability", KArea),
+			tampil(wajibU(medan(j("Salvage"), "Salvage", KArea)), salvage),
+			tampil(wajibU(medan(j("AdjusterFee"), "Adjuster / Consultant Fee", KArea)), fee),
+			wajibU(medan(j("Remarks"), "Remarks", KArea)),
+		),
+		tampil(tombol("KirimKomite", "Send Claim to Committee", "KirimKomite"), boleh),
 	}
 }
 

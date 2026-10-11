@@ -225,10 +225,10 @@ func TestFlattenSetiapJalur(t *testing.T) {
 			}
 		}
 	}
-	// 148 + 2 amandemen (T_ADDITIONALSHIP; T_FEALIST tiket 41) - 1 jalur akar - 2 ruas V-30 - 4 jalur tiga
-	// tabel wadah (T_FR_POLICY dua jalur).
-	if diuji != 143 {
-		t.Errorf("%d jalur diuji, mau 143", diuji)
+	// 148 + 4 amandemen (T_ADDITIONALSHIP; T_FEALIST tiket 41; T_MEMORANDUMACCEPT dua jalur tiket 73) - 1 jalur akar - 2 ruas
+	// V-30 - 4 jalur tiga tabel wadah (T_FR_POLICY dua jalur).
+	if diuji != 145 {
+		t.Errorf("%d jalur diuji, mau 145", diuji)
 	}
 	if len(wadah) != 3 {
 		t.Errorf("tabel wadah tercapai %v, mau T_FR_FACOFFERLIST, T_FR_OBJECT, T_FR_POLICY", wadah)
@@ -495,8 +495,8 @@ func TestFlattenTeksMenyimpang(t *testing.T) {
 	if len(h.Diagnostik.KomaDesimal) != 0 {
 		t.Errorf("koma desimal ditafsirkan di kolom teks: %v", h.Diagnostik.KomaDesimal)
 	}
-	if len(kolomTeksMenyimpang) != 8 {
-		t.Errorf("%d kolom menyimpang, mau 8", len(kolomTeksMenyimpang))
+	if len(kolomTeksMenyimpang) != 9 { // 8 butir 68.1 + T_LISTINSTALLMENT.INSTALLMENT_PERCENTAGE (tiket 51 K51-3)
+		t.Errorf("%d kolom menyimpang, mau 9", len(kolomTeksMenyimpang))
 	}
 	for tk := range kolomTeksMenyimpang {
 		tb, kol, _ := strings.Cut(tk, ".")

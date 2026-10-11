@@ -218,7 +218,7 @@ func TestSimpanMemvalidasiUlang(t *testing.T) {
 	badan := isi[a:]
 	// Simpan → periksaDanHitung → periksaBerkas (keputusan work owner 05-10-2026).
 	if !strings.Contains(badan, "u.periksaDanHitung(ctx, polisID, berkas, tipe, true)") ||
-		!strings.Contains(isi, "baris, hasil, err := periksaBerkas(berkas, tipe)") {
+		!strings.Contains(isi, "baris, hasil, err := periksaBerkas(berkas, tipe, dataPolis.Terapkan)") {
 		t.Error("Simpan tidak memvalidasi ulang berkasnya; klien yang dapat " +
 			"melewatkan tinjauan dapat menyimpan apa saja")
 	}
@@ -275,5 +275,88 @@ func TestRingkasPenolakan(t *testing.T) {
 	}
 	if RingkasPenolakan(nil) != "" {
 		t.Error("tanpa penolakan tetap berkalimat")
+	}
+}
+
+// TestPolicyHolderDanPlanDariPolis - POLICY_HOLDER / PLAN peserta ditimpa data
+// polis SEBELUM validasi per baris, di jalan bersama Validate / Calculate CSV
+// (keputusan work owner 05-10-2026).
+func TestPolicyHolderDanPlanDariPolis(t *testing.T) {
+	isi, err := bacaBerkasLayanan("polis_unggah.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	jalan := isi[strings.Index(isi, "func (u *UnggahPremiumList) periksaDanHitung("):]
+	iPeriksa := strings.Index(jalan, "dataPolis.Periksa()")
+	iBerkas := strings.Index(jalan, "periksaBerkas(berkas, tipe, dataPolis.Terapkan)")
+	if iPeriksa < 0 || iBerkas < iPeriksa {
+		t.Error("data polis tidak diperiksa sebelum berkas diproses")
+	}
+	b := isi[strings.Index(isi, "func periksaBerkas("):]
+	nol, kait, val := strings.Index(b, "models.IsiNolUangKosong(baris)"), strings.Index(b, "f(baris)"),
+		strings.Index(b, "models.ValidasiUnggah(tipe, baris)")
+	if !(nol < kait && kait < val) {
+		t.Error("kait data polis tidak berjalan sebelum validasi per baris")
+	}
+}
+
+// TestSpreadingDiJalanCalculate - keputusan work owner 06-10-2026:
+//   - spreading hanya Type QR, sesudah hitung premi (cabang hitung QR);
+//   - Validate CSV (hitung=false) tidak menjalankannya dan tidak menulis;
+//   - Calculate CSV menulis peserta + spreading di SATU transaksi, spreading lama dihapus eksplisit.
+func TestSpreadingDiJalanCalculate(t *testing.T) {
+	isi, err := bacaBerkasLayanan("polis_unggah.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	jalan := isi[strings.Index(isi, "func (u *UnggahPremiumList) periksaDanHitung("):]
+	jalan = jalan[:strings.Index(jalan, "\n}\n")]
+	iQR := strings.Index(jalan, "if hitung && models.HitungPesertaPerTipe(tipe) {")
+	iHitung := strings.Index(jalan, "models.HitungPesertaQR(m, baris, lewati)")
+	iSpread := strings.Index(jalan, "u.spreadingQR(ctx, rujukan, kepala, baris, lewati)")
+	if iQR < 0 || iHitung < iQR || iSpread < iHitung {
+		t.Error("spreading tidak di cabang hitung QR sesudah hitung premi")
+	}
+	simpan := isi[strings.Index(isi, "func (u *UnggahPremiumList) Simpan("):]
+	iTx := strings.Index(simpan, "DalamTransaksi(ctx")
+	iHapus := strings.Index(simpan, "spreading.HapusSpreadingPolis(ctx, tx, polisID)")
+	iSisipP := strings.Index(simpan, "peserta.SisipPeserta(ctx, tx, polisID, baris)")
+	iSisipS := strings.Index(simpan, "spreading.SisipSpreading(ctx, tx, polisID, pelaku.AkunID, idPeserta, baris)")
+	if iTx < 0 || iHapus < iTx || iSisipP < iHapus || iSisipS < iSisipP {
+		t.Error("peserta dan spreading tidak ditulis di satu transaksi (hapus spreading → sisip peserta → sisip spreading)")
+	}
+	tinjau := isi[strings.Index(isi, "func (u *UnggahPremiumList) Tinjau("):strings.Index(isi, "func periksaBerkas(")]
+	if strings.Contains(tinjau, "SisipSpreading") || strings.Contains(tinjau, "DalamTransaksi") {
+		t.Error("Validate CSV menulis spreading")
+	}
+}
+
+// TestConfirmDigerbangiKesiapan - keputusan work owner 06-10-2026: Confirm menjalankan
+// pemeriksaan kesiapan SEBELUM transaksi yang menerbitkan nomor dan menutup kasus.
+func TestConfirmDigerbangiKesiapan(t *testing.T) {
+	isi, err := bacaBerkasLayanan("polis_penawaran.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	badan := isi[strings.Index(isi, "func (p *Penawaran) PutuskanDenganNomor("):]
+	iSiap := strings.Index(badan, "p.periksaSiapConfirm(ctx, pelaku, keadaan)")
+	iTerapkan := strings.Index(badan, "p.terapkan(ctx, pelaku, keadaan, akibat, sebab, saat)")
+	if iSiap < 0 || iTerapkan < iSiap {
+		t.Error("Confirm tidak memeriksa kesiapan sebelum menerbitkan nomor")
+	}
+	k, err := bacaBerkasLayanan("polis_kesiapan.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, jejak := range []string{"models.SusunDataPolis(d.IsianDataPolis)", "PesanSiapWPC", "PesanSiapPeserta",
+		"PesanSiapSummary", "PesanSiapSpreading", "PesanSiapPeriode"} {
+		if !strings.Contains(k, jejak) {
+			t.Errorf("kesiapan tanpa %s", jejak)
+		}
+	}
+	for _, jejak := range []string{"DalamTransaksi", "ExecContext"} {
+		if strings.Contains(k, jejak) {
+			t.Errorf("kesiapan menulis (%s)", jejak)
+		}
 	}
 }

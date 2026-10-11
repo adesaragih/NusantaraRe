@@ -158,10 +158,15 @@ func daftarTahunTreaty(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 		}
 		halaman, _ := strconv.Atoi(r.URL.Query().Get("halaman"))
 		ukuran, _ := strconv.Atoi(r.URL.Query().Get("ukuran"))
+		// saringan per kolom inbox (work owner 11-10-2026 "SEMUA HEADER BUAT FILTERNYA")
+		k := r.URL.Query()
+		saring := models.SaringTahunTreaty{UnderwritingYear: k.Get("underwritingYear"),
+			TreatyYear: k.Get("treatyYear"), StartDate: k.Get("startDate"), EndDate: k.Get("endDate"),
+			TreatyGroupID: k.Get("treatyGroupId"), Proportion: k.Get("proportion")}
 		hal, err := svc.TahunTreatyTCO().
 			DenganGudang(services.GudangTahunTreatyOracle(svc)).
 			DenganGrup(services.PembacaGrupTreatyOracle(svc)).
-			Daftar(r.Context(), inti.PelakuDari(r, stubPelaku), halaman, ukuran)
+			Daftar(r.Context(), inti.PelakuDari(r, stubPelaku), halaman, ukuran, saring)
 		if jawabGalatTreatyContractOut(w, err) {
 			return
 		}

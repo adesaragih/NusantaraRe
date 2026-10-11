@@ -65,12 +65,36 @@ menunggu dijalankan work owner — sebelum biner baru.
 
 ## Keputusan agent (menunggu konfirmasi)
 
-- **C-1** popup baris `CedingCedant` tidak dibuat: Choose Ceding dan % Share ada di baris grid. Grid CurrencyList dan
+- **C-1 RALAT 05-10-2026** (gambar layar Pega detail baris dari work owner): detail baris `CedingCedant` DIBUAT sebagai
+  panel di bawah baris (pola tab Object): Ceding + Choose Ceding; % Share* "of" ShareOfCeding; grid Currency · TSI
+  Cedant · Premium Cedant; kontrak `shareOfCeding` + `dasarMataUang` (sesi c3, K49-8).
+  > RALAT dasar: sesi 0f semula menduga cabang `TotalSpreadAll.pxResults` — keliru; langkah itu ber-label `//`
+  > (dimatikan). Yang berjalan langkah 4 atas `OfferFacIn.CurrencyList` (`.TSI` + `.Policy.Payment.Premium` diisi
+  > `CountPremiAndTSIRNMFireMBU_ACT`), lihat bagian Backend. Proteksi total premi kini di-port sesi c3 (K49-9).
+  > Teks lama C-1 di bawah dibatalkan.
+- ~~**C-1** popup baris `CedingCedant` tidak dibuat: Choose Ceding dan % Share ada di baris grid. Grid CurrencyList dan
   proteksi "Total premi share cedant must be equal total premi RNM!" menunggu tab Payment (disetujui work owner
   05-10-2026: "setuju").
 - **C-2** % Share RNM baca-saja di tab ini (diubah di tab Spreading).
 - **C-3** proteksi hanya bila `wajib` (gerbang di atas); Share Cedant Type bertanda wajib dalam kondisi yang sama.
-- **C-4** baris dari Add boleh berceding kosong sampai Choose Ceding; Save menolaknya bila `wajib`.
+- **C-8 (keputusan work owner 05-10-2026)** "kalau ada 2 currency, ditotalin jadi idr. ini yang sekarang cuma di total
+  angka nya saja tanpa liat currency": Total TSI RNM / Total Premi RNM = Σ per mata uang × kurs TOIDR
+  (`TREATYEXCHANGEYEARLY`, sumber yang sama dengan tab Spreading) — menyimpang sadar dari `CountPremiAndTSIRNMFireMBU_ACT`
+  (Pega menjumlah angka tanpa kurs). Mata uang tanpa kurs → total "" + `kursTidakAda` (sesi c3).
+  Sumber kurs dikonfirmasi work owner 05-10-2026: "kurs yang ada pada database berdasarkan begin date, nilai kursnya
+  pakai tabel TREATYEXCHANGEYEARLY" → TOIDR yang periodenya memuat Begin date (sama dengan Spreading), tanpa jatuh ke
+  kurs terbaru; `M_CURRENCYSTANDARD` (kurs harian) tidak dipakai.
+- **C-7 (keputusan work owner 05-10-2026)** "ini masa bisa lebih dari 100%": Σ % Share cedant > 100 selalu ditolak (layar
+  + diminta ke backend), tanpa gerbang `wajib`; pesan agent "Total % Share cedant tidak boleh lebih dari 100.". Kartu
+  % Share RNM tanpa akhiran "%".
+- **C-6 (keputusan work owner 05-10-2026, membatalkan C-5)** "saat di add salin aja dari data Ceding Co dari tab General,
+  dan tombol choose ceding nya di hapus saja": Add menyalin `cedingUmum`; grid berisi → hanya ceding General yang
+  belum ada (kode), tanpa baris kosong (tak dapat diisi tanpa Choose Ceding) — keputusan agent atas langkah 4
+  `AddCedantList_act`. Tombol Choose Ceding tidak ada.
+- ~~**C-5 (keputusan work owner 05-10-2026)** "saat klik add, ceding co dari tab general gausa di salin": Add selalu
+  menambah satu baris kosong (menyimpang sadar dari `AddCedantList_act`); `cedingUmum` tidak dipakai layar.
+- ~~**C-4** baris dari Add boleh berceding kosong sampai Choose Ceding; Save menolaknya bila `wajib`.~~ Gugur oleh C-6
+  (Add hanya menyalin Ceding Co General; tidak ada baris kosong, tidak ada Choose Ceding).
 
 ## Backend (sesi c3, 05-10-2026)
 
@@ -111,7 +135,7 @@ proteksi (`ErrMasukanCedant`, pesan verbatim), 401 tanpa identitas, 404 case, 50
   kosong), "% Share cedant more than 100 or less than 0!" (share ≤ 0, kosong, atau > 100), "Ceding on list inward facultative
   cedant can't be null!" (Pega `.CedingCoName==""`; di sini kode ATAU nama kosong — nama yang disimpan tetap dari AGENT). ⚠️ Di Pega langkah 9 "% SHARE NULL" memasang `Local.ErrMsgNull` (bukan
   `Local.ErrMsg`), sehingga pesan share tidak pernah tampil walau Save tetap ditahan (`ProtectSpreading.CARI1 = 1`); di sini
-  pesan yang dimaksud ditampilkan. "Total premi share cedant must be equal total premi RNM!" ditunda (C-1).
+  pesan yang dimaksud ditampilkan. "Total premi share cedant must be equal total premi RNM!" di-port kemudian (K49-9).
 - **K49-3** (c3) Total TSI / Premi RNM tidak disimpan, dihitung tiap baca dari objek tersimpan, dengan NR dihitung ulang dari
   % Share RNM seperti tiap Save Pega: `TotalTSINusaReSpreading` = PercentShare × Σ `CoverageList(1).TSILiability` tiap item /
   100, `TotalPremiNusaRe` = Σ `PremiNusantaraRe` seluruh coverage (`CountPremiAndTSIRNMFireMBU_ACT` 6.2.2.1.2, 6.2.2.1.3.3,
@@ -133,6 +157,52 @@ proteksi (`ErrMasukanCedant`, pesan verbatim), 401 tanpa identitas, 404 case, 50
   bila jumlah potongan sama (nama ber-`;` → dikosongkan, diisi dari AGENT saat Save). Share of Ceding ditulis dari % Share
   RNM tersimpan (NUMBER(38,8), paling banyak 8 desimal; contoh Pega memuat hingga ±17 desimal). Endpoint tidak memeriksa
   `!IsLife` / jenis FIRE — sama dengan tab lain modul ini (Spreading, Clauses).
+- **K49-7** (c3) `cedingUmum` **tetap** di jawaban GET. C-5 (Add tidak menyalin Ceding Co General) dibatalkan C-6 work owner
+  05-10-2026 ("saat di add salin aja dari data Ceding Co dari tab General, dan tombol choose ceding nya di hapus saja"): Add
+  kembali menyalin `cedingUmum`, sehingga baris cedant berasal dari Ceding Co tab General (T_CEDINGCOLIST / gabungan `;`,
+  K49-6). Backend tidak memaksa asal baris (layar yang menyusun); kode tetap divalidasi ke AGENT dan nama ditulis dari AGENT.
+- **K49-8** (c3) Detail baris cedant (`Section\CedingCedant.xml`): GET/PUT menambah `shareOfCeding` (T_QUOTATIONDATA
+  .SHARE_OF_CEDING tersimpan apa adanya, "" bila kosong) dan `dasarMataUang[{currency, tsiRnm, premiumRnm, tsiGross,
+  premiumGross}]` = dasar `CedingCedantList(i).CurrencyList` pada ShareCeding = 100 (layar menghitung ShareCeding × dasar /
+  100). `[terverifikasi]` `Activity\SetTSIPremiCedant_Act.xml` (pxInsName `ASM-FW-GISFW-DATA-QUOTATION!SETTSIPREMICEDANT_ACT`)
+  punya dua blok berulang EMBEDDED: langkah 4 atas `pyWorkPage.OfferFacIn.CurrencyList` dan langkah 5 "Count TSI & Premi
+  cedant" atas `TotalSpreadAll.pxResults` — langkah 5 ber-`pyStepsBlockName` `//` (konvensi label `//` = dimatikan, seperti
+  SumTSIPremiSpreadedRNM_FIRE_Act 3.5.2.3.2.5), jadi yang berjalan **langkah 4**:
+  - Share RNM (`ShareCedantType==1`): TSI = ShareCeding × (`.TSI` × PercentShare / 100) / 100, Premium = ShareCeding ×
+    `.Policy.Payment.Premium` / 100;
+  - Gross (`==0`): TSI = ShareCeding × `.TSI` / 100, Premium = ShareCeding × (`.Policy.Payment.Premium` × 100 / PercentShare) / 100.
+
+  `CurrencyList(n).TSI` / `.Policy.Payment.Premium` diisi `CountPremiAndTSIRNMFireMBU_ACT` 6.2.5 (`.Name==Local.Currency`) =
+  `Local.lTSI` (Σ `TSIObjectItem` item bermata uang itu, 6.2.2.1.2) / `Local.lPremi` (Σ `PremiNusantaraRe` coverage-nya,
+  6.2.2.1.3.3), keduanya dinolkan per mata uang (6.2.1). Maka dasar: `tsiRnm` = Σ TSI objek × PercentShare / 100,
+  `premiumRnm` = Σ premi NR, `tsiGross` = Σ TSI objek, `premiumGross` = Σ premi NR × 100 / PercentShare (kosong bila
+  PercentShare 0). ⚠️ `[dugaan]` `.Policy.Payment.Premium` per mata uang dapat diubah lagi oleh activity tab Payment
+  (installment / diskon) sesudah FireMBU — belum terverifikasi; di sini = nilai FireMBU. Mata uang urut kemunculan pertama;
+  item tanpa mata uang tidak masuk dasar. Kosong (`[]`) bila % Share RNM kosong. Angka 8 desimal.
+- **K49-9** (c3) Proteksi "Total premi share cedant must be equal total premi RNM!" (ProtectShareCedant_Act 3.3 / 4 / 5)
+  **di-port** (di balik gerbang `wajib`, K49-2): `@Math.divide(TotalPremiNusaRe,1,4)` wajib sama dengan
+  `@Math.divide(Σ CedingCedantList(i).CurrencyList(n).Premium,1,4)` dengan Premium menurut langkah 4 di atas; urutan pesan
+  langkah 7 (paling depan, sesudah pesan agent Share Cedant Type). Akibatnya: Share RNM lolos bila Σ ShareCeding = 100; Gross
+  lolos bila Σ ShareCeding = % Share RNM. `CedingCedantList(i).CurrencyList` **tidak disimpan** (nilai turunan, dihitung
+  tiap baca; pola K-067) — rancangan punya `T_CEDING_CURRENCYLIST` (NAME, PREMIUM, TSI, CURRENCY_CODE; induk
+  T_CEDINGCEDANTLIST) untuk data lama; migrasi 200 baru ditulis bila ada pembaca hilir (Payment / slip / FacOut).
+- **K49-10** (c3, C-7 work owner 05-10-2026 "ini masa bisa lebih dari 100%", pemicu case NB 50 + 60 = 110 lolos Save) —
+  PUT menolak Σ ShareCeding seluruh baris > 100 dengan 400 "Total % Share cedant tidak boleh lebih dari 100." (pesan agent,
+  Pega tidak memeriksa jumlah), **tanpa gerbang**, sejajar dengan "Value can't be more than 100 or less than 0!". Dihitung
+  eksak (apd); tepat 100 lolos. Di bawah gerbang `wajib` proteksi total premi (K49-9) tetap berjalan.
+- **K49-11** (c3, C-8 work owner 05-10-2026 "kalau ada 2 currency, ditotalin jadi idr") — MENYIMPANG sadar dari
+  `CountPremiAndTSIRNMFireMBU_ACT` (yang menjumlah angka lintas mata uang tanpa kurs): `totalTsiRnm` / `totalPremiRnm` =
+  Σ per mata uang asli (TSI = PercentShare × Σ TSILiability coverage pertama tiap item / 100; Premi = Σ premi NR) × kurs ke
+  IDR. Pembaca kurs = **ringkasan Spreading** (`SumTSIPremiSpreadedRNM_Act` langkah 19, `services/spreading.go`
+  `ringkasan`) `[terverifikasi]` kode sendiri: ID mata uang dari `CURRENCY` (`IDMataUang`); ID `"10026"` → kurs 1 (langkah
+  19.4 "SET KURS = 1, WHEN IDR"; IDR TIDAK membaca TREATYEXCHANGEYEARLY, tetapi ID-nya tetap dibaca dari CURRENCY seperti
+  Spreading); selain itu `KursPada` (GetKursLimitSpreading_SQL pada Begin date) **tanpa** jatuh ke kurs terbaru — usul
+  fallback `KursTerbaru` tidak dipakai karena Spreading tidak memakainya. Kunci baru `kursTidakAda: string[]` (selalu
+  larik): kode mata uang tanpa kurs (item tanpa mata uang = `"(kosong)"`); bila berisi, kedua total `""` (tidak menjumlah
+  sebagian). `dasarMataUang` dan CurrencyList cedant tetap dalam mata uang asli. Proteksi total premi (K49-9) tetap
+  membandingkan angka **mentah tanpa kurs** di kedua sisi seperti Pega (TotalPremiNusaRe mentah vs Σ premi cedant mentah):
+  premi cedant per mata uang = rasio share yang sama atas premi RNM mata uang itu, sehingga kesamaan jumlah mentah setara
+  dengan kesamaan per mata uang, dan proteksi tidak bergantung pada ada-tidaknya kurs.
 
 ## Acceptance criteria
 
@@ -140,3 +210,15 @@ proteksi (`ErrMasukanCedant`, pesan verbatim), 401 tanpa identitas, 404 case, 50
   Delete / Choose Ceding.
 - [x] Backend GET / PUT + SetShareOfCeding + proteksi (sesi c3, 05-10-2026; migrasi 199 ditulis, belum dijalankan;
   gerbang: FLAG_ONGOING_POLICY tersimpan, IsGroup menunggu model peran, K49-2).
+
+## Total per mata uang (work owner 06-10-2026, gambar layar Pega)
+
+> RALAT batas tab: tab "Inw Fac Cedant Panels" di `Section\InputInwardFacultativeDtl.xml` membentang 60510–±74880 (bukan
+> 60510–67588 seperti tertulis di atas). Bagian 67588–74880 terlewat saat analisis pertama.
+
+- `[terverifikasi]` layout S62 (`pyContainerVisibleWhen IsFire`, format Notifications) @67554: grid
+  `TotalSpreadAll.pxResults` (@68107) — Currency (`.Name`) · Total TSI Top Risk Spreaded (`.TSIAddCap`) · Total TSI Spreaded
+  (`.TSI`) · Total Limit of Liability (`.OldTSI`) · Total Premium Spreaded (`.Premium`); varian `!IsFire` @70737 tanpa Top
+  Risk; tombol Save `SaveFacIn_Act` @73883.
+- Frontend: `TabCedant.tsx` memuat `GET …/spreading` dan menampilkan `RingkasanSpreading … hanyaMataUang` (data sama dengan
+  ringkasan per mata uang tab Spreading). Tanpa backend baru.

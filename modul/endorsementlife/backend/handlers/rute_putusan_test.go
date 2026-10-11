@@ -12,19 +12,20 @@ import (
 
 func TestRutePutuskan(t *testing.T) {
 	g := gudangSatuKasus()
-	g.Polis["NBLF-1"] = &tiruan.Polis{ID: "NBLF-1", ProdKe: 1, Kepala: map[string]string{"TYPE": "QR"}}
+	g.Polis["NBLF-1"] = &tiruan.Polis{ID: "NBLF-1", ProdKe: 0, Kepala: map[string]string{"TYPE": "QR"}}
 	g.Peserta = append(g.Peserta, &tiruan.Peserta{ID: "UJI-NB-1", PolisID: "NBLF-1", PLNumber: "UJI-PL-1", Nilai: map[string]string{}})
-	g.Polis["EDMLF-1"].ProdKe = 2
+	g.Polis["EDML-1"].ProdKe = 1
 	g.Peserta[0].Nilai["CURRENCY"] = "IDR"
 	h := routerBuat(g)
-	jalur := handlers.Prefix + "/kasus/EDMLF-1/putuskan"
+	jalur := handlers.Prefix + "/kasus/EDML-1/putuskan"
 	if w := minta(t, h, "POST", jalur, `{"status":"1"}`, false); w.Code != http.StatusUnauthorized {
 		t.Fatalf("tanpa identitas %d", w.Code)
 	}
 	if w := minta(t, h, "POST", jalur, `{"status":"1"}`, true); w.Code != http.StatusConflict {
 		t.Fatalf("belum Save %d %s", w.Code, w.Body)
 	}
-	if w := minta(t, h, "POST", handlers.Prefix+"/kasus/EDMLF-1/simpan", `{}`, true); w.Code != http.StatusOK {
+	// Save berisi perubahan (proteksi 08-10-2026: Perubahan Data tanpa centang dan tanpa New ditolak 422).
+	if w := minta(t, h, "POST", handlers.Prefix+"/kasus/EDML-1/simpan", `{"pilih":["UJI-D1"]}`, true); w.Code != http.StatusOK {
 		t.Fatalf("simpan %d %s", w.Code, w.Body)
 	}
 	if w := minta(t, h, "POST", jalur, `{"status":"3"}`, true); w.Code != http.StatusUnprocessableEntity {
@@ -37,14 +38,14 @@ func TestRutePutuskan(t *testing.T) {
 	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), `"status":"Resolved-Completed","noEndorsement":"UJI-PL-1/01"`) {
 		t.Fatalf("confirm %d %s", w.Code, w.Body)
 	}
-	if g.Polis["EDMLF-1"].Status != models.StatusKasusSelesai {
+	if g.Polis["EDML-1"].Status != models.StatusKasusSelesai {
 		t.Error("kasus tidak resmi")
 	}
 	// K5 (01-10-2026): peserta kasus ikut tertulis ke tabel warisan - cacahnya di jawaban Confirm.
 	if !strings.Contains(w.Body.String(), `"pesertaWarisan":1`) || len(g.PesertaWarisanTertulis) != 1 {
 		t.Errorf("peserta warisan %s (%d baris)", w.Body, len(g.PesertaWarisanTertulis))
 	}
-	w = minta(t, h, "GET", handlers.Prefix+"/kasus/EDMLF-1", "", true)
+	w = minta(t, h, "GET", handlers.Prefix+"/kasus/EDML-1", "", true)
 	if !strings.Contains(w.Body.String(), `"riwayat":[{"no":1,`) || !strings.Contains(w.Body.String(), `"status":"Accept","comment":"UJI"`) {
 		t.Errorf("riwayat tidak terbaca %s", w.Body)
 	}

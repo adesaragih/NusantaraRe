@@ -6,6 +6,8 @@ package services
 //	                           2.1.1 b565 `·` `.Plan==""`  → "Plan tidak boleh kosong" (b442)
 //	                           2.1.2 b715 `·` plan sama di baris lain → "Plan tidak boleh sama" (b421)
 //	                           2.1.3 b876 `·` `.RIRATE==""` → "RI/RATE tidak boleh kosong" (b463)
+//	                           + Bussines (`.Name`) sama di baris lain → "Bussines tidak boleh sama"
+//	                             (BUKAN korpus - keputusan work owner 05-10-2026)
 //	UNDERWRITING LIMIT b42075  angka desimal, Min ≤ Max (R17); `Medical` teks bebas (R16)
 //
 // ⛔ Pesan Pega dipasang di medan barisnya; di sini diawali judul grid dan
@@ -27,6 +29,12 @@ const (
 	PesanRIRatePlanKosong = "RI/RATE tidak boleh kosong" // b463
 )
 
+// PesanBisnisSama - satu Bussines (`.Name`, Class of Business) hanya boleh muncul
+// SEKALI di PLAN LIST (keputusan work owner 05-10-2026; tidak ada di korpus). Premium
+// List Life memilih plan produk menurut Class of Business polis - dua plan berbisnis
+// sama membuat rate yang dipakai tidak dapat ditentukan.
+const PesanBisnisSama = "Bussines tidak boleh sama"
+
 // Judul grid VERBATIM.
 const (
 	judulPlan    = "PLAN LIST"          // b31557
@@ -45,8 +53,12 @@ func (pk *periksa) baris(judul string, i int, format string, a ...any) {
 // kemunculan kedua dan seterusnya, baris kosong dilewati).
 func periksaPlan(pk *periksa, daftar []models.BarisPlan) {
 	jumlah := map[string]int{}
+	bisnis := map[string]int{}
 	for _, b := range daftar {
 		jumlah[strings.TrimSpace(b.Plan)]++
+		if n := kunciBisnis(b.Name); n != "" {
+			bisnis[n]++
+		}
 	}
 	for i, b := range daftar {
 		plan := strings.TrimSpace(b.Plan)
@@ -55,6 +67,11 @@ func periksaPlan(pk *periksa, daftar []models.BarisPlan) {
 		}
 		if jumlah[plan] > 1 {
 			pk.baris(judulPlan, i, "%s", PesanPlanSama)
+		}
+		// Bussines ganda dengan plan BERBEDA (plan yang sama sudah ditolak "Plan tidak
+		// boleh sama" - tidak dilaporkan dua kali).
+		if n := kunciBisnis(b.Name); n != "" && bisnis[n] > jumlah[plan] {
+			pk.baris(judulPlan, i, "%s", PesanBisnisSama)
 		}
 		if strings.TrimSpace(b.RIRate) == "" {
 			pk.baris(judulPlan, i, "%s", PesanRIRatePlanKosong)
@@ -233,3 +250,6 @@ const bentukWaktuPega = "20060102T150405.000 GMT"
 func barisKomentar(saat time.Time, akun, komentar string) models.BarisKomentar {
 	return models.BarisKomentar{Date: saat.UTC().Format(bentukWaktuPega), OperatorName: akun, Suggest: komentar}
 }
+
+// kunciBisnis - Bussines untuk dibandingkan: tanpa spasi tepi, tidak peka huruf besar.
+func kunciBisnis(nama string) string { return strings.ToUpper(strings.TrimSpace(nama)) }

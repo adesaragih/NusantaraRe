@@ -43,17 +43,21 @@ func sqlSisipKoas(koas string) string {
 	return "INSERT INTO " + koas + " (ID, PARENT_ID, COINS_NAME) VALUES (:1, :2, :3)"
 }
 
-// argKerugian - bind :5..:13 sqlSisipKerugian, urutan sama dengan daftar kolomnya. Kosong -> NULL kecuali CURRENCY
-// (wajib, diperiksa services). DateOfLoss di sini sudah teks Pega (services).
+// argKerugian - bind :5..:13 sqlSisipKerugian, urutan sama dengan daftar kolomnya. Kosong -> NULL, termasuk CURRENCY
+// (tidak wajib sejak migrasi 209; aplikasi tidak menulis 'UNKNOWN', K-012). DateOfLoss di sini sudah teks Pega (services).
 func argKerugian(c models.CatatanKerugian) []any {
 	k := db.KosongJadiNil
-	return []any{k(c.DateOfLoss), k(c.LossObject), c.Currency, ikatDesimal(c.Amount), ikatDesimal(c.Claim),
+	return []any{k(c.DateOfLoss), k(c.LossObject), k(c.Currency), ikatDesimal(c.Amount), ikatDesimal(c.Claim),
 		ikatDesimal(c.PreventionOfLoss), k(c.CauseOfLoss), k(c.Remarks), k(c.Detail)}
 }
 
 // bacaKerugian - catatan kerugian case `id` per T_PROPERTY.ID (teks).
-func (r *ObjekOracle) bacaKerugian(ctx context.Context, t tabelObjek, id string) (map[string][]models.CatatanKerugian, error) {
-	baris, err := r.db.QueryContext(ctx, sqlBacaKerugian(t), id)
+func (r *ObjekOracle) bacaKerugian(ctx context.Context, t tabelObjek, b lingkupBaca) (map[string][]models.CatatanKerugian, error) {
+	q, arg, err := b.kueri(sqlBacaKerugian(t))
+	if err != nil {
+		return nil, err
+	}
+	baris, err := r.db.QueryContext(ctx, q, arg...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: baca catatan kerugian: %w", err)
 	}
@@ -88,17 +92,18 @@ func (r *ObjekOracle) bacaKerugian(ctx context.Context, t tabelObjek, id string)
 }
 
 // sisipKerugian - catatan kerugian satu property (SEQ_NO 1..n), masing-masing dengan satu baris CoinsData.
-func (r *ObjekOracle) sisipKerugian(ctx context.Context, tx *db.Tx, t tabelObjek, idProperty string, rugi []models.CatatanKerugian) error {
+func (w *tulisObjek) sisipKerugian(ctx context.Context, idProperty string, rugi []models.CatatanKerugian) error {
+	t := w.t
 	for j, c := range rugi {
-		idRugi, err := r.db.NomorBerikut(ctx, tx, sequenceListCauseOfLoss)
+		idRugi, err := w.p.nomor(ctx, sequenceListCauseOfLoss)
 		if err != nil {
 			return err
 		}
-		idKoas, err := r.db.NomorBerikut(ctx, tx, sequenceCoinsData)
+		idKoas, err := w.p.nomor(ctx, sequenceCoinsData)
 		if err != nil {
 			return err
 		}
-		uid, err := uidAcak()
+		uid, err := w.uid()
 		if err != nil {
 			return err
 		}
@@ -109,11 +114,7 @@ func (r *ObjekOracle) sisipKerugian(ctx context.Context, tx *db.Tx, t tabelObjek
 			{sqlSisipKerugian(t.rugi), TabelListCauseOfLoss, append([]any{idRugi, idProperty, j + 1, uid}, argKerugian(c)...)},
 			{sqlSisipKoas(t.koas), TabelCoinsData, []any{idKoas, idRugi, db.KosongJadiNil(c.CoinsName)}},
 		} {
-			h, err := jalankan(ctx, tx, l.q, "menyisipkan "+l.tabel, l.arg...)
-			if err != nil {
-				return err
-			}
-			if err := db.PastikanSatuBaris(h, l.tabel); err != nil {
+			if err := w.p.sisip(ctx, l.q, l.tabel, l.arg); err != nil {
 				return err
 			}
 		}

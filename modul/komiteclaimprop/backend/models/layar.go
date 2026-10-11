@@ -109,6 +109,7 @@ const (
 	JudulKomite      = "CLAIM COMMITTEE -"
 	JudulAdjustment  = "ADJUSTMENT"
 	JudulTutup       = "CLOSE"
+	JudulTolak       = "REJECT"
 	TombolLihat      = "View more details"
 	TombolBatal      = "Cancel"
 	TombolKirim      = "Submit"
@@ -191,9 +192,11 @@ func tampilBila(m []Medan, ya bool, x ...Medan) []Medan {
 func SusunLayar(k Kasus, kl kontrak.KlaimTreaty, total []TotalMataUang, akun string, peran []string) Layar {
 	p := pembaca{kl: kl, adj: AdjustmentKlaim(kl)}
 	ly := Layar{Kasus: k, Judul: []string{JudulKomite, JudulAdjustment}, BolehKerja: k.Pemegang(akun, peran)}
-	tt2 := !k.Tutup() // `.TransferType = 2` (container TT 2 dan judul ADJUSTMENT); TT 4 = judul CLOSE
-	if !tt2 {
+	tt2 := !k.TanpaAdjustment() // `.TransferType = 2` (container TT 2 dan judul ADJUSTMENT); TT 4 CLOSE, TT 3 REJECT
+	if k.Tutup() {
 		ly.Judul = []string{JudulKomite, JudulTutup}
+	} else if k.Tolak() {
+		ly.Judul = []string{JudulKomite, JudulTolak}
 	}
 
 	// Panel "Claim Treaty" - kolom kiri (Stacked with labels left).

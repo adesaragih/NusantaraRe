@@ -53,11 +53,20 @@ export interface Tata {
   tambah?: Tata
   bernomor?: boolean
   /** Format layout Pega: dua = Inline grid double, sebaris = Inline, tab = layout group Tab, judul = kepala layar. */
-  letak?: 'dua' | 'sebaris' | 'tab' | 'judul' | 'tabel'
+  letak?: 'dua' | 'sebaris' | 'tab' | 'judul' | 'tabel' | 'sukses' | 'info'
   /** Ikon tombol dari XML (pi-plus, pi-trash, pi-pencil, pi-check). */
   ikon?: 'tambah' | 'hapus' | 'ubah' | 'simpan'
   /** Paging grid (pyGridPaginator). */
   perHalaman?: number
+  /** Kondisi tampil `pyIsClientWhen` - dievaluasi layar dengan nilai lokal (`saringKlien`), tanpa memanggil server. */
+  tampilJika?: SyaratKlien
+}
+
+/** Tampil bila nilai `jalur` = `nilai` (`beda`: bila bukan `nilai`). */
+export interface SyaratKlien {
+  jalur: string
+  nilai: string
+  beda?: boolean
 }
 
 export interface Kasus {

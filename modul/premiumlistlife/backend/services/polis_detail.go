@@ -14,6 +14,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	inti "nusantarare/inti/backend"
@@ -174,4 +175,49 @@ func (d *DetailPolis) MedanTanpaKolom() []MedanTanpaKolomPolis {
 		}
 	}
 	return keluar
+}
+
+// ErrRincianProdukTidakAda - produk tidak ada di Master Product Name Life (404).
+// Padanan galat repository, diekspor di sini supaya handler tidak mengimpor
+// repository (handlers -> services -> repository).
+var ErrRincianProdukTidakAda = repository.ErrRincianProdukTidakAda
+
+// ErrPesertaTakDitemukan - peserta tidak ada di polis itu (404).
+var ErrPesertaTakDitemukan = errors.New("services: peserta tidak ditemukan di polis ini")
+
+// SpreadingPeserta membaca spreading retro SATU peserta - popup baris grid
+// "Participant Details" (keputusan work owner 07-10-2026). Baca-saja; gerbang sama
+// dengan grid peserta (`Peserta`). Tanpa spreading = Lapisan kosong, bukan galat.
+func (d *DetailPolis) SpreadingPeserta(ctx context.Context, pelaku inti.Pelaku, polisID, detailID string) (
+	repository.SpreadingSatuPeserta, error) {
+
+	if err := inti.WajibIdentitas(pelaku); err != nil {
+		return repository.SpreadingSatuPeserta{}, err
+	}
+	if d == nil || d.svc == nil || !d.svc.PunyaDatabase() {
+		return repository.SpreadingSatuPeserta{}, db.ErrTanpaOracle
+	}
+	if polisID == "" || detailID == "" {
+		return repository.SpreadingSatuPeserta{}, fmt.Errorf("%w: id polis / peserta kosong", galat.ErrPermintaanTidakSah)
+	}
+	p, err := repository.NewSpreading(d.svc.DB()).Peserta(ctx, polisID, detailID)
+	if errors.Is(err, repository.ErrPesertaSpreadingTidakAda) {
+		return repository.SpreadingSatuPeserta{}, fmt.Errorf("%w: %s", ErrPesertaTakDitemukan, detailID)
+	}
+	return p, err
+}
+
+// RekapRetro membaca total retro per reinsurer per mata uang - tab Summary.
+// Nama reinsurer dari data (tanpa daftar nama tetap Pega).
+func (d *DetailPolis) RekapRetro(ctx context.Context, pelaku inti.Pelaku, polisID string) ([]repository.RekapRetro, error) {
+	if err := inti.WajibIdentitas(pelaku); err != nil {
+		return nil, err
+	}
+	if d == nil || d.svc == nil || !d.svc.PunyaDatabase() {
+		return nil, db.ErrTanpaOracle
+	}
+	if polisID == "" {
+		return nil, fmt.Errorf("%w: id polis kosong", galat.ErrPermintaanTidakSah)
+	}
+	return repository.NewSpreading(d.svc.DB()).Rekap(ctx, polisID)
 }

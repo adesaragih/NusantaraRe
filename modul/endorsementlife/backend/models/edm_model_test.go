@@ -1,11 +1,13 @@
 package models
 
 import (
+	"errors"
 	"html"
 	"os"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 // akarKorpus - korpus READ-ONLY; uji yang membacanya DILEWATI bila tak terjangkau.
@@ -54,7 +56,7 @@ func TestPeriksaEdmTypeHanyaSatuDanTiga(t *testing.T) {
 
 func TestPengenalKasusTanpaPadding(t *testing.T) {
 	id, err := RakitPengenalKasus("7")
-	if err != nil || id != "EDMLF-7" {
+	if err != nil || id != "EDML-7" {
 		t.Fatalf("RakitPengenalKasus(7) = %q, %v", id, err)
 	}
 	for _, rusak := range []string{"", "x", "-1", "1.5"} {
@@ -62,57 +64,78 @@ func TestPengenalKasusTanpaPadding(t *testing.T) {
 			t.Errorf("%q diterima", rusak)
 		}
 	}
-	if !KasusEDM("EDMLF-1") || KasusEDM("NBLF-1") || KasusEDM("EDMLF-") {
+	if !KasusEDM("EDML-1") || KasusEDM("NBLF-1") || KasusEDM("EDML-") {
 		t.Error("KasusEDM salah menggolongkan pengenal")
 	}
 }
 
-// K3 keputusan work owner 01-10-2026 (OQ-EDM-008): NOMOR = rumus Pega `GenerateNoEDM_Life` 3–4
-// (`Local.Prodke` int ← `PRODKE` baris terbaru b898/b899, `CARI4 = Prodke+1` b946, pad dua digit b967);
-// VERSI tetap E1 (`NVL(PRODKE, 1)` + 1). Polis NB warisan (`PRODKE` kosong) → `/01`, lalu `/02`.
-func TestNomorEndorsementRumusPega(t *testing.T) {
-	kasus := []struct {
-		nama   string
-		polis  string
-		versi  Versi
-		nomor  string
-		prodKe int
-	}{
-		{"NB warisan PRODKE kosong", "UJI-PL-1", Versi{ID: "UJI-IDPEGA-1", ProdKe: 1, UrutanPega: 0}, "UJI-PL-1/01", 2},
-		{"endorsement pertama sistem baru", "UJI-PL-1", Versi{ID: "EDMLF-1", ProdKe: 2, UrutanPega: 1}, "UJI-PL-1/02", 3},
-		{"endorsement warisan Pega /01", "UJI-PL-1", Versi{ID: "UJI-IDPEGA-2", ProdKe: 1, UrutanPega: 1}, "UJI-PL-1/02", 2},
-		{"delapan", "UJI-PL-1", Versi{ID: "x", ProdKe: 9, UrutanPega: 8}, "UJI-PL-1/09", 10},
-		{"dua digit tanpa pad tambahan b967", "UJI-PL-1", Versi{ID: "x", ProdKe: 10, UrutanPega: 9}, "UJI-PL-1/10", 11},
-		{"tiga digit", " UJI-PL-1 ", Versi{ID: "x", ProdKe: 100, UrutanPega: 99}, "UJI-PL-1/100", 101},
+// TestPengenalEDMLSamaDenganPega - `EDML-<n>` (keputusan work owner 07-10-2026, migrasi 484 mulai 828).
+func TestPengenalEDMLSamaDenganPega(t *testing.T) {
+	if AwalanKasus != "EDML-" {
+		t.Fatalf("AwalanKasus = %q", AwalanKasus)
 	}
-	for _, k := range kasus {
-		n, b, err := NomorEndorsement(k.polis, k.versi)
-		if err != nil || n != k.nomor || b != k.prodKe {
-			t.Errorf("%s: NomorEndorsement = %q, %d, %v; mau %q, %d", k.nama, n, b, err, k.nomor, k.prodKe)
+	if id, err := RakitPengenalKasus("828"); err != nil || id != "EDML-828" {
+		t.Errorf("RakitPengenalKasus(828) = %q, %v", id, err)
+	}
+	for _, sah := range []string{"EDML-828", "EDML-1", "EDML-1234"} {
+		if !KasusEDM(sah) {
+			t.Errorf("%q ditolak", sah)
 		}
 	}
-	if _, _, err := NomorEndorsement("", Versi{ProdKe: 1}); err == nil {
-		t.Error("nomor polis kosong diterima")
-	}
-	if _, _, err := NomorEndorsement("UJI-PL-1", Versi{ProdKe: 0}); err == nil {
-		t.Error("PRODKE 0 diterima sebagai versi")
-	}
-	if _, _, err := NomorEndorsement("UJI-PL-1", Versi{ProdKe: 1, UrutanPega: -1}); err == nil {
-		t.Error("urutan Pega negatif diterima")
+	// Awalan lama, NB, kosong, dan akhiran bukan angka bukan kasus modul ini.
+	for _, bukan := range []string{"EDMLF-1", "EDMLF-828", "NBLF-828", "EDML-", "EDML", "EDML-12a", "EDML--1", "edml-1", ""} {
+		if KasusEDM(bukan) {
+			t.Errorf("%q diterima", bukan)
+		}
 	}
 }
 
-// Urutan Pega endorsement sistem baru = akhiran nomornya: Pega menulis `JSON_POLIS.PRODKE = CARI4`
-// (`InsertJsonPolisEDM` b101), angka yang sama dengan akhiran `NOPOLIS||'/'||CARI14`.
-func TestUrutanDariNomor(t *testing.T) {
-	for nomor, mau := range map[string]int{"UJI-PL-1/01": 1, "UJI-PL-1/10": 10, "UJI/PL/1/100": 100, " UJI-PL-1/02 ": 2} {
-		if got, err := UrutanDariNomor(nomor); err != nil || got != mau {
-			t.Errorf("UrutanDariNomor(%q) = %d, %v; mau %d", nomor, got, err, mau)
+// PRODKE SATU hitungan mulai 0 (keputusan work owner 08-10-2026): NO_ENDORS = PL + "/" + PRODKE baru dua digit.
+func TestNomorEndorsementDariPRODKE(t *testing.T) {
+	for _, k := range []struct {
+		polis  string
+		prodKe int
+		nomor  string
+	}{
+		{"RNML-QRL2.10.26.00042", 1, "RNML-QRL2.10.26.00042/01"}, // endorsement pertama (NB PRODKE 0 → 1)
+		{"RNML-QRL2.10.26.00042", 2, "RNML-QRL2.10.26.00042/02"}, // dari versi 1
+		{"UJI-PL-1", 9, "UJI-PL-1/09"},
+		{"UJI-PL-1", 10, "UJI-PL-1/10"},
+		{" UJI-PL-1 ", 100, "UJI-PL-1/100"}, // > 99: angka apa adanya (pola Pega b966)
+	} {
+		if n, err := NomorEndorsement(k.polis, k.prodKe); err != nil || n != k.nomor {
+			t.Errorf("NomorEndorsement(%q, %d) = %q, %v; mau %q", k.polis, k.prodKe, n, err, k.nomor)
 		}
 	}
-	for _, rusak := range []string{"", "UJI-PL-1", "UJI-PL-1/", "UJI-PL-1/0x", "UJI-PL-1/-1"} {
-		if _, err := UrutanDariNomor(rusak); err == nil {
-			t.Errorf("%q diterima", rusak)
+	if _, err := NomorEndorsement("", 1); err == nil {
+		t.Error("nomor polis kosong diterima")
+	}
+	if _, err := NomorEndorsement("UJI-PL-1", 0); err == nil {
+		t.Error("PRODKE 0 (new business) diterima sebagai nomor endorsement")
+	}
+}
+
+// TestTanggalProduksiEndorsement - TGL_PROD JSON_POLIS (08-10-2026): bulan sama → tanggal Confirm; bergeser → tgl 1.
+func TestTanggalProduksiEndorsement(t *testing.T) {
+	wib := time.FixedZone("WIB", 7*60*60)
+	for _, k := range []struct {
+		saat    time.Time
+		periode string
+		mau     string
+	}{
+		{time.Date(2026, 10, 8, 15, 30, 0, 0, wib), "10.2026", "2026-10-08"},
+		{time.Date(2026, 10, 28, 9, 0, 0, 0, wib), "11.2026", "2026-11-01"},
+		{time.Date(2026, 12, 30, 9, 0, 0, 0, wib), "01.2027", "2027-01-01"},
+		{time.Date(2026, 10, 31, 20, 0, 0, 0, time.UTC), "11.2026", "2026-11-01"}, // 01-11 03:00 WIB
+	} {
+		got, err := TanggalProduksi(k.saat, k.periode)
+		if err != nil || got.Format("2006-01-02") != k.mau || got.Hour() != 0 {
+			t.Errorf("%v %s = %v, %v; mau %s", k.saat, k.periode, got, err, k.mau)
+		}
+	}
+	for _, salah := range []string{"", "2026-10", "13.2026"} {
+		if _, err := TanggalProduksi(time.Now(), salah); !errors.Is(err, ErrTanggalProduksi) {
+			t.Errorf("periode %q: %v", salah, err)
 		}
 	}
 }
@@ -160,8 +183,8 @@ func TestKeputusanIsLifeAccepted(t *testing.T) {
 
 func TestLebihBaruMemilihPRODKETerbesar(t *testing.T) {
 	nb := Versi{Jenis: SumberWarisan, ID: "UJI-IDPEGA-1", ProdKe: 1}
-	edm := Versi{Jenis: SumberAplikasi, ID: "EDMLF-1", ProdKe: 2, EdmType: "1"}
-	if LebihBaru(nb, edm).ID != "EDMLF-1" || LebihBaru(edm, nb).ID != "EDMLF-1" {
+	edm := Versi{Jenis: SumberAplikasi, ID: "EDML-1", ProdKe: 2, EdmType: "1"}
+	if LebihBaru(nb, edm).ID != "EDML-1" || LebihBaru(edm, nb).ID != "EDML-1" {
 		t.Error("PRODKE terbesar tidak menang")
 	}
 	seri := Versi{Jenis: SumberAplikasi, ID: "NBLF-1", ProdKe: 1}

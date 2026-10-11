@@ -24,7 +24,7 @@ interface Tombol {
 }
 
 export const SENSUS: readonly Tombol[] = [
-  { berkas: 'ConfirmSubmitEDM', label: 'Close', baris: 1366, kunci: 'TERIMA_EDM.close' },
+  { berkas: 'ConfirmSubmitEDM', label: 'Close', baris: 1366, alasan: 'popup hasil diganti "Endorsement confirmed" bertombol OK (HASIL_EDM.ok) - permintaan work owner 09-10-2026' },
   { berkas: 'EndorsmentLife_Section', label: 'Process Policy No', baris: 2414, alasan: 'VIS=never' },
   { berkas: 'EndorsmentLife_Section', label: 'Submit', baris: 4226, kunci: 'BUAT_EDM.submit' },
   { berkas: 'InboxEndorsementLife', label: 'Create', baris: 3780, alasan: 'R11 panel tak terjangkau (InData.CARI1==1)' },
@@ -37,9 +37,9 @@ export const SENSUS: readonly Tombol[] = [
   { berkas: 'InputEDMLife', label: 'Add CSV Data', baris: 10405, kunci: 'UNGGAH_EDM.addCsvData' },
   { berkas: 'InputEDMLife', label: 'DELETE ALL', baris: 13607, kunci: 'SIMPAN_EDM.deleteAll' },
   { berkas: 'InputEDMLife', label: 'View Premium', baris: 36494, alasan: 'VIS 1=2' },
-  { berkas: 'InputEDMLife', label: 'Save', baris: 37202, kunci: 'SIMPAN_EDM.save' },
-  { berkas: 'InputEDMLife', label: 'Submit', baris: 37494, kunci: 'PUTUSAN_EDM.submit' },
-  { berkas: 'InputEDMLife', label: 'Submit', baris: 38109, kunci: 'PUTUSAN_EDM.submit' },
+  { berkas: 'InputEDMLife', label: 'Save', baris: 37202, alasan: 'diganti nama "Process Endorsement" (PROSES_EDM.processEndorsement), dipindah ke bawah + konfirmasi - keputusan work owner 08-10-2026' },
+  { berkas: 'InputEDMLife', label: 'Submit', baris: 37494, alasan: 'diganti nama "Confirm" (KONFIRMASI_PUTUSAN_EDM.confirm) + popup konfirmasi - keputusan work owner 08-10-2026' },
+  { berkas: 'InputEDMLife', label: 'Submit', baris: 38109, alasan: 'diganti nama "Confirm" (KONFIRMASI_PUTUSAN_EDM.confirm) + popup konfirmasi - keputusan work owner 08-10-2026' },
   { berkas: 'ShowLifePremiumSummary_EDM', label: 'View Old Policy', baris: 64965, kunci: 'POLIS_LAMA_EDM.viewOldPolicy' },
   { berkas: 'ShowLifePremiumSummary_EDM', label: 'View Old Policy', baris: 65522, kunci: 'POLIS_LAMA_EDM.viewOldPolicy' },
   { berkas: 'ShowLifePremiumSummary_EDM', label: 'View Old Policy', baris: 66083, kunci: 'POLIS_LAMA_EDM.viewOldPolicy' },

@@ -8,12 +8,13 @@ import (
 	"testing"
 
 	"nusantarare/inti/backend/db"
+	"nusantarare/modul/premiumlistlife/backend/models"
 )
 
 func TestSqlBahanHitungQR(t *testing.T) {
 	for nama, k := range map[string]struct{ q, mau string }{
 		"kepala": {sqlKepalaUnggah("S.T_PREMIUM_LIST"),
-			"SELECT TYPE, PRODUCT_NAME_ID, BUSINESS_NAME, PRO_RATE_TYPE, RI_SLIP_RNM FROM S.T_PREMIUM_LIST WHERE ID = :1"},
+			"SELECT TYPE, PRODUCT_NAME_ID, BUSINESS_NAME, PRO_RATE_TYPE, RI_SLIP_RNM, POLICY_HOLDER_NAME\n\t   FROM S.T_PREMIUM_LIST WHERE ID = :1"},
 		// Batas produk dari M_PRODUCTNAME_LIFE, bukan PRODUCTINWARD_LIFE (05-10-2026).
 		"batas": {sqlBatasProdukMPNL("S.M_PRODUCTNAME_LIFE"),
 			"TO_CHAR(MAXSUMINSURED, 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''') FROM S.M_PRODUCTNAME_LIFE WHERE ID = :1"},
@@ -52,10 +53,34 @@ func TestSisipPesertaMenulisKolomHasilQR(t *testing.T) {
 		ada[k] = true
 	}
 	for _, k := range []string{"RATE", "RISK", "SUM_AT_RISK_GROSS", "CEDING_RETENTION", "SUM_REASURED",
-		"SHARE_NUSANTARA_RE", "GROSS_PREMIUM", "DEDUCTION", "BROKERAGE_FEE", "NET_PREMIUM", "RI_ADMIN_FEE",
-		"PERIOD_MM", "FACTOR", "EM_PERCENT"} {
+		"SHARE_NUSANTARA_RE", "SHARE_NUSANTARA_RE_GROSS", "GROSS_PREMIUM", "DEDUCTION", "BROKERAGE_FEE", "NET_PREMIUM", "RI_ADMIN_FEE",
+		"PERIOD_MM", "FACTOR", "EM_PERCENT", "SUM_AT_RISK_RETRO", "RETROCEDED_SHARE"} {
 		if !ada[k] {
 			t.Errorf("SisipPeserta tidak menulis %s", k)
+		}
+	}
+}
+
+// Type non-QR: SUM_AT_RISK_RETRO / RETROCEDED_SHARE dari CSV tersimpan apa adanya,
+// kosong → NULL (keputusan work owner 06-10-2026).
+func TestSisipPesertaKolomRetroDariCSV(t *testing.T) {
+	kolom, _, _ := ekspresiSisipPeserta()
+	nama := strings.Split(kolom, ", ")
+	arg := nilaiSisipPeserta("ID1", "POLIS1", models.BarisUnggah{Nomor: 1, Nilai: map[string]string{
+		"SUM_AT_RISK_RETRO": "12345.5", "RETROCEDED_SHARE": " "}})
+	if len(arg) != len(nama) {
+		t.Fatalf("%d nilai untuk %d kolom", len(arg), len(nama))
+	}
+	for i, k := range nama {
+		switch k {
+		case "SUM_AT_RISK_RETRO":
+			if arg[i] != "12345.5" {
+				t.Errorf("SUM_AT_RISK_RETRO = %v", arg[i])
+			}
+		case "RETROCEDED_SHARE":
+			if arg[i] != nil {
+				t.Errorf("RETROCEDED_SHARE kosong = %v, mau NULL", arg[i])
+			}
 		}
 	}
 }

@@ -1,0 +1,83 @@
+-- =====================================================================================================================
+-- USULAN penyeragaman IDPEGA baris lama case NB FacIn ke case id POLOS (keputusan work owner 11-10-2026: "kolom idpega nya sesuai
+-- case id"; diperluas riwayat akseptasi / FACINOFFER / JSON_OFFER / FACINPERFORMANCE / DOCUMENT_POLIS).
+--
+-- ⛔ DITULIS SAJA. BELUM PERNAH DIJALANKAN. TIDAK WAJIB: aplikasi (nbfacin) sudah MEMBACA dua bentuk (polos dan berawalan
+-- 'ASM-FW-GISFW-WORK '), jadi skrip ini hanya merapikan data lama. Dijalankan DBA di DEV sesudah persetujuan work owner. Bukan
+-- migrasi bernomor. TANPA COMMIT - COMMIT / ROLLBACK oleh DBA sesudah BAGIAN 2 cocok.
+--
+-- Sebelum menjalankan: ganti `{skema}` dengan skema objek nbfacin (T_WORK_POLIS). Tabel Pega ditulis berawalan POOLDATA. seperti
+-- di kode (tabel tanpa awalan skema = POOLDATA); sesuaikan bila sinonim berbeda di DEV.
+--
+-- CAKUPAN: hanya baris berawalan 'ASM-FW-GISFW-WORK ' yang case-nya ada di {skema}.T_WORK_POLIS LINI 'FAC' ber-ID 'NB-%'
+-- (case NB FacIn). DOCUMENT_POLIS / HISTORYAKSEPTASI* dipakai modul lain - saringan ini menjaga baris modul lain tidak tersentuh.
+-- ⚠️ Bila Pega masih aktif menulis case yang sama, baris berawalan baru dapat muncul lagi - aplikasi tetap membacanya.
+-- =====================================================================================================================
+
+-- ---- BAGIAN 0: hitung baris yang akan diubah (simpan hasilnya) -------------------------------------------------------
+SELECT 'JSON_POLIS' AS TABEL, COUNT(*) AS N FROM POOLDATA.JSON_POLIS t
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC')
+UNION ALL SELECT 'FACINPRODUCTION', COUNT(*) FROM POOLDATA.FACINPRODUCTION t
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC')
+UNION ALL SELECT 'CEDING_FACINPRODUCTION', COUNT(*) FROM POOLDATA.CEDING_FACINPRODUCTION t
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC')
+UNION ALL SELECT 'HISTORYAKSEPTASIPEGA', COUNT(*) FROM POOLDATA.HISTORYAKSEPTASIPEGA t
+ WHERE t.ID_PEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.ID_PEGA, 19) AND w.LINI = 'FAC')
+UNION ALL SELECT 'HISTORYAKSEPTASIPRODUCTION', COUNT(*) FROM POOLDATA.HISTORYAKSEPTASIPRODUCTION t
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC')
+UNION ALL SELECT 'FACINPERFORMANCE', COUNT(*) FROM POOLDATA.FACINPERFORMANCE t
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC')
+UNION ALL SELECT 'JSON_OFFER', COUNT(*) FROM POOLDATA.JSON_OFFER t
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC')
+UNION ALL SELECT 'FACINOFFER', COUNT(*) FROM POOLDATA.FACINOFFER t
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC')
+UNION ALL SELECT 'DOCUMENT_POLIS', COUNT(*) FROM POOLDATA.DOCUMENT_POLIS t
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC');
+-- (FACINOFFER ditulis sistem baru / Pega dengan pyID polos - hitungan ini diharapkan 0.)
+
+-- ---- BAGIAN 0.1: bentrok kunci JSON_POLIS (IDPEGA = PK) - HARUS 0 sebelum BAGIAN 1 -----------------------------------
+SELECT COUNT(*) AS BENTROK_JSON_POLIS FROM POOLDATA.JSON_POLIS a
+ WHERE a.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM POOLDATA.JSON_POLIS b WHERE b.IDPEGA = SUBSTR(a.IDPEGA, 19));
+-- Bila > 0: case punya JSON_POLIS dua bentuk - putuskan baris mana yang dipakai (aplikasi membaca TGL_INPUT terbaru) sebelum lanjut.
+
+-- ---- BAGIAN 1: ubah ke case id polos (SUBSTR(kolom, 19) = sesudah 'ASM-FW-GISFW-WORK ') -------------------------------
+UPDATE POOLDATA.JSON_POLIS t SET t.IDPEGA = SUBSTR(t.IDPEGA, 19)
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC');
+UPDATE POOLDATA.FACINPRODUCTION t SET t.IDPEGA = SUBSTR(t.IDPEGA, 19)
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC');
+UPDATE POOLDATA.CEDING_FACINPRODUCTION t SET t.IDPEGA = SUBSTR(t.IDPEGA, 19)
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC');
+UPDATE POOLDATA.HISTORYAKSEPTASIPEGA t SET t.ID_PEGA = SUBSTR(t.ID_PEGA, 19)
+ WHERE t.ID_PEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.ID_PEGA, 19) AND w.LINI = 'FAC');
+UPDATE POOLDATA.HISTORYAKSEPTASIPRODUCTION t SET t.IDPEGA = SUBSTR(t.IDPEGA, 19)
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC');
+UPDATE POOLDATA.FACINPERFORMANCE t SET t.IDPEGA = SUBSTR(t.IDPEGA, 19)
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC');
+UPDATE POOLDATA.JSON_OFFER t SET t.IDPEGA = SUBSTR(t.IDPEGA, 19)
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC');
+UPDATE POOLDATA.FACINOFFER t SET t.IDPEGA = SUBSTR(t.IDPEGA, 19)
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC');
+UPDATE POOLDATA.DOCUMENT_POLIS t SET t.IDPEGA = SUBSTR(t.IDPEGA, 19)
+ WHERE t.IDPEGA LIKE 'ASM-FW-GISFW-WORK NB-%'
+   AND EXISTS (SELECT 1 FROM {skema}.T_WORK_POLIS w WHERE w.ID = SUBSTR(t.IDPEGA, 19) AND w.LINI = 'FAC');
+
+-- ---- BAGIAN 2: jalankan ulang BAGIAN 0 - semua N harus 0; jumlah baris yang diubah per UPDATE = N BAGIAN 0 tabelnya ------
+-- Cocok -> COMMIT. Tidak cocok -> ROLLBACK.

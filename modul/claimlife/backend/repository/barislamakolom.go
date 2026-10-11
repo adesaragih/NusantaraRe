@@ -385,3 +385,56 @@ func NilaiBarisLama(b BarisLama) []any {
 	}
 	return out
 }
+
+// polaLebarWarisan - "VARCHAR2(100)" / "CHAR(1)" -> lebar byte.
+var polaLebarWarisan = regexp.MustCompile(`^(?:VARCHAR2|CHAR)\((\d+)\)$`)
+
+// PeriksaLebarWarisan menolak teks yang melebihi lebar kolom katalog OS_AKSEPTASI_KLAIM_LIFE (keputusan work owner
+// 11-10-2026: jangan dipotong diam-diam). Galat menyebut kolom, lebar, dan panjang nilainya (bukan nilainya - bisa nama
+// orang).
+func PeriksaLebarWarisan(b BarisLama) error {
+	for _, m := range medanBarisLama(&b) {
+		cocok := polaLebarWarisan.FindStringSubmatch(tipeWarisan[m.Kolom])
+		if cocok == nil {
+			continue
+		}
+		var batas int
+		fmt.Sscanf(cocok[1], "%d", &batas)
+		if n := len(strings.TrimSpace(*m.Nilai)); n > batas {
+			return fmt.Errorf("repository: baris warisan %s: kolom %s %d byte melebihi lebar %s di "+namaTabelLama,
+				b.ID, m.Kolom, n, tipeWarisan[m.Kolom])
+		}
+	}
+	return nil
+}
+
+// NilaiTulisLama - nilai bind kolom-kolom yang disebut, berurut, untuk pernyataan tulis yang memakai PenampungTulisLama:
+// kosong = NULL (ADR-U-0027), tanggal dinormalkan ke 'YYYY-MM-DD HH24:MI:SS'. Berbeda dari NilaiBarisLama (fixture),
+// tanggal yang TIDAK terbaca menjadi GALAT - jalur pengguna tidak boleh menulis NULL diam-diam.
+func NilaiTulisLama(b BarisLama, kolom []string) ([]any, error) {
+	medan := map[string]*string{}
+	for _, m := range medanBarisLama(&b) {
+		medan[m.Kolom] = m.Nilai
+	}
+	out := make([]any, 0, len(kolom))
+	for _, k := range kolom {
+		p, ada := medan[k]
+		if !ada {
+			return nil, fmt.Errorf("repository: kolom %s bukan kolom BarisLama", k)
+		}
+		teks := strings.TrimSpace(*p)
+		switch {
+		case teks == "":
+			out = append(out, nil)
+		case kolomTanggalLama[k]:
+			t, err := utils.ParseTanggal(teks)
+			if err != nil {
+				return nil, fmt.Errorf("repository: baris warisan %s: kolom %s tanggal %q tidak terbaca: %w", b.ID, k, teks, err)
+			}
+			out = append(out, utils.FormatTanggalWaktu(t))
+		default:
+			out = append(out, teks)
+		}
+	}
+	return out, nil
+}

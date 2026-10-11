@@ -73,8 +73,25 @@ func minta(t *testing.T, svc *services.Service, metode, jalur, badan, pelaku str
 	return w.Code, strings.TrimSpace(w.Body.String())
 }
 
+// TestTampilanAnekaKabel - tiket 73 P1 lewat HTTP: medan services.TampilanAneka -> kunci kabel (Boiler C1+C4+C5 +
+// kolomTahunJumlah; HE C5+C6 + he + topRisk; Golf C1 + golf).
+func TestTampilanAnekaKabel(t *testing.T) {
+	for old, mau := range map[string]string{
+		"11": `"tampilanAneka":{"kontainer":["C1","C4","C5"],"kolomTahunJumlah":true,"he":false,"golf":false,"tanamanHasil":false,"engineering":false,"bonding":false,"briguna":false,"topRisk":false,"sectionLol":false,"jumlahSatuan":true,"currencyCoverage":true,"mbd":false}`,
+		"20": `"tampilanAneka":{"kontainer":["C5","C6"],"kolomTahunJumlah":false,"he":true,"golf":false,"tanamanHasil":false,"engineering":false,"bonding":false,"briguna":false,"topRisk":true,"sectionLol":false,"jumlahSatuan":true,"currencyCoverage":true,"mbd":false}`,
+		"27": `"tampilanAneka":{"kontainer":["C1"],"kolomTahunJumlah":false,"he":false,"golf":true,"tanamanHasil":false,"engineering":false,"bonding":false,"briguna":false,"topRisk":false,"sectionLol":false,"jumlahSatuan":true,"currencyCoverage":false,"mbd":false}`,
+	} {
+		k := &models.Kasus{CaseID: "UJI-NB-1", Opportunity: models.Opportunity{ClassOfBusiness: "UJI KELAS", GroupBusinessID: "3"}}
+		svc := services.Baru(nil).DenganKasus(kasusTiruan{k: k}).DenganTransaksi(tanpaOracle).
+			DenganTableOfLimit(tolTiruan{bisnis: []models.BarisBisnisLini{{ID: "10999", OldID: old, GroupPanel: "003"}}})
+		if kode, isi := minta(t, svc, "GET", "/api/nbfacin/kasus/UJI-NB-1", "", ""); kode != 200 || !strings.Contains(isi, mau) {
+			t.Errorf("%s: %d %s", old, kode, isi)
+		}
+	}
+}
+
 // TestBacaKasus - GET /api/nbfacin/kasus/{caseId} (tiket 31): bentuk jawaban persis
-// (kunci tingkat atas, 14 kunci opportunity, 13 kunci general), 404, 503.
+// (19 kunci tingkat atas termasuk tampilanAneka tiket 73 P1, riskScoring tiket 54, aksesLossRecord tiket 55, aksesKorespondensi tiket 56, bolehUbah / alasanBacaSaja (tanpa pembaca tahap = boleh), 14 kunci opportunity, 13 kunci general), 404, 503.
 func TestBacaKasus(t *testing.T) {
 	kode, isi := minta(t, layananKasus(), "GET", "/api/nbfacin/kasus/UJI-NB-1", "", "")
 	var j map[string]json.RawMessage
@@ -91,11 +108,13 @@ func TestBacaKasus(t *testing.T) {
 		return k
 	}
 	all, _ := json.Marshal(j)
-	if n := len(kunci(all)); n != 6 || len(kunci(j["opportunity"])) != 14 || len(kunci(j["general"])) != 15 {
+	if n := len(kunci(all)); n != 21 || len(kunci(j["opportunity"])) != 14 || len(kunci(j["general"])) != 15 {
 		t.Errorf("kunci %v / opportunity %v / general %v", kunci(all), kunci(j["opportunity"]), kunci(j["general"]))
 	}
 	for _, harus := range []string{`"caseId":"UJI-NB-1"`, `"position":"Offer"`, `"statusWork":"Pending-Policy"`,
-		`"insuredName":"UJI TERTANGGUNG"`, `"offeringDate":"01-10-2026"`, `"businessProspectName":"UJI Prospek"`, `"beginDate":""`} {
+		`"insuredName":"UJI TERTANGGUNG"`, `"riskScoring":{"finalScore":"","noteFinalScore":""}`, `"aksesLossRecord":false`, `"aksesKorespondensi":false`, `"bolehUbah":true,"alasanBacaSaja":"","bolehUbahSpreading":true,"ubahBarisSpreading":true,"ubahAkumulasi":false`, `"offeringDate":"01-10-2026"`, `"businessProspectName":"UJI Prospek"`, `"beginDate":""`, `"jenisCsv":""`,
+		// tiket 73 P1: tanpa pembaca BUSINESS -> kontainer larik kosong (bukan null), semua sakelar false.
+		`"tampilanAneka":{"kontainer":[],"kolomTahunJumlah":false,"he":false,"golf":false,"tanamanHasil":false,"engineering":false,"bonding":false,"briguna":false,"topRisk":false,"sectionLol":false,"jumlahSatuan":false,"currencyCoverage":false,"mbd":false}`} {
 		if !strings.Contains(isi, harus) {
 			t.Errorf("jawaban tanpa %s: %s", harus, isi)
 		}
@@ -114,10 +133,10 @@ func TestBacaKasus(t *testing.T) {
 func TestSimpanGeneral(t *testing.T) {
 	svc := layananKasus()
 	badan := `{"reffNumber":"UJI-REF","qqName":"","beginDate":"01-11-2026","offeringDate":"","endDate":"",` +
-		`"policyType":"Master Policy","marketingId":"UJI-MO","day":"366","typeFacultative":"Facultative In"}`
+		`"policyType":"1","marketingId":"UJI-MO","day":"366","typeFacultative":"Facultative In"}`
 	kode, isi := minta(t, svc, "PUT", "/api/nbfacin/kasus/UJI-NB-1/general", badan, "UJI-USER")
 	if kode != 200 || !strings.Contains(isi, `"reffNumber":"UJI-REF"`) || !strings.Contains(isi, `"beginDate":"01-11-2026"`) ||
-		!strings.Contains(isi, `"offeringDate":"03-10-2026"`) || !strings.Contains(isi, `"policyType":"Master Policy"`) {
+		!strings.Contains(isi, `"offeringDate":"03-10-2026"`) || !strings.Contains(isi, `"policyType":"1"`) {
 		t.Fatalf("%d %s", kode, isi)
 	}
 	for _, u := range []struct {

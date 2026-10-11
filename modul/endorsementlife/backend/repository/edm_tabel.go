@@ -31,7 +31,8 @@ const (
 
 // Tabel warisan `POOLDATA` - dibaca dan (E2) ditulis, tidak pernah dibuat.
 const (
-	// tabelPolisWarisan - rekam polis Pega; DIBACA saja (RALAT R18).
+	// tabelPolisWarisan - rekam polis Pega; dibaca (sumber versi warisan) dan sejak 08-10-2026 DITULIS satu
+	// baris per kasus yang diresmikan, tanpa DATA_JSON (edm_jsonpolis.go; dulu RALAT R18 "dibaca saja").
 	tabelPolisWarisan = "JSON_POLIS"
 	// tabelPesertaWarisanEDM - tabel peserta warisan (±66,8 juta baris).
 	// Konstanta modul ini sendiri, bukan konstanta pembaca Claim Life: aturan

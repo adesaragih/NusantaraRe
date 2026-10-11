@@ -106,4 +106,14 @@ describe('gaya modul Claim Prop', () => {
   it('tanpa kotak masuk Beranda (bukan bagian Pega)', () => {
     expect(readFileSync(join(AKAR, 'menu.ts'), 'utf8')).not.toMatch(/antreanBeranda\s*:|daftarBeranda\s*:/)
   })
+
+  // Work owner 11-10-2026 (Summary Outstanding Claim: empat angka bertumpuk di kolom Treaty Gross 100%):
+  // `.claimprop__angka` ber-`display: block` - dipasang di <td> sel itu keluar dari baris tabel.
+  it('kelas claimprop__angka (display block) tidak dipasang di sel tabel <td> / <th>', () => {
+    expect(ATURAN).toMatch(/\.claimprop \.claimprop__angka \{\s*display: block;/)
+    for (const p of berkas(AKAR, '.tsx')) {
+      const teks = readFileSync(p, 'utf8')
+      expect(teks, p).not.toMatch(/<t[dh]\b[^>]*className=["'{`][^>]*\bclaimprop__angka\b/)
+    }
+  })
 })

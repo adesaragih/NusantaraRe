@@ -186,6 +186,9 @@ export const RINCI_PESERTA: Readonly<Record<TipeEDM, readonly KolomKorpus[]>> = 
   QR: [
     { label: 'Begin Date', kolom: 'BEGIN_DATE', jenis: 'd', berkas: 'Section\\PL_Detail_Sec.xml', baris: 1145, tag: 'pyLabelFieldValue' },
     { label: 'Entry Age', kolom: 'ENTRY_AGE', jenis: 'n', berkas: 'Section\\PL_Detail_Sec.xml', baris: 1325, tag: 'pyLabelFieldValue' },
+    // SEX - tidak ada di `PL_Detail_Sec` Pega; ditambahkan ke popup Details karena disembunyikan dari grid
+    // Participants (keputusan work owner 08-10-2026). Label = kepala grid `InputEDMLife.xml` b12602 (GRID_EDM.sex).
+    { label: 'SEX', kolom: 'SEX', jenis: 't', berkas: 'Section\\InputEDMLife.xml', baris: 12602, tag: 'pyValue' },
     { label: 'PLAN', kolom: 'PLAN', jenis: 't', berkas: 'Section\\InputEDMLife.xml', baris: 13010, tag: 'pyValue' },
     { label: 'STNC', kolom: 'STNC', jenis: 't', berkas: 'Section\\ViewCSVResult_LifeEDM.xml', baris: 2740, tag: 'pyValue' },
     { label: 'Expired Date', kolom: 'EXPIRED_DATE', jenis: 'd', berkas: 'Section\\PL_Detail_Sec.xml', baris: 2365, tag: 'pyLabelFieldValue' },
@@ -215,6 +218,9 @@ export const RINCI_PESERTA: Readonly<Record<TipeEDM, readonly KolomKorpus[]>> = 
   QP: [
     { label: 'Begin Date', kolom: 'BEGIN_DATE', jenis: 'd', berkas: 'Section\\PL_Detail_Sec.xml', baris: 13644, tag: 'pyLabelFieldValue' },
     { label: 'Entry Age', kolom: 'ENTRY_AGE', jenis: 'n', berkas: 'Section\\PL_Detail_Sec.xml', baris: 13824, tag: 'pyLabelFieldValue' },
+    // SEX - tidak ada di `PL_Detail_Sec` Pega; ditambahkan ke popup Details karena disembunyikan dari grid
+    // Participants (keputusan work owner 08-10-2026). Label = kepala grid `InputEDMLife.xml` b12602 (GRID_EDM.sex).
+    { label: 'SEX', kolom: 'SEX', jenis: 't', berkas: 'Section\\InputEDMLife.xml', baris: 12602, tag: 'pyValue' },
     { label: 'PLAN', kolom: 'PLAN', jenis: 't', berkas: 'Section\\InputEDMLife.xml', baris: 13010, tag: 'pyValue' },
     { label: 'STNC', kolom: 'STNC', jenis: 't', berkas: 'Section\\ViewCSVResult_LifeEDM.xml', baris: 2740, tag: 'pyValue' },
     { label: 'Expired Date', kolom: 'EXPIRED_DATE', jenis: 'd', berkas: 'Section\\PL_Detail_Sec.xml', baris: 14864, tag: 'pyLabelFieldValue' },
@@ -241,6 +247,9 @@ export const RINCI_PESERTA: Readonly<Record<TipeEDM, readonly KolomKorpus[]>> = 
   TP: [
     { label: 'Begin Date', kolom: 'BEGIN_DATE', jenis: 'd', berkas: 'Section\\PL_Detail_Sec.xml', baris: 34597, tag: 'pyLabelFieldValue' },
     { label: 'Entry Age', kolom: 'ENTRY_AGE', jenis: 'n', berkas: 'Section\\PL_Detail_Sec.xml', baris: 34777, tag: 'pyLabelFieldValue' },
+    // SEX - tidak ada di `PL_Detail_Sec` Pega; ditambahkan ke popup Details karena disembunyikan dari grid
+    // Participants (keputusan work owner 08-10-2026). Label = kepala grid `InputEDMLife.xml` b12602 (GRID_EDM.sex).
+    { label: 'SEX', kolom: 'SEX', jenis: 't', berkas: 'Section\\InputEDMLife.xml', baris: 12602, tag: 'pyValue' },
     { label: 'PLAN', kolom: 'PLAN', jenis: 't', berkas: 'Section\\InputEDMLife.xml', baris: 13010, tag: 'pyValue' },
     { label: 'STNC', kolom: 'STNC', jenis: 't', berkas: 'Section\\ViewCSVResult_LifeEDM.xml', baris: 2740, tag: 'pyValue' },
     { label: 'Expired Date', kolom: 'EXPIRED_DATE', jenis: 'd', berkas: 'Section\\PL_Detail_Sec.xml', baris: 35818, tag: 'pyLabelFieldValue' },
@@ -269,6 +278,9 @@ export const RINCI_PESERTA: Readonly<Record<TipeEDM, readonly KolomKorpus[]>> = 
   TR: [
     { label: 'Begin Date', kolom: 'BEGIN_DATE', jenis: 'd', berkas: 'Section\\PL_Detail_Sec.xml', baris: 22320, tag: 'pyLabelFieldValue' },
     { label: 'Entry Age', kolom: 'ENTRY_AGE', jenis: 'n', berkas: 'Section\\PL_Detail_Sec.xml', baris: 22500, tag: 'pyLabelFieldValue' },
+    // SEX - tidak ada di `PL_Detail_Sec` Pega; ditambahkan ke popup Details karena disembunyikan dari grid
+    // Participants (keputusan work owner 08-10-2026). Label = kepala grid `InputEDMLife.xml` b12602 (GRID_EDM.sex).
+    { label: 'SEX', kolom: 'SEX', jenis: 't', berkas: 'Section\\InputEDMLife.xml', baris: 12602, tag: 'pyValue' },
     { label: 'PLAN', kolom: 'PLAN', jenis: 't', berkas: 'Section\\InputEDMLife.xml', baris: 13010, tag: 'pyValue' },
     { label: 'STNC', kolom: 'STNC', jenis: 't', berkas: 'Section\\ViewCSVResult_LifeEDM.xml', baris: 2740, tag: 'pyValue' },
     { label: 'Expired Date', kolom: 'EXPIRED_DATE', jenis: 'd', berkas: 'Section\\PL_Detail_Sec.xml', baris: 23540, tag: 'pyLabelFieldValue' },
@@ -297,24 +309,29 @@ export const RINCI_PESERTA: Readonly<Record<TipeEDM, readonly KolomKorpus[]>> = 
 }
 
 /** Grid spreading `PL_Detail_Sec` (`pyEditAction` `RetroLife`). Kolom = medan `models.Spreading`. */
+// Kolom angka spreading/retro ber-jenis 'n' (08-10-2026): formatter angka yang SAMA dengan medan rincian
+// (`selAngka`, format id) dan rata kanan; dulu 't' sehingga tampil mentah. Label tidak berubah.
 export const RINCI_SPREADING: readonly KolomKorpus[] = [
   { label: 'Treaty Type', kolom: 'treatyTypeName', jenis: 't', berkas: 'Section\\PL_Detail_Sec.xml', baris: 11001, tag: 'pyValue' },
-  { label: 'Retroceded Share', kolom: 'retrocadedShare', jenis: 't', berkas: 'Section\\PL_Detail_Sec.xml', baris: 11147, tag: 'pyValue' },
+  { label: 'Retroceded Share', kolom: 'retrocadedShare', jenis: 'n', berkas: 'Section\\PL_Detail_Sec.xml', baris: 11147, tag: 'pyValue' },
 ]
 
 /** `RetroDetailLife` grid b1205. Kolom = medan `models.SpreadingRetro`. */
 export const RINCI_RETRO: readonly KolomKorpus[] = [
   { label: 'Reinsurer Name', kolom: 'reinsurerName', jenis: 't', berkas: 'Section\\RetroDetailLife.xml', baris: 1333, tag: 'pyValue' },
-  { label: 'Percent Share (%)', kolom: 'percentShare', jenis: 't', berkas: 'Section\\RetroDetailLife.xml', baris: 1484, tag: 'pyValue' },
-  { label: 'Total Share', kolom: 'amount', jenis: 't', berkas: 'Section\\RetroDetailLife.xml', baris: 1637, tag: 'pyValue' },
-  { label: 'Rate', kolom: 'rate', jenis: 't', berkas: 'Section\\RetroDetailLife.xml', baris: 1790, tag: 'pyValue' },
-  { label: 'Gross Premium', kolom: 'premiumSpreadedGross', jenis: 't', berkas: 'Section\\RetroDetailLife.xml', baris: 1943, tag: 'pyValue' },
-  { label: '1st Year Discount (%)', kolom: 'commision', jenis: 't', berkas: 'Section\\RetroDetailLife.xml', baris: 2096, tag: 'pyValue' },
-  { label: 'RI Admin Fee (%)', kolom: 'ovrComm', jenis: 't', berkas: 'Section\\RetroDetailLife.xml', baris: 2249, tag: 'pyValue' },
-  { label: 'Net Premium', kolom: 'premiumSpreadedNet', jenis: 't', berkas: 'Section\\RetroDetailLife.xml', baris: 2402, tag: 'pyValue' },
+  { label: 'Percent Share (%)', kolom: 'percentShare', jenis: 'n', berkas: 'Section\\RetroDetailLife.xml', baris: 1484, tag: 'pyValue' },
+  { label: 'Total Share', kolom: 'amount', jenis: 'n', berkas: 'Section\\RetroDetailLife.xml', baris: 1637, tag: 'pyValue' },
+  { label: 'Rate', kolom: 'rate', jenis: 'n', berkas: 'Section\\RetroDetailLife.xml', baris: 1790, tag: 'pyValue' },
+  { label: 'Gross Premium', kolom: 'premiumSpreadedGross', jenis: 'n', berkas: 'Section\\RetroDetailLife.xml', baris: 1943, tag: 'pyValue' },
+  { label: '1st Year Discount (%)', kolom: 'commision', jenis: 'n', berkas: 'Section\\RetroDetailLife.xml', baris: 2096, tag: 'pyValue' },
+  { label: 'RI Admin Fee (%)', kolom: 'ovrComm', jenis: 'n', berkas: 'Section\\RetroDetailLife.xml', baris: 2249, tag: 'pyValue' },
+  { label: 'Net Premium', kolom: 'premiumSpreadedNet', jenis: 'n', berkas: 'Section\\RetroDetailLife.xml', baris: 2402, tag: 'pyValue' },
 ]
 
-/** Popup `View Upload` - `ViewCSVResult_LifeEDM` grid b1082 (`TempWorkPage.ListLifePremiumDetailUpload`). */
+/**
+ * Popup `View Upload` - `ViewCSVResult_LifeEDM` grid b1082 (`TempWorkPage.ListLifePremiumDetailUpload`). BUKTI KORPUS saja:
+ * layar tidak lagi memakainya sejak 10-10-2026 (View Upload memakai kolom grid Participants, `kolomGrid`).
+ */
 export const HASIL_CSV: readonly KolomKorpus[] = [
   { label: 'POLICY NO', kolom: 'POLICY_NO', jenis: 't', berkas: 'Section\\ViewCSVResult_LifeEDM.xml', baris: 1218, tag: 'pyValue' },
   { label: 'POLICY HOLDER', kolom: 'POLICY_HOLDER', jenis: 't', berkas: 'Section\\ViewCSVResult_LifeEDM.xml', baris: 1364, tag: 'pyValue' },

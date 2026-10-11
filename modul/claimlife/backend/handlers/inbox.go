@@ -15,6 +15,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	inti "nusantarare/inti/backend"
@@ -45,6 +46,9 @@ type barisInboxJSON struct {
 	NomorPolis string `json:"nomorPolis"`
 	NamaBisnis string `json:"namaBisnis"`
 	MataUang   string `json:"mataUang"`
+	// 11-10-2026: kolom "PL Number" (pengganti Policy No) dan "Update Operator Name".
+	PLNumber     string `json:"plNumber"`
+	UpdateOpName string `json:"updateOpName"`
 }
 
 type halamanInboxJSON struct {
@@ -145,12 +149,30 @@ func kotakMasuk(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 				CaseID: b.CaseID, ID: b.WorkID, Tahap: b.Tahap,
 				CreateOpName: b.CreateOpName, TglCreate: stempel,
 				// Status sebagai KATA - `models.StatusBaris.String()`.
-				Status:     kontrak.StatusBarisDariKode(b.StatusKlaim).String(),
+				Status:     kataStatusInbox(b.StatusKlaim),
 				NomorKlaim: b.NomorKlaim, NomorPolis: b.NomorPolis,
+				PLNumber: b.PLNumber, UpdateOpName: b.UpdateOpName,
 				NamaBisnis: b.NamaBisnis, MataUang: b.MataUang,
 			})
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(keluar)
 	}
+}
+
+// kataStatusInbox - kolom `Work Status` kotak masuk dalam bahasa Inggris (10-10-2026), dari STS_REJECT header klaim.
+//
+// ⛔ Header TANPA keputusan (NULL - case yang baru didaftarkan, belum Save to RNM) = "Outstanding": kasusnya memang di
+// antrian Outstanding Claim. Dulu `kontrak.StatusBarisDariKode("")` menjawab "Tidak diketahui" untuk setiap case
+// baru. Kosakata kontrak (inti, dipakai layar Detail) tidak diubah - pemetaan ini khusus kotak masuk.
+func kataStatusInbox(kode string) string {
+	switch strings.TrimSpace(kode) {
+	case "", kontrak.KodeOutstanding:
+		return "Outstanding"
+	case kontrak.KodeAksep:
+		return "Accepted"
+	case kontrak.KodeDitolak:
+		return "Rejected"
+	}
+	return "Unknown"
 }

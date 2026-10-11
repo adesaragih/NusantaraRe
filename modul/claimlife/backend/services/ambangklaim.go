@@ -92,7 +92,8 @@ func (a *AmbangKlaim) Hitung(ctx context.Context, pelaku inti.Pelaku,
 		return PenandaBatasKlaim{}, fmt.Errorf("%w: nomor polis kosong", intigalat.ErrPermintaanTidakSah)
 	}
 
-	polis, err := a.svc.PembacaPolis().Ringkas(ctx, nomorPolis)
+	// `nomorPolis` di sini = IDPEGA peserta (kuncipolis.go, keputusan work owner 10-10-2026).
+	polis, _, err := RingkasPolisIdPega(ctx, a.svc.PembacaPolis(), []string{nomorPolis})
 	if err != nil {
 		return PenandaBatasKlaim{}, err
 	}

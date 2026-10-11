@@ -258,14 +258,116 @@ func TestPeriodePolisBerformatTanggal(t *testing.T) {
 	ly := models.SusunLayar(models.Kasus{ID: "KMT-UJI", TransferType: models.TransferAdjustment, Count: 1, Loop: 1},
 		kl, models.PraProses{}, nil, nil, "", nil)
 	for _, b := range ly.Bagian {
-		for _, m := range b.Medan {
-			if m.Label == "Period" {
-				if m.Nilai != "01-01-2026 - 31-12-2026" {
-					t.Fatalf("Period %q", m.Nilai)
+		for _, k := range b.Kolom {
+			for _, m := range k {
+				if m.Label == "Period Policy" {
+					if m.Nilai != "01-01-2026 - 31-12-2026" {
+						t.Fatalf("Period Policy %q", m.Nilai)
+					}
+					return
 				}
-				return
 			}
 		}
 	}
-	t.Fatal("medan Period tidak ada")
+	t.Fatal("medan Period Policy tidak ada")
+}
+
+func TestRincianAdjustmentRapi(t *testing.T) {
+	// Work owner 11-10-2026 "RAPIHKAN LAGI!": total spreading / QS cukup di kaki grid-nya (LS11 / LS16 yang mengulang
+	// total yang sama sebagai baris terpisah dibuang); Location of Loss tanpa pemisah menggantung di depan.
+	kl := kontrak.KlaimFacIn{Objek: 1, Nilai: map[string]string{"ClaimData.Location": ", UJI KEL, UJI KEC, UJI KOTA"},
+		Daftar: map[string][]map[string]string{
+			models.DaftarDiAdj(1, 1, 1, models.AnakSpread): {{"TreatyType": "UJI-T1", "TreatyName": "UJI QS FAC",
+				"SharePercentage": "100", "ClaimSpreaded": "48400"}},
+			models.DaftarDiAdj(1, 1, 1, models.AnakQS): {{"TreatyName": "UJI QS (OR)", "SharePercentage": "50",
+				"ClaimSpreaded": "24200"}, {"TreatyName": "UJI QS (R/I)", "SharePercentage": "50", "ClaimSpreaded": "24200"}},
+		}}
+	pr := models.PraProses{AdjKomite: []map[string]string{{"PaymentType": "1", "Currency": "IDR",
+		"TotalSharePersen": "100", "TotalSpreadAdjustment": "48400"}}, Posisi: [][2]int{{1, 1}}}
+	ly := models.SusunLayar(models.Kasus{ID: "KMT-UJI", TransferType: models.TransferAdjustment, Count: 1, Loop: 1},
+		kl, pr, nil, nil, "", nil)
+	var rinci []models.Bagian
+	lokasi := ""
+	for _, b := range ly.Bagian {
+		if b.Kunci == "adjustment" && len(b.Grid) == 1 && len(b.Grid[0].Rincian) == 1 {
+			rinci = b.Grid[0].Rincian[0]
+		}
+		for _, k := range b.Kolom {
+			for _, m := range k {
+				if m.Label == "Location of Loss" {
+					lokasi = m.Nilai
+				}
+			}
+		}
+	}
+	if lokasi != "UJI KEL, UJI KEC, UJI KOTA" {
+		t.Errorf("Location of Loss %q", lokasi)
+	}
+	if rinci == nil {
+		t.Fatal("rincian adjustment tidak ada")
+	}
+	kaki := 0
+	for _, b := range rinci {
+		if b.Kunci == "spreadingTotal" || b.Kunci == "qsTotal" {
+			t.Errorf("baris total ganda %q masih ada", b.Kunci)
+		}
+		for _, g := range b.Grid {
+			if (g.Judul == "Spreading Adjustment" || g.Judul == "BreakDown Spreading Quota Share (QS)") && len(g.Kaki) == 2 {
+				kaki++
+			}
+		}
+	}
+	if kaki != 2 {
+		t.Errorf("kaki total spreading + QS %d, mau 2", kaki)
+	}
+}
+
+func TestPolisDanKlaimDuaKolomIkutLayoutLama(t *testing.T) {
+	// Work owner 11-10-2026 "INI LAYOUT LAMA IKUTI DAN RAPIHIN!": Policy Detail LS6 | LS7 dan Claim Details LS49 | LS19 =
+	// dua kolom berlabel kiri, urutan layout lama.
+	kl := kontrak.KlaimFacIn{Objek: 1, Item: 1, Nilai: map[string]string{"OfferFacIn.PolicyData.PolicyNo": "UJI-RNM-F.001",
+		"ClaimData.StsKatastrofe": "Non-Catastrophe", "ClaimData.NonKatastrofeType": "Big Claim"},
+		Daftar: map[string][]map[string]string{models.DaftarItem(1): {{"CoverageNote": "UJI FLEXAS",
+			"OccupationName": "UJI OKUPASI"}}}}
+	pr := models.PraProses{AdjKomite: []map[string]string{{"PaymentType": "1"}}, Posisi: [][2]int{{1, 1}}, Okupasi: "UJI OKUPASI"}
+	ly := models.SusunLayar(models.Kasus{ID: "KMT-UJI", TransferType: models.TransferAdjustment, Count: 1, Loop: 1},
+		kl, pr, nil, nil, "", nil)
+	label := func(k []models.Medan) string {
+		var l []string
+		for _, m := range k {
+			l = append(l, m.Label)
+		}
+		return strings.Join(l, "|")
+	}
+	mau := map[string][2]string{
+		"polis": {"Name of Insured|QQ Name|Line of Business|Policy No.", "Ceding Co Name|SOB Name|Period Policy"},
+		"klaim": {"Input Date|PIC Name|Claim No / Claim ID|Occupation",
+			"Date of Loss|Cause of Loss|Coverage|Location of Loss|Catastrophe|Non Catastrophe Type|Catastrophe Note"},
+	}
+	for kunci, m := range mau {
+		var b models.Bagian
+		for _, x := range ly.Bagian {
+			if x.Kunci == kunci {
+				b = x
+			}
+		}
+		if len(b.Kolom) != 2 || len(b.Medan) != 0 {
+			t.Fatalf("%s: kolom %d medan %d", kunci, len(b.Kolom), len(b.Medan))
+		}
+		if got := [2]string{label(b.Kolom[0]), label(b.Kolom[1])}; got != m {
+			t.Errorf("%s\n dapat %v\n mau   %v", kunci, got, m)
+		}
+	}
+}
+
+func TestLabelJenisBayarIkutPromptValues(t *testing.T) {
+	// Prompt values property ASM-FW-GCNMFW-Data-Adjustment.PaymentType (screenshot work owner 11-10-2026), sama dengan
+	// Claim Fac In; dahulu "2 Interim" (teks SetDataForInformation_Act) tanpa 6 / 7.
+	mau := map[string]string{"1": "Final", "2": "Claim", "3": "Salvage", "4": "Adjuster Fee", "5": "Adjustment",
+		"6": "Consultant Fee", "7": "Cancellation"}
+	for k, v := range mau {
+		if models.LabelJenisBayar[k] != v {
+			t.Errorf("PaymentType %s = %q, mau %q", k, models.LabelJenisBayar[k], v)
+		}
+	}
 }

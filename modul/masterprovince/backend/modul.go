@@ -3,7 +3,7 @@
 // Modul DI LUAR dua puluh folder korpus (PANDUAN-TIM-PER-MODUL bab 5). Keputusan work owner 04-10-2026: Master Data
 // dipecah menjadi delapan modul menu terpisah di grup MASTER ("8 modul terpisah"); mesinnya bersama di
 // `inti/backend/master` ("Pindah ke inti"). Modul ini = master `province` di `/api/master-province`.
-// Pemilik migrasi 880-882 (keenam tabel flat master + T_MASTER_STATUS + jejak ubah; keputusan work owner
+// Pemilik migrasi 215-218 (dulu 880-883; keenam tabel flat master + T_MASTER_STATUS + jejak ubah; keputusan work owner
 // 04-10-2026 "Dihapus, tabel pindah ke Province").
 // Baris M_NAV_MENU-nya dari migrasi inti 913 (tanpa slot menu: "Modul luar korpus tanpa slot").
 package backend
@@ -16,7 +16,8 @@ import (
 	"nusantarare/inti/backend/master"
 )
 
-// berkasMigrasi - migrasi 880-882 (dulu milik modul masterdata; nama berkas tetap - T_MIGRASI mencatat nama).
+// berkasMigrasi - migrasi 215-218 (dulu 880-883, sebelumnya masterdata 760-762; T_MIGRASI mencatat NAMA berkas - lihat
+// MODUL.md "Penomoran ulang").
 //
 //go:embed migrations/*.sql
 var berkasMigrasi embed.FS

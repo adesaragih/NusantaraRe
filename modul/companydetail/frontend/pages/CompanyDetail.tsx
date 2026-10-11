@@ -17,10 +17,11 @@ import { NAMA_CD } from '../menu'
 /** Tampilan halaman: daftar, View satu organisasi, atau form (`id` null = Create). */
 type Tampilan = { jenis: 'daftar' } | { jenis: 'lihat'; id: string } | { jenis: 'form'; id: string | null }
 
-export default function CompanyDetail() {
+export default function CompanyDetail({ mulaiBaru = false }: { mulaiBaru?: boolean } = {}) {
   // Menu View only (M_LOGIN_GO_MENU.HAK, 04-10-2026): tanpa Create dan Edit; View tetap.
   const bolehUbah = useBolehUbah(NAMA_CD)
-  const [tampilan, setTampilan] = useState<Tampilan>({ jenis: 'daftar' })
+  // `mulaiBaru` (PropsRute, 10-10-2026): dibuka tombol New Company Detail form Opportunity NB FacIn - langsung form Create.
+  const [tampilan, setTampilan] = useState<Tampilan>(mulaiBaru && bolehUbah ? { jenis: 'form', id: null } : { jenis: 'daftar' })
   const [ketik, setKetik] = useState('')
   const [kueri, setKueri] = useState('')
   const [halaman, setHalaman] = useState(1)

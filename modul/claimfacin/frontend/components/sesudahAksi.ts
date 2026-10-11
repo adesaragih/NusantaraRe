@@ -12,7 +12,7 @@
 //              BukaRetro(List)  -> RetroList_Harnness    (FacRetroList halaman polis, hanya-baca)
 //            SearchPolis (pop-up Choose Polis) -> grid hasil GET pilihan/polis di dalam modal.
 
-import type { Layar } from '../api'
+import type { Layar, Tata } from '../api'
 import { CFI } from '../labels'
 
 /** Pop-up layar (bukan modal tata server). */
@@ -54,6 +54,15 @@ export function modalSesudah(
 
 /** Modal Choose Polis (harness ChoosePolis, `services.ModalPilihPolis`). */
 export const MODAL_POLIS = 'pilihPolis'
+
+/**
+ * Isi modal Choose Polis dalam urutan Section `ViewPolis`: LS2 baris pencarian (unsur pertama), LS10 grid hasil
+ * `SearchPolis_act` (disisipkan layar - datanya pilihan server), lalu detail polis terpilih (`InputInwardFacultativeDtl`)
+ * dan sisanya. Dahulu grid tampil di bawah detail (temuan work owner 10-10-2026 "RAPIHKAN INI").
+ */
+export function bagiIsiPolis(isi: readonly Tata[]): { atas: Tata[]; bawah: Tata[] } {
+  return { atas: isi.slice(0, 1), bawah: isi.slice(1) }
+}
 
 /**
  * Judul modal = pyWindowName tombol pembuka / pyLabel harness dan flow action. Kunci modal = `konteks` setiap aksi di

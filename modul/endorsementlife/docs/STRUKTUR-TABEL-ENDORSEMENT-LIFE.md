@@ -9,12 +9,12 @@ Berkas ini menggambarkan BENTUK, bukan alasan — alasannya ada di `spec.md` dan
 adalah **ejaan korpus** — itu **bukti asal kolom**, bukan nama kolom.
 
 > **Catatan implementasi 01-10-2026** (gelombang 2–7, `RALAT-DEV-01-10-2026.md`). Nol tabel baru: migrasi 480–482 hanya
-> `PROD_KE DEFAULT 1`, tiga index pencari versi, `SEQ_WORK_EDM_LIFE`, dan index unik `UX_PL_EDM_TERBUKA`. Kolom yang **ditulis** jalur
+> `PROD_KE DEFAULT 1` (*485, 08-10-2026: `DEFAULT 0` — PRODKE satu hitungan mulai 0*), tiga index pencari versi, `SEQ_WORK_EDM_LIFE`, dan index unik `UX_PL_EDM_TERBUKA`. Kolom yang **ditulis** jalur
 > endorsement:
 >
 > | Tabel | Saat | Kolom |
 > | --- | --- | --- |
-> | `T_PREMIUM_LIST` | buat kasus | `ID` `EDMLF-<n>`, `OLD_POLICY_NO`, `EDM_TYPE`, `EDM_NOTE`, `EDM_DATE`, `PROD_KE`, `CREATE_OP_NAME`, `TGL_INPUT` + 24 kolom kepala salinan (`models.KolomKepalaSalin`) |
+> | `T_PREMIUM_LIST` | buat kasus | `ID` `EDML-<n>`, `OLD_POLICY_NO`, `EDM_TYPE`, `EDM_NOTE`, `EDM_DATE`, `PROD_KE`, `CREATE_OP_NAME`, `TGL_INPUT`, `EDM_TYPE_PERUBAHAN_DATA` / `EDM_TYPE_BATAL` (483, 07-10-2026) + 24 kolom kepala salinan (`models.KolomKepalaSalin`) |
 > | `T_PREMIUM_LIST` | `Confirm` | `NO_POLIS`, `PROD_KE`, `NO_ENDORS` = `PL_NUMBER_EDM`, `STATUSS` `Resolved-Completed` (`Decline`: `STATUSS` `Resolved-Rejected` saja) |
 > | `T_PREMIUM_LIST_DETAIL` | buat kasus / CSV | salinan versi lama ber-`PARENT_ID` + `EDM_STATUS` `Old`; baris CSV `New` |
 > | `T_PREMIUM_LIST_DETAIL` | `Save` | `EDM_STATUS` `Delete`/`Batal` + 32 kolom uang dibalik tandanya |
@@ -22,9 +22,9 @@ adalah **ejaan korpus** — itu **bukti asal kolom**, bukan nama kolom.
 > | `T_PREMIUM_LIST_SPREADING`, `_RETRO` | buat kasus | salinan apa adanya (OQ-EDM-015) |
 > | `T_PREMIUM_LIST_SUMMARY` | `Save`, CSV sesudah `Save` | rekap per mata uang dihitung ulang (tanpa empat kolom SUM) |
 > | `T_VIEW_SUGGEST` | keputusan | `NO`, `DATE_SUGGEST`, `PIC_SUGGEST`, `IS_CEDING_CONFIRM`, `COMMENT_SUGGEST` |
-> | `M_LIFE_PREMIUM_SUMMARY` | `Confirm` | 37 kolom prosedur `PEGA_M_LIFE_PREMIUM_SUMMARY` |
+> | `M_LIFE_PREMIUM_SUMMARY` | `Confirm` | 37 kolom prosedur `PEGA_M_LIFE_PREMIUM_SUMMARY` + `PREMIUM_SELISIH`, `BALANCE_SELISIH` (09-10-2026, bukan korpus) |
 >
-> **Tidak ditulis:** `M_LIFE_PREMIUM_DETAIL` (OQ-EDM-016), `JSON_POLIS` (R18), `LIFEINPRODUCTION` (R17), kolom kepala *(ralat 01-10-2026, K4 keputusan work owner 01-10-2026: `LIFEINPRODUCTION` DITULIS satu baris per kasus yang diresmikan — 27 kolom `SaveLifeinProduction_SQL`, nol DDL)* *(ralat 01-10-2026, K5 keputusan work owner 01-10-2026: `M_LIFE_PREMIUM_DETAIL` DITULIS saat Confirm — setiap peserta kasus, `SaveMasterLPDet`, nol DDL)*
+> **Tidak ditulis:** `M_LIFE_PREMIUM_DETAIL` (OQ-EDM-016), `JSON_POLIS` (R18; *08-10-2026: DITULIS satu baris per kasus yang diresmikan — IDPEGA, NOPOLIS, PRODKE, NOENDORS, TGL_PROD, USERNAME, TGL_INPUT; DATA_JSON NULL*), `LIFEINPRODUCTION` (R17), kolom kepala *(ralat 01-10-2026, K4 keputusan work owner 01-10-2026: `LIFEINPRODUCTION` DITULIS satu baris per kasus yang diresmikan — 27 kolom `SaveLifeinProduction_SQL`, nol DDL)* *(ralat 01-10-2026, K5 keputusan work owner 01-10-2026: `M_LIFE_PREMIUM_DETAIL` DITULIS saat Confirm — setiap peserta kasus, `SaveMasterLPDet`, nol DDL)*
 > `T_PREMIUM_LIST.STATUS_OLD` (tak ada penulis di korpus Endorsement).
 
 ---
@@ -58,7 +58,10 @@ EDM**.
 
 Satu-satunya rule yang **berbeda** antara kedua modul adalah `SaveLifeinProduction_SQL`: jalur NB
 menulis **36 kolom** ke `POOLDATA.LIFEINPRODUCTION`, jalur EDM menulis **27 kolom** dan **menambah
-`NO_ENDORS`**. Gabungannya **37 kolom** — semuanya sudah tercatat di berkas PremiumList.
+`NO_ENDORS`**. Gabungannya **37 kolom** — semuanya sudah tercatat di berkas PremiumList. *(09-10-2026, keputusan
+work owner: jalur EDM kini juga menulis `DESCRIPTION` ← Comment keputusan Confirm (trim, maks. 255 byte, kosong →
+NULL) — kolom milik daftar NB; `repository.KolomProduksiTambahanEDM`. Ditambah `WPC` (`TRUNC`), `PRODUCTNAMEID`,
+`PRODUCTNAME` ← kepala kasus `T_PREMIUM_LIST` `WPC` / `PRODUCT_NAME_ID` / `PRODUCT_NAME` (disalin saat Create Addendum).)*
 
 ---
 
@@ -85,9 +88,11 @@ irisan ber-`Dipakai = EDM saja` dari tabel `T_PREMIUM_LIST` di berkas PremiumLis
 | `START_DATE` | DATE | ya | | **EDM saja** | keputusan tiket 00 Endorsement |
 | `END_DATE` | DATE | ya | | **EDM saja** | keputusan tiket 00 Endorsement |
 | `PL_NUMBER_EDM` | teks | ya | | **EDM saja** | keputusan tiket 00 Endorsement |
-| `PROD_KE` | bilangan bulat | ya | | **EDM saja** | keputusan tiket 00 Endorsement — versi berjalan = `PRODKE` terbesar |
+| `PROD_KE` | bilangan bulat | ya | | **EDM saja** | keputusan tiket 00 Endorsement — versi berjalan = `PRODKE` terbesar; 485 (08-10-2026): NB = 0 (`DEFAULT 0`), endorsement ke-n = n |
 | `EDM_STATUS` | teks | ya | | **EDM saja** | keputusan tiket 00 Endorsement — `Old`/`New`/`Delete`/`Batal` |
 | `STATUS_OLD` | teks | ya | | **EDM saja** | keputusan tiket 00 Endorsement |
+| `EDM_TYPE_PERUBAHAN_DATA` | teks | ya | | **EDM saja** | keputusan work owner 07-10-2026 (OQ-EDM-005, migrasi 483) — sub-jenis EDM Type 1, teks label `EndorsmentLife_Section` b1645 |
+| `EDM_TYPE_BATAL` | teks | ya | | **EDM saja** | keputusan work owner 07-10-2026 (OQ-EDM-005, migrasi 483) — sub-jenis EDM Type 3, teks label b1937 |
 
 ⚠️ **`TYPE_CEDING` tidak ada di daftar ini** — ia **kolom bersama (NB + EDM)**, bersumber korpus.
 Tiket 00 Endorsement hanya menetapkan **domain nilainya**. Lihat
@@ -153,10 +158,25 @@ ini menggantikan baris yang mana pada versi lama".
 - `[terbuka]` delapan kolom produk/layer (`PRODUCT_NAME_ID`, `PRODUCT_NAME`, `LAYER_1..4`, `ANNUITY_INTEREST`, `PREMIUM_REFUND_FACTOR`) tidak ditulis jalur EDM — kosong di baris versi EDM
 - `[terbuka]` rantai versi dicari lewat (`NO_POLIS`, `PROD_KE`), belum ada kolom penunjuk versi sebelumnya
 - `[terbuka]` polis lama hasil migrasi belum punya baris `T_WORK_POLIS`, padahal PK-nya diambil dari sana
-- `[terbuka]` format identitas kerja `EDMLF-<n>`
+- ~~`[terbuka]` format identitas kerja~~ → `EDML-<n>` sama dengan Pega, sequence mulai 828 (migrasi 484, keputusan work owner 07-10-2026)
 - `[terbuka]` kolom `T_PREMIUM_LIST_SPREADING`, `_SPREADING_RETRO`, dan `T_VIEW_SUGGEST` **sudah ditetapkan** di `spec.md` §12 PremiumList; yang belum ditetapkan hanya presisi dan nullability per kolom
 - `[terbuka]` `DESCRIPTION` dan `WPC` juga tidak ditulis jalur EDM, di luar delapan kolom produk/layer
 - `[terbuka]` `SUM_INSURED`, `PL_NUMBER_EDM`, `EDM_STATUS`, `STATUS_OLD` ada di header **dan** di peserta
 - `[terbuka]` `PL_NUMBER_EDM`, `EDM_STATUS`, `STATUS_OLD`, `STATUS` pada peserta ditulis rule yang identik di kedua modul, tetapi hanya terisi pada jalur EDM
 - `[terbuka]` `ON DELETE` untuk `PARENT_ID` belum ditetapkan
 - `[terbuka]` `EDM_TYPE` menerima `1` dan `3`; siapa yang menolak nilai lain — basis data atau lapisan layanan — belum ditetapkan
+
+## Tambahan 09-10-2026 (keputusan work owner, bukan korpus)
+
+- **Kepala kasus `T_PREMIUM_LIST`**: `ANNUITY_INTEREST` dan `PREMIUM_REFUND_FACTOR` (NUMBER(38,8), kolom PremiumList migrasi
+  051 — tanpa migrasi baru) kini **disalin** saat Create Addendum (`models.KolomKepalaTambahan`, di luar 24 properti
+  `MappingEDMLife` 9): sumber aplikasi = kolomnya (`TO_CHAR TM9`), sumber warisan = `DATA_JSON` `.AnnuityInterest` /
+  `.PremiumRefundFactor` (angka tak terbaca dikosongkan + dicatat); ditulis koefisien + skala (kebal NLS). Menutup sebagian
+  `[terbuka]` "delapan kolom produk/layer" di atas (`PRODUCT_NAME*`, `WPC` sudah disalin sejak R09; `LAYER_1..4` tetap tidak).
+- **`LIFEINPRODUCTION`** jalur Confirm EDM: 27 kolom korpus + `DESCRIPTION`, `WPC`, `PRODUCTNAMEID`, `PRODUCTNAME`,
+  `ANNUITYINTEREST`, `PREMIUMREFUNDFACTOR` (`repository.KolomProduksiTambahanEDM`). Kasus yang lahir sebelum penyalinan
+  kedua kolom angka memakai **cadangan** kepala versi yang di-endorse (`NVL(p.X, cadangan)`) — baris kasus tidak diubah.
+- **`M_LIFE_PREMIUM_SUMMARY`**: `PREMIUM_SELISIH`, `BALANCE_SELISIH` (kolom tabel warisan dari work owner; ⚠️ tipe/lebar
+  **belum diverifikasi** di repo — diperlakukan NUMBER seperti kolom uang lain) hanya pada baris Confirm endorsement:
+  selisih After − Before per mata uang = baris *Difference* Summary Comparison (rekap peserta Delete/Batal + New dengan
+  `rumusPremiBalance` per Type). Baris PremiumList (`NBLF-…`) tidak disentuh. Kolom rekap warisan lain tidak berubah.

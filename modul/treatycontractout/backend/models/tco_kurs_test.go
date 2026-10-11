@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -31,13 +30,15 @@ func desKurs(t *testing.T, s string) *apd.Decimal {
 }
 
 func TestUraiNilaiKursTCO(t *testing.T) {
-	for teks, mau := range map[string]string{"15500": "15500", "15500.25": "15500.25", "15500,25": "15500.25"} {
+	// format Indonesia dari menu Treaty Exchange Yearly diterima (keputusan work owner 11-10-2026)
+	for teks, mau := range map[string]string{"15500": "15500", "15500.25": "15500.25", "15500,25": "15500.25",
+		"15.500,25": "15500.25", "16.000,00": "16000.00", "1.234.567": "1234567", " 14.000,00 ": "14000.00"} {
 		d, err := UraiNilaiKursTCO(teks)
 		if err != nil || d.Text('f') != mau {
 			t.Errorf("%q: %v %v", teks, d, err)
 		}
 	}
-	for _, buruk := range []string{"", "0", "-1", "15.500,25", "abc"} {
+	for _, buruk := range []string{"", "0", "-1", "abc", "15,500.25", "1.5.5,0", "16.00,00"} {
 		if _, err := UraiNilaiKursTCO(buruk); !errors.Is(err, ErrKursTakTerurai) {
 			t.Errorf("%q: %v", buruk, err)
 		}
@@ -88,18 +89,49 @@ func TestPilihKursBerlakuTCOBarisKembar(t *testing.T) {
 		t.Errorf("tiga kembar persis: %+v %v", k, err)
 	}
 
-	// TIDAK identik - tetap master rusak, dan pesannya menyebut kedua baris.
+	// TIDAK identik - input terbaru (DATEIU) menang, yang kalah dicacah (keputusan work owner 11-10-2026, menggantikan
+	// "tolak, jangan menebak" 29-09-2026).
+	input := func(k KursTCO, id, waktu string) KursTCO {
+		k.ID = id
+		if waktu != "" {
+			t0, err := time.Parse("2006-01-02 15:04", waktu)
+			if err != nil {
+				t.Fatal(err)
+			}
+			k.DiinputPada = t0
+		}
+		return k
+	}
+	lama := input(a, "10112", "2025-11-02 20:24")
 	for nama, b := range map[string]KursTCO{
 		"TOIDR berbeda":               baris("16600", "2025-07-01", "2026-06-30"),
 		"angka sama, teks lain":       baris("16500", "2025-07-01", "2026-06-30"),
 		"TOIDR sama, periode berbeda": baris("16500.00", "2026-06-01", "2027-05-31"),
 		"TOIDR sama, akhir berbeda":   baris("16500.00", "2025-07-01", "2026-12-31"),
 	} {
-		_, err := PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{a, b}}, tglKurs("2026-06-15"))
-		if !errors.Is(err, ErrKursGanda) || !strings.Contains(err.Error(), `"16500.00"`) ||
-			!strings.Contains(err.Error(), fmt.Sprintf("%q", b.TeksToIDR)) {
-			t.Errorf("%s: harus tetap master rusak dan menyebut kedua baris: %v", nama, err)
+		baru := input(b, "10140", "2026-10-09 08:27")
+		for _, urut := range [][]KursTCO{{lama, baru}, {baru, lama}} {
+			k, err := PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: urut}, tglKurs("2026-06-15"))
+			if err != nil || k.TeksToIDR != b.TeksToIDR || k.ID != "10140" || k.BarisTertimpa != 1 || k.BarisKembar != 0 {
+				t.Errorf("%s: harap input terbaru (10140) dipakai, satu tertimpa: %+v %v", nama, k, err)
+			}
 		}
+	}
+	// waktu input sama -> ID terbesar (angka, bukan teks: 10140 > 9999); DATEIU kosong = paling lama
+	x := input(baris("15000", "2024-04-01", "2025-03-31"), "9999", "2026-10-09 08:27")
+	y := input(baris("15500", "2024-04-01", "2025-03-31"), "10140", "2026-10-09 08:27")
+	if k, err := PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{x, y}}, tglKurs("2024-07-01")); err != nil || k.ID != "10140" {
+		t.Errorf("seri waktu input -> ID terbesar: %+v %v", k, err)
+	}
+	tanpa := input(baris("17000", "2024-04-01", "2025-03-31"), "99999", "")
+	if k, err := PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: []KursTCO{tanpa, x}}, tglKurs("2024-07-01")); err != nil || k.ID != "9999" {
+		t.Errorf("DATEIU kosong kalah dari yang berwaktu: %+v %v", k, err)
+	}
+	// dua baris lama kembar + satu berbeda yang lebih baru: yang baru dipakai, dua lama tertimpa
+	tigaBaris := []KursTCO{lama, lama, input(baris("16600", "2025-07-01", "2026-06-30"), "10200", "2026-10-10 12:00")}
+	if k, err := PilihKursBerlakuTCO(HasilMasterKursTCO{Berlaku: tigaBaris}, tglKurs("2026-06-15")); err != nil ||
+		k.TeksToIDR != "16600" || k.BarisTertimpa != 2 {
+		t.Errorf("dua lama kalah oleh satu baru: %+v %v", k, err)
 	}
 }
 

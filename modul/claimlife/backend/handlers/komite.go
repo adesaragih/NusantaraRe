@@ -54,6 +54,9 @@ func serahkanKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			// lama, dan pengguna lama mengenalinya.
 			galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 			return
+		case errors.Is(err, services.ErrSerahkanBukanClaimAnalis):
+			galat.Tulis(w, http.StatusConflict, "Send Claim to Committee hanya tersedia pada tahap Claim Analis")
+			return
 		case errors.Is(err, services.ErrBarisSudahDiserahkan):
 			galat.Tulis(w, http.StatusConflict,
 				"baris sudah pernah diserahkan ke Komite")

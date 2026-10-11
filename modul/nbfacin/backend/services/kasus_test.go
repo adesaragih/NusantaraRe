@@ -126,11 +126,11 @@ func TestSimpanGeneral(t *testing.T) {
 		t.Fatalf("simpan kosong (sebagian): %v", err)
 	}
 	isian := IsianGeneral{ReffNumber: "UJI-REF", QQName: "UJI QQ", BeginDate: "01-11-2026", OfferingDate: "02-10-2026",
-		EndDate: "01-11-2027", PolicyType: "Individual Policy", MarketingID: "UJI-MO", Day: "365", TypeFacultative: "Facultative In"}
+		EndDate: "01-11-2027", PolicyType: "0", MarketingID: "UJI-MO", Day: "365", TypeFacultative: "Facultative In"}
 	k, err := svc.SimpanGeneral(ctx, akun, "UJI-NB-1", isian)
 	g := k.General
 	if err != nil || g.ReffNumber != "UJI-REF" || g.QQName != "UJI QQ" || g.BeginDate != "01-11-2026" || g.OfferingDate != "02-10-2026" ||
-		g.EndDate != "01-11-2027" || g.PolicyType != "Individual Policy" || g.MarketingID != "UJI-MO" || g.Day != "365" ||
+		g.EndDate != "01-11-2027" || g.PolicyType != "0" || g.MarketingID != "UJI-MO" || g.Day != "365" ||
 		g.TypeFacultative != "Facultative In" || g.SourceOfBusiness != "UJI SOB" {
 		t.Fatalf("%+v (%v)", g, err)
 	}
@@ -148,6 +148,8 @@ func TestSimpanGeneral(t *testing.T) {
 		"qq 501 bita":    {IsianGeneral{QQName: strings.Repeat("U", 501)}, "qqName paling banyak 500"},
 		"MOID 51 bita":   {IsianGeneral{MarketingID: strings.Repeat("U", 51)}, "marketingId paling banyak 50"},
 		"policy 51 bita": {IsianGeneral{PolicyType: strings.Repeat("U", 51)}, "policyType paling banyak 50"},
+		"policy label":   {IsianGeneral{PolicyType: "Master Policy"}, "policyType wajib 0, 1 atau 2"},
+		"policy 3":       {IsianGeneral{PolicyType: "3"}, "policyType wajib 0, 1 atau 2"},
 	} {
 		if _, err := svc.SimpanGeneral(ctx, akun, "UJI-NB-1", u.isian); !errors.Is(err, ErrMasukanGeneral) || !strings.Contains(err.Error(), u.pesan) {
 			t.Errorf("%s: %v, mau 400 %q", nama, err, u.pesan)

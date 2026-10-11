@@ -20,7 +20,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-import { Area, Field, Gagal, Halaman, Kosong, Memuat, Modal, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
+import { Area, Field, Gagal, Kosong, Memuat, Modal, Pilih, type Opsi } from '../../../../inti/frontend/components/ui/dasar'
+import HalamanPopup from '../components/HalamanPopup'
 import TanggalDMY from '../components/TanggalDMY'
 import type { KasusBaru } from './InwardFacultative'
 import {
@@ -35,11 +36,13 @@ import {
 import {
   FORM_OPPORTUNITY as F,
   KEPALA_PORTAL,
+  MENU_TOMBOL_OPPORTUNITY,
   NILAI_AWAL_OPPORTUNITY as AWAL,
   OPSI_OPPORTUNITY_SOURCE,
   POPUP_CHOOSE_ACCOUNT as POPUP,
   TEKS_FORM_OPPORTUNITY as TEKS,
   TEKS_GRUP_BISNIS,
+  TEKS_MENU_OPPORTUNITY,
   TOMBOL_FORM_OPPORTUNITY as TOMBOL,
 } from '../labels'
 
@@ -105,12 +108,12 @@ export function PopupChooseAccount({ onTutup, onPilih }: { onTutup: () => void; 
         <div className="nbf-popup__kotak">
           <Field label={POPUP.cari} value={kotak} onChange={setKotak} />
         </div>
-        <button type="submit" className="btn btn--ghost btn--sm" disabled={memuat}>
+        <button type="submit" className="btn nbf-tema__tombol btn--ghost btn--sm" disabled={memuat}>
           {POPUP.tombolCari}
         </button>
       </div>
       {hasil && hasil.baris.length > 0 && (
-        <Halaman halaman={hasil.halaman} ukuran={hasil.ukuran} total={hasil.total} onPindah={(h) => void muat(kunciCari.current, h)} />
+        <HalamanPopup halaman={hasil.halaman} ukuran={hasil.ukuran} total={hasil.total} onPindah={(h) => void muat(kunciCari.current, h)} />
       )}
       <div className="table-wrap">
         <table className="nbf-tabel">
@@ -134,7 +137,7 @@ export function PopupChooseAccount({ onTutup, onPilih }: { onTutup: () => void; 
                   <td>{b.insuredName}</td>
                   <td>{b.groupBusiness}</td>
                   <td className="table__actions">
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => onPilih(b)}>
+                    <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={() => onPilih(b)}>
                       {POPUP.pilih}
                     </button>
                   </td>
@@ -153,9 +156,15 @@ export function PopupChooseAccount({ onTutup, onPilih }: { onTutup: () => void; 
 
 export default function FormOpportunity({
   pemilik,
+  onBukaMenu,
   onDibuat,
 }: {
   pemilik: string
+  /**
+   * Buka menu modul lain di jendela (`PropsRute.onBukaMenu`): New Company Detail -> Company Detail, New Group Business ->
+   * Accounts (work owner 10-10-2026). Tanpa penyedia ini kedua tombol nonaktif.
+   */
+  onBukaMenu?: (modul: string, opsi?: { baru?: boolean }) => boolean
   /** Case berhasil dibuat -> layar Inward Facultative (tiket 30). */
   onDibuat?: (k: KasusBaru) => void
 }) {
@@ -176,6 +185,15 @@ export default function FormOpportunity({
   const [menyimpan, setMenyimpan] = useState(false)
   const [galatSimpan, setGalatSimpan] = useState<unknown>(null)
   const [caseId, setCaseId] = useState('')
+  const [pesanMenu, setPesanMenu] = useState('')
+
+  /** Tombol New Company Detail / New Group Business: isi menu modulnya di jendela; isian Opportunity tetap. */
+  function bukaMenu(tombol: keyof typeof MENU_TOMBOL_OPPORTUNITY) {
+    setPesanMenu('')
+    const { modul, menu } = MENU_TOMBOL_OPPORTUNITY[tombol]
+    // Langsung form tambah (Create / Add), bukan daftarnya (work owner 10-10-2026).
+    if (onBukaMenu?.(modul, { baru: true }) === false) setPesanMenu(TEKS_MENU_OPPORTUNITY.tidakAda(menu))
+  }
 
   // Saran Class Of Business mengikuti Group Business terpilih (C-11). Group berganti = isian lama dan
   // saran lama tidak berlaku; jawaban untuk group lama dibuang.
@@ -255,7 +273,7 @@ export default function FormOpportunity({
       <section className="inbox">
         <header className="inbox__kepala">
           <h2 className="inbox__judul">{F.judul}</h2>
-          <button type="button" className="btn btn--primary" onClick={() => void buat()} disabled={menyimpan || caseId !== ''}>
+          <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" onClick={() => void buat()} disabled={menyimpan || caseId !== ''}>
             {menyimpan ? TEKS.menyimpan : KEPALA_PORTAL.buat.label}
           </button>
         </header>
@@ -291,7 +309,7 @@ export default function FormOpportunity({
                   <span>{grup.groupBusiness}</span>
                   <button
                     type="button"
-                    className="btn btn--ghost btn--sm"
+                    className="btn nbf-tema__tombol btn--ghost btn--sm"
                     aria-label={TEKS_GRUP_BISNIS.ganti}
                     title={TEKS_GRUP_BISNIS.ganti}
                     onClick={() => setCariGrup(true)}
@@ -301,16 +319,31 @@ export default function FormOpportunity({
                 </div>
               ) : (
                 <div className="nbf-opp__tombol">
-                  <button type="button" className="btn btn--ghost btn--sm" onClick={() => setCariGrup(true)}>
+                  <button type="button" className="btn nbf-tema__tombol btn--ghost btn--sm" onClick={() => setCariGrup(true)}>
                     {TOMBOL.cariGrup}
                   </button>
-                  <button type="button" className="btn btn--sm" disabled>
+                  <button
+                    type="button"
+                    className="btn nbf-tema__tombol btn--sm"
+                    disabled={onBukaMenu === undefined}
+                    onClick={() => bukaMenu('perusahaanBaru')}
+                  >
                     {TOMBOL.perusahaanBaru}
                   </button>
-                  <button type="button" className="btn btn--sm" disabled>
+                  <button
+                    type="button"
+                    className="btn nbf-tema__tombol btn--sm"
+                    disabled={onBukaMenu === undefined}
+                    onClick={() => bukaMenu('grupBaru')}
+                  >
                     {TOMBOL.grupBaru}
                   </button>
                 </div>
+              )}
+              {pesanMenu !== '' && (
+                <p className="field__error" role="alert">
+                  {pesanMenu}
+                </p>
               )}
             </div>
             <div className="field">

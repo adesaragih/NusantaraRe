@@ -4,8 +4,8 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { isiDariPenawaran, tanggalMasukan, type PenawaranPolis } from '../api'
-import { LABEL_PENAWARAN } from '../labels'
-import { hitungMaxTBC, jenisAsuransiDari, kolomWajibKosong, opsiDari, saringAngkaDesimal, tampilTBC, tanggalRiwayat, terapkanPilihan } from './FormPenawaran'
+import { LABEL_PENAWARAN, TUTUP_STATUS_OFFER } from '../labels'
+import { hitungMaxTBC, jenisAsuransiDari, kalimatKasusDitutup, kalimatTutupOffer, kolomWajibKosong, opsiDari, saringAngkaDesimal, tampilTBC, tanggalRiwayat, terapkanPilihan } from './FormPenawaran'
 
 // Uji form penawaran — tiket 01 bagian 3.
 
@@ -320,5 +320,30 @@ describe('gaya seluruh layar modul', () => {
         expect(t, berkas).toMatch(/className="btn\b/)
       }
     }
+  })
+})
+
+describe('Save Offer Bind/Closed menutup kasus (keputusan work owner 08-10-2026)', () => {
+  it('konfirmasi hanya untuk Bind/Closed pada bendera 0; kalimat sesuai', () => {
+    expect(kalimatTutupOffer('0', 'Bind')).toBe('Save the offer and close the case as Resolved-Completed?')
+    expect(kalimatTutupOffer('0', 'Closed')).toBe('Save the offer and close the case as Resolved-Rejected?')
+    for (const s of ['Accept', 'Pending', 'Decline', '']) expect(kalimatTutupOffer('0', s), s).toBeNull()
+    for (const s of ['1', '2', '3', 'Bind', 'Closed']) expect(kalimatTutupOffer('1', s), s).toBeNull()
+    expect(TUTUP_STATUS_OFFER.batal).toBe('Cancel')
+    expect(TUTUP_STATUS_OFFER.ya).toBe('Yes')
+  })
+
+  it('tombol Save Offer bertanya dulu untuk Bind/Closed; Yes menyimpan; hasil tutup kembali ke kotak masuk', () => {
+    const tombol = BERKAS.slice(BERKAS.indexOf('{LABEL_PENAWARAN.simpan}') - 600, BERKAS.indexOf('{LABEL_PENAWARAN.simpan}'))
+    expect(tombol).toContain('const kalimat = kalimatTutupOffer(data.flag, isi.status)')
+    expect(tombol).toContain('if (kalimat !== null) setTanyaTutup(kalimat)')
+    expect(tombol).toContain('else void simpan()')
+    const modal = BERKAS.slice(BERKAS.indexOf('{tanyaTutup !== null && ('), BERKAS.indexOf('<div className="pl-offer__riwayat">'))
+    expect(modal).toContain('labelBatal={TUTUP_STATUS_OFFER.batal}')
+    expect(modal).toContain('void simpan()')
+    expect(BERKAS).toContain("if ((hasil.statusTutup ?? '') !== '') {")
+    expect(BERKAS).toContain('onDitutup?.()')
+    expect(INPUT_OFFER).toContain('<FormPenawaran polisID={polisID} onDitutup={onSelesai}')
+    expect(kalimatKasusDitutup('Resolved-Completed')).toBe('Case closed — Resolved-Completed.')
   })
 })

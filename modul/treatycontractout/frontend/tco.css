@@ -435,3 +435,23 @@
     box-shadow: var(--mt-timbul-kecil);
   }
 }
+
+/* Baris saringan per kolom inbox tahun treaty (work owner 11-10-2026 "SEMUA HEADER BUAT FILTERNYA"): isian ringkas
+   di bawah kepala kolom, beralas kepala tabel; hasil kosong ditulis di dalam tabel supaya saringan tetap dapat diubah. */
+.tco .tco-tabel > .inbox__tabel thead tr.tco-saring > th {
+  padding-top: 4px;
+  padding-bottom: 10px;
+  font-weight: 400;
+}
+.tco .tco-saring .field__input {
+  width: 100%;
+  min-width: 96px;
+  height: 30px;
+  padding: 0 10px;
+  font-size: 12.5px;
+}
+.tco .tco-tabel td.tco-saring-kosong {
+  padding: 18px 12px;
+  text-align: center;
+  color: var(--mt-teks-redup);
+}

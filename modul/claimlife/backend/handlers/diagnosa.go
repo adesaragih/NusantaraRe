@@ -156,6 +156,9 @@ func jawabGalatDiagnosa(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, services.ErrTahapTidakBergridPeserta):
 		galat.Tulis(w, http.StatusConflict,
 			"tahap ini tidak membuka layar detail peserta")
+	case errors.Is(err, services.ErrDiagnosaBukanMedicalCheck):
+		galat.Tulis(w, http.StatusConflict,
+			"the diagnosis can only be changed at the Medical Check stage")
 	case errors.Is(err, services.ErrNilaiDiagnosaKepanjangan):
 		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, galat.ErrPermintaanTidakSah):

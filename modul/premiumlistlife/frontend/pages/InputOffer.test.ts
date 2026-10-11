@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 
 import { KEPUTUSAN_POLIS } from '../labels'
 import { bolehRejectDiTahap, TAHAP_POLIS } from '../api'
-import { ringkasanAkibat } from './InputOffer'
+import { confirmTampil, ringkasanAkibat } from './InputOffer'
 
 // Uji layar keputusan penawaran — tiket 01 bagian 2; GILIRAN-14 butir bq.
 
@@ -156,7 +156,7 @@ describe('Confirm terkunci selama ada perubahan belum disimpan (03-10-2026)', ()
     expect(detail).toContain('onBelumTersimpan={onBelumTersimpan}')
     expect(rute).toContain('onBelumTersimpan={setDataBelumTersimpan}')
     expect(rute).toContain('confirmTerkunci={polis.tahap === TAHAP_POLIS.detail && dataBelumTersimpan}')
-    expect(io).toContain('disabled={sibuk || confirmTerkunci}')
+    expect(io).toContain('disabled={sibuk || confirmTerkunci || belumSiap}')
     expect(io).toContain('KONFIRMASI_KEPUTUSAN.belumTersimpan')
   })
 })
@@ -167,5 +167,38 @@ describe('WPC ditampilkan bersama PL Number (03-10-2026)', () => {
     expect(io).toContain("setWpcTerbit(hasil.wpc ?? '')")
     expect(io).toContain('{tanggalTampil(wpcTerbit)}')
     expect(io).toContain('HASIL_NOMOR_PL.labelWpc')
+  })
+})
+
+describe('kesiapan Confirm (06-10-2026)', () => {
+  it('Confirm terkunci selama server menyebut sesuatu yang kurang, alasannya ditampilkan', () => {
+    const kode = readFileSync(join(__dirname, 'InputOffer.tsx'), 'utf8')
+    expect(kode).toContain('ambilKesiapanConfirm(polisID)')
+    expect(kode).toContain('const belumSiap = alasanBelumSiap.length > 0')
+    expect(kode).toContain('{KONFIRMASI_KEPUTUSAN.belumSiap}')
+    expect(kode).toContain('if (tanya === KEPUTUSAN_POLIS.confirm && (confirmTerkunci || belumSiap)) {')
+    const rute = readFileSync(join(__dirname, '..', 'rute.tsx'), 'utf8')
+    expect(rute).toContain('versiKesiapan={versiKesiapan}')
+  })
+})
+
+describe('Confirm disembunyikan untuk kasus Input Offer (keputusan work owner 08-10-2026)', () => {
+  it('tahap penawaran: bendera 0 tanpa Confirm, bendera 1 dengan Confirm; tahap detail selalu', () => {
+    expect(confirmTampil(TAHAP_POLIS.penawaran, '0')).toBe(false)
+    expect(confirmTampil(TAHAP_POLIS.penawaran, '')).toBe(false)
+    expect(confirmTampil(TAHAP_POLIS.penawaran, '1')).toBe(true)
+    expect(confirmTampil(TAHAP_POLIS.detail, '0')).toBe(true)
+    expect(confirmTampil(TAHAP_POLIS.detail, '1')).toBe(true)
+  })
+
+  it('tombol Confirm dibungkus confirmTampil; Decline tidak; bendera dari FormPenawaran', () => {
+    const SUMBER_IO = readFileSync(join(__dirname, 'InputOffer.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    const aksi = SUMBER_IO.slice(SUMBER_IO.indexOf('<div className="pl-keputusan__aksi">'), SUMBER_IO.indexOf('{/* Sebab Confirm terkunci'))
+    expect(aksi).toContain('{confirmTampil(tahap, flag) && (')
+    expect(aksi.indexOf('confirmTampil(tahap, flag)')).toBeLessThan(aksi.indexOf('{KEPUTUSAN_POLIS.confirm}'))
+    const decline = aksi.slice(aksi.indexOf('{KEPUTUSAN_POLIS.confirm}'))
+    expect(decline).toContain('{KEPUTUSAN_POLIS.decline}')
+    expect(decline).not.toContain('confirmTampil')
+    expect(SUMBER_IO).toContain('onFlag={setFlag}')
   })
 })

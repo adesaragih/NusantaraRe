@@ -19,7 +19,7 @@
 //
 // ⚠️ Daftar kolomnya DATANG DARI SERVER, tidak diketik ulang di sini.
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
   DETAIL_POLIS,
@@ -27,6 +27,7 @@ import {
   KOLOM_PALING_KANAN,
   KOLOM_SELALU_TAMPIL,
   LABEL_TAB_PESERTA,
+  PANEL_SPREADING,
   TAB_PESERTA,
   URUTAN_KOLOM_PESERTA,
   type TabPeserta,
@@ -34,6 +35,7 @@ import {
 import { Gagal, Kosong, Memuat, StripTab } from '../../../../inti/frontend/components/ui/dasar'
 import FormDataPolis from './FormDataPolis'
 import UnggahCSVPeserta from './UnggahCSVPeserta'
+import ModalSpreadingPeserta from '../components/ModalSpreadingPeserta'
 import PanelSummary from '../components/PanelSummary'
 import { pemisahRibuan } from '../angka'
 import { tanggalTampil } from '../tanggal'
@@ -53,6 +55,19 @@ import {
  * ⚠️ Kolom asing TIDAK disembunyikan. Kolom yang hilang dari layar karena
  * judulnya belum terdaftar adalah data yang hilang tanpa satu pun tanda.
  */
+/** Tombol yang membuka popup spreading dari baris peserta yang terfokus (07-10-2026). */
+export function tombolBukaBaris(key: string): boolean {
+  return key === 'Enter' || key === ' '
+}
+
+/** Judul kolom nomor baris grid peserta (06-10-2026). */
+export const JUDUL_NOMOR_BARIS = 'No'
+
+/** Nomor baris berlanjut antar halaman: (halaman − 1) × ukuran + urutan + 1. */
+export function nomorBaris(halaman: number, ukuran: number, i: number): number {
+  return (Math.max(halaman, 1) - 1) * ukuran + i + 1
+}
+
 export function judulKolom(nama: string): string {
   return JUDUL_KOLOM_PESERTA[nama] ?? nama
 }
@@ -126,10 +141,13 @@ export function kalimatNomor(kepala: KepalaPolis | null): string {
 export default function PremiumListDetail({
   polisID,
   onBelumTersimpan,
+  onBerubah,
 }: {
   polisID: string
   /** Diteruskan ke form data polis - Confirm dikunci selama ada perubahan belum disimpan. */
   onBelumTersimpan?: (belum: boolean) => void
+  /** Dipanggil sesudah Save Data / Calculate CSV berhasil - kesiapan Confirm dibaca ulang (06-10-2026). */
+  onBerubah?: () => void
 }) {
   const [kepala, setKepala] = useState<KepalaPolis | null>(null)
   const [hal, setHal] = useState<HalamanPesertaPolis | null>(null)
@@ -140,6 +158,20 @@ export default function PremiumListDetail({
   // (keputusan work owner 05-10-2026) - panel lalu menyatakan summary belum ada.
   const [versiSummary, setVersiSummary] = useState(0)
   const [tab, setTab] = useState<TabPeserta>('rincian')
+  // Popup spreading satu peserta (keputusan work owner 07-10-2026): baris yang
+  // diklik diingat supaya fokus kembali ke sana saat popup ditutup.
+  const [spreading, setSpreading] = useState<{ id: string; nama: string } | null>(null)
+  const barisPemicu = useRef<HTMLTableRowElement | null>(null)
+  const bukaSpreading = (baris: HTMLTableRowElement, id: string, nama: string) => {
+    barisPemicu.current = baris
+    setSpreading({ id, nama })
+  }
+  const tutupSpreading = useCallback(() => {
+    setSpreading(null)
+    requestAnimationFrame(() => {
+      barisPemicu.current?.focus()
+    })
+  }, [])
   // Periode produksi di kepala, seperti Input Offer Life (02-10-2026). Galatnya
   // DINYATAKAN: 503 berarti POOLDATA.TANGGAL_CLOSING kosong.
   const [periode, setPeriode] = useState('')
@@ -229,6 +261,7 @@ export default function PremiumListDetail({
         onTersimpan={() => {
           void muat()
           setVersiSummary((v) => v + 1)
+          onBerubah?.()
         }}
       />
 
@@ -243,6 +276,7 @@ export default function PremiumListDetail({
         onTersimpan={() => {
           void muat()
           setVersiSummary((v) => v + 1)
+          onBerubah?.()
         }}
       />
 
@@ -270,14 +304,32 @@ export default function PremiumListDetail({
                 <table className="inbox__tabel">
                   <thead>
                     <tr>
+                      {/* Nomor baris paling kiri - jumlah peserta mudah dilihat (06-10-2026). */}
+                      <th className="pl-detail__no">{JUDUL_NOMOR_BARIS}</th>
                       {tampilKolom.map((k) => (
                         <th key={k}>{judulKolom(k)}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {hal.baris.map((b) => (
-                      <tr key={b.id}>
+                    {hal.baris.map((b, i) => (
+                      // Klik / Enter / Space → popup spreading peserta ini (07-10-2026).
+                      <tr
+                        key={b.id}
+                        className="pl-detail__baris"
+                        tabIndex={0}
+                        aria-haspopup="dialog"
+                        title={PANEL_SPREADING.bukaBaris}
+                        onClick={(e) => {
+                          bukaSpreading(e.currentTarget, b.id, b.nilai[PANEL_SPREADING.kolomNama] ?? '')
+                        }}
+                        onKeyDown={(e) => {
+                          if (!tombolBukaBaris(e.key)) return
+                          e.preventDefault()
+                          bukaSpreading(e.currentTarget, b.id, b.nilai[PANEL_SPREADING.kolomNama] ?? '')
+                        }}
+                      >
+                        <td className="pl-detail__no">{nomorBaris(hal.halaman, hal.ukuran, i)}</td>
                         {tampilKolom.map((k) => (
                           <td key={k}>{selPeserta(selAngkaAtauTanggal(b.nilai[k], kolomAngka.has(k)))}</td>
                         ))}
@@ -286,6 +338,15 @@ export default function PremiumListDetail({
                   </tbody>
                 </table>
               </div>
+            )}
+
+            {spreading !== null && (
+              <ModalSpreadingPeserta
+                polisID={polisID}
+                detailID={spreading.id}
+                nama={spreading.nama}
+                onTutup={tutupSpreading}
+              />
             )}
 
             {/*

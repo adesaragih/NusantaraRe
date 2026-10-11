@@ -476,6 +476,11 @@ export interface PenawaranPolis {
     classOfBusiness: PilihanKode[]
     status: PilihanKode[]
   }
+  /**
+   * Status kerja bila Save Offer ini MENUTUP kasus (Status Bind/Closed, bendera "0" - keputusan work owner
+   * 08-10-2026); kosong/absen selain itu.
+   */
+  statusTutup?: string
 }
 
 /** Badan `PUT /api/polis-life/{id}/penawaran` — kode, bukan nama. */
@@ -758,4 +763,79 @@ export async function ambilRateProduk(riRateId: string): Promise<RateProduk> {
 /** Tombol View di samping Product Name - baca-saja. */
 export async function ambilRincianProduk(id: string): Promise<RincianProduk> {
   return minta<RincianProduk>('/api/polis-life/rincian-produk', { kueri: { id } })
+}
+
+// ——— Spreading retro (keputusan work owner 06-10-2026; per peserta sejak 07-10-2026) ———
+
+/** Satu reinsurer satu lapisan - teks desimal dari server. */
+export interface SpreadingReinsurer {
+  nama: string
+  pctShare: string
+  amount: string
+  rate: string
+  komisi: string
+  ovrComm: string
+  gross: string
+  net: string
+}
+
+/** Satu lapisan (Reins Type) satu peserta. */
+export interface SpreadingLapisan {
+  reinsType: string
+  treatyYear: string
+  bagian: string
+  reinsurer: SpreadingReinsurer[]
+}
+
+/**
+ * Spreading retro SATU peserta — `GET /api/polis-life/{id}/peserta/{detailId}/spreading`
+ * (popup baris peserta, keputusan work owner 07-10-2026). Angka teks desimal dari server.
+ */
+export interface SpreadingSatuPeserta {
+  id: string
+  nama: string
+  sertifikat: string
+  currency: string
+  retrocededShare: string
+  /** Label Transaction Year (cadangan: ID treaty year) dan periodenya (ISO). */
+  treatyYear: string
+  treatyMulai: string
+  treatyAkhir: string
+  /** Kosong = peserta tanpa spreading (bukan Type QR, atau belum dihitung). */
+  lapisan: SpreadingLapisan[] | null
+}
+
+/** Total retro per reinsurer per mata uang — nama reinsurer dari data. */
+export interface RekapRetroPolis {
+  reinsurer: string
+  currency: string
+  gross: string
+  net: string
+}
+
+/** Membaca spreading retro satu peserta polis (404 bila peserta bukan milik polis). */
+export async function ambilSpreadingPeserta(polisID: string, detailID: string): Promise<SpreadingSatuPeserta> {
+  return minta<SpreadingSatuPeserta>(
+    `/api/polis-life/${encodeURIComponent(polisID)}/peserta/${encodeURIComponent(detailID)}/spreading`,
+  )
+}
+
+/** Membaca rekap retro per reinsurer per mata uang — tab Summary. */
+export async function ambilRekapRetroPolis(polisID: string): Promise<RekapRetroPolis[]> {
+  const h = await minta<{ rekap: RekapRetroPolis[] | null }>(
+    `/api/polis-life/${encodeURIComponent(polisID)}/spreading/rekap`,
+  )
+  return h.rekap ?? []
+}
+
+/** Kesiapan Confirm — `GET /api/polis-life/{id}/kesiapan-confirm` (06-10-2026). */
+export interface KesiapanConfirm {
+  siap: boolean
+  /** Seluruh yang masih kurang — kosong bila siap. */
+  alasan: string[] | null
+}
+
+/** Membaca alasan Confirm belum dapat dijalankan. */
+export async function ambilKesiapanConfirm(polisID: string): Promise<KesiapanConfirm> {
+  return minta<KesiapanConfirm>(`/api/polis-life/${encodeURIComponent(polisID)}/kesiapan-confirm`)
 }

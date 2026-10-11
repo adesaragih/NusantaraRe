@@ -20,27 +20,18 @@ import {
   type Halaman,
   type Layar,
   type Pilihan,
-  type Tata,
 } from '../api'
 import { putuskanAksi, type AksiDiminta } from '../antreAksi'
 import { CFI } from '../labels'
 import { ambil, kunciOpsi, masukan, modeKirim, semuaTata, setel, sumberServer } from '../nilai'
 import PanelLampiran from './PanelLampiran'
 import Popup, { HasilPolis } from './Popup'
-import { judulModal, lanjutanAksi, MODAL_POLIS, modalSesudah, type JenisPopup } from './sesudahAksi'
+import { bagiIsiPolis, judulModal, lanjutanAksi, MODAL_POLIS, modalSesudah, type JenisPopup } from './sesudahAksi'
 import { pisahKakiModal } from './susun'
 import TataView, { konteksDi, LayarTata, Tombol, type KonteksTata } from './TataView'
 
 /** Daftar FacRetroList halaman polis (RetroList_Harnness). */
 const DAFTAR_RETRO = 'OfferFacIn.FacRetroList'
-
-/** Tombol aktif beraksi `aksi` di layout utama (tab Lampiran: Save = tombol Save layar, pola Claim Prop). */
-function adaTombol(ts: readonly Tata[], aksi: string): boolean {
-  return ts.some((t) => (t.jenis === 'tombol' && t.aksi === aksi && !t.nonaktif) || adaTombol(t.anak ?? [], aksi))
-}
-
-/** Aksi tombol Save Input Register (click:save). */
-const AKSI_SIMPAN = 'Simpan'
 
 /** Satu aksi layar beserta ubahan medan yang memicunya. */
 interface Permintaan extends AksiDiminta {
@@ -282,13 +273,12 @@ export default function LayarKasus({
           {info}
         </div>
       )}
-      <LayarTata tata={layar.tata} k={k} />
-      <PanelLampiran
-        id={id}
-        hanyaLihat={hanyaLihat}
-        bolehSimpan={layar.bolehKerja && adaTombol(layar.tata, AKSI_SIMPAN)}
-        onSimpan={() => kirim(AKSI_SIMPAN)}
-      />
+      {/* berkunci tahap: layar tahap berikutnya (Register -> Estimation -> Adjustment) muncul memudar */}
+      <div key={layar.label || layar.kasus.statusWork} className="claimfacin__halaman">
+        <LayarTata tata={layar.tata} k={k} />
+      </div>
+      {/* Save panel Lampiran pindah ke baris aksi di samping Submit (work owner 11-10-2026). */}
+      <PanelLampiran id={id} hanyaLihat={hanyaLihat} />
       {modal && isiModal && kModal && kKaki && (
         <Modal
           judul={judulModal(modal)}
@@ -301,13 +291,20 @@ export default function LayarKasus({
         >
           {kotakGalat}
           {kotakPesanModal}
-          <TataView tata={isiModal.isi} k={kModal} />
-          {modal === MODAL_POLIS && hasilPolis !== null && (
-            <HasilPolis
-              baris={hasilPolis}
-              sibuk={sibuk}
-              onPilih={(param) => kirim('CopyNB', 0, {}, MODAL_POLIS, param)}
-            />
+          {modal === MODAL_POLIS ? (
+            <>
+              <TataView tata={bagiIsiPolis(isiModal.isi).atas} k={kModal} />
+              {hasilPolis !== null && (
+                <HasilPolis
+                  baris={hasilPolis}
+                  sibuk={sibuk}
+                  onPilih={(param) => kirim('CopyNB', 0, {}, MODAL_POLIS, param)}
+                />
+              )}
+              <TataView tata={bagiIsiPolis(isiModal.isi).bawah} k={kModal} />
+            </>
+          ) : (
+            <TataView tata={isiModal.isi} k={kModal} />
           )}
         </Modal>
       )}

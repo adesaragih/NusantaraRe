@@ -84,3 +84,31 @@ func TestSimpanRNMTanpaDatabaseMenjawab503(t *testing.T) {
 		t.Errorf("kode = %d, mau 503", w.Code)
 	}
 }
+
+// 11-10-2026: seluruh kekurangan kolom wajib ikut di 422 sebagai daftar terstruktur; gerbang tanpa kekurangan = [] (bukan null).
+func TestPelanggaranRNMMembawaKekurangan(t *testing.T) {
+	w := httptest.NewRecorder()
+	jawabGalatSimpanRNM(w, &services.PelanggaranRNM{Langkah: "wajib", Pesan: "a\nb", Kekurangan: []services.KekuranganRNM{
+		{NomorPeserta: 1, PesertaID: "P1", Sertifikat: "UJI-1", Nama: "UJI A", Kolom: "Date of Loss", Pesan: "a"},
+		{NomorPeserta: 2, PesertaID: "P2", Sertifikat: "UJI-2", Kolom: "Claim RNM", Pesan: "b"},
+	}})
+	if w.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("kode %d", w.Code)
+	}
+	var isi struct {
+		Galat      string                   `json:"galat"`
+		Kekurangan []map[string]interface{} `json:"kekurangan"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &isi); err != nil {
+		t.Fatal(err)
+	}
+	if isi.Galat != "a\nb" || len(isi.Kekurangan) != 2 || isi.Kekurangan[0]["kolom"] != "Date of Loss" ||
+		isi.Kekurangan[0]["nomorPeserta"] != float64(1) || isi.Kekurangan[1]["sertifikat"] != "UJI-2" {
+		t.Errorf("badan %s", w.Body.String())
+	}
+	w = httptest.NewRecorder()
+	jawabGalatSimpanRNM(w, &services.PelanggaranRNM{Langkah: "11.4", Pesan: "Person number 1 has already been accepted."})
+	if !strings.Contains(w.Body.String(), `"kekurangan":[]`) {
+		t.Errorf("tanpa kekurangan: %s", w.Body.String())
+	}
+}

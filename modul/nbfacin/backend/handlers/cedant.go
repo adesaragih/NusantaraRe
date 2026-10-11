@@ -24,15 +24,29 @@ type barisCedantKabel struct {
 	ShareCeding  string `json:"shareCeding"`
 }
 
+// dasarMataUangKabel - kontrak `dasarMataUang[]`: dasar CurrencyList cedant pada ShareCeding = 100 (layar menghitung
+// ShareCeding × dasar / 100).
+type dasarMataUangKabel struct {
+	Currency     string `json:"currency"`
+	TSIRNM       string `json:"tsiRnm"`
+	PremiumRNM   string `json:"premiumRnm"`
+	TSIGross     string `json:"tsiGross"`
+	PremiumGross string `json:"premiumGross"`
+}
+
 type tampilanCedantKabel struct {
-	SobName         string             `json:"sobName"`
-	ShareCedantType string             `json:"shareCedantType"`
-	PercentShare    string             `json:"percentShare"`
-	TotalTSIRNM     string             `json:"totalTsiRnm"`
-	TotalPremiRNM   string             `json:"totalPremiRnm"`
-	Wajib           bool               `json:"wajib"`
-	Cedant          []barisCedantKabel `json:"cedant"`
-	CedingUmum      []barisCedantKabel `json:"cedingUmum"`
+	SobName         string               `json:"sobName"`
+	ShareCedantType string               `json:"shareCedantType"`
+	ShareOfCeding   string               `json:"shareOfCeding"`
+	PercentShare    string               `json:"percentShare"`
+	TotalTSIRNM     string               `json:"totalTsiRnm"`
+	TotalPremiRNM   string               `json:"totalPremiRnm"`
+	Wajib           bool                 `json:"wajib"`
+	WajibType       bool                 `json:"wajibType"`
+	Cedant          []barisCedantKabel   `json:"cedant"`
+	CedingUmum      []barisCedantKabel   `json:"cedingUmum"`
+	DasarMataUang   []dasarMataUangKabel `json:"dasarMataUang"`
+	KursTidakAda    []string             `json:"kursTidakAda"`
 }
 
 func keBarisCedantKabel(d []models.BarisCedant) []barisCedantKabel {
@@ -44,9 +58,14 @@ func keBarisCedantKabel(d []models.BarisCedant) []barisCedantKabel {
 }
 
 func keCedantKabel(d services.TampilanCedant) tampilanCedantKabel {
-	return tampilanCedantKabel{SobName: d.SobName, ShareCedantType: d.ShareCedantType, PercentShare: teks(d.PercentShare),
-		TotalTSIRNM: teks(d.TotalTSIRNM), TotalPremiRNM: teks(d.TotalPremiRNM), Wajib: d.Wajib,
-		Cedant: keBarisCedantKabel(d.Cedant), CedingUmum: keBarisCedantKabel(d.CedingUmum)}
+	dasar := make([]dasarMataUangKabel, 0, len(d.DasarMataUang))
+	for _, x := range d.DasarMataUang {
+		dasar = append(dasar, dasarMataUangKabel{x.Currency, teks(x.TSIRNM), teks(x.PremiumRNM), teks(x.TSIGross), teks(x.PremiumGross)})
+	}
+	return tampilanCedantKabel{SobName: d.SobName, ShareCedantType: d.ShareCedantType, ShareOfCeding: d.ShareOfCeding,
+		PercentShare: teks(d.PercentShare), TotalTSIRNM: teks(d.TotalTSIRNM), TotalPremiRNM: teks(d.TotalPremiRNM), Wajib: d.Wajib, WajibType: d.WajibType,
+		Cedant: keBarisCedantKabel(d.Cedant), CedingUmum: keBarisCedantKabel(d.CedingUmum), DasarMataUang: dasar,
+		KursTidakAda: append([]string{}, d.KursTidakAda...)}
 }
 
 // bacaCedant - GET /api/nbfacin/kasus/{caseId}/cedant.

@@ -6,7 +6,7 @@ Modul ini **membuat tujuh belas tabel** — `T_NB_OPPORTUNITY` (migrasi 180, tik
 baris `T_WORK_POLIS` milik premiumlistlife (K-064; tidak dibuat, tidak dipetakan kolomnya di sini). Selebihnya ia hanya
 **membaca** dua puluh satu tabel / view yang sudah ada (lima di antaranya — `ACCUMULATION`, `PROVINCE`, `ACCUMULATEDTYPE`, `CZONE` milik `masterprovince` (dulu Master Data) dan `NATION` yang ditulis `masternation` — digambarkan di `modul/masterprovince/docs/STRUKTUR-TABEL-MASTER-DATA.md`) — enam tabel limit
 akseptasi (tiket 20), tabel akun `T_M_ACCOUNT` (tiket 27), tabel bisnis `BUSINESS` (tiket 28), `MARKETINGOFFICER` (31), `AGENT`
-(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38), `V_JN_OBJ_ITEM` dan `CURRENCY` (39), `TABLEOFLIMIT` (40), `COVERAGE` (43), view `CITY` / `DISTRICT`, tabel `JSON_POLIS` dan `NATION` (46) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
+(33), `RISKADDRESS` (36; juga DISISIPI tiket 37), `RW` (36/37), `OCCUPATION` (38), `V_JN_OBJ_ITEM` dan `CURRENCY` (39), `TABLEOFLIMIT` (40), `COVERAGE` (43), view `CITY` / `DISTRICT`, tabel `JSON_POLIS` dan `NATION` (46); ditambah — di luar hitungan dua puluh satu itu — view `ZONES` / `CONSTRUCTION` dan tabel `ZONEOJK` (52) — sama dengan bab "Tabel warisan" `MODUL.md`. Enam tabel limit akseptasi yang sudah ada
 di `POOLDATA`, dengan nama tabel dan kolom **verbatim**. Berkas ini **peta**, bukan DDL: hanya kolom yang dibaca
 repository (`backend/repository/limit.go`). Ke-enamnya dinyatakan di `MODUL.md` bab "Tabel warisan: dibaca, tidak
 dibuat".
@@ -139,7 +139,23 @@ dijaga `TestMigrasiFlatSebagianCocokRancangan`). Berbagi PK dengan `T_WORK_POLIS
 | `END_DATE_TIME` | teks | VARCHAR2(30) | End date — `.PolicyData.EndDateTime`, teks Pega |
 | `FOLLOWING` | teks | VARCHAR2(50) | Old Policy Number — `.Following` (sel 72), tampil saja |
 | `PERCENT_SHARE` | angka desimal | NUMBER(38,8) | tiket 48 (migrasi 198) — % Share RNM `.OfferFacIn.PercentShare` (tab Spreading sel 80), 0–100 |
+| `PPN_CHECK` | teks | VARCHAR2(10) | tiket 50 (migrasi 200 NUMBER(5), diganti teks oleh migrasi 202) — "Exclude PPN ?" `.OfferFacIn.PPnCheck`, teks Pega apa adanya "true" / "false" (butir 68.1; Pega menyetelnya true tiap hitung, `SetRIComm_Act` langkah 5) |
+| `PAY_RI_COMMISION` | angka desimal | NUMBER(38,8) | tiket 50 (200) — % Premium Deduction `.PolicyData.Payment.RICommision` |
+| `PAY_PCT_BROKERAGE_FEE` | angka desimal | NUMBER(38,8) | tiket 50 (200) — % Brokerage Fee `.PolicyData.Payment.PctBrokerageFee` |
+| `PAY_INSTALLMENT` | angka bulat | NUMBER(5) | tiket 51 (201) — Installment `.PolicyData.Payment.Installment` (jumlah cicilan, 1–99) |
 | `SHARE_CEDANT_TYPE` | angka bulat | NUMBER(5) | tiket 49 (migrasi 199) — Share Cedant Type `.OfferFacIn.ShareCedantType`: 0 Gross, 1 Share RNM (`DDL\ShareCedantType.xml`); kosong = belum dipilih |
+| `NB_STATUS` | teks | VARCHAR2(1000) | tiket 57 (migrasi 208) — `pyWorkPage.NBStatus` (halaman KERJA, amandemen loader: data lama kosong), ditulis Submit tahap marketing: "NB IS IN TEAM LEADER'S INBOX" / "NB IS IN <MARKETING>'S OPPORTUNITY" / "NB IS IN <jabatan>'S INBOX" / "NB WAS DECLINED BY  <OPERATOR>" |
+| `IS_DEDUCTIBLE_ACCEPTANCE` | teks | VARCHAR2(10) | tiket 58 (migrasi 210) — "Deductible Acceptance Case" `.OfferFacIn.IsDeductibleAcceptance`, teks Pega "true" / "false" (butir 68.1); ditulis Submit Team Leader |
+| `COMMENT_DEDUCTIBLE` | teks | VARCHAR2(500) | tiket 58 (migrasi 210) — "Comment Deductible" `.OfferFacIn.CommentDeductible`; ditulis Submit Team Leader |
+| `DATE_TO_UW` | teks | VARCHAR2(30) | tiket 58 (migrasi 210) — `.OfferFacIn.DateToUW` teks Pega DateTime; Accept Team Leader (`IsJuniorUW_B`); rancangan menaruhnya di T_WORK_POLIS (premiumlistlife) — amandemen loader |
+| `SUBMIT_TO_UW` | teks | VARCHAR2(30) | tiket 58 (migrasi 210) — `.OfferFacIn.SubmitToUW` teks Pega DateTime; Accept Team Leader bila kosong (`IsJuniorUW_B`); amandemen loader |
+| `DAYS_VALIDITY` | teks | VARCHAR2(50) | tiket 61 (migrasi 212) — "Validity Of Acceptance" `.OfferFacIn.DaysValidity` (hari, teks bulat); ditulis Submit tahap Underwriting |
+| `DATE_VALIDITY` | teks | VARCHAR2(30) | tiket 61 (migrasi 212) — "days, or up to" `.OfferFacIn.DateValidity` teks Pega DateTime 00:00 WIB (`GetDateValidity_ACT`); ditulis Submit tahap Underwriting |
+| `WAITING_BIND_DATE` | teks | VARCHAR2(30) | tiket 61 (migrasi 212) — "Waiting Bind" `.OfferFacIn.WaitingBindDate` teks Pega DateTime 00:00 WIB (`GetDateValidity_ACT` L701); ditulis Submit tahap Underwriting |
+| `COMMENT_TEXT` | teks | VARCHAR2(500) | tiket 61 (migrasi 212) — Comment `.OfferFacIn.Comment` Submit tahap Underwriting (juga ke riwayat KETERANGAN) |
+| `CONFIRM_BINDING` | teks | VARCHAR2(50) | tiket 64 (migrasi 213) — `.OfferFacIn.ConfirmBinding` "1" / "0"; ditulis tombol Binding (`POST …/submit/binding`), direset Revise |
+| `RECEIVED_RI_SLIP` | teks | VARCHAR2(50) | tiket 64 (migrasi 213) — `.OfferFacIn.ReceivedRiSlip` "true" / "false"; ditulis Submit tahap Binding (Accept), direset Revise |
+| `PRO_RATE_PERCENT` | angka desimal | NUMBER(38,8) | tiket 73 P2 (migrasi 255, rentang kedua) — `.OfferFacIn.ProRatePercent` % Pro Rate tingkat case tab Coverage Aneka; ditulis PUT `…/objek-aneka`; NULL = belum diisi (dihitung dari tanggal, CPCA langkah 4) |
 
 ## T_QUOTATIONDATA
 
@@ -182,6 +198,62 @@ rancangan, ID/PARENT_ID NUMBER(19) (A92). Satu baris per ceding, urut pilih; dig
 | `CEDING_CO` | teks | VARCHAR2(50) | kode `AGENT.ID` — `.CedingCoList(n).CedingCo` |
 | `CEDING_CO_NAME` | teks | VARCHAR2(500) | nama dari `AGENT.CLIENTNAME` — `.CedingCoList(n).CedingCoName` |
 
+## T_CURRENCYLIST
+
+Tiket 50 (tab Premium Deduction / Brokerage Fee) — **dibuat sebagian** modul ini, migrasi `200_premium_deduction.sql`
+(+ `SEQ_T_CURRENCYLIST`, indeks `IX_CURRENCYLIST_PARENT`). Tabel RANCANGAN (jalur `CurrencyList`, induk `T_GENERAL_POLIS`);
+`.Policy.Payment.*` dilipat ke awalan `PAY_` (V-22b). Satu baris per mata uang objek (urut kemunculan pertama), diperbarui
+menurut nama mata uang tiap Save tab Premium Deduction / Payment (cicilan dipertahankan; mata uang yang hilang dibuang
+beserta cicilannya, K50-11). Nilai uang = potret saat Save; layar menghitung ulang dari persen bila premi berubah
+(K50-3).
+
+| Kolom | Tipe | Tipe DDL (migrasi 200) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_CURRENCYLIST` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan (diisi loader) |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan (diisi loader) |
+| `PARENT_ID` | teks | VARCHAR2(32) NOT NULL | = `T_GENERAL_POLIS.ID` (FK tanpa `ON DELETE`) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan mata uang, mulai 1 |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID v4 acak (A106) |
+| `CURRENCY_CODE` | teks | VARCHAR2(50) DEFAULT 'UNKNOWN' NOT NULL | = `NAME` |
+| `NAME` | teks | VARCHAR2(500) | kode mata uang `.Name` (mis. IDR) |
+| `PAY_PREMIUM` | angka desimal | NUMBER(38,8) | `.Policy.Payment.Premium` = Σ PremiNusantaraRe item bermata uang itu (FireMBU 6.2.5) saat Save |
+| `PAY_COMMISION` | angka desimal | NUMBER(38,8) | Total Premium Deduction `.Policy.Payment.Commision` |
+| `PAY_DEDUCTION2` | angka desimal | NUMBER(38,8) | Total Premium Deduction 2 `.Policy.Payment.Deduction2` — amandemen tiket 50 (K50-2) |
+| `PAY_BROKERAGE_FEE` | angka desimal | NUMBER(38,8) | Total Brokerage Fee `.Policy.Payment.BrokerageFee` |
+| `PAY_PPH` | angka desimal | NUMBER(38,8) | `.Policy.Payment.PPh` = tarif PPH × Brokerage Fee / 100 |
+| `PAY_PPN` | angka desimal | NUMBER(38,8) | `.Policy.Payment.PPN` = tarif PPN × Brokerage Fee / 100 |
+| `SUM_TOTAL_PAYMENT` | angka desimal | NUMBER(38,8) | tiket 51 (201) — Total Payment `.SumTotalPayment` = Net Premium (keputusan work owner 06-10-2026, K51-1) |
+| `PAY_NET_PREMIUM` | angka desimal | NUMBER(38,8) | tiket 51 (201) — `.Policy.Payment.NetPremium` = Premium − Commision − Deduction2 − BrokerageFee + PPh + PPN |
+
+## T_LISTINSTALLMENT
+
+Tiket 51 (tab Payment) — **dibuat sebagian** modul ini, migrasi `201_payment.sql` (+ `SEQ_T_LISTINSTALLMENT`, indeks
+`IX_LISTINSTALLMENT_PARENT`). Tabel RANCANGAN (jalur `CurrencyList/ListInstallment`, induk `T_CURRENCYLIST`). Satu baris
+per cicilan per mata uang, diganti utuh tiap Save tab Payment; nilai uang = potret saat Save (layar menghitung ulang dari
+persen dan nilai mata uang terkini, K51-4).
+
+| Kolom | Tipe | Tipe DDL (migrasi 201) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_LISTINSTALLMENT` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan (diisi loader) |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan (diisi loader) |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_CURRENCYLIST.ID` (FK tanpa `ON DELETE`) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan cicilan, mulai 1 |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID v4 acak (A106) |
+| `CURRENCY_CODE` | teks | VARCHAR2(10) DEFAULT 'UNKNOWN' NOT NULL | = mata uang induk |
+| `INSTALLMENT_NO` | angka bulat | NUMBER(5) | No `.InstallmentNo` |
+| `DUE_DATE` | teks | VARCHAR2(30) | Due Date `.DueDate`, teks Pega `YYYYMMDD` |
+| `INSTALLMENT_PERCENTAGE` | teks | VARCHAR2(50) | % Installment `.InstallmentPercentage`, teks desimal apa adanya (skala sampai 20; K51-3) |
+| `PREMIUM` | angka desimal | NUMBER(38,8) | Premium RNM `.Premium` = Premium mata uang × % / 100 |
+| `RI_COMMISION` | angka desimal | NUMBER(38,8) | Deduction `.RICommision` = Commision × % / 100 |
+| `DEDUCTION2` | angka desimal | NUMBER(38,8) | Deduction 2 `.Deduction2` = Deduction2 × % / 100 (4 desimal) |
+| `BROKERAGE_FEE` | angka desimal | NUMBER(38,8) | Total Brokerage Fee `.BrokerageFee` × % / 100 |
+| `PPH` | angka desimal | NUMBER(38,8) | `.PPh` × % / 100 |
+| `PPN` | angka desimal | NUMBER(38,8) | `.PPN` × % / 100 |
+| `DISCOUNT` | angka desimal | NUMBER(38,8) | Discount `.Discount` (NB: 0) |
+| `PAYMENT_TOTAL` | angka desimal | NUMBER(38,8) | Total Payment `.PaymentTotal` = Net Premium × % / 100 |
+
 ## T_CEDINGCEDANTLIST
 
 Tiket 49 (tab Inw Fac Cedant Panels) — **dibuat utuh** modul ini, migrasi `199_cedant.sql` (+ `SEQ_T_CEDINGCEDANTLIST`,
@@ -200,6 +272,190 @@ Data-Quotation). Satu baris per cedant, urut grid; diganti utuh tiap Save tab Ce
 | `CEDING_CO` | teks | VARCHAR2(50) | kode `AGENT.ID` — `.CedingCedantList(n).CedingCo` (Choose Ceding) |
 | `CEDING_CO_NAME` | teks | VARCHAR2(500) | nama — `.CedingCedantList(n).CedingCoName` |
 | `SHARE_CEDING` | angka desimal | NUMBER(38,8) | % Share cedant — `.CedingCedantList(n).ShareCeding`, 0–100 |
+
+## T_SCORINGRISK
+
+Tiket 54 (tab Scoring Risk) — **dibuat utuh** modul ini, migrasi `205_scoring_risk.sql` (+ `SEQ_T_SCORINGRISK`). Tabel
+RANCANGAN (jalur `ScoringRisk`, induk `T_GENERAL_POLIS`, kelas Data-ScoringRisk). Satu baris per kasus (UNIQUE
+`PARENT_ID`); kelima tabel Scoring Risk diganti utuh tiap Save tab Scoring Risk. GET menghitung ulang dari masukan tersimpan
+(kolom hasil di bawah = hasil hitung saat Save, untuk laporan / tahap lain).
+
+| Kolom | Tipe | Tipe DDL (migrasi 205) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_SCORINGRISK` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan (diisi loader) |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan (diisi loader) |
+| `PARENT_ID` | teks | VARCHAR2(32) NOT NULL | = `T_GENERAL_POLIS.ID` (FK, UNIQUE) |
+| `FINAL_SCORE` | angka desimal | NUMBER(38,8) | `.FinalScore` — Score Top Risk, atau rata-rata dua kolom 2 desimal |
+| `NOTE_FINAL_SCORE` | teks | VARCHAR2(500) | `.NoteFinalScore` — "Good" / "Above Average" / "Average" / "Below Average" / "Poor" |
+| `STATUS` | teks | VARCHAR2(50) | `.Status` — "New Business" (ID kasus memuat "NB") / "Renewal" |
+
+## T_SCORINGRESULT
+
+Tiket 54 — **dibuat utuh**, migrasi 205 (+ `SEQ_T_SCORINGRESULT`). Jalur `ScoringRisk/ScoringResult`, induk
+`T_SCORINGRISK`, satu baris (UNIQUE `PARENT_ID`). Bendera = teks "true" / "false" (butir 68.1; `Activity\ScoringResult.xml`).
+
+| Kolom | Tipe | Tipe DDL (migrasi 205) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_SCORINGRESULT` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan (diisi loader) |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan (diisi loader) |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_SCORINGRISK.ID` (FK, UNIQUE) |
+| `GOOD` | teks | VARCHAR2(50) | FinalScore 86–100 |
+| `ABOVE_AVERAGE` | teks | VARCHAR2(50) | FinalScore 76–<86 |
+| `AVERAGE` | teks | VARCHAR2(50) | FinalScore 60–<76 |
+| `BELOW_AVERAGE` | teks | VARCHAR2(50) | FinalScore 30–<60 |
+| `POOR` | teks | VARCHAR2(50) | FinalScore 0–<30 |
+| `ACCEPTABLE_NOT_APPROVAL` | teks | VARCHAR2(50) | FinalScore 30–100 tanpa persetujuan |
+| `ACCEPTABLE_WITH_APPROVAL` | teks | VARCHAR2(50) | FinalScore 30–100 dengan persetujuan |
+| `NOT_ACCEPTABLE` | teks | VARCHAR2(50) | FinalScore 0–<30 |
+| `OCCUPATION` | teks | VARCHAR2(50) | "Due to" Occupation (Occupation ChechBox4 / 5) |
+| `OBJECT_CONDITIONS` | teks | VARCHAR2(500) | "Due to" Object Conditions (Class Construction 3 / 4, Building 4, Machinery 4) |
+| `LOSS_RATIO` | teks | VARCHAR2(50) | "Due to" Loss Ratio (okupasi × band loss ratio) |
+| `OTHERS` | teks | VARCHAR2(50) | "Due to" Others (Total Sum Insured ChechBox1) |
+| `OPERATIONAL_DIV_HEAD` | teks | VARCHAR2(50) | "Approval From" Operational Div. Head |
+| `OPERATIONAL_DIRECTOR` | teks | VARCHAR2(50) | "Approval From" Operational Director (TotalRNMShare dibandingkan NUMERIK) |
+| `TECHNICAL_DIRECTOR` | teks | VARCHAR2(50) | "Approval From" Technical Director (rumus Pega dijaga OperationalDirector — selalu sama) |
+| `PRESIDENT_DIRECTOR` | teks | VARCHAR2(50) | "Approval From" President Director (Occupation ChechBox5) |
+
+## T_DATASCORINGRISKLIST
+
+Tiket 54 — **dibuat utuh** + satu kolom amandemen, migrasi 205 (+ `SEQ_T_DATASCORINGRISKLIST`, indeks
+`IX_DATASCORING_PARENT`). Jalur `ScoringRisk/DataScoringRiskList`, induk `T_SCORINGRISK`: `SEQ_NO` 1 = Top Risk, 2 =
+Dominant Risk (hanya bila lokasi dominan dipilih dan ber-okupasi). Lebar teks = lebar sumbernya (pola butir 80).
+
+| Kolom | Tipe | Tipe DDL (migrasi 205) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_DATASCORINGRISKLIST` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan (diisi loader) |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan (diisi loader) |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_SCORINGRISK.ID` (FK) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | 1 Top Risk, 2 Dominant Risk |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID v4 acak (A106) |
+| `OCCUPATION_CODE` | teks | VARCHAR2(1000) | `.OccupationCode` = OccupationList(1).OccupationId lokasi (rancangan 50) |
+| `OCCUPATION_NOTE` | teks | VARCHAR2(1000) | `.OccupationNote` = OccupationList(1).OccupationName (rancangan 500) |
+| `SCORE` | angka desimal | NUMBER(38,8) | `.Score` = Σ ScorePerFactor kolom |
+| `TOP_RISK_LOCATION` | teks | VARCHAR2(4000) | `.TopRiskLocation` = RiskLocation.ASMAddress lokasi (rancangan 50) |
+| `INDEX_LOCATION` | teks | VARCHAR2(50) | `.IndexLocation` — ObjectNo lokasi Dominant Risk (amandemen tiket 54; kosong di kolom 1) |
+
+## T_SCORING_FACTOR
+
+Tiket 54 — **dibuat utuh** + satu kolom amandemen, migrasi 205 (+ `SEQ_T_SCORING_FACTOR`, indeks
+`IX_SCORING_FACTOR_PARENT`). Jalur `…/ScoringFactor` (aturan loader V-30), induk `T_DATASCORINGRISKLIST`: 24 baris per kolom,
+`SEQ_NO` = urutan `models.DaftarFaktorScoring` (urut `SetScore_Act` langkah 5).
+
+| Kolom | Tipe | Tipe DDL (migrasi 205) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_SCORING_FACTOR` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan (diisi loader) |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan (diisi loader) |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_DATASCORINGRISKLIST.ID` (FK) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | 1–24 |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID v4 acak |
+| `CHECKED` | teks | VARCHAR2(10) | `.Checked` "true" / "false" |
+| `FACTOR_GROUP` | teks | VARCHAR2(50) | nama halaman kelompok (RiskLocation / ObjectConditions / FEA / LossRatio / Others); NULL = faktor langsung |
+| `FACTOR_NAME` | teks | VARCHAR2(500) | nama halaman faktor Pega (mis. `Riot`, `Stockinthepolicycover`) |
+| `REMARKS` | teks | VARCHAR2(500) | `.Remarks` — tidak ditulis tab ini (bukan medan kontrak tiket 54) |
+| `SCORE_PER_FACTOR` | angka desimal | NUMBER(38,8) | `.ScorePerFactor` = poin opsi tercentang, 0 bila tidak |
+| `PERCENT_LOSS_RATIO` | angka desimal | NUMBER(38,8) | `.LossRatio.LossRatio.PercentLossRatio` — hanya baris faktor LossRatio (amandemen tiket 54) |
+
+## T_SCORING_OPTION
+
+Tiket 54 — **dibuat utuh**, migrasi 205 (+ `SEQ_T_SCORING_OPTION`, indeks `IX_SCORING_OPTION_PARENT`). Jalur
+`…/ScoringOption`, induk `T_SCORING_FACTOR`: satu baris per ChechBoxN (101 per kolom).
+
+| Kolom | Tipe | Tipe DDL (migrasi 205) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_SCORING_OPTION` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan (diisi loader) |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan (diisi loader) |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_SCORING_FACTOR.ID` (FK) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | = nomor opsi |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID v4 acak |
+| `CHECK_BOX` | teks | VARCHAR2(10) | `.ChechBoxN` "true" / "false"; dibaca balik sebagai `pilihan` (nomor terkecil yang "true") |
+| `OPTION_NO` | teks | VARCHAR2(50) | N |
+| `SCORE` | angka desimal | NUMBER(38,8) | `.ScoreN` = poin `ValueScoringRisk_act` bila tercentang, 0 bila tidak |
+
+## T_LOSSRECORD
+
+Tiket 55 (tab utama Loss Record, tingkat CASE) — **tabel BARU** modul ini (bukan rancangan loader; keputusan work owner
+06-10-2026 butir 4), migrasi `206_loss_record_kasus.sql` (+ `SEQ_T_LOSSRECORD`). Satu baris per kasus (UNIQUE `PARENT_ID`),
+induk `T_GENERAL_POLIS`. Diganti utuh bersama `T_LOSSRECORDLIST` tiap Save tab Loss Record. GET menghitung ulang dari
+masukan tersimpan (rasio di bawah = hasil hitung saat Save).
+
+| Kolom | Tipe | Tipe DDL (migrasi 206) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_LOSSRECORD` |
+| `PARENT_ID` | teks | VARCHAR2(32) NOT NULL | = `T_GENERAL_POLIS.ID` (FK, UNIQUE) |
+| `PREMI_PAR` | angka desimal | NUMBER(38,8) | `.OfferFacIn.PremiPAR`; bawaan bila kosong / 0 = Σ premi spread × kurs Begin date, 0 desimal |
+| `PREMI_MB` | angka desimal | NUMBER(38,8) | `.OfferFacIn.PremiMB` |
+| `PREMI_PL` | angka desimal | NUMBER(38,8) | `.OfferFacIn.PremiPL` |
+| `PREMI_OTHER` | angka desimal | NUMBER(38,8) | `.OfferFacIn.PremiOther` |
+| `LOSS_RATIO1_YEAR_PERCENT` | angka desimal | NUMBER(38,8) | `.LossRatio1YearPercent` = Y1 / Gross × 100 |
+| `LOSS_RATIO3_YEAR_PERCENT` | angka desimal | NUMBER(38,8) | `.LossRatio3YearPercent` = Y3 / (Gross × 3) × 100 |
+| `LOSS_RATIO5_YEAR_PERCENT` | angka desimal | NUMBER(38,8) | `.LossRatio5YearPercent` = Y5 / (Gross × 5) × 100 |
+| `NET_LOSS_RATIO1_YEAR` | angka desimal | NUMBER(38,8) | `.NetLossRatio1Year` = Y1 / (Gross × (1 − RI Comm/100)) × 100 |
+| `NET_LOSS_RATIO3_YEAR` | angka desimal | NUMBER(38,8) | `.NetLossRatio3Year` (× 3) |
+| `NET_LOSS_RATIO5_YEAR` | angka desimal | NUMBER(38,8) | `.NetLossRatio5Year` (× 5) |
+
+## T_LOSSRECORDLIST
+
+Tiket 55 — **tabel BARU**, migrasi 206 (+ `SEQ_T_LOSSRECORDLIST`, indeks `IX_LOSSRECORDLIST_PARENT`). Baris
+`.OfferFacIn.ListCauseOfLoss` (kelas Data-CauseOfLoss) tingkat case — BEDA dari `T_LISTCAUSEOFLOSS` (per lokasi, tiket 42).
+Induk `T_LOSSRECORD`; urut `SEQ_NO` = Date of Loss terbaru dulu (`SaveLossRecord` langkah 9).
+
+| Kolom | Tipe | Tipe DDL (migrasi 206) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_LOSSRECORDLIST` |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_LOSSRECORD.ID` (FK) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan, mulai 1 |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID v4 acak |
+| `UW_YEAR` | teks | VARCHAR2(10) | `.UWYEAR` = tahun ADD_MONTHS(Begin, −12L) jendela yang memuat DOL; kosong = di luar 5 jendela |
+| `TAHUN_KE` | angka bulat | NUMBER(5) | `.TahunKe` = L (1..5); NULL = di luar jendela |
+| `CLASS_OF_BUSINESS` | teks | VARCHAR2(4000) | `.ClassOfBusiness` = BUSINESS.NOTE (saran `GET /class-of-business/saran`) |
+| `DATE_OF_LOSS` | teks | VARCHAR2(30) | `.DOL` teks Pega DateTime pukul 12:00 WIB (pola T_LISTCAUSEOFLOSS); kosong saat isi = Begin − 1 tahun |
+| `CAUSE_OF_LOSS` | teks | VARCHAR2(500) | `.CauseOfLoss` huruf besar |
+| `CURRENCY` | teks | VARCHAR2(10) | `.Currency` huruf besar, dipangkas |
+| `LOSS_AMOUNT` | angka desimal | NUMBER(38,8) | `.LOSS_AMOUNT` |
+| `LOSS_AMOUNT_IDR` | angka desimal | NUMBER(38,8) | `.LOSS_AMOUNT_IDR` = LOSS_AMOUNT (IDR / mata uang kosong) atau × KURS_IDR; NULL = kurs tidak ada |
+| `KURS_IDR` | angka desimal | NUMBER(38,10) | `.KursIDR` = TOIDR TREATYEXCHANGEYEARLY pada Begin date (non-IDR saja) |
+
+## T_CORRESPONDENCELIST
+
+Tiket 56 (tab Correspondence) — **tabel BARU** modul ini (bukan rancangan loader; tidak ada di `DDL\`; sampel CONTOH semua
+kosong), migrasi `207_korespondensi.sql` (+ `SEQ_T_CORRESPONDENCELIST`, indeks `IX_CORRESPONDENCE_PARENT`). Baris
+`.OfferFacIn.CorrespondenceList` (kelas Data-Correspondence), induk `T_GENERAL_POLIS`, urut `SEQ_NO` = urutan Add.
+
+| Kolom | Tipe | Tipe DDL (migrasi 207) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_CORRESPONDENCELIST`; = `no` kontrak |
+| `PARENT_ID` | teks | VARCHAR2(32) NOT NULL | = `T_GENERAL_POLIS.ID` (FK) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan Add (terbesar + 1) |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID v4 acak |
+| `TANGGAL` | teks | VARCHAR2(30) | `.Date` teks Pega DateTime saat Add (kabel `DD-MM-YYYY HH:MM` WIB) |
+| `SENDER` | teks | VARCHAR2(150) | `.Sender` = M_LOGIN_GO.NAME akun yang menambah |
+| `SENDER_MAIL` | teks | VARCHAR2(254) | `.SenderMail` = M_LOGIN_GO.EMAIL akun itu (Cc + Reply-To saat kirim) |
+| `SUBJECT` | teks | VARCHAR2(1000) | `.Subject` (tanpa CR / LF) |
+| `MESSAGE` | teks | VARCHAR2(4000) | `.Message` HTML yang SUDAH dibersihkan server (CLOB dilarang penjaga inti → ≤ 4000 bita) |
+| `IS_EDITABLE` | teks | VARCHAR2(1) DEFAULT '1' NOT NULL | `.IsEditable` "1" draf / "0" terkirim (terkunci) |
+| `SENT_AT` | teks | VARCHAR2(30) | waktu kirim berhasil, teks Pega DateTime |
+| `CREATE_OP` | teks | VARCHAR2(64) | LOGIN_ID akun yang menambah |
+| `TGL_CREATE` | date | DATE | SYSDATE saat Add |
+
+## T_RECIPIENTLIST
+
+Tiket 56 — **tabel BARU**, migrasi 207 (+ `SEQ_T_RECIPIENTLIST`, indeks `IX_RECIPIENTLIST_PARENT`). Baris `.RecipientList`
+induk `T_CORRESPONDENCELIST`, diganti utuh tiap Save / Send draf.
+
+| Kolom | Tipe | Tipe DDL (migrasi 207) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_RECIPIENTLIST` |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_CORRESPONDENCELIST.ID` (FK) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan grid |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID v4 acak |
+| `RECIPIENT` | teks | VARCHAR2(150) | `.Recipient` nama (akun M_LOGIN_GO terpilih atau teks bebas) |
+| `RECIPIENT_MAIL` | teks | VARCHAR2(254) | `.RecipientMail` alamat (To saat kirim) |
+| `IS_EDITABLE` | teks | VARCHAR2(1) DEFAULT '1' NOT NULL | ikut induk ("0" sesudah terkirim) |
 
 ## T_CLAUSELIST
 
@@ -245,7 +501,7 @@ Save (W-4 / `SetLossRatio_Act`), tidak dari layar.
 | `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
 | `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
 | `PARENT_ID` | teks | VARCHAR2(32) NOT NULL | = `T_GENERAL_POLIS.ID` (butir 76.1; FK) |
-| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan baris grid, mulai 1 |
+| `SEQ_NO` | angka bulat | NUMBER(10) NOT NULL | urutan objek 1..n — NUMBER(5) di 186, diperlebar migrasi 257 (tiket 75: 1 juta lokasi) |
 | `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID (aplikasi v4, A106) |
 | `LOSS_RATIO1_YEAR_AMOUNT` | angka desimal | NUMBER(38,8) | LR 1 Year = ΣClaim/ΣAmount (≤ 365 hari), 8 desimal (A148) — **uang** |
 | `LOSS_RATIO1_YEAR_PERCENT` | teks | VARCHAR2(50) | %LR 1 Years = ΣClaim·100/ΣAmount (8 desimal, A148), teks desimal |
@@ -409,7 +665,7 @@ medan kontrak ADA di rancangan — tanpa kolom baru. Medan uang / rate / persen 
 | `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
 | `COVERAGE` | teks | VARCHAR2(50) | `.Coverage` — ID coverage (`COVERAGE.ID`) |
 | `OLDID` | teks | VARCHAR2(50) | `.OLDID` — kode tampil |
-| `COVERAGE_NOTE` | teks | VARCHAR2(500) | `.CoverageNote` — nama coverage |
+| `COVERAGE_NOTE` | teks | VARCHAR2(4000) | `.CoverageNote` — nama coverage (= COVERAGE.NAME 4000; 500 rancangan, dilebarkan migrasi 251) |
 | `COVERAGE_BASIS` | teks | VARCHAR2(50) | `.CoverageBasis` — 1..4 (5 Layering ditolak 400, tahap C2–C4) |
 | `DAY` | teks | VARCHAR2(50) | `.Day` |
 | `TSI` | angka desimal | NUMBER(38,8) | **uang** — server: = `TSI_OBJECT_ITEM` item |
@@ -436,8 +692,159 @@ medan kontrak ADA di rancangan — tanpa kolom baru. Medan uang / rate / persen 
 | `UNIT` | teks | VARCHAR2(50) | tiket 46 (migrasi 195 `ALTER ADD`) — `.Unit` Indemnity Unit, kode apa adanya |
 | `ACCUMULATION_CODE` | teks | VARCHAR2(50) | tiket 46 (195) — `.AccumulationCode` (Choose / Copy Accumulation) |
 | `ACCUMULATION_DESCRIPTION` | teks | VARCHAR2(500) | tiket 46 (195) — `.AccumulationDescription` = Accumulation Address |
+| `ZONE` | teks | VARCHAR2(4000) | tiket 52 (203 VARCHAR2(1000), dilebarkan 204) — `.Zone` = `ZONES.DESCRIPTION` terpilih; rancangan VARCHAR2(50); 203 memakai lebar `ZONEOJK.DESCRIPTION` (sampel `DDL\CONTOH` sampai 111 byte), tetapi Zone di DEV > 1000 byte → 4000 (perintah work owner 06-10-2026) |
+| `CONSTRUCTION_EARTHQUAKE` | teks | VARCHAR2(500) | tiket 52 (203) — `.ConstructionEarthquake` 4.2 Construction = `CONSTRUCTION.CONSTRUCTION`; TIDAK di rancangan (amandemen loader); lebar = kolom konstruksi saudaranya, lebar sumber belum terverifikasi |
 | `TSI_NUSANTARA_RE` | angka desimal | NUMBER(38,8) | tiket 48 (198) — `.TSINusantaraRe` = PercentShare × TSILiability / 100 (CountPremiAndTSIRNMFireMBU_ACT langkah 6) |
 | `PREMI_NUSANTARA_RE` | angka desimal | NUMBER(38,8) | tiket 48 (198) — `.PremiNusantaraRe` = PercentShare × Premium / 100 − PercentShare × Discount / 100 |
+| `CALCULATE_METHOD` | teks | VARCHAR2(50) | tiket 73 P2 (214) — `.CalculateMethod` coverage Aneka |
+| `CALCULATE_METHOD_FAC_IN` | teks | VARCHAR2(50) | tiket 73 P2 (214) — `.CalculateMethod_FacIn` |
+| `PCT_SHORT_PERIOD` | angka desimal | NUMBER(38,8) | tiket 73 P2 (214) — `.PctShortPeriod` (K73-6; rancangan VARCHAR2(30)) |
+| `LOADING` | angka desimal | NUMBER(38,8) | tiket 73 P2 (214) — `.Loading` |
+| `SUB_LIMIT_NOTE` | teks | VARCHAR2(500) | tiket 73 P2 (214) — `.SubLimitNote` |
+| `MIN_PREMIUM` | angka desimal | NUMBER(38,8) | tiket 73 P2 (214) — **uang**, `.MinPremium` |
+| `TYPE_OF_DISCOUNT` | teks | VARCHAR2(10) | tiket 73 P2 (214) — `.TypeOfDiscount` teks apa adanya (sampel "true" 95/95; kolomTeksMenyimpang butir 68.1) |
+| `IS_OLD_DATA` | teks | VARCHAR2(10) | tiket 73 P2 (214) — `.IsOldData` |
+| `COVERAGE_INITIAL` | teks | VARCHAR2(500) | tiket 74 P2 (256 `ALTER ADD`) — `.CoverageInitial` coverage cargo |
+
+## T_ANEKALIST
+
+Tiket 73 P1 — migrasi 214. Objek keluarga Aneka (form `NB FacIn\Section\InputDtlObjectAneka_FacIn.xml`, kontainer C1–C9). Rancangan 27 kolom (tanpa penunjuk IDX_* milik loader) + kolom form **baru** (amandemen loader `amandemenAneka`). Induk **jamak**: okupasi Aneka (`T_OCCUPATIONLIST` ber-`PARENT_TABLE` `T_RISKLOCATION`) atau Golf (`T_RISKLOCATION`); `PARENT_ID` tanpa FK, indeks `IX_T_ANEKALIST_PARENT (PARENT_TABLE, PARENT_ID)`.
+
+| Kolom | Tipe | Tipe DDL (migrasi 214) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_ANEKALIST` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_OCCUPATIONLIST.ID` (non-Golf) atau `T_RISKLOCATION.ID` (Golf); tanpa FK (induk jamak) |
+| `PARENT_TABLE` | teks | VARCHAR2(30) | `T_OCCUPATIONLIST` / `T_RISKLOCATION` |
+| `SRC_PATH` | teks | VARCHAR2(200) | `LocationList/Property/RiskLocation/OccupationList/AnekaList` / `LocationList/Property/RiskLocation/AnekaList` |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan objek 1..n |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
+| `BUILT_IN` | teks | VARCHAR2(50) | `.BuiltIn` Place of Manufacture (C2) |
+| `DRAFT_WORDING_ID` | teks | VARCHAR2(50) | `.DraftWordingID` (C1, `IsBonding`) |
+| `END_DATE` | teks | VARCHAR2(30) | `.END_DATE` (C1) |
+| `FLAG` | teks | VARCHAR2(1000) | `.Flag` (C2; SHIP.FLAGNAME, lebar sumber) |
+| `GEOGRAPHICAL_LIMITS` | teks | VARCHAR2(50) | `.GeographicalLimits` (C7) |
+| `IS_OLD_DATA` | teks | VARCHAR2(10) | `.IsOldData` |
+| `LOCATION_ID` | teks | VARCHAR2(50) | `.LocationID` (turunan rancangan) |
+| `OBJECT_NAME` | teks | VARCHAR2(4000) | `.ObjectName`; HE = SetObjectDescHE_DT; lebar 4000 (SHIP.NAME 1000 + sambungan HE) |
+| `OCCUPATION_ID` | teks | VARCHAR2(1000) | `.OccupationID`; lebar = 189 |
+| `QUANTITY` | teks | VARCHAR2(50) | `.Quantity` (C3 / C5 / C9) |
+| `START_DATE` | teks | VARCHAR2(30) | `.START_DATE` (C1) |
+| `SECTION` | teks | VARCHAR2(50) | `.Section` 1..4 (`DDL\Section.xml`) |
+| `SELECTED_LOCATION_ADDRESS` | teks | VARCHAR2(50) | `.SelectedLocationAddress` (rancangan) |
+| `SELECTED_OBJECT_ITEM` | teks | VARCHAR2(50) | `.SelectedObjectItem` (rancangan) |
+| `SERIAL_NO` | teks | VARCHAR2(50) | `.SerialNo` (C4) |
+| `TSI` | angka desimal | NUMBER(38,8) | **uang** — `.TSI` |
+| `UNIT_QUANTITY` | teks | VARCHAR2(50) | `.UnitQuantity` (C5) |
+| `YEAR` | teks | VARCHAR2(50) | `.Year` (C2 / C5 / C7 / C8 / C9) |
+| `CURRENCY_CODE` | teks | VARCHAR2(10) DEFAULT 'UNKNOWN' NOT NULL | = `.Currency.Name` objek (K-069 / K-012) |
+| `NO_KONTRAK` | teks | VARCHAR2(50) | **baru** — `.NO_KONTRAK` (C1) |
+| `NO_KTP` | teks | VARCHAR2(50) | **baru** — `.NO_KTP` (C1) |
+| `NO_NPWP` | teks | VARCHAR2(50) | **baru** — `.NO_NPWP` (C1) |
+| `OTHERS` | teks | VARCHAR2(500) | **baru** — `.Others` (C1, blok Briguna luar) |
+| `INVOICE_NO` | teks | VARCHAR2(50) | **baru** — `.InvoiceNo` (C3) |
+| `MAINTENANCE_PERIOD` | angka desimal | NUMBER(38,8) | **baru** — `.MaintenancePeriod` (C1 / C4, `IsEngineering`; K73-6) |
+| `NO_OF_TREE` | angka desimal | NUMBER(38,8) | **baru** — `.NoOfTree` (C8; K73-6) |
+| `AREA_HECTAR` | angka desimal | NUMBER(38,8) | **baru** — `.AreaHectar` (C8; K73-6) |
+| `LIMIT_IDEMNITY_DAY` | angka desimal | NUMBER(38,8) | **baru** — `.LimitIdemnityDay` (C9; K73-6) |
+| `LIMIT_IDEMNITY_MONTH` | angka desimal | NUMBER(38,8) | **baru** — `.LimitIdemnityMonth` (C9; K73-6) |
+| `LIMIT_OF_LIABILITY` | angka desimal | NUMBER(38,8) | **baru**, **uang** — `.LimitOfLiability` (grid okupasi) |
+| `TSI_OLD` | angka desimal | NUMBER(38,8) | **baru**, **uang** — `.TSIOld` (grid Golf); ditulis aplikasi (loader V-28b) |
+| `FLAG_DELETE` | teks | VARCHAR2(10) | **baru** — `.FlagDelete` (ADR-0031) |
+| `ALM_RISK_ID` | teks | VARCHAR2(100) | **baru** — `.AlmRiskID` (lookup kapal = SHIP.ID) |
+| `LOAN_ACCOUNT_NUMBER` | teks | VARCHAR2(50) | **baru** — Briguna `.LoanAccountNumber` (K73-7) |
+| `LOAN_NAME` | teks | VARCHAR2(500) | **baru** — Briguna `.LoanName` |
+| `JOB` | teks | VARCHAR2(500) | **baru** — Briguna `.Job` |
+| `DEPOSIT_ACCOUNT_NO` | teks | VARCHAR2(50) | **baru** — Briguna `.DepositAccountNo` |
+| `ID_CARD_NO` | teks | VARCHAR2(50) | **baru** — Briguna `.IDCardNo` |
+| `INSTITUTION` | teks | VARCHAR2(500) | **baru** — Briguna `.Institution` |
+| `LOAN_TYPE` | teks | VARCHAR2(50) | **baru** — Briguna `.LoanType` |
+| `DATE_OF_BIRTH` | teks | VARCHAR2(30) | **baru** — Briguna `.DateOfBirth` (teks Pega) |
+| `SALARY` | angka desimal | NUMBER(38,8) | **baru**, **uang** — Briguna `.Salary` |
+
+## T_MARINEHULL
+
+Tiket 73 P1 — migrasi 214, satu halaman per objek (`UQ_T_MARINEHULL_PARENT`). `.MarineHull` objek C2 (lookup kapal men-SET CLASSIFICATION / CONSTRUCTION / DWTRT / GRTRT / NRTRT; lebar = kolom POOLDATA.SHIP); LENGTHM / BREADTHM / DEPTHM **baru**.
+
+| Kolom | Tipe | Tipe DDL (migrasi 214) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_MARINEHULL` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_ANEKALIST.ID` (UNIQUE, FK) |
+| `CLASSIFICATION` | teks | VARCHAR2(1000) | `.CLASSIFICATION` |
+| `CONSTRUCTION` | teks | VARCHAR2(1000) | `.CONSTRUCTION` |
+| `DWTRT` | teks | VARCHAR2(1000) | `.DWTRT` |
+| `GRTRT` | teks | VARCHAR2(1000) | `.GRTRT` |
+| `NRTRT` | teks | VARCHAR2(1000) | `.NRTRT` |
+| `TYPE_OF_VESSEL` | teks | VARCHAR2(50) | `.TYPE_OF_VESSEL` |
+| `LENGTHM` | teks | VARCHAR2(50) | `.LENGTHM` |
+| `BREADTHM` | teks | VARCHAR2(50) | `.BREADTHM` |
+| `DEPTHM` | teks | VARCHAR2(50) | `.DEPTHM` |
+
+## T_AVIATIONHULL
+
+Tiket 73 P1 — migrasi 214, satu halaman per objek (`UQ_T_AVIATIONHULL_PARENT`). `.AviationHull` objek C7 — rancangan apa adanya.
+
+| Kolom | Tipe | Tipe DDL (migrasi 214) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_AVIATIONHULL` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_ANEKALIST.ID` (UNIQUE, FK) |
+| `MAX_PASSENGERS` | teks | VARCHAR2(50) | `.MAX_PASSENGERS` |
+| `PILOTS` | teks | VARCHAR2(50) | `.PILOTS` |
+| `REGISTRATION_MARKS` | teks | VARCHAR2(50) | `.REGISTRATION_MARKS` |
+| `SPECIAL_RENTAL_USES` | teks | VARCHAR2(50) | `.SPECIAL_RENTAL_USES` |
+| `SPECIAL_USES` | teks | VARCHAR2(50) | `.SPECIAL_USES` |
+| `STANDARD_USES` | teks | VARCHAR2(50) | `.STANDARD_USES` |
+
+## T_VEHICLEHE
+
+Tiket 73 P1 — migrasi 214, satu halaman per objek (`UQ_T_VEHICLEHE_PARENT`). `.VehicleHE` objek C4 / C6 — BRAND / TYPE = ID terpilih lookup merk / tipe; CHASSIS_NUMBER / ENGINE_NUMBER / OBJECT_ID_HE **baru**.
+
+| Kolom | Tipe | Tipe DDL (migrasi 214) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_VEHICLEHE` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_ANEKALIST.ID` (UNIQUE, FK) |
+| `BRAND` | teks | VARCHAR2(50) | `.BRAND` |
+| `BRAND_NAME` | teks | VARCHAR2(500) | `.BRAND_NAME` |
+| `OBJECT_NAME_HE` | teks | VARCHAR2(500) | `.OBJECT_NAME_HE` |
+| `TYPE` | teks | VARCHAR2(50) | `.TYPE` |
+| `TYPE_NAME` | teks | VARCHAR2(500) | `.TYPE_NAME` |
+| `CHASSIS_NUMBER` | teks | VARCHAR2(50) | `.CHASSIS_NUMBER` |
+| `ENGINE_NUMBER` | teks | VARCHAR2(50) | `.ENGINE_NUMBER` |
+| `OBJECT_ID_HE` | teks | VARCHAR2(50) | `.OBJECT_ID_HE` |
+
+## T_MEMORANDUMACCEPT
+
+Tiket 73 P1 — migrasi 214, satu halaman per objek (`UQ_T_MEMORANDUMACCEPT_PARENT`). `.MemorandumAccept` objek C1 — **tabel baru** (tidak di rancangan): SURETY_TYPE diisi server dari BusinessCode (`InputDtlObjectAneka_PreAct`), 15 medan `Section\InputDtlMemorandumAccept.xml`.
+
+| Kolom | Tipe | Tipe DDL (migrasi 214) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_MEMORANDUMACCEPT` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_ANEKALIST.ID` (UNIQUE, FK) |
+| `SURETY_TYPE` | teks | VARCHAR2(50) | `.SURETY_TYPE` |
+| `APPLICATION_NUMBER` | teks | VARCHAR2(500) | `.APPLICATION_NUMBER` |
+| `ACCUMULATION` | teks | VARCHAR2(500) | `.ACCUMULATION` |
+| `COLLATERAL` | teks | VARCHAR2(500) | `.COLLATERAL` |
+| `INSURED_SIUP` | teks | VARCHAR2(500) | `.INSURED_SIUP` |
+| `KEY_PERSON` | teks | VARCHAR2(500) | `.KEY_PERSON` |
+| `ORIGINAL_RATE` | teks | VARCHAR2(500) | `.ORIGINAL_RATE` |
+| `PRINCIPALS_OUT_GO` | teks | VARCHAR2(500) | `.PRINCIPALS_OUT_GO` |
+| `TYPE_OF_WORDING` | teks | VARCHAR2(500) | `.TYPE_OF_WORDING` |
+| `BUILDING_STATUS` | teks | VARCHAR2(4000) | `.BUILDING_STATUS` |
+| `SUPPORTING_DOCUMENT` | teks | VARCHAR2(4000) | `.SUPPORTING_DOCUMENT` |
+| `PRINCIPALS_DATA` | teks | VARCHAR2(4000) | `.PRINCIPALS_DATA` |
+| `CONCLUSIONS_PROPOSALS` | teks | VARCHAR2(4000) | `.CONCLUSIONS_PROPOSALS` |
+| `PRINCIPALS_BACKGROUND` | teks | VARCHAR2(4000) | `.PRINCIPALS_BACKGROUND` |
+| `SUMMARY_FINANCIAL` | teks | VARCHAR2(4000) | `.SUMMARY_FINANCIAL` |
+| `PRINCIPALS_GUARANTEE` | teks | VARCHAR2(4000) | `.PRINCIPALS_GUARANTEE` |
 
 ## T_SPREADINGLIST
 
@@ -538,7 +945,7 @@ Tiket 42 — migrasi 191, **utuh** (rancangan jalur `LocationList/Property/ListC
 | `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan catatan 1..n |
 | `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
 | `CLAIM` | angka desimal | NUMBER(38,8) | Total Claim (100%) — **uang** |
-| `CURRENCY` | teks | VARCHAR2(50) DEFAULT 'UNKNOWN' NOT NULL | Currency (`CURRENCY`, ≠ ITL); **wajib** (K-069 + K-012, pola A133) |
+| `CURRENCY` | teks | VARCHAR2(50) DEFAULT 'UNKNOWN' (NOT NULL di 191, boleh NULL sejak migrasi 209) | Currency (`CURRENCY`, ≠ ITL); **tidak wajib** sejak tiket 42b (keputusan work owner 07-10-2026, Pega pyRequired=false; meralat A133) - kosong = NULL, aplikasi tidak menulis 'UNKNOWN' (K-012) |
 | `DETAIL` | teks | VARCHAR2(500) | Loss Detail — dilebarkan dari rancangan 50 (A146) |
 | `REMARKS` | teks | VARCHAR2(500) | Remarks — apa adanya (`DDL\Remarks.xml`: Settled / Ex Gratia Payment / Withdraw / Others / --, dipakai frontend) |
 | `DATE_OF_LOSS` | teks | VARCHAR2(30) | **baru** — Date of Loss, teks Pega `YYYYMMDDTHHMMSS.mmm GMT` pukul 12:00 WIB (pola Begin date) |
@@ -564,7 +971,7 @@ Tiket 42 — migrasi 191, **utuh** (rancangan `.../ListCauseOfLoss/CoinsData`, s
 
 Tiket 45 — migrasi 194, **sebagian** (pola A109): rancangan jalur `.../CoverageList/DeductibleList` (lima jalur, semuanya
 berinduk `T_COVERAGELIST`) → `PARENT_ID` ber-FK ke `T_COVERAGELIST.ID`, indeks `IX_T_DEDUCTIBLELIST_PARENT`. Banyak baris
-per coverage, urut `SEQ_NO`. Tanpa kolom yang belum dipakai layar (`FLAG_CURRENCY` R-3, `DESCRIPTIONS`, `BASIS_TYPE`,
+per coverage, urut `SEQ_NO`. Tanpa kolom yang belum dipakai layar (`FLAG_CURRENCY` R-3, `DESCRIPTIONS` - ditambah 256 tiket 74, `BASIS_TYPE`,
 `CLAIM_CATEGORY`, `DEDUCTIBLE_TYPE`, `TYPE`, `VALUE`, `COVERAGE`, kolom turunan `*_ID`).
 
 | Kolom | Tipe | Tipe DDL (migrasi 194) | Isi |
@@ -587,6 +994,312 @@ per coverage, urut `SEQ_NO`. Tanpa kolom yang belum dipakai layar (`FLAG_CURRENC
 | `TIME_EXCESS` | teks | VARCHAR2(30) | Time Excess (hari) — teks desimal (A171) |
 | `TYPE_DEDUCTIBLE` | angka bulat | NUMBER(5) | kode pyStandardValue 0–7 (`DDL\TypeDeductible.xml`, A170) |
 | `TYPE_DEDUCTIBLE2` | angka bulat | NUMBER(5) | kode (`DDL\TypeDeductible2.xml`, bila MinMax 3) |
+| `DESCRIPTIONS` | teks | VARCHAR2(4000) | tiket 74 P2 (256 `ALTER ADD`) — `.Descriptions` deskripsi deductible coverage cargo (pxTextArea) |
+
+## T_CARGOLIST
+
+Tiket 74 P1 — migrasi 256: grid `.OfferFacIn.CargoList` MARINE CARGO (rancangan 22 kolom + 4 baru). Satu baris per cargo, urut `SEQ_NO`.
+
+| Kolom | Tipe | Tipe DDL (migrasi 256) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_CARGOLIST` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | teks | VARCHAR2(32) NOT NULL | = `T_GENERAL_POLIS.ID` (FK) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan baris 1..n |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
+| `BL_NUMBER` | teks | VARCHAR2(4000) | `.PolicyData.BLNumber` "No BL" (pxTextArea; rancangan VARCHAR2(50)) |
+| `CONVEYANCE_ID` | teks | VARCHAR2(50) | `.ConveyanceID` (BrowseConveyance_RD .ID) |
+| `CONVEYANCE_NAME` | teks | VARCHAR2(500) | server — `.ConveyanceName` = Description master (ProtectObjectMarine) |
+| `CONVEYANCE_NOTE` | teks | VARCHAR2(500) | server — `.ConveyanceNote` = Description master |
+| `FLAG_OLD_DATA` | teks | VARCHAR2(10) | `.FlagOldData` rancangan |
+| `FROM_RUTE` | teks | VARCHAR2(50) | `.FromRute` |
+| `GOOD_ID` | teks | VARCHAR2(50) | `.GoodID` (BrowseGoodsType .ID) |
+| `GOOD_NOTE` | teks | VARCHAR2(500) | server — `.GoodNote` = Description master |
+| `INVOICE_NUMBER` | teks | VARCHAR2(50) | `.PolicyData.InvoiceNumber` |
+| `IS_TOP_RISK` | teks | VARCHAR2(10) | `.IsTopRisk` teks "true" / "false" |
+| `PACKING_ID` | teks | VARCHAR2(50) | `.PackingID` (BrowsePacking_RD .ID) |
+| `PACKING_NOTE` | teks | VARCHAR2(500) | server — `.PackingNote` = Description master |
+| `SAIL_DATE` | teks | VARCHAR2(30) | `.PolicyData.SailDate` teks tanggal Pega (pola START_DATE) |
+| `TO_RUTE` | teks | VARCHAR2(50) | `.ToRute` |
+| `TRADING_ID` | teks | VARCHAR2(50) | `.TradingID` (BrowseTrading_RD .ID) |
+| `TRADING_NOTE` | teks | VARCHAR2(500) | server — `.TradingNote` = Description master |
+| `INVOICE_DATE` | teks | VARCHAR2(30) | **baru** — `.PolicyData.InvoiceDate` (pola START_DATE) |
+| `MAX_AGE` | teks | VARCHAR2(50) | **baru** — `.PolicyData.MaxAge` (BrowseMaxAge_RD .ID) |
+| `MAX_AGE_DETAIL` | teks | VARCHAR2(4000) | **baru** — server, `.PolicyData.MaxAgeDetail` = `.Warranty` master |
+| `FLAG_DELETE` | teks | VARCHAR2(10) | **baru** — `.FlagDelete` (hapus lunak EDM; NB tidak menulis) |
+
+## T_SHIP
+
+Tiket 74 P1 — migrasi 256: `.PolicyData.Ship` satu halaman per cargo (`UQ_T_SHIP_PARENT`), diisi popup Select Ship (`SelectShip_act` L470-873). Lebar = POOLDATA.SHIP.
+
+| Kolom | Tipe | Tipe DDL (migrasi 256) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_SHIP` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_CARGOLIST.ID` (UNIQUE, FK) |
+| `AGE` | teks | VARCHAR2(50) | server — CountAgeShip: tahun SailDate − `.Y_MAKE1` |
+| `CONST` | teks | VARCHAR2(1000) | `.CONST` (SelectShip Construction) |
+| `DWT` | teks | VARCHAR2(1000) | `.DWT` teks, koma → titik (SelectShip) |
+| `FLAG_NAME` | teks | VARCHAR2(1000) | `.FLAG_NAME` |
+| `GRT` | teks | VARCHAR2(1000) | `.GRT` teks, koma → titik |
+| `IMO` | teks | VARCHAR2(1000) | `.Imo` |
+| `NM_SHIP` | teks | VARCHAR2(1000) | `.NM_SHIP` (SelectShip Name) |
+| `NRT` | teks | VARCHAR2(1000) | `.NRT` teks, koma → titik |
+| `REGISTER` | teks | VARCHAR2(1000) | `.REGISTER` |
+| `REMARK` | teks | VARCHAR2(1000) | `.REMARK` |
+| `SHIPTYPE_ID` | teks | VARCHAR2(1000) | `.SHIPTYPE_ID` |
+| `SHIPTYPE_NAME` | teks | VARCHAR2(1000) | `.SHIPTYPE_NAME` (= SHIP.SHIPNAME, SelectShip.xml L6439) |
+| `SHIP_REF_ID` | teks | VARCHAR2(100) | `.Ship.ID` (= SHIP.ID) |
+| `Y_MAKE1` | teks | VARCHAR2(1000) | `.Y_MAKE1` |
+| `Y_MAKE2` | teks | VARCHAR2(1000) | `.Y_MAKE2` |
+| `FORMER_SHIP_NAME` | teks | VARCHAR2(1000) | **baru** — `.FormerShipName` |
+| `CLASSIFICATION` | teks | VARCHAR2(1000) | **baru** — `.Classification` |
+| `REBUILT` | teks | VARCHAR2(1000) | **baru** — `.Rebuilt` |
+
+## T_LC
+
+Tiket 74 P1 — migrasi 256: `.PolicyData.LC` satu halaman per cargo (`UQ_T_LC_PARENT`).
+
+| Kolom | Tipe | Tipe DDL (migrasi 256) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_LC` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_CARGOLIST.ID` (UNIQUE, FK) |
+| `LC` | teks | VARCHAR2(50) | `.LC` cekbox "LC Status" teks "true" / "false" |
+| `LCBANK` | teks | VARCHAR2(500) | **baru** — `.LCBANK` |
+| `LC_NUMBER` | teks | VARCHAR2(500) | **baru** — `.LCNumber` |
+| `LC_CONDITION` | teks | VARCHAR2(500) | **baru** — `.LCCondition` |
+| `LC_REMARK` | teks | VARCHAR2(500) | **baru** — `.LCRemark` |
+| `LC_END_DATE` | teks | VARCHAR2(30) | **baru** — `.LCEndDate` "LC Expired Date" (pola START_DATE) |
+
+## T_SURVEYAGENT
+
+Tiket 74 P1 — migrasi 256 (**baru**, K74-6 per cargo): `.PolicyData.SurveyAgent` satu halaman per cargo (`UQ_T_SURVEYAGENT_PARENT`).
+
+| Kolom | Tipe | Tipe DDL (migrasi 256) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_SURVEYAGENT` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_CARGOLIST.ID` (UNIQUE, FK) |
+| `ASM_AGENT_ID` | teks | VARCHAR2(100) | `.ASMAgentID` (BrowseLLOYDAGENT_RD .ID) |
+| `FULL_NAME` | teks | VARCHAR2(4000) | `.pyFullName` (pxTextArea) |
+| `ADDRESS` | teks | VARCHAR2(500) | `.pyAddress` |
+| `CITY` | teks | VARCHAR2(500) | `.pyCity` |
+| `COUNTRY` | teks | VARCHAR2(500) | `.pyCountry` |
+
+## T_ADDITIONALSHIP
+
+Tiket 74 P1 — migrasi 256 (**baru**): grid `.PolicyData.Ship.AdditionalShip`, banyak baris per kapal, urut `SEQ_NO`.
+
+| Kolom | Tipe | Tipe DDL (migrasi 256) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_ADDITIONALSHIP` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_SHIP.ID` (FK) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan baris 1..n |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
+| `SHIP_REF_ID` | teks | VARCHAR2(100) | `.ID` (autocomplete Register ID) |
+| `REGISTER` | teks | VARCHAR2(1000) | `.REGISTER` |
+| `NM_SHIP` | teks | VARCHAR2(1000) | `.NM_SHIP` |
+| `VOYAGE_NO` | teks | VARCHAR2(500) | `.VOYAGE_NO` |
+| `SHIPTYPE_ID` | teks | VARCHAR2(1000) | `.SHIPTYPE_ID` |
+| `FLAG_NAME` | teks | VARCHAR2(1000) | `.FLAG_NAME` |
+| `NRT` | teks | VARCHAR2(1000) | `.NRT` |
+| `DWT` | teks | VARCHAR2(1000) | `.DWT` |
+| `GRT` | teks | VARCHAR2(1000) | `.GRT` |
+| `Y_MAKE1` | teks | VARCHAR2(1000) | `.Y_MAKE1` |
+| `CONST` | teks | VARCHAR2(1000) | `.CONST` |
+
+## T_ADDITIONALCOVERAGE
+
+Tiket 74 P2 — migrasi 256: grid Warranty Extension `.AdditionalCoverage` coverage cargo (sebagian rancangan), banyak baris per coverage.
+
+| Kolom | Tipe | Tipe DDL (migrasi 256) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_ADDITIONALCOVERAGE` |
+| `IDPEGA` | teks | VARCHAR2(50) | kolom sistem rancangan |
+| `COB_GROUP` | teks | VARCHAR2(20) | kolom sistem rancangan |
+| `PARENT_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_COVERAGELIST.ID` (FK) |
+| `SEQ_NO` | angka bulat | NUMBER(5) NOT NULL | urutan baris 1..n |
+| `ROW_UID` | teks | VARCHAR2(36) NOT NULL | UUID baris |
+| `COVERAGE` | teks | VARCHAR2(50) | `.Coverage` (BrowseMarineCondition_RD .ID) |
+| `COVERAGE_NOTE` | teks | VARCHAR2(500) | `.CoverageNote` (= ConditionName) |
+
+## T_NB_CSV_UNGGAH
+
+Tiket 75 — migrasi 257: satu pekerjaan unggah CSV objek tanpa batas (status, kemajuan, header, galat proses).
+
+| Kolom | Tipe | Tipe DDL (migrasi 257) | Isi |
+| --- | --- | --- | --- |
+| `ID` | angka bulat | NUMBER(19) NOT NULL | surrogate dari `SEQ_T_NB_CSV_UNGGAH` |
+| `CASE_ID` | teks | VARCHAR2(32) NOT NULL | ID case (T_GENERAL_POLIS.ID / T_WORK_POLIS.ID), tanpa FK |
+| `STATUS` | teks | VARCHAR2(20) NOT NULL | memvalidasi / valid / gagal_validasi / menyimpan / selesai / gagal |
+| `FASE` | teks | VARCHAR2(20) NOT NULL | validasi / simpan (Ulangi melanjutkan fase ini) |
+| `NAMA_BERKAS` | teks | VARCHAR2(500) | nama berkas bagian multipart |
+| `UKURAN` | angka bulat | NUMBER(19) | byte diterima |
+| `JUMLAH_BARIS` | angka bulat | NUMBER(10) DEFAULT 0 NOT NULL | baris data berkas |
+| `BARIS_DIPROSES` | angka bulat | NUMBER(10) DEFAULT 0 NOT NULL | baris tervalidasi |
+| `BARIS_TERSIMPAN` | angka bulat | NUMBER(10) DEFAULT 0 NOT NULL | baris tersimpan (lokasi) |
+| `KELOMPOK_TERAKHIR` | angka bulat | NUMBER(10) DEFAULT 0 NOT NULL | kelompok simpan terakhir yang COMMIT (1000 baris) |
+| `JUMLAH_GALAT` | angka bulat | NUMBER(10) DEFAULT 0 NOT NULL | jumlah galat baris |
+| `JUMLAH_PESAN` | angka bulat | NUMBER(10) DEFAULT 0 NOT NULL | jumlah pesan (KodePos …) |
+| `NO_OFFER_SLIP` | teks | VARCHAR2(4000) | header langkah 5.3 (teks CSV, D1 (b)) |
+| `BEGIN_DATE` | teks | VARCHAR2(4000) | header langkah 5.3 (teks CSV dd/MM/yyyy) |
+| `END_DATE` | teks | VARCHAR2(4000) | header langkah 5.3 (teks CSV dd/MM/yyyy) |
+| `GALAT_PROSES` | teks | VARCHAR2(4000) | sebab status gagal ("gagal di baris N: …") |
+| `GALAT_DI_BARIS` | angka bulat | NUMBER(10) | baris awal kelompok yang gagal |
+| `DIBUAT_OLEH` | teks | VARCHAR2(100) | akun pengunggah |
+| `DIBUAT` | timestamp | TIMESTAMP NOT NULL | SYSTIMESTAMP saat dibuat |
+| `DIUBAH` | timestamp | TIMESTAMP NOT NULL | detak (SYSTIMESTAMP tiap langkah; basi > 15 menit = terputus) |
+| `JENIS` | teks | VARCHAR2(10) DEFAULT 'fire' NOT NULL | importer: fire / cargo (migrasi 258, tiket 74 P6; pekerjaan lama = fire) / aneka (tiket 73 P6, tanpa migrasi kolom ini) |
+| `KOLOM` | teks | VARCHAR2(4000) | judul dikenali urut berkas, dipisah ";" (migrasi 258; NULL = urutan template FIRE) |
+
+## T_NB_CSV_BARIS
+
+Tiket 75 — migrasi 257: penampung baris CSV apa adanya; satu kolom `C_<kolom>` VARCHAR2(4000) per kolom template (61, urut KolomCsvObjek); kunci (UNGGAH_ID, NO_BARIS).
+
+| Kolom | Tipe | Tipe DDL (migrasi 257) | Isi |
+| --- | --- | --- | --- |
+| `UNGGAH_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_NB_CSV_UNGGAH.ID` (FK) |
+| `NO_BARIS` | angka bulat | NUMBER(10) NOT NULL | nomor baris data 1..n |
+| `C_NO` | teks | VARCHAR2(4000) | kolom CSV `NO` apa adanya |
+| `C_NO_OFFER_SLIP` | teks | VARCHAR2(4000) | kolom CSV `NO_OFFER_SLIP` apa adanya |
+| `C_CLASS_OF_BUSINESS` | teks | VARCHAR2(4000) | kolom CSV `CLASS_OF_BUSINESS` apa adanya |
+| `C_BEGIN_DATE` | teks | VARCHAR2(4000) | kolom CSV `BEGIN_DATE` apa adanya |
+| `C_END_DATE` | teks | VARCHAR2(4000) | kolom CSV `END_DATE` apa adanya |
+| `C_INSURED_NAME` | teks | VARCHAR2(4000) | kolom CSV `INSURED_NAME` apa adanya |
+| `C_SOB_NAME` | teks | VARCHAR2(4000) | kolom CSV `SOB_NAME` apa adanya |
+| `C_CEDING_CO_NAME` | teks | VARCHAR2(4000) | kolom CSV `CEDING_CO_NAME` apa adanya |
+| `C_MARKETING_NAME` | teks | VARCHAR2(4000) | kolom CSV `MARKETING_NAME` apa adanya |
+| `C_OCCUPATION_CODE` | teks | VARCHAR2(4000) | kolom CSV `OCCUPATION_CODE` apa adanya |
+| `C_OCCUPATION_NAME` | teks | VARCHAR2(4000) | kolom CSV `OCCUPATION_NAME` apa adanya |
+| `C_CLASS_OF_CONSTRUCTION` | teks | VARCHAR2(4000) | kolom CSV `CLASS_OF_CONSTRUCTION` apa adanya |
+| `C_TYPE_ADDRESS` | teks | VARCHAR2(4000) | kolom CSV `TYPE_ADDRESS` apa adanya |
+| `C_ADDRESS` | teks | VARCHAR2(4000) | kolom CSV `ADDRESS` apa adanya |
+| `C_BUILDING_NO` | teks | VARCHAR2(4000) | kolom CSV `BUILDING_NO` apa adanya |
+| `C_POSTAL_CODE` | teks | VARCHAR2(4000) | kolom CSV `POSTAL_CODE` apa adanya |
+| `C_KELURAHAN` | teks | VARCHAR2(4000) | kolom CSV `KELURAHAN` apa adanya |
+| `C_OBJECT_TYPE` | teks | VARCHAR2(4000) | kolom CSV `OBJECT_TYPE` apa adanya |
+| `C_INTEREST` | teks | VARCHAR2(4000) | kolom CSV `INTEREST` apa adanya |
+| `C_TOP_RISK` | teks | VARCHAR2(4000) | kolom CSV `TOP_RISK` apa adanya |
+| `C_ITEM_TYPE` | teks | VARCHAR2(4000) | kolom CSV `ITEM_TYPE` apa adanya |
+| `C_ITEM_TYPE_1` | teks | VARCHAR2(4000) | kolom CSV `ITEM_TYPE_1` apa adanya |
+| `C_ITEM_TYPE_2` | teks | VARCHAR2(4000) | kolom CSV `ITEM_TYPE_2` apa adanya |
+| `C_ITEM_TYPE_3` | teks | VARCHAR2(4000) | kolom CSV `ITEM_TYPE_3` apa adanya |
+| `C_ITEM_TYPE_4` | teks | VARCHAR2(4000) | kolom CSV `ITEM_TYPE_4` apa adanya |
+| `C_ITEM_TYPE_5` | teks | VARCHAR2(4000) | kolom CSV `ITEM_TYPE_5` apa adanya |
+| `C_ITEM_TYPE_6` | teks | VARCHAR2(4000) | kolom CSV `ITEM_TYPE_6` apa adanya |
+| `C_TSI_OBJECT_ITEM` | teks | VARCHAR2(4000) | kolom CSV `TSI_OBJECT_ITEM` apa adanya |
+| `C_TSI_OBJECT_ITEM_1` | teks | VARCHAR2(4000) | kolom CSV `TSI_OBJECT_ITEM_1` apa adanya |
+| `C_TSI_OBJECT_ITEM_2` | teks | VARCHAR2(4000) | kolom CSV `TSI_OBJECT_ITEM_2` apa adanya |
+| `C_TSI_OBJECT_ITEM_3` | teks | VARCHAR2(4000) | kolom CSV `TSI_OBJECT_ITEM_3` apa adanya |
+| `C_TSI_OBJECT_ITEM_4` | teks | VARCHAR2(4000) | kolom CSV `TSI_OBJECT_ITEM_4` apa adanya |
+| `C_TSI_OBJECT_ITEM_5` | teks | VARCHAR2(4000) | kolom CSV `TSI_OBJECT_ITEM_5` apa adanya |
+| `C_TSI_OBJECT_ITEM_6` | teks | VARCHAR2(4000) | kolom CSV `TSI_OBJECT_ITEM_6` apa adanya |
+| `C_ACCUMULATION_CODE` | teks | VARCHAR2(4000) | kolom CSV `ACCUMULATION_CODE` apa adanya |
+| `C_ACCUMULATION_NAME` | teks | VARCHAR2(4000) | kolom CSV `ACCUMULATION_NAME` apa adanya |
+| `C_ADJUSTABLE_PCT` | teks | VARCHAR2(4000) | kolom CSV `ADJUSTABLE_PCT` apa adanya |
+| `C_CURRENCY` | teks | VARCHAR2(4000) | kolom CSV `CURRENCY` apa adanya |
+| `C_INDEMNITY_MONTH` | teks | VARCHAR2(4000) | kolom CSV `INDEMNITY_MONTH` apa adanya |
+| `C_LOL` | teks | VARCHAR2(4000) | kolom CSV `LOL` apa adanya |
+| `C_RATE_FLEXAS` | teks | VARCHAR2(4000) | kolom CSV `RATE_FLEXAS` apa adanya |
+| `C_NET_RATE_FLEXAS` | teks | VARCHAR2(4000) | kolom CSV `NET_RATE_FLEXAS` apa adanya |
+| `C_DISCOUNT_RATE_FLEXAS` | teks | VARCHAR2(4000) | kolom CSV `DISCOUNT_RATE_FLEXAS` apa adanya |
+| `C_RATE_RSMDCC` | teks | VARCHAR2(4000) | kolom CSV `RATE_RSMDCC` apa adanya |
+| `C_NET_RATE_RSMDCC` | teks | VARCHAR2(4000) | kolom CSV `NET_RATE_RSMDCC` apa adanya |
+| `C_DISCOUNT_RATE_RSMDCC` | teks | VARCHAR2(4000) | kolom CSV `DISCOUNT_RATE_RSMDCC` apa adanya |
+| `C_RATE_FWTWD` | teks | VARCHAR2(4000) | kolom CSV `RATE_FWTWD` apa adanya |
+| `C_NET_RATE_FWTWD` | teks | VARCHAR2(4000) | kolom CSV `NET_RATE_FWTWD` apa adanya |
+| `C_DISCOUNT_RATE_FWTWD` | teks | VARCHAR2(4000) | kolom CSV `DISCOUNT_RATE_FWTWD` apa adanya |
+| `C_RATE_EQ` | teks | VARCHAR2(4000) | kolom CSV `RATE_EQ` apa adanya |
+| `C_NET_RATE_EQ` | teks | VARCHAR2(4000) | kolom CSV `NET_RATE_EQ` apa adanya |
+| `C_DISCOUNT_RATE_EQ` | teks | VARCHAR2(4000) | kolom CSV `DISCOUNT_RATE_EQ` apa adanya |
+| `C_RATE_OTHERS` | teks | VARCHAR2(4000) | kolom CSV `RATE_OTHERS` apa adanya |
+| `C_NET_RATE_OTHERS` | teks | VARCHAR2(4000) | kolom CSV `NET_RATE_OTHERS` apa adanya |
+| `C_DISCOUNT_RATE_OTHERS` | teks | VARCHAR2(4000) | kolom CSV `DISCOUNT_RATE_OTHERS` apa adanya |
+| `C_KODE_POS` | teks | VARCHAR2(4000) | kolom CSV `KODE_POS` apa adanya |
+| `C_KECAMATAN` | teks | VARCHAR2(4000) | kolom CSV `KECAMATAN` apa adanya |
+| `C_KABUPATEN_KOTA` | teks | VARCHAR2(4000) | kolom CSV `KABUPATEN_KOTA` apa adanya |
+| `C_PROVINSI` | teks | VARCHAR2(4000) | kolom CSV `PROVINSI` apa adanya |
+| `C_SUMBER_KODE_POS` | teks | VARCHAR2(4000) | kolom CSV `SUMBER_KODE_POS` apa adanya |
+| `C_TINGKAT_KEYAKINAN` | teks | VARCHAR2(4000) | kolom CSV `TINGKAT_KEYAKINAN` apa adanya |
+| `C_TRADING` | teks | VARCHAR2(4000) | kolom CSV cargo `TRADING` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_DEPARTURE` | teks | VARCHAR2(4000) | kolom CSV cargo `DEPARTURE` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_DESTINATION` | teks | VARCHAR2(4000) | kolom CSV cargo `DESTINATION` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_GOODS` | teks | VARCHAR2(4000) | kolom CSV cargo `GOODS` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_GOODS_NAME` | teks | VARCHAR2(4000) | kolom CSV cargo `GOODS_NAME` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_PACKING` | teks | VARCHAR2(4000) | kolom CSV cargo `PACKING` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_CONVEYENCE` | teks | VARCHAR2(4000) | kolom CSV cargo `CONVEYENCE` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_CONVEYENCE_NAME` | teks | VARCHAR2(4000) | kolom CSV cargo `CONVEYENCE_NAME` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_COVERAGE_IDX` | teks | VARCHAR2(4000) | kolom CSV cargo `COVERAGE_IDX` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_COVERAGE_NAME` | teks | VARCHAR2(4000) | kolom CSV cargo `COVERAGE_NAME` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_TSI` | teks | VARCHAR2(4000) | kolom CSV cargo `TSI` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_AGENT` | teks | VARCHAR2(4000) | kolom CSV cargo `AGENT` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_DATASHIP` | teks | VARCHAR2(4000) | kolom CSV cargo `DATASHIP` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_INVOICE` | teks | VARCHAR2(4000) | kolom CSV cargo `INVOICE` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_ETD` | teks | VARCHAR2(4000) | kolom CSV cargo `ETD` apa adanya (migrasi 258, tiket 74 P6) |
+| `C_BLNUMBER` | teks | VARCHAR2(4000) | kolom CSV cargo `BLNUMBER` apa adanya (migrasi 258, tiket 74 P6) |
+
+## T_NB_CSV_BARIS_ANEKA
+
+Tiket 73 P6 — migrasi 250 (K73-52 opsi 1): penampung baris pekerjaan unggah berjenis `aneka`; satu kolom `C_<judul>` VARCHAR2(4000) per judul yang dibaca InsertUploadAneka_act (35, urut KolomCsvAneka); kunci (UNGGAH_ID, NO_BARIS). Tabel sendiri TANPA FK: 250 berjalan sebelum 257 yang membuat T_NB_CSV_UNGGAH.
+
+| Kolom | Tipe | Tipe DDL (migrasi 250) | Isi |
+| --- | --- | --- | --- |
+| `UNGGAH_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_NB_CSV_UNGGAH.ID` (tanpa FK) |
+| `NO_BARIS` | angka bulat | NUMBER(10) NOT NULL | nomor baris data 1..n |
+| `C_NO` | teks | VARCHAR2(4000) | kolom CSV Aneka `NO` apa adanya |
+| `C_TYPE_ADDRESS` | teks | VARCHAR2(4000) | kolom CSV Aneka `TYPE_ADDRESS` apa adanya |
+| `C_ADDRESS` | teks | VARCHAR2(4000) | kolom CSV Aneka `ADDRESS` apa adanya |
+| `C_BUILDING_NO` | teks | VARCHAR2(4000) | kolom CSV Aneka `BUILDING_NO` apa adanya |
+| `C_POSTAL_CODE` | teks | VARCHAR2(4000) | kolom CSV Aneka `POSTAL_CODE` apa adanya |
+| `C_COUNTRY` | teks | VARCHAR2(4000) | kolom CSV Aneka `COUNTRY` apa adanya |
+| `C_OCCUPATION_NAME` | teks | VARCHAR2(4000) | kolom CSV Aneka `OCCUPATION_NAME` apa adanya |
+| `C_OBJECT_DESCRIPTION` | teks | VARCHAR2(4000) | kolom CSV Aneka `OBJECT_DESCRIPTION` apa adanya |
+| `C_SECTION` | teks | VARCHAR2(4000) | kolom CSV Aneka `SECTION` apa adanya |
+| `C_CURRENCY` | teks | VARCHAR2(4000) | kolom CSV Aneka `CURRENCY` apa adanya |
+| `C_TSI` | teks | VARCHAR2(4000) | kolom CSV Aneka `TSI` apa adanya |
+| `C_YEAR` | teks | VARCHAR2(4000) | kolom CSV Aneka `YEAR` apa adanya |
+| `C_PLACE_OF_MANUFACTURE` | teks | VARCHAR2(4000) | kolom CSV Aneka `PLACE_OF_MANUFACTURE` apa adanya |
+| `C_OBJECT_TYPE` | teks | VARCHAR2(4000) | kolom CSV Aneka `OBJECT_TYPE` apa adanya |
+| `C_NRT` | teks | VARCHAR2(4000) | kolom CSV Aneka `NRT` apa adanya |
+| `C_GRT` | teks | VARCHAR2(4000) | kolom CSV Aneka `GRT` apa adanya |
+| `C_DWT` | teks | VARCHAR2(4000) | kolom CSV Aneka `DWT` apa adanya |
+| `C_FLAGNAME` | teks | VARCHAR2(4000) | kolom CSV Aneka `FLAGNAME` apa adanya |
+| `C_CONSTRUCTION` | teks | VARCHAR2(4000) | kolom CSV Aneka `CONSTRUCTION` apa adanya |
+| `C_CLASSIFICATION` | teks | VARCHAR2(4000) | kolom CSV Aneka `CLASSIFICATION` apa adanya |
+| `C_COVERAGE_NAME` | teks | VARCHAR2(4000) | kolom CSV Aneka `COVERAGE_NAME` apa adanya |
+| `C_CALCULATE_METHOD` | teks | VARCHAR2(4000) | kolom CSV Aneka `CALCULATE_METHOD` apa adanya |
+| `C_DAY` | teks | VARCHAR2(4000) | kolom CSV Aneka `DAY` apa adanya |
+| `C_PCT_LOADING` | teks | VARCHAR2(4000) | kolom CSV Aneka `PCT_LOADING` apa adanya |
+| `C_PCT_SCALE` | teks | VARCHAR2(4000) | kolom CSV Aneka `PCT_SCALE` apa adanya |
+| `C_PCT_RATE` | teks | VARCHAR2(4000) | kolom CSV Aneka `PCT_RATE` apa adanya |
+| `C_PREMIUM` | teks | VARCHAR2(4000) | kolom CSV Aneka `PREMIUM` apa adanya |
+| `C_PCT_DISCOUNT` | teks | VARCHAR2(4000) | kolom CSV Aneka `PCT_DISCOUNT` apa adanya |
+| `C_DISCOUNT` | teks | VARCHAR2(4000) | kolom CSV Aneka `DISCOUNT` apa adanya |
+| `C_PCT_LOL` | teks | VARCHAR2(4000) | kolom CSV Aneka `PCT_LOL` apa adanya |
+| `C_LOL` | teks | VARCHAR2(4000) | kolom CSV Aneka `LOL` apa adanya |
+| `C_SERIALNO` | teks | VARCHAR2(4000) | kolom CSV Aneka `SERIALNO` apa adanya |
+| `C_CHASSISNUMBER` | teks | VARCHAR2(4000) | kolom CSV Aneka `CHASSISNUMBER` apa adanya |
+| `C_ENGINENUMBER` | teks | VARCHAR2(4000) | kolom CSV Aneka `ENGINENUMBER` apa adanya |
+| `C_KELURAHAN` | teks | VARCHAR2(4000) | kolom CSV Aneka `KELURAHAN` apa adanya |
+
+## T_NB_CSV_PESAN
+
+Tiket 75 — migrasi 257: galat dan pesan per baris pekerjaan unggah; kunci (UNGGAH_ID, URUT).
+
+| Kolom | Tipe | Tipe DDL (migrasi 257) | Isi |
+| --- | --- | --- | --- |
+| `UNGGAH_ID` | angka bulat | NUMBER(19) NOT NULL | = `T_NB_CSV_UNGGAH.ID` (FK) |
+| `URUT` | angka bulat | NUMBER(10) NOT NULL | urutan per pekerjaan |
+| `JENIS` | teks | VARCHAR2(10) NOT NULL | galat / pesan |
+| `NO_BARIS` | angka bulat | NUMBER(10) | nomor baris data (NULL = tingkat berkas) |
+| `TEKS` | teks | VARCHAR2(4000) NOT NULL | teks galat / pesan |
 
 ## Kolom status aktif objek master (bahan menu master)
 
@@ -720,14 +1433,18 @@ Tiket 46 (pencarian akumulasi menurut nomor polis, `RDBList\GetSummaryRiskAccumP
 Tiket 38 (saran Occupation Surrounding Risk). Tabel warisan `POOLDATA.OCCUPATION`, **baca saja**. Sumber tipe
 `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\OCCUPATION.txt`; kelas → tabel `[terverifikasi]`
 `RDBList\SearchOccupationIDSQL.xml` (kelas `ASM-FW-GISFW-INT-OCCUPATION`, `FROM OCCUPATION`). RD
-`BrowseOccupationFacInFIRE_RD`. Hanya empat kolom di bawah yang dibaca.
+`BrowseOccupationFacInFIRE_RD`. Hanya tujuh kolom di bawah yang dibaca (tiga terakhir: rate FLEXAS tiket 52,
+`RDBList\RateFlexas_Sql.xml`).
 
 | Kolom | Tipe DDL | Dibaca untuk |
 | --- | --- | --- |
 | `OLDID` | VARCHAR2(1000) | nilai saran (`.OldID`) → `T_SURROUNDINGRISK.*_OCCUPATION`; dicari; urutan kedua |
 | `NAME` | VARCHAR2(1000) | nama (`.Name`) → `*_NOTE` di layar; dicari; urutan pertama |
 | `TYPE` | VARCHAR2(1000) | saringan RD `.Type = Param.TYPE` = `'FIRE'` |
-| `KDRISKEXPOSURE` | VARCHAR2(1000) | `kdRiskExposure` → Category okupasi (`SetDataOccupation`, tiket 40) |
+| `KDRISKEXPOSURE` | VARCHAR2(1000) | `kdRiskExposure` → Category okupasi (`SetDataOccupation`, tiket 40); tiket 54 Scoring Risk Occupation "01".."05" → ChechBox1..5 (`GetRiskExposureOccupationFire`: `TYPE = 'FIRE'`, OLDID, baris pertama urut ID) |
+| `OCCUPATIONCODE` | VARCHAR2(1000) | tiket 52 FLEXAS: saringan `IN` kode `occupationIds` (`= .OccupationId` SQL asal), urutan pertama |
+| `RATELOWER` | NUMBER(20,6) | tiket 52 FLEXAS: terbesar atas okupasi objek → `.Rate`; NULL dilewati |
+| `ID` | VARCHAR2(1000) | tiket 52: urutan kedua — baris pertama per kode bila ganda (`pxResults(1)` kueri tanpa urutan, `[dugaan]`) |
 
 ## V_JN_OBJ_ITEM
 
@@ -785,3 +1502,38 @@ keputusan work owner butir 96 — RD `BrowseCoverageFacIn_RD` (`DDL\BrowseCovera
 | `TYPE` | VARCHAR2(4000 BYTE) | popup: saringan `= 'FIRE'` (peka huruf, `=` RD) |
 | `ACTIVESTATUS` | VARCHAR2(4000 BYTE) | popup: saringan `= '1'` atau kosong (D OR E RD) |
 | `BUSINESSCODE` | VARCHAR2(4000 BYTE) | popup: kolom laporan RD (ikut DISTINCT), tidak dikirim; saringan B dikirim kosong → dibuang |
+
+## ZONES
+
+Tiket 52 (autocomplete Zone form coverage FIRE, RD `BrowseZones_RD`). **View** warisan `POOLDATA.ZONES`, **baca saja**.
+Sumber `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\ZONES.txt` (view atas JSON `m_zones`; tipe kolom tidak tertulis). Kelas
+`ASM-FW-GISFW-Int-ZONES` → view `ZONES` `[dugaan]` (nama dan kolom laporan RD sama persis). Saringan RD kosong dibuang
+(`pyUseNullIfEmpty` false), tidak peka huruf (`pyCaseInsensitive` true); urut `DESCRIPTION`, `ID`; batas saran 50.
+
+| Kolom | Dibaca untuk |
+| --- | --- |
+| `ID` | `id` saran |
+| `DESCRIPTION` | `label` saran → `.Zone`; medan cari `q` (Contains) |
+| `OLDID` | saringan I `= oldId` (OLDID coverage) |
+| `ZONE` | saringan C..H: X / Y / Z (coverage 100835 / 100828 / 100817 / 100816) atau 1–6 (100829 / 100821), `SetPropertyCoverageDT_FacIn` |
+
+## CONSTRUCTION
+
+Tiket 52 (autocomplete 4.2 Construction). **View** warisan `POOLDATA.CONSTRUCTION`, **baca saja**. Sumber
+`[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\CONSTRUCTION.txt` (view atas JSON `m_construction`; tipe kolom tidak tertulis);
+`RDBList\SearchClassConstructionReas_SQL.xml` = `select distinct construction from construction order by CONSTRUCTION`.
+
+| Kolom | Dibaca untuk |
+| --- | --- |
+| `CONSTRUCTION` | `id` = `label` saran → `.ConstructionEarthquake`; DISTINCT, urut, medan cari `q` (Contains, tidak peka huruf) |
+
+## ZONEOJK
+
+Tiket 52 (rate 4.2 PRGBI, `CountPremiRate_ACT` + `RateEarthquake_Sql`). **Tabel** warisan `POOLDATA.ZONEOJK`, **baca saja**.
+Sumber tipe `[terverifikasi]`: DDL `D:\migrasi\RNM\DDL\ZONEOJK.txt`.
+
+| Kolom | Tipe DDL | Dibaca untuk |
+| --- | --- | --- |
+| `DESCRIPTION` | VARCHAR2(1000) | saringan `= .Zone` (persis, peka huruf seperti SQL asal) |
+| `RATE` | NUMBER(20,3) | → `.Rate` (‰ Gross Rate) coverage OLDID "4.2 PRGBI" bila `callAct` "rate"; tanpa baris / NULL → Rate tetap |
+| `ID` | VARCHAR2(20) | urutan saja — baris pertama bila DESCRIPTION ganda (`pxResults(1)` kueri tanpa urutan, `[dugaan]`) |

@@ -117,6 +117,8 @@ terurai, bukan menebak; pemisah desimal yang dipakai view belum diketahui — pe
 
 ### `RATE_LIFE` — **VIEW**, 8 kolom — dilengkapi 26 September 2026 malam
 
+> ⚠️ **10-10-2026 (keputusan work owner)**: view ini **dibuang di DEV** (ORA-00942). `M_RATE_LIFE` kini tabel FLAT 8 kolom tanpa JSONDATA (ID VARCHAR2(10) NOT NULL, IDUSEDBY 10, USEDBY 500, TYPE 100, GENDER 10, CONTRACT 10, AGE 10, RATE 50 - ALL_TAB_COLUMNS DEV). Pembaca Claim Life membaca `M_RATE_LIFE`. Isi di bawah = riwayat.
+
 > Ralat: catatan sebelumnya menyebutnya "tabel, enam kolom pertama terbaca". Ia **view** atas
 > `M_RATE_LIFE` *(`ID VARCHAR2(10)`, `JSONDATA CLOB`)*: `SELECT a.ID, a.JSONDATA.IDUSEDBY,
 > a.JSONDATA.USEDBY, a.JSONDATA.TYPE, a.JSONDATA.GENDER, a.JSONDATA.CONTRACT, a.JSONDATA.AGE,

@@ -11,6 +11,10 @@
 /* --------------------------------------------------------------- kulit */
 
 .komiteclaimprop .komiteclaimprop__akar {
+  /* ikon lampiran: unggah hijau / lihat toska (salinan token tab lampiran Claim Prop) */
+  --kcp-unggah: #3bb273;
+  --kcp-lihat: #12b5c6;
+  --kcp-ikon-teks: #ffffff;
   --kcp-latar-tepi: #cfd7e5;
   --kcp-latar-atas: #f9fafd;
   --kcp-latar-bawah: #e4e9f3;
@@ -63,6 +67,9 @@
 }
 
 :root[data-theme="dark"] .komiteclaimprop .komiteclaimprop__akar {
+  --kcp-unggah: #2f8f5c;
+  --kcp-lihat: #0e8f9c;
+  --kcp-ikon-teks: #f2fbf6;
   --kcp-latar-tepi: #323b50;
   --kcp-latar-atas: #222a3b;
   --kcp-latar-bawah: #161b27;
@@ -658,4 +665,61 @@
   font-size: 12.5px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* Lampiran klaim induk (perintah work owner 11-10-2026), susunan tab lampiran Claim Prop: tombol kanan, kolom ikon
+   Upload File (nonaktif di komite) / View File, popup penampil. */
+/* Panel di paling bawah layar, di luar grid tata letak (perintah work owner 11-10-2026). */
+.komiteclaimprop .komiteclaimprop__lampiran {
+  margin-top: 16px;
+}
+
+.komiteclaimprop .komiteclaimprop__lampiran-aksi {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 4px 0 8px;
+}
+
+.komiteclaimprop .komiteclaimprop__grid-alat {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.komiteclaimprop .komiteclaimprop__kolom-ikon {
+  width: 140px;
+  text-align: center;
+}
+
+.komiteclaimprop .komiteclaimprop__akar .komiteclaimprop__ikon-lampiran {
+  width: 40px;
+  padding: 0;
+  color: var(--kcp-ikon-teks);
+}
+
+.komiteclaimprop .komiteclaimprop__ikon-lampiran--unggah,
+.komiteclaimprop .komiteclaimprop__ikon-lampiran--unggah:hover:not(:disabled) {
+  background: var(--kcp-unggah);
+}
+
+.komiteclaimprop .komiteclaimprop__ikon-lampiran--lihat,
+.komiteclaimprop .komiteclaimprop__ikon-lampiran--lihat:hover:not(:disabled) {
+  background: var(--kcp-lihat);
+}
+
+.komiteclaimprop .komiteclaimprop__penampil-bingkai {
+  display: block;
+  width: 100%;
+  height: 75vh;
+  border: 0;
+}
+
+.komiteclaimprop .komiteclaimprop__penampil-gambar {
+  display: block;
+  max-width: 100%;
+  max-height: 75vh;
+  margin: 0 auto;
 }

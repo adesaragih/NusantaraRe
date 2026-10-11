@@ -16,6 +16,7 @@ type BarisCedant struct {
 // CedingCoName bila daftar kosong).
 type KasusCedant struct {
 	SobName, ShareCedantType, FlagOnGoingPolicy string
+	ShareOfCeding                               string // T_QUOTATIONDATA.SHARE_OF_CEDING apa adanya
 	Cedant, CedingUmum                          []BarisCedant
 }
 

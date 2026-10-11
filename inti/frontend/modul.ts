@@ -96,24 +96,20 @@ export interface MenuModul<H extends string = HalamanTerdaftar> {
    * yang ia pegang), ditampilkan di Beranda. Tanpa penyedia ini klik di Beranda membuka halaman awal modul.
    */
   daftarBeranda?: (workbasket: string | null) => Promise<DaftarBeranda>
-}
-
-/**
- * Bentuk ekspor `PENDAFTARAN_LAYAR` di `modul/<nama>/frontend/layar.ts` - modul TANPA MENU (perintah work owner
- * 09-10-2026: menu Komite Claim Prop / Non Prop / Life / FacIn dihapus, "anggap menu itu tidak pernah ada" - komite
- * digabung ke menu klaim masing-masing). Modul ini tidak punya baris `M_NAV_MENU`, tombol sidebar, maupun entri palet:
- * ia dipasang hanya bagi pemegang menu modul peminjamnya (`MODUL_DIPINJAM` frontend/App.tsx) dan dibuka DI TEMPAT lewat
- * `PropsRute.onBukaModul`. Sebuah folder modul punya `menu.ts` ATAU `layar.ts`, tidak keduanya.
- */
-export interface LayarModul<H extends string = HalamanTerdaftar> {
-  /** Nama modul backend - SAMA dengan nama folder dan `const Nama` Go. */
-  nama: string
-  /** Nama modul - nama folder korpus VERBATIM (judul jendela berkas), bukan label menu. */
-  kelompok: string
-  /** Seluruh halaman modul ini. */
-  halaman: readonly H[]
-  /** Halaman yang dibuka `onBukaModul` / `onLihatBerkas` (berkasnya lewat `bukaKasus`). */
-  halamanAwal: H
+  /**
+   * Opsional dan aditif (09-10-2026, work owner "View Policy dibuatin di menu baru. dibawah menu home"): tombol sidebar
+   * TAMBAHAN yang berdiri di bawah Beranda, di luar golongan - mis. menu View Policy milik NB FacIn. Tampil hanya bila tombol
+   * modul pemiliknya tampil untuk akun itu (baris M_NAV_MENU dimigrasi, modul aktif, menu dipegang akun); halamannya wajib
+   * salah satu `halaman` modul. Pengecualian sadar atas "satu modul satu menu" (30-09-2026).
+   */
+  menuAtas?: readonly { label: string; halaman: H }[]
+  /**
+   * Opsional dan aditif (10-10-2026): form tambah modul ini SUDAH berupa jendela sendiri (mis. popup Add account). Rute
+   * yang dibuka `PropsRute.onBukaMenu(modul, { baru: true })` lalu dipasang TANPA bingkai jendela Shell, dan rutenya
+   * hanya merender form itu; menutup / menyimpannya memanggil `onBeranda` (menutup permintaan). Work owner 10-10-2026:
+   * "HANYA MUNCULIN INI SAJA, MENU UTAMA ACCOUNT NYA TIDAK USAH".
+   */
+  formBaruBerjendela?: boolean
 }
 
 /** Bentuk ekspor `RUTE_MODUL` di `modul/<nama>/frontend/rute.tsx`. */
@@ -165,6 +161,22 @@ export interface PropsRute<H extends string> {
    * pop up, langsung buka komitenya"). `false` = modul itu tidak dipasang bagi akun ini.
    */
   onBukaModul?: (modul: string, id: string) => boolean
+  /**
+   * Opsional dan aditif (10-10-2026): buka MENU modul lain (halaman awalnya, bukan satu berkas) di jendela di atas layar
+   * ini - layar pemanggil dan isiannya tetap. Tombol New Company Detail / New Group Business form Opportunity NB FacIn
+   * (perintah work owner "BUTTON NEW COMPANY DETAIL = ISI MENU COMPANY DETAIL, BUTTON NEW GROUP BUSINESS = ISI MENU
+   * ACCOUNT"). Berbeda dengan `onLihatBerkas`: isi menu BUKAN tampilan saja - hak menu akun (`KonteksHakMenu`) tetap
+   * berlaku. `false` = modul itu tidak dipasang bagi akun ini (menunya tidak dipegang). `opsi.baru` = langsung form tambah
+   * modul itu (`mulaiBaru`), bukan daftarnya (work owner 10-10-2026: "New Company Detail LANGSUNG MENU CREATE NYA, NEW
+   * GROUP BUSINESS JUGA LANGSUNG TAMPILAN SAAT ADD").
+   */
+  onBukaMenu?: (modul: string, opsi?: { baru?: boolean }) => boolean
+  /**
+   * Opsional dan aditif (10-10-2026): rute dipasang di jendela `onBukaMenu(modul, { baru: true })` - halaman awal modul
+   * langsung membuka form tambahnya (Create / Add) bila akun boleh mengubah (`useBolehUbah`). Rute yang tidak membacanya
+   * tetap menampilkan halaman awalnya seperti biasa.
+   */
+  mulaiBaru?: boolean
 }
 
 /** Satu modul frontend terdaftar. */
@@ -181,8 +193,10 @@ export interface ModulFrontend<H extends string> {
   antreanBeranda?: () => Promise<AntreanBeranda[]>
   /** Penyedia daftar kotak masuk Beranda (lihat `MenuModul.daftarBeranda`). */
   daftarBeranda?: (workbasket: string | null) => Promise<DaftarBeranda>
-  /** Modul tanpa menu (`layar.ts`, lihat `LayarModul`): bukan entri sidebar / palet, tanpa baris `M_NAV_MENU`. */
-  tanpaMenu?: true
+  /** Tombol sidebar di bawah Beranda (lihat `MenuModul.menuAtas`). */
+  menuAtas?: readonly { label: string; halaman: H }[]
+  /** Form tambah berupa jendela sendiri (lihat `MenuModul.formBaruBerjendela`). */
+  formBaruBerjendela?: boolean
   /**
    * Komponen rute. ⛔ Ia TETAP terpasang selama modulnya aktif, supaya
    * keadaannya (kasus yang sedang dibuka) bertahan saat pemakai pindah

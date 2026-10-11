@@ -231,7 +231,7 @@ function PopupZip({
                             <td>{b.province}</td>
                             <td>{b.nation}</td>
                             <td className="table__actions">
-                              <button type="button" className="btn btn--primary btn--sm" onClick={() => onPilih(b)}>
+                              <button type="button" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary btn--sm" onClick={() => onPilih(b)}>
                                 {T.pilih}
                               </button>
                             </td>
@@ -396,7 +396,7 @@ export default function FormTambahAkumulasi({
             required
             error={salah.zipCode}
           />
-          <button type="button" className="btn btn--ghost" aria-haspopup="dialog" onClick={() => setPanelZip(true)}>
+          <button type="button" className="btn nbf-tema__tombol btn--ghost" aria-haspopup="dialog" onClick={() => setPanelZip(true)}>
             {T.pilihZip.label}
           </button>
         </div>
@@ -434,10 +434,10 @@ export default function FormTambahAkumulasi({
       </div>
       <Gagal galat={galat} />
       <div className="nbf-akum__kaki">
-        <button type="button" className="btn btn--ghost" onClick={onTutup}>
+        <button type="button" className="btn nbf-tema__tombol btn--ghost" onClick={onTutup}>
           {T.tutup.label}
         </button>
-        <button type="submit" className="btn btn--primary" disabled={menyimpan}>
+        <button type="submit" className="btn nbf-tema__tombol nbf-tema__tombol--utama btn--primary" disabled={menyimpan}>
           {menyimpan ? TEKS.menyimpan : T.simpan.label}
         </button>
       </div>

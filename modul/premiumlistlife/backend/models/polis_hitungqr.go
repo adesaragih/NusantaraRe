@@ -36,6 +36,13 @@ import (
 	"nusantarare/inti/backend/utils"
 )
 
+// Kolom retro peserta (migrasi 052). ⚠️ RETROCEDED_SHARE BUKAN `RetrocadedShare`
+// (ejaan lain, medan spreading per lapisan - lihat models/polis_detail.go).
+const (
+	KolomSumAtRiskRetro  = "SUM_AT_RISK_RETRO"
+	KolomRetrocededShare = "RETROCEDED_SHARE"
+)
+
 // TipeHitungQR - satu-satunya Type yang kolom pesertanya dihitung.
 const TipeHitungQR = "QR"
 
@@ -48,6 +55,8 @@ func HitungPesertaPerTipe(tipe string) bool { return strings.TrimSpace(tipe) == 
 var KolomHasilHitungQR = []string{
 	"CEDING_RETENTION", "SUM_REASURED", KolomShareNusantaraRe, KolomShareNusantaraReGross,
 	"SUM_AT_RISK_GROSS", "RISK", "RATE", "GROSS_PREMIUM", "DEDUCTION", "BROKERAGE_FEE", "NET_PREMIUM",
+	// SUM_AT_RISK_RETRO dan RETROCEDED_SHARE = SUM_AT_RISK_GROSS (keputusan work owner 06-10-2026).
+	KolomSumAtRiskRetro, KolomRetrocededShare,
 }
 
 // kolomHasilQR - himpunan KolomHasilHitungQR.
@@ -106,15 +115,102 @@ type riskQR struct {
 	risk           *apd.Decimal
 }
 
+// MasterRate - master rate satu R/I Rate (`M_RATE_LIFE` per IDUSEDBY) yang sudah
+// diurai dan seragam (seluruhnya U atau seluruhnya F/M). Dipakai rate PREMI
+// dan rate RETRO (spreading) - satu pencarian, keputusan work owner 06-10-2026.
+type MasterRate struct {
+	id string
+	// gender - master rate ber-GENDER F/M; false = seluruhnya U (unisex).
+	gender bool
+	baris  []rateQR
+}
+
+// Gender menjawab apakah master ber-GENDER F/M.
+func (mr MasterRate) Gender() bool { return mr.gender }
+
+// UraiMasterRate mengurai baris `M_RATE_LIFE` satu R/I Rate dan menegakkan
+// keseragamannya. Kalimat galat ("" = sah) untuk pemanggil yang membungkusnya.
+func UraiMasterRate(id string, rate []BarisRateQR) (MasterRate, string) {
+	mr := MasterRate{id: id}
+	var u, fm int
+	for _, r := range rate {
+		g := strings.ToUpper(strings.TrimSpace(r.Gender))
+		baris := rateQR{id: strings.TrimSpace(r.ID), gender: g}
+		for _, x := range []struct {
+			teks, kolom string
+			ke          **apd.Decimal
+		}{{r.Age, "AGE", &baris.age}, {r.Contract, "CONTRACT", &baris.contract}, {r.Rate, "RATE", &baris.rate}} {
+			d, err := angkaMaster(x.teks)
+			if err != nil {
+				return MasterRate{}, fmt.Sprintf("R/I Rate %s row ID %s: %s %q is not a number", id, baris.id, x.kolom, x.teks)
+			}
+			*x.ke = d
+		}
+		switch g {
+		case "U":
+			u++
+		case "F", "M":
+			fm++
+		default:
+			return MasterRate{}, fmt.Sprintf("R/I Rate %s row ID %s: GENDER %q is not U, F or M", id, baris.id, r.Gender)
+		}
+		mr.baris = append(mr.baris, baris)
+	}
+	if len(mr.baris) == 0 {
+		return MasterRate{}, fmt.Sprintf("R/I Rate %s has no rows", id)
+	}
+	if u > 0 && fm > 0 {
+		return MasterRate{}, fmt.Sprintf("R/I Rate %s mixes unisex and gendered rows", id)
+	}
+	mr.gender = fm > 0
+	return mr, ""
+}
+
+// ProRateSah - Premium Payment Method yang dapat dipakai master ber-gender.
+func ProRateSah(proRate string) bool { return proRate == "1" || proRate == "2" || proRate == "3" }
+
+// Cari - rate untuk AGE = umur: master U → AGE + CONTRACT; master F/M → Pro Rate
+// Type 1: AGE + CONTRACT + SEX, Pro Rate Type 2/3: AGE + SEX. Mengembalikan rate
+// (bila tepat satu), cacah yang cocok, dan teks yang dicari untuk pesan.
+func (mr MasterRate) Cari(proRate string, umur int64, kontrak *apd.Decimal, sex string) (*apd.Decimal, int, string) {
+	age := apd.New(umur, 0)
+	var rate *apd.Decimal
+	var cocok int
+	for _, r := range mr.baris {
+		ok := sama(r.age, age)
+		switch {
+		case !mr.gender:
+			ok = ok && sama(r.contract, kontrak)
+		case proRate == "1":
+			ok = ok && sama(r.contract, kontrak) && r.gender == sex
+		default: // Pro Rate Type 2/3: CONTRACT tidak dicocokkan
+			ok = ok && r.gender == sex
+		}
+		if ok && r.rate != nil {
+			cocok++
+			rate = r.rate
+		}
+	}
+	dicari := fmt.Sprintf("age %d", umur)
+	if !mr.gender || proRate == "1" {
+		dicari += ", contract " + kontrak.Text('f')
+	}
+	if mr.gender {
+		dicari += ", sex " + sex
+	}
+	if cocok != 1 {
+		rate = nil
+	}
+	return rate, cocok, dicari
+}
+
 // MasterQR - parameter dan master yang siap dipakai HitungPesertaQR.
 type MasterQR struct {
 	cedingRet, cedingLimit, rnmShare, riComm, brokerage *apd.Decimal
 	riRateID, riRiskID                                  string
 	proRateType                                         string
-	// gender - master rate ber-GENDER F/M; false = seluruhnya U (unisex).
-	gender bool
-	rate   []rateQR
-	risk   []riskQR
+	rate                                                MasterRate
+	risk                                                []riskQR
 }
 
 // ctxQR - konteks aritmetika: presisi lebar, half-up.
@@ -212,39 +308,14 @@ func SiapkanMasterQR(p ParamProdukQR, plan []PlanProdukQR, rate []BarisRateQR, r
 	}
 	m.riRateID = strings.TrimSpace(pl.RIRateID)
 	m.riRiskID = strings.TrimSpace(p.RIRiskID)
-	// Master rate: urai, lalu P3 - seragam U atau seragam F/M.
-	var u, fm int
-	for _, r := range rate {
-		g := strings.ToUpper(strings.TrimSpace(r.Gender))
-		baris := rateQR{id: strings.TrimSpace(r.ID), gender: g}
-		for _, x := range []struct {
-			teks, kolom string
-			ke          **apd.Decimal
-		}{{r.Age, "AGE", &baris.age}, {r.Contract, "CONTRACT", &baris.contract}, {r.Rate, "RATE", &baris.rate}} {
-			d, err := angkaMaster(x.teks)
-			if err != nil {
-				return gagal("R/I Rate %s row ID %s: %s %q is not a number", m.riRateID, baris.id, x.kolom, x.teks)
-			}
-			*x.ke = d
-		}
-		switch g {
-		case "U":
-			u++
-		case "F", "M":
-			fm++
-		default:
-			return gagal("R/I Rate %s row ID %s: GENDER %q is not U, F or M", m.riRateID, baris.id, r.Gender)
-		}
-		m.rate = append(m.rate, baris)
+	// Master rate: urai, lalu P3 - seragam U atau seragam F/M (UraiMasterRate,
+	// dipakai juga rate retro - 06-10-2026).
+	mr, salah := UraiMasterRate(m.riRateID, rate)
+	if salah != "" {
+		return gagal("%s", salah)
 	}
-	if len(m.rate) == 0 {
-		return gagal("R/I Rate %s has no rows", m.riRateID)
-	}
-	if u > 0 && fm > 0 {
-		return gagal("R/I Rate %s mixes unisex and gendered rows", m.riRateID)
-	}
-	m.gender = fm > 0
-	if m.gender && m.proRateType != "1" && m.proRateType != "2" && m.proRateType != "3" {
+	m.rate = mr
+	if m.rate.gender && !ProRateSah(m.proRateType) {
 		return gagal("Premium Payment Method (1, 2 or 3) must be set on the policy for gendered R/I Rate %s", m.riRateID)
 	}
 	for _, r := range risk {
@@ -336,7 +407,7 @@ func hitungSatuQR(m MasterQR, b *BarisUnggah) *Penolakan {
 	}
 	kontrak := KontrakQR(periode)
 	sex := strings.ToUpper(ambil("SEX"))
-	if m.gender && sex != "F" && sex != "M" {
+	if m.rate.gender && sex != "F" && sex != "M" {
 		return tolak("SEX", fmt.Sprintf("SEX must be F or M (R/I Rate %s is gendered), found %q", m.riRateID, ambil("SEX")))
 	}
 	faktor := satu
@@ -358,32 +429,8 @@ func hitungSatuQR(m MasterQR, b *BarisUnggah) *Penolakan {
 		em = d
 	}
 
-	// 10 - RATE dari master plan, AGE = ENTRY_AGE.
-	age := apd.New(umur, 0)
-	var rate *apd.Decimal
-	var cocok int
-	for _, r := range m.rate {
-		ok := sama(r.age, age)
-		switch {
-		case !m.gender:
-			ok = ok && sama(r.contract, kontrak)
-		case m.proRateType == "1":
-			ok = ok && sama(r.contract, kontrak) && r.gender == sex
-		default: // Pro Rate Type 2/3: CONTRACT tidak dicocokkan
-			ok = ok && r.gender == sex
-		}
-		if ok && r.rate != nil {
-			cocok++
-			rate = r.rate
-		}
-	}
-	dicari := fmt.Sprintf("age %d", umur)
-	if !m.gender || m.proRateType == "1" {
-		dicari += ", contract " + kontrak.Text('f')
-	}
-	if m.gender {
-		dicari += ", sex " + sex
-	}
+	// 10 - RATE dari master plan, AGE = ENTRY_AGE (MasterRate.Cari - sama dengan rate retro).
+	rate, cocok, dicari := m.rate.Cari(m.proRateType, umur, kontrak, sex)
 	if cocok == 0 {
 		return tolak("RATE", fmt.Sprintf("No rate found for %s in R/I Rate %s", dicari, m.riRateID))
 	}
@@ -451,6 +498,13 @@ func hitungSatuQR(m MasterQR, b *BarisUnggah) *Penolakan {
 	b.Nilai[KolomShareNusantaraRe] = bulatTeks(&share, 4)
 	b.Nilai[KolomShareNusantaraReGross] = bulatTeks(&share, 4)
 	b.Nilai["SUM_AT_RISK_GROSS"] = bulatTeks(&sar, 4)
+	// 10.3.3 - SUM_AT_RISK_RETRO = RETROCEDED_SHARE = SUM_AT_RISK_GROSS (keputusan work
+	// owner 06-10-2026; Pega: SHARE × local.Risk, hanya bila produk punya Outward List).
+	b.Nilai[KolomSumAtRiskRetro] = bulatTeks(&sar, 4)
+	b.Nilai[KolomRetrocededShare] = bulatTeks(&sar, 4)
+	// Bahan spreading retro presisi penuh (keputusan work owner 06-10-2026).
+	retro := new(apd.Decimal).Set(&sar)
+	b.QR = &HasilBarisQR{Retro: retro, Umur: umur, Kontrak: kontrak, Sex: sex, EM: em, TahunPertama: tanggalSama(mulai, gvb)}
 	b.Nilai["RISK"] = riskTeks
 	b.Nilai["RATE"] = bulatTeks(rate, 4)
 	b.Nilai["GROSS_PREMIUM"] = bulatTeks(&gross, 4)

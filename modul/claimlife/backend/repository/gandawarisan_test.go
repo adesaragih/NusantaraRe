@@ -25,7 +25,7 @@ func TestSQLGandaBerurutPosisi(t *testing.T) {
 		"death":  {sqlStatusWarisanTerakhir("L", "S"), "12345"},
 		"health": {sqlAdaWarisanSamaDOL("L", "S"), "123456"},
 		"cermin": {sqlIsiTertanggungCermin("L", "S"), "12345678"},
-		"ceding": {sqlIsiCedingCermin("L", "P"), "123"},
+		"ceding": {sqlIsiCedingCermin("L", "P", "S"), "12345"},
 	} {
 		if err := db.PeriksaSQL(u.q); err != nil {
 			t.Errorf("%s: %v", nama, err)
@@ -93,12 +93,17 @@ func TestSQLIsiTertanggungCerminDariSumber(t *testing.T) {
 			t.Errorf("tanpa %q:\n%s", mau, q)
 		}
 	}
-	c := sqlIsiCedingCermin("L", "P")
-	for _, mau := range []string{"UPDATE L o", "SET CEDINGCO = (SELECT pl.CEDING_CO FROM P pl WHERE pl.NO_POLIS = :1",
-		"ORDER BY NVL(pl.PROD_KE, 0) DESC FETCH FIRST 1 ROWS ONLY", "WHERE o.ID = :2 AND o.CASEID = :3"} {
+	c := sqlIsiCedingCermin("L", "P", "S")
+	// 10-10-2026: header = baris utama T_PREMIUM_LIST ber-ID = IDPEGA baris sumber; NO_POLIS tidak dipakai.
+	for _, mau := range []string{"UPDATE L o", "SET CEDINGCO = (SELECT pl.CEDING_CO FROM P pl",
+		"WHERE pl.ID = (SELECT m.IDPEGA FROM S m", "m.PL_NUMBER = :1 AND m.CERTIFICATE_NO = :2 AND m.ID = :3 AND ROWNUM = 1)",
+		"AND pl.ID_PEGA = pl.ID)", "WHERE o.ID = :4 AND o.CASEID = :5"} {
 		if !strings.Contains(c, mau) {
 			t.Errorf("ceding tanpa %q:\n%s", mau, c)
 		}
+	}
+	if strings.Contains(c, "NO_POLIS") {
+		t.Errorf("ceding masih memakai NO_POLIS:\n%s", c)
 	}
 	if err := db.PeriksaSQL(c); err != nil {
 		t.Error(err)

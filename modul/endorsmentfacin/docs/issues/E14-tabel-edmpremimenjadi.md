@@ -20,7 +20,13 @@ satu cabang tertentu, dan di sana hanya **dua lini** yang memakai bentuk berbeda
 
 **Blocked by:** E13
 
-**Status:** blocked — 01-10-2026. Ter-block E13 (dan E12).
+**Status:** sebagian — 09-10-2026. Satu dari enam berkas rumus: `DataTransform/CountPremiEDM_DT` diport di
+`backend/services/premiedmdt.go` (`HitungPremiEDMDT`): kedua WHEN tanggal (dapat benar bersamaan; B menimpa
+A), cabang EdmType 4 / 1 / 2, 23 aksi `pyDisabled` dilewati (K-048). `@divide` (mode belum terverifikasi)
+hanya diterima bila eksak. ⛔ `[terverifikasi]` Cabang EdmType 1 DataTransform ini berjalan untuk SEMUA lini
+— temuan `K046_EdmType1_HanyaLife…` tidak berlaku di berkas ini. Kasus nyata NB-15 ditolak (tanggal polis
+lama 17:00 GMT vs baru 05:00 → n,5 hari, A09). Belum: `CountEndorsementData`, `CountDataEDMElse`,
+`ReCountPremiLifeEDM`, `CopyAllObj_ACT`; bentuk tabel keputusan lintas berkas.
 
 - [ ] Terimplementasi sebagai **tabel** (lini × jenis endorsement × jalur), bukan satu rumus
 - [ ] Kedua puluh dua penugasan terwakili; **sebelas bentuk semantik** dapat dibedakan

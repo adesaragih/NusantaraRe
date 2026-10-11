@@ -77,7 +77,7 @@ export default function SubTabFEA({ fea, ubah }: { fea: BarisFEA[]; ubah: (fea: 
               <th scope="col" className="table__actions">
                 <button
                   type="button"
-                  className="btn btn--ghost btn--sm"
+                  className="btn nbf-tema__tombol btn--ghost btn--sm"
                   onClick={() => {
                     ubah([...fea, feaBaru()])
                     setTerbuka((t) => [...t, fea.length])
@@ -99,7 +99,7 @@ export default function SubTabFEA({ fea, ubah }: { fea: BarisFEA[]; ubah: (fea: 
                 <td>
                   <button
                     type="button"
-                    className="btn btn--ghost btn--sm"
+                    className="btn nbf-tema__tombol btn--ghost btn--sm"
                     aria-label={TEKS_OBJEK.bukaBaris}
                     aria-expanded={terbuka.includes(n)}
                     onClick={() => setTerbuka((t) => (t.includes(n) ? t.filter((x) => x !== n) : [...t, n]))}
@@ -116,7 +116,7 @@ export default function SubTabFEA({ fea, ubah }: { fea: BarisFEA[]; ubah: (fea: 
                 <td className="table__actions">
                   <button
                     type="button"
-                    className="btn btn--ghost btn--sm"
+                    className="btn nbf-tema__tombol btn--ghost btn--sm"
                     onClick={() => {
                       ubah(fea.filter((_, x) => x !== n))
                       setTerbuka((t) => t.filter((x) => x !== n).map((x) => (x > n ? x - 1 : x)))
