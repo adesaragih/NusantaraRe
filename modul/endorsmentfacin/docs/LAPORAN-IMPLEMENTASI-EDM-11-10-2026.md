@@ -40,7 +40,7 @@ ditunda (W-EDM-04).
 | A33 | `edmType` "" diterima (dinilai bukan-batal); "3" (`EdmUsang3`, K-029) → 422 | `services/layanan.go` |
 | A34 | `[dugaan]` Teks pilihan **EDM Type** (`.Quotation.EdmTypeNew`) = Penambahan / Pengurangan / Perubahan / RI Slip. Prompt list properti itu **tidak ada** di korpus; nilai 1/2/3 terbukti dari visibilitas `EdmType1/2/3` (daftar `TypePenambahan/Pengurangan/Perubahan`), nilai 4 dari bypass "edm ri slip" (`CARI41=="4"`) | `frontend/labels.ts` `JENIS_EDM_BARU` |
 | A35 | Detail EDM Type Penambahan memuat `12 Adjustment PPN/PPH` **sekali**. `[terverifikasi]` Korpus menambahkannya dua kali: langkah Pengurangan menulis ke `TypePenambahan` (K-046) — dropdown Pega menampilkan entri kembar; di sini kembaran dibuang (tampilan saja, nilai sama) | `Activity/SetEdmType.xml`; uji `endorsmentfacin.test.tsx` mencacah kembaran = 2 sebagai uji instrumen |
-| A36 | **Endorsement Source** sementara teks bebas: sumber pilihannya `D_EnumerationList` (`Type=sumberedm`, `Language=id-ID`, `Status=1`) — isi tabel enumerasi Pega tidak ada di korpus; autocomplete Pega pun mengizinkan isian bebas. **Endorsement Status** belum dirender (prompt list tidak ada di korpus). **Endorsement Internal Retro** menampilkan kode `1` / `0` (teks tidak ada di korpus) | `WorkPrimaryDetails` L2011-2290, L8836-8995, L9896-10213 |
+| A36 | ⚠️ Sebagian dijawab: Endorsement Status = W-EDM-13, Internal Retro = W-EDM-14; Endorsement Source tetap teks bebas. Semula: **Endorsement Source** sementara teks bebas: sumber pilihannya `D_EnumerationList` (`Type=sumberedm`, `Language=id-ID`, `Status=1`) — isi tabel enumerasi Pega tidak ada di korpus; autocomplete Pega pun mengizinkan isian bebas. **Endorsement Status** belum dirender (prompt list tidak ada di korpus). **Endorsement Internal Retro** menampilkan kode `1` / `0` (teks tidak ada di korpus) | `WorkPrimaryDetails` L2011-2290, L8836-8995, L9896-10213 |
 
 **Tambahan W-EDM-07** — nomor A40/A41 (A37 dan A39 sudah dipakai modul ini untuk keputusan register NB yang dikutip kode: A37 = HALF_UP `@Math.divide`, A39 = rekonsiliasi EDM dengan rumus NB, ditahan). ⛔ Ralat: draf pertama bagian ini menomori klep A37/A38 tanpa memeriksa nomor terpakai - bentrok dengan A37 (temuan sesi `nusantarare-0b`, `grep -rnw A37` = 14 rujukan di kode dan dokumen):
 
@@ -113,8 +113,8 @@ ditunda (W-EDM-04).
 | A43 | Tautan `DataToEDM` (`EndorsementID`/`EDMHandle`/`EDMHandle2`) TIDAK ditulis: kasus portal bukan entitas tersimpan di sistem baru. `pzInsKey` OpenCase = ID (bentuk kunci instans Pega tidak ditebak, tidak disimpan) | `services/kasus.go` |
 | A44 | Dua Create bersamaan atas polis yang sama **tidak dikunci** (G2 dapat lolos di keduanya). Kunci murah butuh mengunci baris tabel warisan Pega — perlu persetujuan | `[pertanyaan terbuka]` |
 | A45 | Detail EDM Type diperiksa SESUDAH pemeriksaan (syaratnya membaca jenis bisnis); di luar EdmType 4 ∧ EdmTypeNew 1/2/3 nilainya wajib kosong → 422 bila terisi | `Section/EdmType1/2/3.xml` `pyRequiredWhen` |
-| A46 | ⚠️ **Penyimpangan dari korpus, menunggu work owner:** `EndorsementStatus` DIWAJIBKAN korpus bila bukan Life (`WorkPrimaryDetails` L8906 `pyRequiredWhen OutData.pxResults(1).CARI2!='Life'`), tetapi di sini TIDAK wajib dan tidak dirender — prompt list-nya (`D_EnumerationList`, kelas `ASM-FW-GISFW-Data-Enumeration`) tidak ada di korpus. Kasus lahir dengan `ENDORSEMENT_STATUS` kosong | medan wajib dicacah dua cara (urai sel / cacah baris; selisih di L9920 diselesaikan dengan membaca langsung L9880-9975) |
-| A47 | Nilai radio `EndorsementInternalRetro` tidak ada di korpus → hanya wajib tidak kosong, maks 10 byte | `WorkPrimaryDetails` L9896-10213 |
+| A46 | ✅ **DIJAWAB W-EDM-13** (0 Internal · 1 External · 2 Batal Internal · 3 Batal External; wajib bila bukan Life, bawaan Internal) - penyimpangan di bawah DICABUT. Semula ⚠️ penyimpangan dari korpus: `EndorsementStatus` DIWAJIBKAN korpus bila bukan Life (`WorkPrimaryDetails` L8906 `pyRequiredWhen OutData.pxResults(1).CARI2!='Life'`), tetapi di sini TIDAK wajib dan tidak dirender — prompt list-nya (`D_EnumerationList`, kelas `ASM-FW-GISFW-Data-Enumeration`) tidak ada di korpus. Kasus lahir dengan `ENDORSEMENT_STATUS` kosong | medan wajib dicacah dua cara (urai sel / cacah baris; selisih di L9920 diselesaikan dengan membaca langsung L9880-9975) |
+| A47 | ✅ **DIJAWAB W-EDM-14** (1 Yes · 0 No, bawaan No). Semula: Nilai radio `EndorsementInternalRetro` tidak ada di korpus → hanya wajib tidak kosong, maks 10 byte | `WorkPrimaryDetails` L9896-10213 |
 | A48 | Tabel/sequence hilang → 503 di KEDUA rute (sebelumnya `/periksa` 500 untuk tabel warisan yang hilang), pesan generik "Endorsment Fac In: a required table or sequence is not in this schema; details are in the server log" — nama objek dan teks ORA hanya di log (atas permintaan sesi utama: pesan semula menyebut migrasi 260/262 juga untuk tabel warisan seperti `JSON_POLIS`) | `handlers/rute.go:120` |
 | A49 | Lebar kolom 262 (OLD_POLICY_NO 100 = `JSON_POLIS.NOPOLIS`; REASON 4000; SOURCE_NOTE 1000; SOURCE/STATUS/NB_STATUS 255; kode 10; checkbox 5; IS_CEDING_CONFIRM 20), diperiksa dalam BYTE sebelum INSERT → 422 | migrasi 262; `services/kasus.go` |
 
@@ -131,5 +131,88 @@ sudah tercatat di `T_MIGRASI` sebelum perintah itu dijalankan (260, 261, 966 puk
 menjalankan **nol** pernyataan. Katalog: `SEQ_WORK_POLIS_EDM`, `M_EDM_PENGECUALIAN_POLIS` (+PK), `T_EDM_FACIN_KASUS`
 (+PK, indeks); `M_NAV_MENU` endorsmentfacin `DIMIGRASI = 1`. Isi: pengecualian 0 baris, kasus 0 baris. Sisa untuk DBA:
 isi `M_EDM_PENGECUALIAN_POLIS`; restart backend.
+
+## 6. Form Create Addendum dirapikan (W-EDM-13…15)
+
+- **Tata letak = tangkapan layar Pega** dari work owner:
+  - kiri: Policy Number, Endorsement Source, Endorsement Note, Endorsement Type (+ EDM Type / Detail EDM Type);
+  - kanan: Endorsement Date, Endorsement Status, Endorsement Internal Retro.
+
+  Label di kiri medan; OK lalu Cancel di kanan bawah, di luar kotak form; alasan OK mati di kirinya; hasil
+  pemeriksaan di bawah.
+- **Tema** = salinan tema NB FacIn (token `--edt-*`, kelas `edmf-*`).
+- **Tanggal** dd/mm/yyyy = salinan `TanggalDMY` NB, sebab input date bawaan tampil mm/dd/yyyy.
+- **Endorsement Status** dirender: wajib bila bukan Life, bawaan Internal.
+- **Retro** Yes/No vertikal, bawaan No.
+- **A50** `[terverifikasi]` **Biaya (`.AdminCharge`) dan Survey (`.Survey`) DIBUANG dari layar dan dari badan
+  `/kasus`.** Kontainernya `pyContainerVisibleWhen = never` (`WorkPrimaryDetails.xml` L9174), jadi Pega tidak pernah
+  menampilkannya. Versi pertama form menampilkannya karena laporan pembaca menyebut sel itu `ALWAYS`. Cara itu keliru:
+  yang dibaca hanya visibilitas sel, bukan kontainer induknya. Diuji: kontainer terdekat sebelum kedua caption =
+  `never`.
+  - Backend (sesi 0b): `MasukanKasus` tanpa kedua medan (mengirimnya → 400), kolom `ADMIN_CHARGE` / `SURVEY` ditulis
+    NULL.
+  - Wajib-isi Status/Retro dinilai SESUDAH pemeriksaan (bukan Life saja, urut Detail → Status → Retro).
+  - Diverifikasi sesi utama: build, vet, gofmt bersih; modul 6/6.
+- **Uji:** `tsc` nol galat modul; vitest modul + penjaga 31/31.
+- **12-10-2026 (W-EDM-16):** panel "Policy checks" dibuang atas perintah work owner. Pesan penolakan tetap di bawah
+  medannya; alasan OK mati satu kalimat di samping tombol. Label `PERIKSA` dan CSS panel yang tak terpakai ikut
+  dibuang. Uji: `tsc` nol galat modul; vitest modul + penjaga 31/31.
+
+## 7. Polis NB FacIn sistem baru dapat di-endors (12-10-2026, W-EDM-17)
+
+**Sebab "Invalid policy no!"** `[terverifikasi DEV, sesi 0b]`:
+- NB FacIn sistem baru menulis `JSON_POLIS.DATA_JSON` minimal `{"IDNewBisnis": …}`
+  (`modul/nbfacin/backend/services/selesaipolicy.go:209`).
+- `GetBusinessType_Sql` membaca `DATA_JSON.QuotationData.BusinessType`, sehingga hasilnya kosong → langkah 9.
+
+**Yang lahir:**
+- Kontrak `kontrak.JenisBisnisFacIn` disediakan sesi `nusantarare-c3`: `inti/backend/kontrak/facin.go` (berkas inti
+  bersama, perlu tinjauan tim inti saat PR) dan subpaket nbfacin `services/jenisbisnis`.
+- Modul ini memakainya lewat `Membutuhkan`. Diperiksa sesi utama: `cmd/api/rakit.go` merakit SEMUA modul terdaftar
+  sebelum menyaring `MODUL_AKTIF`, jadi menonaktifkan nbfacin tidak menggagalkan start modul ini.
+
+| # | Keputusan | Bukti |
+| --- | --- | --- |
+| A51 | Polis sistem baru = `DATA_JSON` baris PRODKE terakhir memuat `$.IDNewBisnis`. Bagi polis itu: G1 dibaca dari kasus `T_EDM_FACIN_KASUS` ⋈ `T_WORK_POLIS` yang sudah selesai berproduksi; jenis bisnis dari `FACINPRODUCTION.BUSINESSCODE` → `BUSINESS` (GROUPPANEL, OLDID) → kontrak, HANYA bila `DATA_JSON` tanpa BusinessType. Bukan tepat satu baris BUSINESS → UNKNOWN → "Invalid business, please contact IT!". Polis era Pega tetap setia korpus. **Penyimpangan sadar** akibat keputusan 09-10 "sistem baru tidak pakai data_json lgi", disetujui 12-10 | `services/periksa.go`, `repository/gudang.go`, `kasus.go` |
+| A52 | Kontrak tidak tersedia (nil, mis. uji tanpa perakit) → gerbang bisnis `belum-diperiksa`, `lengkap = false`; `MasukanGerbang.BisnisBelumDiperiksa` aditif (bawaan = korpus) | `services/gerbangtolak.go` |
+| A53 | `StatusEDMSelesaiProduksi = ""` sampai irisan produksi EDM menetapkannya `[pertanyaan terbuka]` → selama itu G1 polis sistem baru selalu "lolos" + catatan "No completed endorsement in the new system" (jujur: polis sistem baru hanya dapat di-endors lewat sistem ini, dan belum ada EDM yang berproduksi) | `models/kasus.go` |
+
+**Uji (diulang sesi utama):**
+- build, `build -tags db`, vet, gofmt: bersih.
+- Modul 7/7 paket ok; `inti/backend/daftar` ok.
+- Gagal di luar modul (nol menyebut endorsmentfacin): 5 penjaga lama, `cmd/api TestPanggilanLintasModulTerdaftar`, dan
+  `inti/backend/config TestSetiapEnvTerdokumentasi` (baru, milik c3: env belum di `.env.example`).
+- Mutasi (sesi 0b): 12/12.
+
+## 8. POSITION = tahap, POSITION_NOTE = workbasket (12-10-2026, W-EDM-18)
+
+**Yang lahir (sesi 0b; diverifikasi ulang sesi utama):**
+- `repository/posisinote.go` = salinan pola `modul/nbfacin/backend/repository/posisinote.go`. Kasus `EDM-` lahir
+  dengan `POSITION = 'Policy'` dan `POSITION_NOTE = 'ReasFacInMarketing'` bila kolomnya ada.
+- Tanpa kolom (nbfacin 254 belum jalan): SQL persis bentuk W-EDM-11 + satu baris log.
+- Migrasi `263_posisi_kasus_edm.sql` mengonversi kasus lama `LINI = 'FACEDM'`.
+
+**Keadaan DEV 12-10 17:35** (dibaca sesi 0b): 254 belum jalan, kolom belum ada, kasus FACEDM 0.
+**Pembaruan 12-10** (disampaikan sesi `nusantarare-9d`, laporan work owner): nbfacin `254_position_note` SUDAH jalan di
+DEV, kolom `POSITION_NOTE VARCHAR2(255)` ada. **263 SUDAH tercatat di DEV** (`T_MIGRASI` 12-10 17:55, kasus FACEDM 0
+→ nol baris berubah); perintah work owner "jalankan" mendapati 263 sudah dijalankan `-migrate` lain — pelari sesi 0b
+0 dijalankan, 1 dilewati. ⛔ Ralat: sesi 0b sempat melaporkan "jam server DB ~1 jam di depan mesin" — keliru, karena
+disimpulkan dari SATU titik data (catatan 254 pukul 18:47); catatan 263 pukul 17:55 cocok dengan jam mesin. Waktu
+catatan 254 yang janggal `belum terverifikasi` (tidak berdampak pada modul ini).
+
+| # | Keputusan | Bukti |
+| --- | --- | --- |
+| A54 | Deteksi kolom per proses, ketiadaan di-cache dan dicoba ulang tiap 1 menit — sama dengan nbfacin (`posisinote.go:114` `jedaUlangCatatan = time.Minute`). Galat selain ORA-00904 → bentuk lama + log, bukan gagal. ⛔ Ralat: laporan pertama sesi 0b menulis angka nbfacin "tidak dibaca" — dilaporkan tanpa dicek, lalu dicek dan sama | `repository/posisinote.go` |
+| A55 | `263_down` hanya mengembalikan baris yang masih di keadaan awal (`Policy` + `ReasFacInMarketing`) | migrasi 263 |
+
+⚠️ **Celah peralihan:** kasus yang lahir di antara 263 selesai dan cache 1 menit kedaluwarsa masih berbentuk lama.
+Bila saat itu DEV sudah punya kasus FACEDM: ulangi `UPDATE` 263 secara manual, atau restart backend sesudah `-migrate`.
+
+⚠️ **Celah uji:** penyambungan deteksi di `SisipWorkPolis` butuh Oracle (mutan `|| true` lolos, celah yang sama di
+nbfacin; `skemauji.Buka` dikunci claimlife). Uji di DEV sesudah 254: buat satu kasus, cek `POSITION`/`POSITION_NOTE`.
+
+**Uji:**
+- Modul ok; build, `build -tags db`, vet, gofmt bersih.
+- Penjaga + `cmd/api`: 6 gagal lama, nol menyebut modul.
 
 *Tanpa nama orang, tanpa nomor polis, tanpa data nasabah.*

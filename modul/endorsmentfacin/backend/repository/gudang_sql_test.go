@@ -53,6 +53,16 @@ func TestSQLGerbang(t *testing.T) {
 		{"Proteksi", SqlAdaProteksi("S.OPENPROTEKSI_EDM"), []string{"1", "2", "3"}, []string{
 			"FROM S.OPENPROTEKSI_EDM o WHERE o.POLICY_NO = :1 AND o.TYPE = :2",
 			"AND (o.STS_AKSEP <> :3 OR o.STS_AKSEP IS NULL) FETCH FIRST 1 ROWS ONLY"}},
+		{"SistemBaru", SqlNilaiPolisTerakhir("S.JSON_POLIS", JalurIDNewBisnis), []string{"1", "2"}, []string{
+			"JSON_VALUE(b.DATA_JSON, '$.IDNewBisnis' NULL ON ERROR)",
+			"b.PRODKE = (SELECT COUNT(c.NOPOLIS) - 1 FROM S.JSON_POLIS c WHERE c.NOPOLIS = :2)"}},
+		{"EdmTypeSelesaiProduksi", SqlEdmTypeSelesaiProduksi("S.T_WORK_POLIS", "S.T_EDM_FACIN_KASUS"), []string{"1", "2", "3"}, []string{
+			"SELECT k.EDM_TYPE FROM S.T_WORK_POLIS w JOIN S.T_EDM_FACIN_KASUS k ON k.ID = w.ID",
+			"WHERE w.LINI = :1 AND k.OLD_POLICY_NO = :2 AND w.STATUS_WORK = :3",
+			"ORDER BY w.TGL_UPDATE DESC, w.ID DESC FETCH FIRST 1 ROWS ONLY"}},
+		{"BisnisProduksi", SqlBisnisProduksi("S.FACINPRODUCTION", "S.BUSINESS"), []string{"1"}, []string{
+			"SELECT DISTINCT b.GROUPPANEL, b.OLDID FROM S.FACINPRODUCTION f JOIN S.BUSINESS b ON b.ID = f.BUSINESSCODE",
+			"WHERE f.NOPOLIS = :1 AND b.GROUPPANEL IS NOT NULL FETCH FIRST 2 ROWS ONLY"}},
 		{"EDMBelumSelesai", SqlEDMBelumSelesai("S.T_WORK_POLIS", "S.T_EDM_FACIN_KASUS"), []string{"1", "2", "3"}, []string{
 			"SELECT w.ID FROM S.T_WORK_POLIS w JOIN S.T_EDM_FACIN_KASUS k ON k.ID = w.ID",
 			"WHERE w.LINI = :1 AND k.OLD_POLICY_NO = :2 AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK NOT LIKE :3)",
@@ -111,16 +121,54 @@ func TestKlasifikasiGalatOracle(t *testing.T) {
 	}
 }
 
+// W-EDM-18 toleran: tanpa kolom POSITION_NOTE bentuknya PERSIS bentuk lama W-EDM-11; dengan kolom, bentuk baru.
+func TestSisipWorkPolisMenurutKolom(t *testing.T) {
+	lama, argLama := SisipWorkPolisMenurut("S.T_WORK_POLIS", false, "EDM-00001", "uji.akun")
+	if lama != SqlSisipWorkPolis("S.T_WORK_POLIS") || strings.Contains(lama, KolomCatatanPosisi) {
+		t.Fatalf("tanpa kolom: %s", lama)
+	}
+	ingin := []any{"EDM-00001", "FACEDM", "ReasFacInMarketing", "1", "Pending-Policy", "uji.akun", "uji.akun"}
+	if len(argLama) != len(ingin) || len(penampung(lama)) != len(ingin) {
+		t.Fatalf("tanpa kolom: %d nilai, %d penampung", len(argLama), len(penampung(lama)))
+	}
+	for i := range ingin {
+		if argLama[i] != ingin[i] {
+			t.Errorf("tanpa kolom bind %d = %v, ingin %v", i+1, argLama[i], ingin[i])
+		}
+	}
+	baru, argBaru := SisipWorkPolisMenurut("S.T_WORK_POLIS", true, "EDM-00001", "uji.akun")
+	q := rata(baru)
+	if !strings.Contains(q, "(ID, LINI, POSITION, POSITION_NOTE, FLAG_ONGOING_POLICY, STATUS_WORK, CREATE_OP, CREATE_OP_NAME, TGL_CREATE, TGL_UPDATE)") ||
+		!strings.Contains(q, "VALUES (:1, :2, :3, :4, :5, :6, :7, :8, SYSDATE, SYSDATE)") || db.PeriksaSQL(q) != nil {
+		t.Fatalf("dengan kolom: %s", q)
+	}
+	ingin = []any{"EDM-00001", "FACEDM", "Policy", "ReasFacInMarketing", "1", "Pending-Policy", "uji.akun", "uji.akun"}
+	if len(argBaru) != len(ingin) || len(penampung(q)) != len(ingin) {
+		t.Fatalf("dengan kolom: %d nilai, %d penampung", len(argBaru), len(penampung(q)))
+	}
+	for i := range ingin {
+		if argBaru[i] != ingin[i] {
+			t.Errorf("dengan kolom bind %d = %v, ingin %v", i+1, argBaru[i], ingin[i])
+		}
+	}
+	if rata(sqlUjiCatatanPosisi("S.T_WORK_POLIS")) != "SELECT POSITION_NOTE FROM S.T_WORK_POLIS WHERE ROWNUM < 1" {
+		t.Fatal("uji kolom berubah")
+	}
+	if !kolomBelumAda(errors.New("ORA-00904: invalid identifier")) || kolomBelumAda(errors.New("ORA-00942")) || kolomBelumAda(nil) {
+		t.Fatal("kolomBelumAda salah membaca galat")
+	}
+}
+
 func TestArgSisipKasus(t *testing.T) {
 	k := models.KepalaKasus{ID: "EDM-00001", OldPolicyNo: "UJI.01.0001", EdmType: "4", EdmTypeNew: "1", DetailType: "2",
 		EndorsementDate: time.Date(2025, 6, 1, 0, 0, 0, 0, time.FixedZone("WIB", 7*3600)), EndorsementReason: "r",
-		EndorsementSource: "s", EndorsementSourceNote: "sn", EndorsementStatus: "", AdminCharge: "true", Survey: "false",
+		EndorsementSource: "s", EndorsementSourceNote: "sn", EndorsementStatus: "", AdminCharge: "", Survey: "",
 		InternalRetro: "0", NBStatus: "NEW EDM", IsCedingConfirm: "Policy"}
 	a := ArgSisipKasus(k)
 	if len(a) != len(KolomKasus) || len(KolomKasus) != 15 {
 		t.Fatalf("%d nilai, %d kolom", len(a), len(KolomKasus))
 	}
-	want := []any{"EDM-00001", "UJI.01.0001", "4", "1", "2", "2025-06-01", "r", "s", "sn", nil, "true", "false", "0",
+	want := []any{"EDM-00001", "UJI.01.0001", "4", "1", "2", "2025-06-01", "r", "s", "sn", nil, nil, nil, "0",
 		"NEW EDM", "Policy"}
 	for i := range want {
 		if a[i] != want[i] {
@@ -139,7 +187,15 @@ func TestRakitIDKasusEDM(t *testing.T) {
 			t.Errorf("%d → %q, ingin %q", n, got, want)
 		}
 	}
-	if models.LiniEDMFacIn != "FACEDM" || models.PosisiAwalEDM != "ReasFacInMarketing" ||
+	// A51: status "berproduksi" belum ditetapkan (irisan produksi EDM) - kosong = tidak pernah cocok. Ubah bersama uji ini.
+	if models.StatusEDMSelesaiProduksi != "" || JalurIDNewBisnis != "$.IDNewBisnis" {
+		t.Fatal("penanda / status berproduksi sistem baru berubah tanpa keputusan")
+	}
+	// W-EDM-18: POSITION = tahap, POSITION_NOTE = workbasket.
+	if models.PosisiAwalEDM != "Policy" || models.CatatanPosisiAwalEDM != "ReasFacInMarketing" {
+		t.Fatal("posisi awal kasus EDM berubah (keputusan work owner W-EDM-18)")
+	}
+	if models.LiniEDMFacIn != "FACEDM" ||
 		models.StatusAwalEDM != "Pending-Policy" || models.FlagAwalEDM != "1" || models.PolaStatusSelesai != "Resolved-%" {
 		t.Fatal("keadaan awal kasus EDM berubah (keputusan work owner W-EDM-08…11)")
 	}

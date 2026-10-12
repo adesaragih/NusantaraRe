@@ -22,7 +22,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/cockroachdb/apd/v3"
 
@@ -342,6 +345,11 @@ type konteksScoring struct {
 	objek     []models.ObjekFire
 	spreading models.KasusSpreading
 	risiko    map[string]string
+	// mulai / waktu - kinerja baca (scoring, kasus, objek, spreading, okupasi), untuk logScoringLambat.
+	mulai time.Time
+	waktu [5]time.Duration
+	// kurs - sumber kurs satu permintaan (kursMemo: keIDRScoring dipanggil empat kali atas mata uang yang sama); nil = s.spreading.
+	kurs sumberKurs
 }
 
 func (s *Service) bacaKonteksScoring(ctx context.Context, id string) (konteksScoring, error) {
@@ -352,18 +360,59 @@ func (s *Service) bacaKonteksScoring(ctx context.Context, id string) (konteksSco
 	if !idKasusSah(id) {
 		return k, ErrKasusTidakAda
 	}
-	var err error
-	if k.tersimpan, err = s.scoring.BacaScoring(ctx, id); err != nil {
-		return k, galatKasus(err)
+	// Laporan work owner 12-10-2026 (tab Scoring "Memuat…" beberapa detik): empat bacaan independen dijalankan PARALEL (masing-masing
+	// lewat basis data, tanpa tx bersama); hasil identik dengan urutan lama. Galat = yang PERTAMA terjadi (pembungkus sama dengan
+	// alur berurutan lama), bacaan lain dibatalkan lewat ctx turunan.
+	k.mulai = time.Now()
+	ctxBaca, batal := context.WithCancel(ctx)
+	defer batal()
+	var (
+		wg      sync.WaitGroup
+		mu      sync.Mutex
+		pertama error
+	)
+	jalan := func(i int, f func() error) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			t0 := time.Now()
+			err := f()
+			k.waktu[i] = time.Since(t0)
+			if err != nil {
+				mu.Lock()
+				if pertama == nil {
+					pertama = err
+					batal()
+				}
+				mu.Unlock()
+			}
+		}()
 	}
-	if k.kasus, err = s.kasus.BacaKasus(ctx, id); err != nil {
-		return k, galatKasus(err)
-	}
-	if k.objek, err = s.BacaObjek(ctx, id); err != nil {
-		return k, err
-	}
-	if k.spreading, err = s.spreading.BacaSpreading(ctx, nil, id); err != nil {
-		return k, galatKasus(err)
+	jalan(0, func() (err error) {
+		if k.tersimpan, err = s.scoring.BacaScoring(ctxBaca, id); err != nil {
+			return galatKasus(err)
+		}
+		return nil
+	})
+	jalan(1, func() (err error) {
+		if k.kasus, err = s.kasus.BacaKasus(ctxBaca, id); err != nil {
+			return galatKasus(err)
+		}
+		return nil
+	})
+	jalan(2, func() (err error) {
+		k.objek, err = s.BacaObjek(ctxBaca, id)
+		return err
+	})
+	jalan(3, func() (err error) {
+		if k.spreading, err = s.spreading.BacaSpreading(ctxBaca, nil, id); err != nil {
+			return galatKasus(err)
+		}
+		return nil
+	})
+	wg.Wait()
+	if pertama != nil {
+		return k, pertama
 	}
 	totalLokasi(&k.spreading)
 	var kode []string
@@ -374,9 +423,24 @@ func (s *Service) bacaKonteksScoring(ctx context.Context, id string) (konteksSco
 			kode = append(kode, o.Occupations[0].OccupationID)
 		}
 	}
+	t0 := time.Now()
+	var err error
 	k.risiko, err = s.occupation.RisikoOkupasiFire(ctx, kode)
+	k.waktu[4] = time.Since(t0)
 	return k, err
 }
+
+// logScoringLambat - satu baris log bila konteks + hitung Scoring melewati ambangLogScoring: durasi tiap langkah (kurs = hitung
+// kolom, termasuk bacaan kurs keIDRScoring). Tanpa data kasus selain ID.
+func logScoringLambat(id string, k konteksScoring, kurs time.Duration) {
+	if total := time.Since(k.mulai); total > ambangLogScoring {
+		log.Printf("nbfacin: Scoring kasus %s lambat %v: scoring %v, kasus %v, objek %v, spreading %v, okupasi %v, kurs %v",
+			id, total, k.waktu[0], k.waktu[1], k.waktu[2], k.waktu[3], k.waktu[4], kurs)
+	}
+}
+
+// ambangLogScoring - konteks Scoring lebih lama dari ini dicatat per langkah (laporan work owner 12-10-2026).
+const ambangLogScoring = 2 * time.Second
 
 // lokasiKolom - lokasi kolom: Top Risk = satu-satunya lokasi, atau lokasi IsTopRisk pertama (SetDataScoringRisk_act
 // langkah 4); Dominant = ObjectNo pertama = indexLocation (langkah 3). nil = tidak ada. TSI / premi spread lokasi dalam
@@ -430,10 +494,14 @@ func (s *Service) lokasiKolom(ctx context.Context, k konteksScoring, top bool, i
 	}
 	// TSI dan premi spread dikonversi TERPISAH: kurs mata uang yang hanya ada di premi tidak mengosongkan TSI (dan sebaliknya).
 	var err error
-	if l.TSIIDR, l.KursTidakAda, err = keIDRScoring(ctx, s, k.spreading.StartDateTime, jumlah, true); err != nil {
+	src := k.kurs
+	if src == nil {
+		src = s.spreading
+	}
+	if l.TSIIDR, l.KursTidakAda, err = keIDRScoring(ctx, src, k.spreading.StartDateTime, jumlah, true); err != nil {
 		return nil, err
 	}
-	l.ShareIDR, _, err = keIDRScoring(ctx, s, k.spreading.StartDateTime, jumlah, false)
+	l.ShareIDR, _, err = keIDRScoring(ctx, src, k.spreading.StartDateTime, jumlah, false)
 	return l, err
 }
 
@@ -444,7 +512,7 @@ func bolehUbahScoring(k models.KasusScoring) bool {
 
 // keIDRScoring - Σ TSI (tsi true) atau premi spread mata uang yang bernilai bukan nol × kurs (totalKeIDR); tanpa mata uang
 // bernilai -> 0; satu kurs tidak ada -> nil + mata uangnya.
-func keIDRScoring(ctx context.Context, s *Service, mulai string, jumlah []jumlahMataUang, tsi bool) (*apd.Decimal, []string, error) {
+func keIDRScoring(ctx context.Context, src sumberKurs, mulai string, jumlah []jumlahMataUang, tsi bool) (*apd.Decimal, []string, error) {
 	var pilih []jumlahMataUang
 	for _, j := range jumlah {
 		v := j.Premi
@@ -458,12 +526,15 @@ func keIDRScoring(ctx context.Context, s *Service, mulai string, jumlah []jumlah
 	if len(pilih) == 0 {
 		return nol(), nil, nil
 	}
-	hasil, _, tidakAda, err := totalKeIDR(ctx, s.spreading, mulai, pilih)
+	hasil, _, tidakAda, err := totalKeIDR(ctx, src, mulai, pilih)
 	return hasil, tidakAda, err
 }
 
 // hitungScoringKasus - konteks + masukan -> tampilan (tanpa menyimpan).
 func (s *Service) hitungScoringKasus(ctx context.Context, id string, k konteksScoring, masukan [2]models.KolomScoring) (TampilanScoring, error) {
+	if k.kurs == nil {
+		k.kurs = kursMemoBaru(s.spreading) // satu permintaan
+	}
 	var lok [2]*lokasiScoring
 	var err error
 	if lok[0], err = s.lokasiKolom(ctx, k, true, ""); err != nil {
@@ -504,7 +575,10 @@ func (s *Service) TampilanScoringKasus(ctx context.Context, id string) (Tampilan
 	if err != nil {
 		return TampilanScoring{}, err
 	}
-	return s.hitungScoringKasus(ctx, id, k, k.tersimpan.Kolom)
+	t0 := time.Now()
+	hasil, err := s.hitungScoringKasus(ctx, id, k, k.tersimpan.Kolom)
+	logScoringLambat(id, k, time.Since(t0))
+	return hasil, err
 }
 
 // HitungScoring - POST …/scoring/hitung: tanpa menyimpan; kasus baca-saja -> 409.

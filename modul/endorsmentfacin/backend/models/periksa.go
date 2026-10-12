@@ -46,6 +46,8 @@ type BisnisPeriksa struct {
 	Hasil HasilGerbangPeriksa `json:"hasil"`
 	// JenisBisnis - SESUDAH langkah 8 (polis berpola RNML = "Life").
 	JenisBisnis string `json:"jenisBisnis"`
+	// Catatan - mis. lini polis sistem baru belum dapat diperiksa (A52). Kosong = tidak dikirim.
+	Catatan string `json:"catatan,omitempty"`
 }
 
 // TanggalPeriksa - `CheckEDMPolisDate`; Mulai/Akhir = tanggal kalender periode yang dibandingkan (`DD-MM-YYYY`,

@@ -240,6 +240,11 @@ export interface KasusNB {
    * lama tanpa kunci ini.
    */
   jenisCsv?: '' | 'fire' | 'cargo' | 'aneka' | 'marinehull' | 'cpm'
+  /**
+   * Saran Marketing Name awal (work owner 12-10-2026): MARKETINGOFFICER.ID aktif milik PEMBUAT case (AKSES_LOGIN = CREATE_OP),
+   * hanya bila case belum punya MOID; "" bila tidak ada. Opsional: biner lama tanpa kunci ini.
+   */
+  marketingBawaan?: string
 }
 
 /**

@@ -94,6 +94,60 @@ func TestGerbangMenuModul(t *testing.T) {
 // Delapan modul master (04-10-2026): satu mesin bersama `inti/backend/master`, tetapi gerbangnya PER MODUL - pemegang
 // menu City memakai rute City (termasuk saran rujukan Province miliknya sendiri), dan rute Province 403. Rute lama
 // `/api/masterdata` sudah tidak ada (404), bukan digerbang.
+// TestGerbangBacaSemuaLogin - modulBacaSemuaLogin (nbfacin, keputusan work owner 12-10-2026): sesi login TANPA menu nbfacin lolos
+// GERBANG untuk GET / HEAD rute nbfacin (View Policy, layar case baca-saja), tulis tetap 403 gerbang, tanpa sesi tetap 401 gerbang
+// (AUTH_STUB: lolos seperti dulu); modul lain GET tanpa menunya tetap 403. Jawaban handler sesudah gerbang (mis. 401 identitas
+// karena konteks uji tanpa pelaku) dibedakan lewat pesan gerbang.
+func TestGerbangBacaSemuaLogin(t *testing.T) {
+	const tolakMenu, tolakSesi = "tidak punya akses ke menu", "belum login atau sesi sudah berakhir"
+	minta := func(h http.Handler, metode, jalur string, menu []string) (int, string) {
+		r := httptest.NewRequest(metode, jalur, strings.NewReader("{}"))
+		if menu != nil {
+			r = r.WithContext(inti.DenganAksesMenu(context.Background(), menu))
+		}
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, r)
+		return w.Code, w.Body.String()
+	}
+	gerbang := func(k int, isi string) bool { // true = ditolak GERBANG
+		return (k == http.StatusForbidden && strings.Contains(isi, tolakMenu)) || (k == http.StatusUnauthorized && strings.Contains(isi, tolakSesi))
+	}
+	h := muxGerbang(t, false)
+	lain := []string{"claimlife"}
+	for _, j := range []string{"/api/nbfacin/polis?opsi=2&filter=X", "/api/nbfacin/polis/treaty?opsi=1&filter=NB-1",
+		"/api/nbfacin/kasus/NB-1", "/api/nbfacin/kasus/NB-1/submit"} {
+		for _, menu := range [][]string{lain, {}} {
+			if k, isi := minta(h, http.MethodGet, j, menu); gerbang(k, isi) {
+				t.Errorf("GET %s menu %v ditolak gerbang: %d %s", j, menu, k, isi)
+			}
+		}
+		if k, isi := minta(h, http.MethodHead, j, lain); gerbang(k, isi) {
+			t.Errorf("HEAD %s ditolak gerbang: %d", j, k)
+		}
+		if k, isi := minta(h, http.MethodGet, j, nil); k != http.StatusUnauthorized || !strings.Contains(isi, tolakSesi) {
+			t.Errorf("GET %s tanpa sesi: %d %s, mau 401 gerbang", j, k, isi)
+		}
+		if k, isi := minta(muxGerbang(t, true), http.MethodGet, j, nil); gerbang(k, isi) {
+			t.Errorf("AUTH_STUB GET %s tanpa sesi ditolak gerbang: %d", j, k)
+		}
+	}
+	for _, c := range []struct{ metode, jalur string }{{http.MethodPost, "/api/nbfacin/opportunity"},
+		{http.MethodPut, "/api/nbfacin/kasus/NB-1/general"}, {http.MethodPost, "/api/nbfacin/kasus/NB-1/submit"},
+		{http.MethodDelete, "/api/nbfacin/kasus/NB-1/lampiran/berkas/1"}} {
+		if k, isi := minta(h, c.metode, c.jalur, lain); k != http.StatusForbidden || !strings.Contains(isi, tolakMenu) {
+			t.Errorf("%s %s tanpa menu nbfacin: %d %s, mau 403 gerbang", c.metode, c.jalur, k, isi)
+		}
+	}
+	for _, j := range []string{"/api/polis-life", "/api/treaty-contract-out/tahun", "/api/komite-claim-prop/kasus"} {
+		if k, isi := minta(h, http.MethodGet, j, lain); k != http.StatusForbidden || !strings.Contains(isi, tolakMenu) {
+			t.Errorf("modul lain GET %s tanpa menunya: %d, mau 403 gerbang", j, k)
+		}
+	}
+	if len(modulBacaSemuaLogin) != 1 || !modulBacaSemuaLogin["nbfacin"] {
+		t.Errorf("modulBacaSemuaLogin berubah: %v", modulBacaSemuaLogin)
+	}
+}
+
 func TestGerbangMenuMaster(t *testing.T) {
 	h := muxGerbang(t, false)
 	kota := []string{"mastercity"}

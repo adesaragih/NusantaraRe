@@ -59,9 +59,17 @@ Irisan I3 — **dibuat** modul ini, migrasi `262_t_edm_facin_kasus.sql` (+ indek
 ### T_WORK_POLIS (milik premiumlistlife, ditulis bersama)
 
 Satu baris per kasus EDM, dalam transaksi yang sama dengan `T_EDM_FACIN_KASUS` (persetujuan work owner
-11-10-2026): `LINI = 'FACEDM'` (BUKAN `FAC` — NB FacIn menyaring lininya hanya lewat kolom ini), `POSITION =
-'ReasFacInMarketing'`, `FLAG_ONGOING_POLICY = '1'`, `STATUS_WORK = 'Pending-Policy'`, `CREATE_OP` =
-`CREATE_OP_NAME` = pengenal akun pembuat, `TGL_CREATE`/`TGL_UPDATE` = SYSDATE. Tidak dibuat modul ini.
+11-10-2026): `LINI = 'FACEDM'` (BUKAN `FAC` — NB FacIn menyaring lininya hanya lewat kolom ini),
+`FLAG_ONGOING_POLICY = '1'`, `STATUS_WORK = 'Pending-Policy'`, `CREATE_OP` = `CREATE_OP_NAME` = pengenal akun
+pembuat, `TGL_CREATE`/`TGL_UPDATE` = SYSDATE. Tidak dibuat modul ini.
+
+Posisi (keputusan work owner W-EDM-18, mengganti W-EDM-11; pola NB tiket 77):
+
+- `POSITION = 'Policy'` (tahap) dan `POSITION_NOTE = 'ReasFacInMarketing'` (workbasket). Kolom `POSITION_NOTE`
+  VARCHAR2(255) dibuat migrasi **nbfacin 254**.
+- Selama 254 belum dijalankan, biner menulis bentuk lama (`POSITION = 'ReasFacInMarketing'`, tanpa `POSITION_NOTE`) —
+  deteksi kolom toleran, `repository/posisinote.go`. Migrasi `263_posisi_kasus_edm.sql` mengonversi baris bentuk lama
+  sesudah 254 (urutan nama berkas lintas modul).
 
 ## Tabel warisan yang dibaca, tidak dibuat
 
@@ -84,6 +92,13 @@ Judul di bawah sengaja berskema. Nol DDL; lebar dari `D:\migrasi\RNM\DDL\` bila 
 ### POOLDATA.FACINPRODUCTION
 
 `GetStartDate` (`CheckEDMPolisDate` langkah 3): `BEGINDATE`/`ENDDATE` (DATE) baris `SPREAD_DATE` terakhir.
+
+### POOLDATA.BUSINESS
+
+Jenis bisnis polis NB sistem baru (DATA_JSON minimal): `FACINPRODUCTION.BUSINESSCODE` → `BUSINESS.ID` →
+`GROUPPANEL`, `OLDID` (saringan `GROUPPANEL IS NOT NULL`, pola nbfacin), lalu kontrak `JenisBisnisFacIn`
+(BusinessType_DeT milik nbfacin; keputusan work owner 12-10-2026 opsi 1a). Semua kolom VARCHAR2
+(`D:\migrasi\RNM\DDL\BUSINESS.txt`).
 
 ### POOLDATA.OPENPROTEKSI_EDM
 

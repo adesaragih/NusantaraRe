@@ -52,8 +52,10 @@ var batasKolomKasus = []struct {
 }
 
 // ValidasiKasus - isian wajib `pyRequired` Section/WorkPrimaryDetails.xml `[terverifikasi]`, urut layar; galat = medan
-// pertama yang gagal. Detail EDM Type diperiksa sesudah pemeriksaan (validasiDetailType), karena syaratnya membaca
-// jenis bisnis polis lama.
+// pertama yang gagal. Medan yang wajibnya bersyarat `OutData.pxResults(1).CARI2!='Life'` - Detail EDM Type, Endorsement
+// Status (L8907), Endorsement Internal Retro (tampil bila bukan Life, L10213) - diperiksa SESUDAH pemeriksaan
+// (validasiSesudahPeriksa), karena syaratnya membaca jenis bisnis polis lama. Di sini nilainya hanya diperiksa bila
+// terisi.
 func ValidasiKasus(m models.MasukanKasus) error {
 	kosong := func(s string) bool { return strings.TrimSpace(s) == "" }
 	switch {
@@ -70,23 +72,37 @@ func ValidasiKasus(m models.MasukanKasus) error {
 		return tolak("EDM Type is required")
 	case kosong(m.EndorsementDate):
 		return tolak("Endorsement Date is required")
-	case kosong(m.EndorsementStatus):
-		// A46 dijawab work owner 11-10-2026: wajib; Prompt List 0-3.
-		return tolak("Endorsement Status is required")
-	case kosong(m.EndorsementInternalRetro):
-		return tolak("Endorsement Internal Retro is required")
 	}
-	if _, ada := models.PilihanEndorsementStatus[m.EndorsementStatus]; !ada {
+	// Pilihan Prompt List (A46 / A47 dijawab work owner 11-10-2026) - bila terisi.
+	if _, ada := models.PilihanEndorsementStatus[m.EndorsementStatus]; !kosong(m.EndorsementStatus) && !ada {
 		return tolak("Endorsement Status %q is not an option", m.EndorsementStatus)
 	}
-	if _, ada := models.PilihanInternalRetro[m.EndorsementInternalRetro]; !ada {
-		// A47 dijawab work owner 11-10-2026: 1 Yes / 0 No.
+	if _, ada := models.PilihanInternalRetro[m.EndorsementInternalRetro]; !kosong(m.EndorsementInternalRetro) && !ada {
 		return tolak("Endorsement Internal Retro %q is not an option", m.EndorsementInternalRetro)
 	}
 	for _, b := range batasKolomKasus {
 		if n := len(b.nilai(m)); n > b.maks {
 			return tolak("%s is too long (%d bytes, maximum %d)", b.label, n, b.maks)
 		}
+	}
+	return nil
+}
+
+// validasiSesudahPeriksa - medan yang wajibnya bersyarat bukan-Life, urut layar: Detail EDM Type (Section
+// EdmType1/2/3), Endorsement Status (L8906), Endorsement Internal Retro (L9968). Life dikirim "" oleh layar (medannya
+// tersembunyi); dalam praktik polis Life sudah ditolak pemeriksaan bisnis sebelum sampai di sini (W-EDM-05).
+func validasiSesudahPeriksa(m models.MasukanKasus, jenisBisnis string) error {
+	if err := validasiDetailType(m, jenisBisnis); err != nil {
+		return err
+	}
+	if jenisBisnis == "Life" {
+		return nil
+	}
+	switch {
+	case strings.TrimSpace(m.EndorsementStatus) == "":
+		return tolak("Endorsement Status is required")
+	case strings.TrimSpace(m.EndorsementInternalRetro) == "":
+		return tolak("Endorsement Internal Retro is required")
 	}
 	return nil
 }
@@ -114,14 +130,6 @@ func validasiDetailType(m models.MasukanKasus, jenisBisnis string) error {
 	return tolak("Detail EDM Type %q is not an option for EDM Type %s", m.DetailType, m.EdmTypeNew)
 }
 
-// teksCentang - checkbox Pega "true"/"false".
-func teksCentang(b bool) string {
-	if b {
-		return "true"
-	}
-	return "false"
-}
-
 // Buat - `POST /kasus`. akun = pengenal akun pelaku (kosong → ErrDilarang).
 func (l *Layanan) Buat(ctx context.Context, akun string, m models.MasukanKasus) (models.HasilKasus, error) {
 	if strings.TrimSpace(akun) == "" {
@@ -147,13 +155,13 @@ func (l *Layanan) Buat(ctx context.Context, akun string, m models.MasukanKasus) 
 	if h.Ditolak || !h.Lengkap {
 		return models.HasilKasus{Pesan: []models.PesanPeriksa{}, Periksa: &h}, nil
 	}
-	if err := validasiDetailType(m, h.Bisnis.JenisBisnis); err != nil {
+	if err := validasiSesudahPeriksa(m, h.Bisnis.JenisBisnis); err != nil {
 		return models.HasilKasus{}, err
 	}
 
 	// OpenCase - SetValueToEDMWork langkah 2 membaca GetEDMStatus_SQL juga untuk RI slip.
 	if !d.StatusEDMDibaca {
-		if d.StatusEDM, err = l.gudang.StatusEDM(ctx, d.PolicyNo); err != nil {
+		if err := l.bacaStatusEDM(ctx, &d); err != nil {
 			return models.HasilKasus{}, err
 		}
 	}
@@ -165,8 +173,8 @@ func (l *Layanan) Buat(ctx context.Context, akun string, m models.MasukanKasus) 
 		Portal: KasusPortal{
 			PolicyNo: m.PolicyNo, Note: m.Note, EndorsementSource: m.EndorsementSource,
 			EndorsementSourceNote: m.EndorsementSourceNote, EndorsementDate: *d.TanggalEndorsement,
-			EndorsementStatus: m.EndorsementStatus, AdminCharge: teksCentang(m.AdminCharge), Survey: teksCentang(m.Survey),
-			EndorsementInternalRetro: m.EndorsementInternalRetro,
+			// AdminCharge / Survey kosong → NULL (A50: tersembunyi `never` di layar Pega).
+			EndorsementStatus: m.EndorsementStatus, EndorsementInternalRetro: m.EndorsementInternalRetro,
 			Quotation: QuotationPortal{EdmType: d.EdmType, EdmTypeNew: m.EdmTypeNew,
 				Type: models.JenisPenyesuaian(m.DetailType)},
 		},

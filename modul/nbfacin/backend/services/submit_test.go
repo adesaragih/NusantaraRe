@@ -301,6 +301,10 @@ func TestAjukanSubmit(t *testing.T) {
 			t.Fatalf("%s: %v %+v", c.isi.EmailType, err, h)
 		}
 		w := st.tulis[0]
+		// Tiket 76 (252): DATE_OFFER Submit marketing (jam uji 07/10/2026 22:04:05 WIB); total tiap Submit (fixture tanpa kurs -> NULL).
+		if w.DateOffer != "10/07/2026 03:04 PM" || w.Ringkasan == nil || w.Ringkasan.TotalTSINusaRe != nil {
+			t.Errorf("%s DATE_OFFER / total: %q %+v", c.isi.EmailType, w.DateOffer, w.Ringkasan)
+		}
 		label := map[string]string{"1": "Accept", "2": "Reject", "4": "Banding", "7": "Decline"}[c.isi.EmailType]
 		mauRiwayat := models.RiwayatProduksi{TypePolis: "NB", Posisi: "Offer", PIC: "Uji Pengguna", TglInp: "07/10/2026 22:04:05",
 			Div: "UJI-DIV", Type: "F", Putaran: "1", Approval: label, Keterangan: w.Riwayat.Keterangan, AksesLogin: "UJI-MKT",

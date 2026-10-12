@@ -22,7 +22,7 @@ nilainya hanya lewat pull request yang disetujui tim inti — dua modul tidak bo
 | Slot menu | `966-967` |
 | Prefix rute API | `/api/endorsmentfacin` |
 | Kontrak disediakan | — |
-| Kontrak dipakai | — |
+| Kontrak dipakai | `kontrak.JenisBisnisFacIn` (disediakan nbfacin, lewat `Membutuhkan` + `inti.Ambil` di `Pendaftaran()`; W-EDM-17) — jenis bisnis polis NB FacIn sistem baru dari `BusinessType_DeT` |
 
 `Pemilik` adalah penanda pemegang modul. Wilayah berkas yang boleh disentuh cabang
 `module/<nama>` dijaga `.github/workflows/penjaga-wilayah-cabang.yml` - CODEOWNERS
@@ -41,7 +41,9 @@ dipensiunkan 1 Oktober 2026.
 Terpakai: **260** `SEQ_WORK_POLIS_EDM` (START WITH 1 — nomor pertama `EDM-00001`, W-EDM-08), **261**
 `M_EDM_PENGECUALIAN_POLIS` (tabel konfigurasi pengecualian nomor polis, isinya diisi DBA — W-EDM-03; tanpa tabel ini
 `/periksa` tetap jalan dengan daftar kosong + catatan), **262** `T_EDM_FACIN_KASUS` (kepala kasus EDM, PK = ID
-`T_WORK_POLIS`, tanpa FK), **966** slot menu. Nomor berikut = 263. Urutan jalan: 260 → 261 → 262 → 966 — semuanya
+`T_WORK_POLIS`, tanpa FK), **263** konversi kasus EDM ke pola POSITION = tahap / POSITION_NOTE = workbasket
+(W-EDM-18; WAJIB sesudah nbfacin `254_position_note.sql` — urutan nama berkas menjaminnya; tanpa 254 `-migrate`
+berhenti ORA-00904 di 263), **966** slot menu. Nomor berikut = 264. Urutan jalan: 260 → 261 → 262 → 966 — semuanya
 dijalankan DBA, bukan agent. Tanpa 260/262 `POST …/kasus` menjawab 503; tanpa 262 gerbang 2 `belum-diperiksa`.
 ⛔ **260, 261, 262, dan 966 SUDAH JALAN di DEV** (`T_MIGRASI` 11-10-2026 17:12 / 17:25; dibaca sesi asisten
 `nusantarare-0b`) — berkasnya tidak boleh diubah lagi; ralat lewat migrasi baru (263 dst.). Isi

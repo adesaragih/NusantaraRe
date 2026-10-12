@@ -122,6 +122,20 @@ type TulisanSubmit struct {
 	// (jalur selesai Policy tidak men-SET NBStatus).
 	Policy        *TulisanPolicy
 	NBStatusTetap bool
+	// Ringkasan - total kasus T_GENERAL_POLIS (migrasi 252, keputusan work owner 12-10-2026 tiket 76): ditulis tiap Submit dari
+	// hitungan Go yang sudah ada; nil = tidak ditulis (hitung gagal / tanpa basis data).
+	Ringkasan *RingkasanTotalPolis
+	// DateOffer - T_GENERAL_POLIS.DATE_OFFER (252) teks "MM/dd/yyyy hh:mm a" GMT, Submit tahap marketing; ditulis HANYA bila kolom
+	// masih NULL (Submit marketing pertama); "" = tidak.
+	DateOffer string
+}
+
+// RingkasanTotalPolis - kolom total T_GENERAL_POLIS (migrasi 252), sudah dibulatkan 8 desimal; nil = NULL.
+//   - TotalTSINusaRe / TotalTSITopRisk = CountTotalTSIPremiNusaRe_Act langkah 14 (services totalTSIUW, kurs terbaru);
+//   - TotalTSINusaReSpreading / TotalPremiNusaRe = CountPremiAndTSIRNM*_ACT (services ringkasanRNM + totalKeIDR, Total RNM IDR
+//     tab Cedant) - MENYIMPANG K49-11: dijumlah per mata uang lalu ke IDR (Pega menjumlah angka lintas mata uang).
+type RingkasanTotalPolis struct {
+	TotalTSINusaRe, TotalTSITopRisk, TotalTSINusaReSpreading, TotalPremiNusaRe *apd.Decimal
 }
 
 // StatusBinding - teks Pega: ConfirmBinding "1" / "0", ReceivedRiSlip "true" / "false".

@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"nusantarare/modul/nbfacin/backend/models"
+	"nusantarare/modul/nbfacin/backend/services/jenisbisnis"
+	"nusantarare/modul/nbfacin/backend/services/kontrakfacin"
 )
 
 // Tiket 73 P0 - gerbang Class of Business.
@@ -24,9 +26,13 @@ func TestBusinessTypeDari(t *testing.T) {
 		if got := businessTypeDari(c.gp, c.old); got != c.mau {
 			t.Errorf("%s/%s: %q mau %q", c.gp, c.old, got, c.mau)
 		}
+		// kontrak.JenisBisnisFacIn (Endorsement Fac In) = perhitungan yang sama, bukan salinan (keputusan work owner 12-10-2026).
+		if got := (kontrakfacin.JenisBisnis{}).BusinessType(c.gp, c.old); got != c.mau {
+			t.Errorf("kontrak %s/%s: %q mau %q", c.gp, c.old, got, c.mau)
+		}
 	}
-	if len(tabelBusinessType) != 36 {
-		t.Errorf("baris %d", len(tabelBusinessType))
+	if jenisbisnis.JumlahBaris() != 36 {
+		t.Errorf("baris %d", jenisbisnis.JumlahBaris())
 	}
 }
 

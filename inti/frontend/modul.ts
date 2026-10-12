@@ -102,7 +102,9 @@ export interface MenuModul<H extends string = HalamanTerdaftar> {
    * modul pemiliknya tampil untuk akun itu (baris M_NAV_MENU dimigrasi, modul aktif, menu dipegang akun); halamannya wajib
    * salah satu `halaman` modul. Pengecualian sadar atas "satu modul satu menu" (30-09-2026).
    */
-  menuAtas?: readonly { label: string; halaman: H }[]
+  /** `semua` (aditif 12-10-2026): tombol tampil bagi SEMUA akun yang login, seperti Beranda - tanpa syarat menu akun - selama
+   *  modul pemiliknya aktif (MODUL_AKTIF). Tanpa `semua`: tampil bila tombol modul pemiliknya tampil. */
+  menuAtas?: readonly { label: string; halaman: H; semua?: boolean }[]
   /**
    * Opsional dan aditif (10-10-2026): form tambah modul ini SUDAH berupa jendela sendiri (mis. popup Add account). Rute
    * yang dibuka `PropsRute.onBukaMenu(modul, { baru: true })` lalu dipasang TANPA bingkai jendela Shell, dan rutenya
@@ -194,7 +196,9 @@ export interface ModulFrontend<H extends string> {
   /** Penyedia daftar kotak masuk Beranda (lihat `MenuModul.daftarBeranda`). */
   daftarBeranda?: (workbasket: string | null) => Promise<DaftarBeranda>
   /** Tombol sidebar di bawah Beranda (lihat `MenuModul.menuAtas`). */
-  menuAtas?: readonly { label: string; halaman: H }[]
+  /** `semua` (aditif 12-10-2026): tombol tampil bagi SEMUA akun yang login, seperti Beranda - tanpa syarat menu akun - selama
+   *  modul pemiliknya aktif (MODUL_AKTIF). Tanpa `semua`: tampil bila tombol modul pemiliknya tampil. */
+  menuAtas?: readonly { label: string; halaman: H; semua?: boolean }[]
   /** Form tambah berupa jendela sendiri (lihat `MenuModul.formBaruBerjendela`). */
   formBaruBerjendela?: boolean
   /**

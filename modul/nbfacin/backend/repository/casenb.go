@@ -77,6 +77,18 @@ func sqlSisipCase(tabel string) string {
 		` VALUES (:1, :2, :3, :4, :5, :6, :7, SYSDATE, SYSDATE)`, tabel)
 }
 
+// sqlSisipCaseCatatan / argSisipCaseCatatan - tiket 77 (migrasi 254): POSITION = tahap Offer (flag awal 0) dan POSITION_NOTE =
+// ReasFacInMarketing (PositionNote awal Pega).
+func sqlSisipCaseCatatan(tabel string) string {
+	return fmt.Sprintf(`INSERT INTO %s (ID, LINI, POSITION, POSITION_NOTE, FLAG_ONGOING_POLICY, STATUS_WORK, CREATE_OP, CREATE_OP_NAME,`+
+		` TGL_CREATE, TGL_UPDATE) VALUES (:1, :2, :3, :4, :5, :6, :7, :8, SYSDATE, SYSDATE)`, tabel)
+}
+
+func argSisipCaseCatatan(id, pembuat string) []any {
+	return []any{id, LiniFacIn, TahapDariFlag(FlagAwalCaseNB), CatatanPosisiDari(PosisiAwalCaseNB), FlagAwalCaseNB, StatusAwalCaseNB,
+		pembuat, pembuat}
+}
+
 func argSisipCase(id, pembuat string) []any {
 	return []any{id, LiniFacIn, PosisiAwalCaseNB, FlagAwalCaseNB, StatusAwalCaseNB, pembuat, pembuat}
 }
@@ -107,6 +119,9 @@ func (r *CaseNBOracle) PengenalBerikut(ctx context.Context, tx *db.Tx) (string, 
 
 // SisipCase - lihat PenulisCaseNB.
 func (r *CaseNBOracle) SisipCase(ctx context.Context, tx *db.Tx, id, pembuat string) error {
+	if work, err := r.db.Qualify(TabelWorkPolis); err == nil && adaCatatanPosisi(ctx, r.db, work) {
+		return r.sisip(ctx, tx, TabelWorkPolis, sqlSisipCaseCatatan, argSisipCaseCatatan(id, pembuat)) // tiket 77
+	}
 	return r.sisip(ctx, tx, TabelWorkPolis, sqlSisipCase, argSisipCase(id, pembuat))
 }
 

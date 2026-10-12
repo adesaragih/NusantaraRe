@@ -69,6 +69,11 @@ func (r *ScoringOracle) tabel() (tabelScoring, error) {
 
 // ---- SQL ---------------------------------------------------------------------------------------------------------
 
+// sqlKepalaScoringCatatan - sqlKepalaScoring dengan posisi efektif (tiket 77).
+func sqlKepalaScoringCatatan(work string) string {
+	return "SELECT " + sqlPosisiEfektif("w") + ", w.FLAG_ONGOING_POLICY FROM " + work + " w WHERE w.ID = :1 AND w.LINI = :2"
+}
+
 func sqlKepalaScoring(work string) string {
 	return "SELECT POSITION, FLAG_ONGOING_POLICY FROM " + work + " WHERE ID = :1 AND LINI = :2"
 }
@@ -174,7 +179,11 @@ func (r *ScoringOracle) BacaScoring(ctx context.Context, id string) (models.Kasu
 		return k, err
 	}
 	var posisi, flag sql.NullString
-	err = r.db.QueryRowContext(ctx, sqlKepalaScoring(t.work), id, LiniFacIn).Scan(&posisi, &flag)
+	q := sqlKepalaScoring(t.work)
+	if adaCatatanPosisi(ctx, r.db, t.work) {
+		q = sqlKepalaScoringCatatan(t.work)
+	}
+	err = r.db.QueryRowContext(ctx, q, id, LiniFacIn).Scan(&posisi, &flag)
 	if errors.Is(err, sql.ErrNoRows) {
 		return k, ErrKasusTidakAda
 	}

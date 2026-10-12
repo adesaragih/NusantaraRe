@@ -28,15 +28,11 @@ export const FORM = {
   jenisBaru: 'Choose EDM Type',
   detail: 'Detail EDM Type',
   tanggal: 'Endorsement Date',
-  biaya: 'Biaya',
-  survey: 'Survey',
+  status: 'Endorsement Status',
   retro: 'Endorsement Internal Retro',
   ok: 'OK',
   batal: 'Cancel',
-  // Teks penata layar sistem baru (bukan Pega) - templat NB FacIn, work owner 11-10-2026 "biar user friendly".
-  bagianPolis: 'Policy',
-  bagianJenis: 'Endorsement',
-  bagianLain: 'Additional',
+  // Teks penata layar sistem baru (bukan Pega) - work owner 11-10-2026 "biar user friendly".
   kalender: 'Open calendar',
   formatTanggal: 'Use the date format dd/mm/yyyy',
 } as const
@@ -94,47 +90,41 @@ export const DETAIL_EDM: Readonly<Record<string, readonly Pilihan[]>> = {
 }
 
 /**
- * `.EndorsementInternalRetro` - pxRadioButtons, bawaan `0` (WorkPrimaryDetails L10212); gerbang 6 membaca `==1`.
- * ⚠️ Prompt list properti ini TIDAK ada di korpus: kodenya ditampilkan apa adanya sampai teksnya diketahui.
+ * `.EndorsementInternalRetro` - pxRadioButtons vertikal, bawaan `0` (WorkPrimaryDetails L10212); gerbang 6 membaca `==1`.
+ * Teks = prompt list properti Pega dari tangkapan layar work owner 11-10-2026 (W-EDM-14; rule properti tidak ada di
+ * korpus): 1 Yes · 0 No, urutan layar Yes lalu No.
  */
 export const PILIHAN_RETRO: readonly Pilihan[] = [
-  { nilai: '1', label: '1' },
-  { nilai: '0', label: '0' },
+  { nilai: '1', label: 'Yes' },
+  { nilai: '0', label: 'No' },
 ]
 
-/** Teks pemeriksaan - teks sistem baru (bukan Pega): Pega hanya mematikan tombol OK dan memasang pesan di medan. */
+/**
+ * `.EndorsementStatus` - pxDropdown, WAJIB bila bukan Life (`pyRequiredWhen OutData.pxResults(1).CARI2!='Life'`,
+ * WorkPrimaryDetails L8906), bawaan tampil "Internal". Prompt list dari tangkapan layar work owner 11-10-2026 (W-EDM-13).
+ */
+export const STATUS_EDM: readonly Pilihan[] = [
+  { nilai: '0', label: 'Internal' },
+  { nilai: '1', label: 'External' },
+  { nilai: '2', label: 'Batal Internal' },
+  { nilai: '3', label: 'Batal External' },
+]
+
+/**
+ * Teks pemeriksaan - teks sistem baru (bukan Pega): Pega hanya mematikan tombol OK dan memasang pesan di medan. Panel
+ * rincian gerbang TIDAK ditampilkan (work owner 12-10-2026: "ini tidak perlu ditampilkan"); pesan penolakan tampil di
+ * bawah medannya (PolicyNo / EndorsementDate), seperti `Property-Set-Messages`.
+ */
 export const PERIKSA = {
-  memeriksa: 'Checking the policy…',
-  lolos: 'The policy passed every check.',
-  belumLengkap: 'Some checks could not be run yet - the endorsement case cannot be created until they are.',
-  judulGerbang: 'Policy checks',
-  gerbang: {
-    1: 'Policy already cancelled by endorsement',
-    2: 'Unfinished endorsement on this policy',
-    3: 'Claim on this policy',
-    4: 'Payment on this policy (cancellation only)',
-    5: 'Renewal of this policy',
-    6: 'Fac out spreading (internal retro only)',
-  } as Readonly<Record<number, string>>,
-  hasil: {
-    lolos: 'passed',
-    tolak: 'rejected',
-    diklep: 'exception applies',
-    dilewati: 'skipped',
-    'belum-diperiksa': 'not checked yet',
-  } as Readonly<Record<string, string>>,
-  bisnis: 'Line of business',
-  periode: (mulai: string, akhir: string) => (mulai === '' && akhir === '' ? 'Policy period' : `Policy period ${mulai} – ${akhir}`),
   /** OK mati - Pega mematikannya selama `CARIGROUP` belum `true` (crmNewHarnessButtons L885). */
   okMati: 'Fill in the required fields and pass every policy check first.',
-  /** Alasan OK mati, satu per keadaan - ditampilkan di bawah kepala form. */
+  /** Alasan OK mati, satu per keadaan - ditampilkan di samping tombol. */
   alasan: {
     wajib: (medan: string[]) => `Required: ${medan.join(', ')}.`,
     memeriksa: 'Checking the policy…',
-    ditolak: 'The policy did not pass the checks below.',
-    belumLengkap: 'Some checks could not be run yet.',
+    ditolak: 'The policy cannot be endorsed - see the message under the field.',
+    belumLengkap: 'Some policy checks could not be run yet. Please try again later.',
   },
-  belumDiperiksa: 'Enter the policy number to run the policy checks.',
   menyimpan: 'Creating the endorsement case…',
   /** Pesan portal sesudah kasus lahir - teks sistem baru. */
   dibuat: (id: string) => `Endorsement case ${id} created.`,

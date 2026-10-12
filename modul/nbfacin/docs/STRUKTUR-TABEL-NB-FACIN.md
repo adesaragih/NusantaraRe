@@ -156,6 +156,54 @@ dijaga `TestMigrasiFlatSebagianCocokRancangan`). Berbagi PK dengan `T_WORK_POLIS
 | `CONFIRM_BINDING` | teks | VARCHAR2(50) | tiket 64 (migrasi 213) — `.OfferFacIn.ConfirmBinding` "1" / "0"; ditulis tombol Binding (`POST …/submit/binding`), direset Revise |
 | `RECEIVED_RI_SLIP` | teks | VARCHAR2(50) | tiket 64 (migrasi 213) — `.OfferFacIn.ReceivedRiSlip` "true" / "false"; ditulis Submit tahap Binding (Accept), direset Revise |
 | `PRO_RATE_PERCENT` | angka desimal | NUMBER(38,8) | tiket 73 P2 (migrasi 255, rentang kedua) — `.OfferFacIn.ProRatePercent` % Pro Rate tingkat case tab Coverage Aneka; ditulis PUT `…/objek-aneka`; NULL = belum diisi (dihitung dari tanggal, CPCA langkah 4) |
+| `OLD_POLIS_ID` | angka bulat | NUMBER(19) | migrasi 252 — kolom sistem rancangan — hanya RENEWAL (aturan loader K-071 J-5); NULL di NB |
+| `ADDITIONAL_CAPITAL` | teks | VARCHAR2(50) | migrasi 252 — medan rancangan `AdditionalCapital` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `BINDER_RNM` | teks | VARCHAR2(50) | migrasi 252 — `.OfferFacIn.BinderRNM` — tanpa Property-Set di korpus NB FacIn (Section `Periode_IsUW` + InsertTreatyProduction_Sql); belum diisi |
+| `CEDING_RETENTION` | angka desimal | NUMBER(38,8) | migrasi 252 — medan rancangan `CedingRetention` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `CEDING_RETENTION_NOMINAL` | angka desimal | NUMBER(38,8) | migrasi 252 — medan rancangan `CedingRetentionNominal` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `COMMENT_CEDING` | teks | VARCHAR2(500) | migrasi 252 — medan rancangan `CommentCeding` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `CONDITION` | teks | VARCHAR2(500) | migrasi 252 — medan rancangan `Condition` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `CURRENT_YEAR` | teks | VARCHAR2(50) | migrasi 252 — medan rancangan `CurrentYear` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `DATE_OFFER` | teks | VARCHAR2(30) | migrasi 252 — `.OfferFacIn.Date` (`ViewOfferFacInUW_PreDT` baris 2) teks "MM/dd/yyyy hh:mm a" GMT; ditulis Submit tahap marketing bila masih NULL (pendekatan, keputusan work owner 12-10-2026) |
+| `FLAG_SAVE_FO` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `FlagSaveFO` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `FLAG_SPECIAL_ACCEPTANCE` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `FlagSpecialAcceptance` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `FLAG_SPREADING` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `FlagSpreading` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `FOLLOWING_NB` | teks | VARCHAR2(50) | migrasi 252 — medan rancangan `FollowingNB` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `GENERATE_DATE_POLICY_NO` | teks | VARCHAR2(30) | migrasi 252 — `.PolicyData.GenerateDatePolicyNo` (`GenerateNopolis_Act` langkah 10) teks Pega UTC; ditulis Selesai Policy saat nomor polis TERBIT (pendekatan, keputusan work owner 12-10-2026) |
+| `ID_FOLLOWING_NB` | teks | VARCHAR2(50) | migrasi 252 — medan rancangan `IDFollowingNB` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `INPUT_COMMENT_DEDUCTIBLE` | teks | VARCHAR2(500) | migrasi 252 — medan rancangan `InputCommentDeductible` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `IS_B2_B` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `IsB2B` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `IS_BANDING` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `IsBanding` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `IS_EDIT_REFF_NUMBER` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `IsEditReffNumber` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `IS_FAC_RETRO` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `IsFacRetro` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `IS_GROSS_NET_SHOW` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `IsGrossNetShow` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `IS_INPUT_FAC_RETRO` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `IsInputFacRetro` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `IS_LIFE_PERIOD` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `IsLifePeriod` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `IS_OCCUP_EXCEPTION` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `IsOccupException` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `IS_PREFERRED_RISK` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `IsPreferredRisk` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `IS_PRO_RATE` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `IsProRate` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `IS_RI_SLIP` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `IsRISlip` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `IS_SPECIAL_ACCEPTANCE` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `IsSpecialAcceptance` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `IS_TOP_RISK` | teks | VARCHAR2(10) | migrasi 252 — medan rancangan `IsTopRisk` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `OFFICER_FAC_OUT` | teks | VARCHAR2(50) | migrasi 252 — medan rancangan `OfficerFacOut` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `PARAM_CONDITION` | teks | VARCHAR2(500) | migrasi 252 — medan rancangan `ParamCondition` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `POLICY_MASTER_ID_PEGA` | teks | VARCHAR2(50) | migrasi 252 — `.OfferFacIn.PolicyMasterIDPega` — tanpa Property-Set di korpus NB FacIn (Obj-Open-By-Handle saja); belum diisi |
+| `POLICY_MASTER_NUMBER` | teks | VARCHAR2(50) | migrasi 252 — `.OfferFacIn.PolicyMasterNumber` — tanpa Property-Set di korpus NB FacIn (hanya dibaca); belum diisi |
+| `POLICY_NO` | teks | VARCHAR2(50) | migrasi 252 — TAHAP 1 — `.PolicyData.PolicyNo` nomor polis (`SaveJsonPolicyFacIn_Act` langkah 12; = JSON_POLIS.NOPOLIS); ditulis Selesai Policy |
+| `PRO_RATE_TYPE` | angka bulat | NUMBER(5) | migrasi 252 — medan rancangan `ProRateType` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `PROD_DATE_TIME` | teks | VARCHAR2(30) | migrasi 252 — TAHAP 1 — `.PolicyData.ProdDateTime` (`SaveJsonPolicyFacIn_Act` langkah 5), teks Pega `YYYYMMDDTHHMMSS.000 GMT` dari JSON_POLIS.TGL_PROD (jam dinding WIB); ditulis Selesai Policy |
+| `PROD_KE` | angka bulat | NUMBER(5) | migrasi 252 — TAHAP 1 — versi produksi = JSON_POLIS.PRODKE (NB `'0'`, `INSERTJSON_JSONPOLIS_FACIN`; aturan loader K-071 J-3); ditulis Selesai Policy |
+| `PRODUCT_BRIGUNA` | teks | VARCHAR2(50) | migrasi 252 — medan rancangan `ProductBriguna` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `SAVE_FAC_OUT` | teks | VARCHAR2(50) | migrasi 252 — medan rancangan `SaveFacOut` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `SHARE_RNML` | angka desimal | NUMBER(38,8) | migrasi 252 — medan rancangan `ShareRNML` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `SOURCE_ID` | teks | VARCHAR2(50) | migrasi 252 — kolom turunan rancangan (loader); belum diisi aplikasi |
+| `SUM_TOTAL_TSI` | angka desimal | NUMBER(38,8) | migrasi 252 — `.OfferFacIn.SumTotalTSI` (SumTSIObjItem_act / SetTotalFormula_ACT) — Go belum punya hitungannya; NULL |
+| `TOTAL_PREMI_NUSA_RE` | angka desimal | NUMBER(38,8) | migrasi 252 — `.OfferFacIn.TotalPremiNusaRe` = Total Premi RNM IDR tab Cedant (`ringkasanRNM` + `totalKeIDR`), MENYIMPANG K49-11; ditulis TIAP Submit; kurs tidak ada = NULL |
+| `TOTAL_RI_COM_NUSA_RE` | teks | VARCHAR2(50) | migrasi 252 — medan rancangan `TotalRIComNusaRe` — belum diisi aplikasi (tahap 2 / 3, peta di docs/issues/76) |
+| `TOTAL_TSI_NUSA_RE` | angka desimal | NUMBER(38,8) | migrasi 252 — `.OfferFacIn.TotalTSINusaRe` = hitungan Go `totalTSIUW` (CountTotalTSIPremiNusaRe_Act L14, kurs terbaru), 8 desimal; ditulis TIAP Submit (keputusan work owner 12-10-2026); kurs tidak ada = NULL |
+| `TOTAL_TSI_NUSA_RE_SPREADING` | angka desimal | NUMBER(38,8) | migrasi 252 — `.OfferFacIn.TotalTSINusaReSpreading` = Total TSI RNM IDR tab Cedant (`ringkasanRNM` + `totalKeIDR`), MENYIMPANG K49-11 (per mata uang -> IDR); ditulis TIAP Submit; kurs tidak ada = NULL |
+| `TOTAL_TSI_TOP_RISK` | angka desimal | NUMBER(38,8) | migrasi 252 — `.OfferFacIn.TotalTSITopRisk` = hitungan Go `totalTSIUW` (L14), 8 desimal; ditulis TIAP Submit; kurs tidak ada = NULL |
+| `TREATY_CAPACITY` | angka desimal | NUMBER(38,8) | migrasi 252 — `.OfferFacIn.TreatyCapacity` (SumTreatyCapacity_Act L9) — Go belum punya hitungannya; NULL |
 
 ## T_QUOTATIONDATA
 
@@ -180,6 +228,46 @@ per case (`UQ_T_QUOTATIONDATA_PARENT`, A87); `PARENT_ID` → `T_GENERAL_POLIS.ID
 | `CEDING_CO_NAME` | teks | VARCHAR2(4000) | Ceding co name — `.QuotationData.CedingCoName` (sel 49), gabungan `;` nama dari `AGENT` (tiket 34); 183 VARCHAR2(500), dilebarkan migrasi **185** (butir 80) |
 | `GROUP_NAME` | teks | VARCHAR2(500) | Group Name — `.QuotationData.GroupName` (sel 56), tampil saja |
 | `SHARE_OF_CEDING` | teks | VARCHAR2(50) | tiket 49 (migrasi 199) — `.QuotationData.ShareOfCeding`, teks Pega apa adanya: "100%" (Gross) atau % Share RNM + "%" (Share RNM), `SetShareOfCeding`; rancangan NUMBER, contoh 94/94 berbentuk "N%" |
+| `BRANCH_CODE` | teks | VARCHAR2(50) | migrasi 253 — `.QuotationData.BranchCode` = MARKETINGOFFICER.BRANCHDETAILID per MOID (`CheckDataQuotation` langkah 6); ditulis Save General (tiket 76b); lebih lebar dari kolom = NULL |
+| `BRANCH_NAME` | teks | VARCHAR2(500) | migrasi 253 — `.QuotationData.BranchName` = MARKETINGOFFICER.BRANCHDETAILNAME per MOID (`CheckDataQuotation` langkah 6); ditulis Save General (tiket 76b); lebih lebar dari kolom = NULL |
+| `BUSINESS_CODE` | teks | VARCHAR2(50) | migrasi 253 — `.QuotationData.BusinessCode` = BUSINESS.ID baris kasus (tepat satu, ber-GROUPPANEL); ditulis Save General |
+| `BUSINESS_FAC` | teks | VARCHAR2(50) | migrasi 253 — `.QuotationData.BusinessFac` "F" (`InputQuotation_PreDT`, workgroup ReasFacIn); ditulis Save General |
+| `BUSINESS_NAME` | teks | VARCHAR2(500) | migrasi 253 — `.QuotationData.BusinessName` = Class of Business opportunity (= BUSINESS.NOTE); ditulis Save General |
+| `BUSINESS_OLD_ID` | teks | VARCHAR2(50) | migrasi 253 — `.QuotationData.BusinessOldId` = BUSINESS.OLDID (GetOldIDBusiness_SQL); ditulis Save General |
+| `BUSINESS_TYPE` | teks | VARCHAR2(50) | migrasi 253 — `.QuotationData.BusinessType` = BusinessType_DeT (`SetBusinessType_Act`, port businessTypeDari); ditulis Save General |
+| `BUSINESS_TYPE2` | teks | VARCHAR2(50) | migrasi 253 — `.QuotationData.BusinessType2` "LIFE" / "NONLIFE" (`InwardFacultative_PreDT`); ditulis Save General |
+| `COMMENT_TEXT` | teks | VARCHAR2(500) | migrasi 253 — medan rancangan `.QuotationData.Comment` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `COPY_FROM` | teks | VARCHAR2(50) | migrasi 253 — medan rancangan `.QuotationData.CopyFrom` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `EMAIL` | teks | VARCHAR2(50) | migrasi 253 — medan rancangan `.QuotationData.Email` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `FAC_OUT_STATUS` | teks | VARCHAR2(50) | migrasi 253 — medan rancangan `.QuotationData.FacOutStatus` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `FRONTING_STATUS` | teks | VARCHAR2(50) | migrasi 253 — medan rancangan `.QuotationData.FrontingStatus` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `GROUP_PANEL` | teks | VARCHAR2(50) | migrasi 253 — `.QuotationData.GroupPanel` = BUSINESS.GROUPPANEL; ditulis Save General |
+| `INPUT_MONTH` | teks | VARCHAR2(50) | migrasi 253 — medan rancangan `.QuotationData.InputMonth` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `INPUT_QUO_DATE` | teks | VARCHAR2(30) | migrasi 253 — medan rancangan `.QuotationData.InputQuoDate` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `INSURED_ID` | teks | VARCHAR2(50) | migrasi 253 — `.QuotationData.InsuredID` = T_NB_OPPORTUNITY.INSURED_ID (rujukan sistem baru; Pega dari POOLDATA.CLIENT); ditulis Save General |
+| `INSURED_NAME` | teks | VARCHAR2(500) | migrasi 253 — `.QuotationData.InsuredName` = T_M_ACCOUNT.INSUREDNAME per ACCOUNT_ID (seperti layar); ditulis Save General |
+| `IS_EDM_SHARE` | teks | VARCHAR2(10) | migrasi 253 — medan rancangan `.QuotationData.IsEDMShare` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `IS_GROUP` | teks | VARCHAR2(10) | migrasi 253 — medan rancangan `.QuotationData.IsGroup` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `IS_MOP` | teks | VARCHAR2(10) | migrasi 253 — `.QuotationData.IsMOP` (`SetMOP_Act`): POLICY_TYPE 0 -> "NonMOP", 1 / 2 -> "MOP"; ditulis Save General |
+| `IS_PROPOSAL` | teks | VARCHAR2(10) | migrasi 253 — medan rancangan `.QuotationData.IsProposal` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `IS_SURVEY_REPORT` | teks | VARCHAR2(10) | migrasi 253 — medan rancangan `.QuotationData.IsSurveyReport` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `IS_TBA` | teks | VARCHAR2(10) | migrasi 253 — medan rancangan `.QuotationData.IsTBA` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `IS_TEMPLATE` | teks | VARCHAR2(10) | migrasi 253 — medan rancangan `.QuotationData.IsTemplate` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `MARKETING_CODE` | teks | VARCHAR2(50) | migrasi 253 — `.QuotationData.MarketingCode` = MARKETINGOFFICER.CLIENTID per MOID (`CheckDataQuotation` langkah 6); ditulis Save General (tiket 76b); lebih lebar dari kolom = NULL |
+| `MARKETING_NAME` | teks | VARCHAR2(500) | migrasi 253 — `.QuotationData.MarketingName` = MARKETINGOFFICER.CLIENTNAME per MOID (`CheckDataQuotation` langkah 6); ditulis Save General (tiket 76b); lebih lebar dari kolom = NULL |
+| `OFFERING_DATE` | teks | VARCHAR2(30) | migrasi 253 — medan rancangan `.QuotationData.OfferingDate` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `OLD_POLICY_NO` | teks | VARCHAR2(50) | migrasi 253 — medan rancangan `.QuotationData.OldPolicyNo` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `OPERATOR_ID` | teks | VARCHAR2(50) | migrasi 253 — medan rancangan `.QuotationData.OperatorID` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `PERIOD` | teks | VARCHAR2(30) | migrasi 253 — medan rancangan `.QuotationData.Period` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `PERIOD_MM` | teks | VARCHAR2(30) | migrasi 253 — medan rancangan `.QuotationData.PeriodMM` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `QQID` | teks | VARCHAR2(50) | migrasi 253 — medan rancangan `.QuotationData.QQID` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `SOB_LEADER0` | teks | VARCHAR2(50) | migrasi 253 — medan rancangan `.QuotationData.SobLeader0` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `SOB_LSG` | teks | VARCHAR2(50) | migrasi 253 — medan rancangan `.QuotationData.SobLsg` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `STATUS_BUSINESS` | teks | VARCHAR2(50) | migrasi 253 — `.QuotationData.StatusBusiness` "1" (NB); ditulis Save General; NULL = salinan belum pernah ditulis (penanda backfill) |
+| `STATUS_SYARIAH` | teks | VARCHAR2(50) | migrasi 253 — medan rancangan `.QuotationData.StatusSyariah` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `TEAM_GROUP` | teks | VARCHAR2(50) | migrasi 253 — `.QuotationData.TeamGroup` = MARKETINGOFFICER.TEAMGROUP per MOID (`CheckDataQuotation` langkah 6); ditulis Save General (tiket 76b); lebih lebar dari kolom = NULL |
+| `TYPE` | teks | VARCHAR2(50) | migrasi 253 — medan rancangan `.QuotationData.Type` — belum diisi aplikasi (peta di docs/issues/76b) |
+| `BTN_QUOTATION` | teks | VARCHAR2(50) | migrasi 253 — medan rancangan `.QuotationData.btnQuotation` — belum diisi aplikasi (peta di docs/issues/76b) |
 
 ## T_CEDINGCOLIST
 

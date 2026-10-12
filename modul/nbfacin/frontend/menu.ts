@@ -34,7 +34,9 @@ export const PENDAFTARAN_MENU: MenuModul<HalamanNbFacIn> = {
   // Daftar case yang menunggu, ID membuka layar case (`PropsRute.bukaKasus`).
   daftarBeranda,
   // Tiket 71 (work owner 09-10-2026 "View Policy dibuatin di menu baru. dibawah menu home").
-  menuAtas: [{ label: VIEW_POLICY.judul, halaman: 'nbfacin-view-policy' }],
+  // `semua`: tampil bagi semua akun seperti Home, tidak ikut menu NB FacIn (work owner 12-10-2026 "jangan digabung, samain aksesnya
+  // kaya menu home, selalu muncul untuk ke semua"). Endpoint View Policy memang hanya mewajibkan login (K71-3).
+  menuAtas: [{ label: VIEW_POLICY.judul, halaman: 'nbfacin-view-policy', semua: true }],
 }
 
 declare module '../../../inti/frontend/modul' {

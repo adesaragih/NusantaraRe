@@ -108,7 +108,7 @@ func TestBacaKasus(t *testing.T) {
 		return k
 	}
 	all, _ := json.Marshal(j)
-	if n := len(kunci(all)); n != 21 || len(kunci(j["opportunity"])) != 14 || len(kunci(j["general"])) != 15 {
+	if n := len(kunci(all)); n != 22 || len(kunci(j["opportunity"])) != 14 || len(kunci(j["general"])) != 15 {
 		t.Errorf("kunci %v / opportunity %v / general %v", kunci(all), kunci(j["opportunity"]), kunci(j["general"]))
 	}
 	for _, harus := range []string{`"caseId":"UJI-NB-1"`, `"position":"Offer"`, `"statusWork":"Pending-Policy"`,
@@ -183,5 +183,24 @@ func TestMarketingOfficer(t *testing.T) {
 	}
 	if kode, _ := minta(t, services.Baru(nil), "GET", "/api/nbfacin/marketing-officer", "", ""); kode != 503 {
 		t.Errorf("tanpa DB: %d", kode)
+	}
+}
+
+// mbTiruanH - PembacaMarketingOfficer + PembacaMarketingBawaan untuk uji HTTP.
+type mbTiruanH struct{ hasil []string }
+
+func (mbTiruanH) DaftarMarketingOfficer(context.Context) ([]models.MarketingOfficer, error) {
+	return nil, nil
+}
+func (m mbTiruanH) MarketingBawaan(context.Context, string) ([]string, error) { return m.hasil, nil }
+
+// TestMarketingBawaanKabel - GET kasus: medan tingkat atas `marketingBawaan` (keputusan work owner 12-10-2026) = ID MARKETINGOFFICER
+// pembuat case bila MOID kosong; ganda -> "".
+func TestMarketingBawaanKabel(t *testing.T) {
+	for hasil, mau := range map[string][]string{`"marketingBawaan":"UJI-MO-7"`: {"UJI-MO-7"}, `"marketingBawaan":""`: {"UJI-MO-9", "UJI-MO-3"}} {
+		svc := layananKasus().DenganMarketingOfficer(mbTiruanH{hasil: mau})
+		if kode, isi := minta(t, svc, "GET", "/api/nbfacin/kasus/UJI-NB-1", "", ""); kode != 200 || !strings.Contains(isi, hasil) {
+			t.Errorf("%v: %d %s", mau, kode, isi)
+		}
 	}
 }

@@ -30,6 +30,12 @@ const (
 	catatanDiklep = "Opened by OPENPROTEKSI_EDM"
 	// catatanGetListEdm - `GetListEdm` dipanggil lewat pxRetrieveReportData (langkah 5.6-5.7); body report tidak ada.
 	catatanGetListEdm = "Unfinished EDM list not checked: report GetListEdm (ASM-FW-GISFW-Work-Endorsement) is not in corpus"
+	// catatanBisnisSistemBaru - A52: lini polis sistem baru belum dapat dihitung.
+	catatanBisnisSistemBaru = "Line of business of a policy created in the new system is not checked yet"
+	// catatanBisnisDariTabel - A51: lini polis sistem baru dari FACINPRODUCTION → BUSINESS → BusinessType_DeT (nbfacin).
+	catatanBisnisDariTabel = "Line of business taken from production tables (policy created in the new system)"
+	// catatanG1SistemBaru - A51: polis sistem baru tanpa kasus EDM berproduksi.
+	catatanG1SistemBaru = "No completed endorsement in the new system"
 	// catatanEDMPega - gerbang 2 lolos: hanya kasus sistem baru yang diperiksa (keputusan work owner W-EDM-12).
 	catatanEDMPega = "EDM cases created in Pega are not checked"
 	// catatanKasusBelumAda - T_EDM_FACIN_KASUS (migrasi 262) belum dibuat DBA.
@@ -65,6 +71,11 @@ type DataPeriksa struct {
 	StatusEDM string
 	// StatusEDMDibaca - StatusEDM sudah diquery (RI slip melompatinya di /periksa; OpenCase tetap membutuhkannya).
 	StatusEDMDibaca bool
+	// SistemBaru - polis buatan NB FacIn sistem baru (DATA_JSON versi terakhir memuat IDNewBisnis, A51). StatusEDM
+	// lalu bersumber kasus EDM sistem baru yang berproduksi, bukan DATA_JSON.
+	SistemBaru bool
+	// G1TakTerbaca - polis sistem baru, T_EDM_FACIN_KASUS tidak ada (ORA-00942): gerbang 1 belum diperiksa.
+	G1TakTerbaca bool
 	// EDMBelumSelesai - gerbang 2: ID kasus EDM sistem baru yang belum selesai (nol atau satu).
 	EDMBelumSelesai []string
 	// G2Diperiksa - gerbang 2 sudah dibaca dari T_EDM_FACIN_KASUS; false = belum diperiksa.
@@ -81,6 +92,9 @@ type DataPeriksa struct {
 	Facout bool
 	// JenisBisnis - GetBusinessType_Sql CARI2 mentah, SEBELUM langkah 8.
 	JenisBisnis string
+	// JenisBisnisDariTabel - JenisBisnis diturunkan dari FACINPRODUCTION → BUSINESS → kontrak JenisBisnisFacIn
+	// (polis sistem baru, A51), bukan dari DATA_JSON.
+	JenisBisnisDariTabel bool
 	// Klep - BrowseOpenProteksiEdm_RD per Param.Type: true = ada baris. Tidak ada di peta = kosong.
 	Klep map[KlepPembatal]bool
 	// KlepTakTerbaca - OPENPROTEKSI_EDM tidak ada (ORA-00942): seluruh klep kosong.
@@ -127,6 +141,9 @@ func SusunHasilPeriksa(d DataPeriksa) (models.HasilPeriksa, error) {
 
 	// Langkah 7-18: jenis bisnis dan predikat lini.
 	jenisBisnis := JenisBisnisUntukPredikat(d.PolicyNo, d.JenisBisnis)
+	// A52: polis sistem baru tanpa BusinessType di DATA_JSON - lini belum dapat dihitung (menunggu kontrak
+	// JenisBisnisFacIn); tidak dinilai, bukan "Invalid policy no!".
+	bisnisBelum := d.SistemBaru && jenisBisnis == ""
 	var p Predikat
 	if jenisBisnis != "" {
 		var err error
@@ -137,7 +154,7 @@ func SusunHasilPeriksa(d DataPeriksa) (models.HasilPeriksa, error) {
 
 	m := MasukanGerbang{
 		PolicyNo: d.PolicyNo, EdmType: d.EdmType, EdmTypeNew: d.EdmTypeNew,
-		EndorsementInternalRetro: d.EndorsementInternalRetro, Predikat: p,
+		EndorsementInternalRetro: d.EndorsementInternalRetro, Predikat: p, BisnisBelumDiperiksa: bisnisBelum,
 		Query: HasilQueryGerbang{
 			StatusEDM: d.StatusEDM, Klaim: d.Klaim, CacahRenewal: cacah(d.Renewal), CacahFacout: cacah(d.Facout),
 			JenisBisnis: d.JenisBisnis, Klep: d.Klep, EDMBelumSelesai: d.EDMBelumSelesai,
@@ -170,8 +187,15 @@ func SusunHasilPeriksa(d DataPeriksa) (models.HasilPeriksa, error) {
 	}
 
 	h.Bisnis = models.BisnisPeriksa{Hasil: models.GerbangLolos, JenisBisnis: jenisBisnis}
-	if jenisBisnis == "" || !(p.IsFire || p.IsAneka || p.IsMBU || p.IsMarineCargo || p.IsPA || p.IsGolfInsurance || p.IsLife) {
+	switch {
+	case bisnisBelum:
+		h.Bisnis.Hasil, h.Bisnis.Catatan = models.GerbangBelumDiperiksa, catatanBisnisSistemBaru
+		h.Lengkap = false
+	case jenisBisnis == "" || !(p.IsFire || p.IsAneka || p.IsMBU || p.IsMarineCargo || p.IsPA || p.IsGolfInsurance || p.IsLife):
 		h.Bisnis.Hasil = models.GerbangTolak
+	}
+	if d.JenisBisnisDariTabel && !bisnisBelum {
+		h.Bisnis.Catatan = catatanBisnisDariTabel
 	}
 
 	if d.TanggalEndorsement != nil {
@@ -237,7 +261,7 @@ func rincianGerbang(d DataPeriksa) ([]models.GerbangPeriksa, error) {
 			set(no, models.GerbangTolak, "")
 		}
 	}
-	// Gerbang 1 (5.5): CARI20==1 || CARI20==2, klep 1.
+	// Gerbang 1 (5.5): CARI20==1 || CARI20==2, klep 1. Polis sistem baru: CARI20 dari kasus EDM berproduksi (A51).
 	satu, err := samaKode(d.StatusEDM, "1")
 	if err != nil {
 		return nil, err
@@ -246,7 +270,14 @@ func rincianGerbang(d DataPeriksa) ([]models.GerbangPeriksa, error) {
 	if err != nil {
 		return nil, err
 	}
-	gerbangBerklep(1, satu || dua, KlepBatal)
+	switch {
+	case d.G1TakTerbaca:
+		set(1, models.GerbangBelumDiperiksa, catatanKasusBelumAda)
+	case d.SistemBaru && d.StatusEDM == "":
+		set(1, models.GerbangLolos, catatanG1SistemBaru)
+	default:
+		gerbangBerklep(1, satu || dua, KlepBatal)
+	}
 	// Gerbang 3 (5.14): klaim terakhir CARI1 != "2" (teks), klep 2.
 	gerbangBerklep(3, len(d.Klaim) > 0 && d.Klaim[0] != "2", KlepKlaim)
 	// Gerbang 4 (5.18): hanya EdmType 1/2; klep 3.

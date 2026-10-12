@@ -55,12 +55,12 @@ export interface IsianKasus extends IsianPeriksa {
   endorsementSource: string
   /** `.EndorsementSourceNote` - teks yang tampil di medan Endorsement Source. */
   endorsementSourceNote: string
-  /** `.EndorsementStatus` - belum dirender (prompt list tidak ada di korpus): kosong. */
+  /** `.EndorsementStatus` - kode `0`..`3` (`labels.ts` `STATUS_EDM`, W-EDM-13); kosong hanya untuk Life. */
   endorsementStatus: string
   /** `.Quotation.Type` - Detail EDM Type. */
   detailType: string
-  adminCharge: boolean
-  survey: boolean
+  // `.AdminCharge` / `.Survey` TIDAK dikirim: kontainernya `pyContainerVisibleWhen = never` (WorkPrimaryDetails L9174) -
+  // di Pega tidak pernah tampil, jadi tidak pernah diisi pengguna.
 }
 
 /**

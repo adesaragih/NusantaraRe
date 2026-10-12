@@ -12,8 +12,13 @@ const (
 	// LiniEDMFacIn - `T_WORK_POLIS.LINI` kasus Endorsment Fac In. BUKAN "FAC": NB FacIn menyaring lininya hanya lewat
 	// kolom ini (portal, kotak masuk, buka kasus), jadi kasus EDM ber-"FAC" akan tampil di layar NB.
 	LiniEDMFacIn = "FACEDM"
-	// PosisiAwalEDM - workbasket `Assignment7` "MARKETING" (flow InputAddendumFacultativeIn, konektor Start2).
-	PosisiAwalEDM = "ReasFacInMarketing"
+	// PosisiAwalEDM - T_WORK_POLIS.POSITION = TAHAP (keputusan work owner W-EDM-18, mengganti W-EDM-11; pola NB tiket 77):
+	// kasus EDM lahir di fase Policy (konektor Start2 `.IsCedingConfirm = Policy`).
+	PosisiAwalEDM = "Policy"
+	// CatatanPosisiAwalEDM - T_WORK_POLIS.POSITION_NOTE = WORKBASKET (migrasi nbfacin 254): `Assignment7` "MARKETING"
+	// (flow InputAddendumFacultativeIn, konektor Start2 `PositionNote`). Sebelum 254 berjalan, nilai ini ditulis ke
+	// POSITION (bentuk W-EDM-11) dan dikonversi migrasi 263.
+	CatatanPosisiAwalEDM = "ReasFacInMarketing"
 	// StatusAwalEDM - STATUS_WORK kasus EDM yang baru lahir.
 	StatusAwalEDM = "Pending-Policy"
 	// FlagAwalEDM - `.FlagOnGoingPolicy = "1"` konektor Start2.
@@ -21,6 +26,12 @@ const (
 	// PolaStatusSelesai - STATUS_WORK kasus yang sudah selesai (pola LIKE): gerbang 2 mencari yang BELUM.
 	PolaStatusSelesai = "Resolved-%"
 )
+
+// StatusEDMSelesaiProduksi - STATUS_WORK kasus EDM sistem baru yang SUDAH BERPRODUKSI; sumber gerbang 1 polis sistem
+// baru (A51; padanan Pega: EdmType versi polis terakhir di JSON_POLIS, yang lahir saat EDM berproduksi).
+// `[pertanyaan terbuka]` ditetapkan irisan produksi EDM. KOSONG = belum ada status itu: kueri tidak pernah cocok
+// (Oracle membaca ” sebagai NULL), jadi belum ada kasus sistem baru yang terhitung berproduksi.
+const StatusEDMSelesaiProduksi = ""
 
 // AwalanKasusEDM - `SetValueToEDMWork` langkah 7 `param.IDPrefix = "EDM-"`.
 const AwalanKasusEDM = "EDM-"
@@ -30,6 +41,10 @@ const AwalanKasusEDM = "EDM-"
 func RakitIDKasusEDM(nomor int64) string { return fmt.Sprintf("%s%05d", AwalanKasusEDM, nomor) }
 
 // MasukanKasus - badan `POST /api/endorsmentfacin/kasus`: isian /periksa + medan form lainnya.
+//
+// ⛔ Tanpa AdminCharge / Survey (A50): `.AdminCharge` (L9361) dan `.Survey` (L9533) Section WorkPrimaryDetails.xml
+// berada di kontainer `pyContainerVisibleWhen = never` (L9175) - Pega tidak pernah menampilkannya. Kolom
+// ADMIN_CHARGE / SURVEY T_EDM_FACIN_KASUS (262, sudah jalan di DEV) tetap ada dan ditulis NULL.
 type MasukanKasus struct {
 	MasukanPeriksa
 	Note                  string `json:"note"`
@@ -37,8 +52,6 @@ type MasukanKasus struct {
 	EndorsementSourceNote string `json:"endorsementSourceNote"`
 	EndorsementStatus     string `json:"endorsementStatus"`
 	DetailType            string `json:"detailType"`
-	AdminCharge           bool   `json:"adminCharge"`
-	Survey                bool   `json:"survey"`
 }
 
 // HasilKasus - jawaban /kasus. CaseID terisi = kasus lahir (201); kosong = ditolak / tidak lengkap (200, Periksa).

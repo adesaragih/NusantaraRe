@@ -36,7 +36,11 @@ type PortalOracle struct{ db *db.DB }
 func NewPortalOracle(d *db.DB) *PortalOracle { return &PortalOracle{db: d} }
 
 // tabelPortal - nama tabel yang sudah dikualifikasi.
-type tabelPortal struct{ work, opp, akun, quo, mo, general, jp string }
+type tabelPortal struct {
+	work, opp, akun, quo, mo, general, jp string
+	// posisi - ekspresi posisi efektif kotak masuk (tiket 77); "" = w.POSITION.
+	posisi string
+}
 
 // saringPortal - LINI (:1) dan pembuat (:2) selalu; bila cari, :3/:4 bernilai pola yang sama; selesai (literal, tanpa bind):
 // SelesaiPortalYa STATUS_WORK 'Resolved-%', SelesaiPortalTidak NULL atau bukan itu.

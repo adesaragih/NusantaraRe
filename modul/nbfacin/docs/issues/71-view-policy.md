@@ -217,3 +217,24 @@ data -> 503.
 - **View Details Life ditunda** (work owner 11-10-2026: "yauda tidak jadi, biarin aja dlu"). Case `NBLF-…` dipegang modul
   `premiumlistlife`, yang rutenya belum menerima `bukaKasus` / `onBeranda` dari modul lain. Bila dilanjutkan: tambahan aditif di
   `modul/premiumlistlife/frontend/rute.tsx` (pola NB Treaty In), lalu `onLihat` di List Polis Life memanggil `onBukaModul`.
+
+## Akses baca untuk semua akun login (keputusan work owner 12-10-2026, disetujui pemegang sesi)
+
+Work owner: menu View Policy "samain aksesnya kaya menu home, selalu muncul untuk ke semua" dan "detail untuk semua, tapi cuma bisa
+baca saja". `cmd/api/rakit.go` `modulBacaSemuaLogin = {"nbfacin"}`: sesi login TANPA menu nbfacin lolos gerbang menu untuk
+**GET / HEAD** rute `/api/nbfacin/...`; POST / PUT / PATCH / DELETE tetap 403 (gerbang menu); tanpa sesi tetap 401 (kecuali
+AUTH_STUB). Modul lain tidak berubah. Uji `cmd/api` `TestGerbangBacaSemuaLogin` (pesan gerbang dibedakan dari jawaban handler);
+mutasi 4 / 4 mati. Frontend (modul NB FacIn dipasang untuk semua akun, hanya halaman View Policy) dikerjakan sesi 9d.
+
+⚠️ **GET nbfacin yang ikut MENULIS** — ikut terbuka bagi semua akun login; TIDAK diubah tanpa keputusan work owner (penelusuran
+statis 62 rute GET; 58 murni baca; klaim kunci dicek ulang sesi c3):
+
+| Rute GET | Yang ditulis | Kondisi |
+| --- | --- | --- |
+| `…/kasus/{caseId}/objek/csv/{idUnggah}` | UPDATE T_NB_CSV_UNGGAH: pekerjaan → `gagal` ("pekerjaan terputus … gunakan Ulangi"), `statusUnggah` services/csvunggah.go:352 | hanya bila status memvalidasi / menyimpan DAN basi (> 15 menit tanpa kemajuan) |
+| `…/kasus/{caseId}/objek/csv/aktif` | sama (pekerjaan terakhir case) | sama |
+| `…/kasus/{caseId}/lampiran/berkas/{id}/isi` | INSERT GCP_IMAGE (token baru), HTTP POST geturl (M_LINK_SERVICE), UPDATE T_STORAGE_IMAGE (URLPUBLIC / EXPDATE …), HTTP GET Google Storage (baca isi) | penyimpanan nyata; token hanya bila cache / GCP_IMAGE tak berlaku; URL hanya bila kosong / bukan https / hampir kedaluwarsa |
+| `…/kasus/{caseId}/lampiran/berkas/{id}/office` | INSERT GCP_IMAGE, HTTP POST geturl, UPDATE T_STORAGE_IMAGE (tanpa unduh isi) | penyimpanan nyata, ekstensi Office, syarat penyegaran sama |
+
+Tidak ada GET yang mengirim email, menulis outbox / T_LOG_SERVICE_RNM, menjadwalkan pekerjaan latar, atau menulis berkas.
+`[belum terverifikasi]` penelusuran nama pemanggilan statis (bukan analisis tipe) - pemanggilan lewat nilai fungsi bisa terlewat.

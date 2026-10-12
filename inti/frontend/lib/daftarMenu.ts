@@ -112,6 +112,11 @@ export interface EntriMenu<H extends string = string> {
    * tombol modul pemiliknya tampil; halamannya tidak menyalakan tombol modul.
    */
   atas?: boolean
+  /**
+   * Tombol atas yang tampil bagi SEMUA akun yang login, seperti Beranda (`MenuModul.menuAtas[].semua`, aditif 12-10-2026) -
+   * tanpa syarat tombol modul pemiliknya tampil. Penyaringan modul aktif (MODUL_AKTIF) dilakukan pemanggil.
+   */
+  semua?: boolean
 }
 
 /**
@@ -273,7 +278,7 @@ export function susunMenu<H extends string>(tabel: MenuTabel, rute: readonly Ent
     }
     if (modul.length > 0) hasil.golongan.push({ kode: g.kode, modul })
   }
-  hasil.atas = rute.filter((e) => e.atas === true && e.pemilik !== null && tampil.has(e.pemilik))
+  hasil.atas = rute.filter((e) => e.atas === true && e.pemilik !== null && (tampil.has(e.pemilik) || e.semua === true))
   // Palet: Beranda (entri aplikasi), lalu tombol di bawah Beranda, lalu tombol modul - urutan sidebar.
   const aplikasi = hasil.entri.filter((e) => e.pemilik === null).length
   hasil.entri.splice(aplikasi, 0, ...hasil.atas)

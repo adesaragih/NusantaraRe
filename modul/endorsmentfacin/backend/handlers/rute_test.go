@@ -102,7 +102,7 @@ func TestPeriksaBentukJawaban(t *testing.T) {
 
 const badanKasus = `{"policyNo":"UJI.01.0001","edmType":"4","edmTypeNew":"1","detailType":"2",
  "endorsementDate":"01-06-2025","endorsementInternalRetro":"0","note":"Catatan uji","endorsementSource":"Ceding",
- "endorsementSourceNote":"Surat uji","endorsementStatus":"0","adminCharge":true,"survey":false}`
+ "endorsementSourceNote":"Surat uji","endorsementStatus":"0"}`
 
 func kirimKasus(t *testing.T, h http.Handler, badan, akun string) *httptest.ResponseRecorder {
 	t.Helper()
@@ -185,7 +185,7 @@ func TestKasusKodeGalat(t *testing.T) {
 		{"tanpa akun", gudangKasus(), badanKasus, "", http.StatusForbidden, "Log in to create an endorsement"},
 		{"note kosong", gudangKasus(), strings.Replace(badanKasus, `"Catatan uji"`, `""`, 1), "uji.akun",
 			http.StatusUnprocessableEntity, "Endorsement Note is required"},
-		{"medan asing", gudangKasus(), strings.Replace(badanKasus, `"survey"`, `"lain"`, 1), "uji.akun",
+		{"adminCharge dibuang (A50)", gudangKasus(), strings.Replace(badanKasus, `}`, `,"adminCharge":true}`, 1), "uji.akun",
 			http.StatusBadRequest, ""},
 		{"sequence belum ada", dengan(func(g *tiruan.Gudang) {
 			g.GalatNomor = fmt.Errorf("%w: ORA-02289", services.ErrBelumAda)

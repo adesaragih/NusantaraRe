@@ -9,6 +9,7 @@ import (
 	"nusantarare/inti/backend/kontrak"
 	"nusantarare/inti/backend/uang"
 	"nusantarare/modul/nbfacin/backend/services/acceptance"
+	"nusantarare/modul/nbfacin/backend/services/jenisbisnis"
 	"nusantarare/modul/nbfacin/backend/services/premium"
 	"nusantarare/modul/nbfacin/backend/services/rules"
 )
@@ -53,6 +54,16 @@ var _ kontrak.PenilaiPredikatFacIn = Predikat{}
 
 // Eval - rules.Eval (galat untuk keraguan data, panic untuk kesalahan program).
 func (Predikat) Eval(nama string, k kontrak.KasusFacIn) (bool, error) { return rules.Eval(nama, k) }
+
+// JenisBisnis memenuhi kontrak.JenisBisnisFacIn: BusinessType_DeT NB (services/jenisbisnis).
+type JenisBisnis struct{}
+
+var _ kontrak.JenisBisnisFacIn = JenisBisnis{}
+
+// BusinessType - jenisbisnis.Dari.
+func (JenisBisnis) BusinessType(groupPanel, oldID string) string {
+	return jenisbisnis.Dari(groupPanel, oldID)
+}
 
 // Premi memenuhi kontrak.MesinPremiFacIn: paket premium NB.
 type Premi struct{}

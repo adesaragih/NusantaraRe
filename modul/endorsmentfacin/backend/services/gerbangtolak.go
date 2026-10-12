@@ -97,6 +97,9 @@ type MasukanGerbang struct {
 	// Predikat - IsFire, IsAneka, IsMBU, IsMarineCargo, IsPA, IsGolfInsurance,
 	// IsLife (langkah 10-16), dinilai SESUDAH query jenis bisnis (E01).
 	Predikat Predikat
+	// BisnisBelumDiperiksa - langkah 8-18 TIDAK dinilai (nol pesan bisnis): jenis bisnis polis sistem baru belum dapat
+	// dihitung (A52 - DATA_JSON minimal, kontrak JenisBisnisFacIn belum ada). Bawaan false = perilaku korpus.
+	BisnisBelumDiperiksa bool
 }
 
 // HasilGerbang - keluaran bisnis.
@@ -196,9 +199,12 @@ func PeriksaGerbangPenolakan(m MasukanGerbang) (HasilGerbang, error) {
 	// (`JenisBisnisUntukPredikat`).
 	jenisBisnis := JenisBisnisUntukPredikat(m.PolicyNo, q.JenisBisnis)
 	// 9 jenis bisnis kosong → lompat ke label `TO` (18).
-	if jenisBisnis == "" {
+	switch {
+	case m.BisnisBelumDiperiksa:
+		// A52: tidak dinilai - bukan "Invalid policy no!".
+	case jenisBisnis == "":
 		pesan(pesanPolis) // 18
-	} else {
+	default:
 		// 10-16 `Local.test = a` bila salah satu predikat lini benar; 17 pesan
 		// bila tidak satu pun.
 		p := m.Predikat

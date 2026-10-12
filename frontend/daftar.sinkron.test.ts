@@ -34,9 +34,9 @@ describe('sidebar ↔ palet, dua arah', () => {
     const dariAtas = PALET.atas.map((e) => [e.modul, e.label])
     expect(PALET.entri.map((e) => [e.modul, e.label])).toEqual([['beranda', 'Home'], ...dariAtas, ...dariSidebar])
     expect(dariSidebar).toHaveLength(MODUL_FRONTEND.length)
-    // Setiap tombol atas milik modul yang tombolnya TAMPIL.
+    // Setiap tombol atas milik modul yang tombolnya TAMPIL - kecuali tombol `semua` (tampil bagi semua akun, 12-10-2026).
     const tampil = new Set(PALET.golongan.flatMap((g) => g.modul.filter((t) => t.halaman !== null).map((t) => t.kode)))
-    for (const e of PALET.atas) expect(tampil.has(e.pemilik ?? ''), e.modul).toBe(true)
+    for (const e of PALET.atas) expect(tampil.has(e.pemilik ?? '') || e.semua === true, e.modul).toBe(true)
     // Label entri palet modul = LABEL tabel = nama folder korpus.
     const sah = new Set<string>(Object.values(LABEL_MENU))
     for (const e of PALET.entri.slice(1 + dariAtas.length)) expect(sah.has(e.label), e.label).toBe(true)
@@ -54,7 +54,8 @@ describe('sidebar ↔ palet, dua arah', () => {
     // `tersusun.golongan` dan PALET menerima `tersusun.entri` - dua keluaran
     // SATU pemotongan, dan `susunMenu` mengisi `entri` dari tombol yang sama
     // yang ia masukkan ke golongan.
-    expect(APP).toContain('menu={ENTRI_MENU}')
+    // 12-10-2026: tombol atas `semua` disaring modul aktif sebelum masuk Shell; menu tetap ENTRI_MENU.
+    expect(APP).toContain('menu={ENTRI_MENU.filter((e) => e.semua !== true || halamanAktif(e.modul, modulAktif))}')
     expect(SHELL).toContain('susunMenu(menuTabel.menu, menu)')
     expect(SHELL).toContain('tersusun?.golongan.map((g) =>')
     expect(SHELL).toContain('menu={tersusun?.entri ?? berandaSaja}')
@@ -128,5 +129,16 @@ describe('nol menu dikarang', () => {
         expect(hasil.label).not.toBe(nama)
       }
     }
+  })
+})
+
+describe('tombol atas `semua` - rute dipasang bagi semua akun (work owner 12-10-2026)', () => {
+  it('rute modul pemilik tombol `semua` dipasang walau menunya tidak dipegang; hanya halaman tombol itu yang boleh dibuka', () => {
+    const app = APP.replace(/\r\n/g, '\n')
+    expect(app).toContain('const HALAMAN_SEMUA = new Set<string>(ENTRI_MENU.filter((e) => e.semua === true).map((e) => e.modul))')
+    expect(app).toContain('{MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulRute)).map((m) => (')
+    expect(app).toContain('const halamanSemua = HALAMAN_SEMUA.has(halaman) && halamanAktif(halaman, modulAktif)')
+    // Beranda tetap per akun.
+    expect(app).toContain('modulAktif={modulBoleh}')
   })
 })

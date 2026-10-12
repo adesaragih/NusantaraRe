@@ -262,19 +262,37 @@ func (s *Service) dasarPayment(ctx context.Context, id string) (TampilanDeductio
 	if !idKasusSah(id) {
 		return TampilanDeduction{}, models.KasusPayment{}, "", ErrKasusTidakAda
 	}
-	k, err := s.payment.BacaPayment(ctx, id)
+	// Laporan work owner 12-10-2026: tiga bacaan independen PARALEL (bacaparalel.go), hasil identik.
+	var (
+		k     models.KasusPayment
+		d     TampilanDeduction
+		mulai string
+	)
+	u := ukurBaru()
+	defer u.lambat("Payment", id)
+	err := bacaParalel(ctx, u,
+		langkahBaca{"payment", func(c context.Context) (err error) {
+			if k, err = s.payment.BacaPayment(c, id); err != nil {
+				return galatKasus(err)
+			}
+			return nil
+		}},
+		langkahBaca{"deduction", func(c context.Context) (err error) {
+			d, err = s.TampilanDeduction(c, id)
+			return err
+		}},
+		langkahBaca{"spreading", func(c context.Context) error {
+			sp, err := s.spreading.BacaSpreading(c, nil, id)
+			if err != nil {
+				return galatKasus(err)
+			}
+			mulai = sp.StartDateTime
+			return nil
+		}})
 	if err != nil {
-		return TampilanDeduction{}, k, "", galatKasus(err)
+		return TampilanDeduction{}, k, "", err
 	}
-	d, err := s.TampilanDeduction(ctx, id)
-	if err != nil {
-		return d, k, "", err
-	}
-	sp, err := s.spreading.BacaSpreading(ctx, nil, id)
-	if err != nil {
-		return d, k, "", galatKasus(err)
-	}
-	return d, k, sp.StartDateTime, nil
+	return d, k, mulai, nil
 }
 
 func tampilanPayment(d TampilanDeduction, installment string, mu []models.MataUangPayment, pesan []string) TampilanPayment {

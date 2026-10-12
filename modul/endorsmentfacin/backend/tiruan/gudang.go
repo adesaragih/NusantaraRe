@@ -32,6 +32,15 @@ type Gudang struct {
 	GalatStatusEDM, GalatJenisBisnis, GalatKlaim, GalatPembayaran error
 	GalatRenewal, GalatFacout, GalatPeriode, GalatPengecualian    error
 
+	// SistemBaru - jawaban PolisSistemBaru (DATA_JSON memuat IDNewBisnis).
+	SistemBaru bool
+	// Bisnis - jawaban BisnisProduksi (baris BUSINESS kode bisnis polis); GalatBisnis - galatnya.
+	Bisnis      []repository.BarisBisnis
+	GalatBisnis error
+	// EdmTypeProduksi - jawaban EdmTypeSelesaiProduksi ("" = tidak ada kasus berproduksi); GalatEdmTypeProduksi - galatnya.
+	EdmTypeProduksi      string
+	GalatEdmTypeProduksi error
+
 	// EDMTerbuka - jawaban gerbang 2 (ID kasus EDM terbuka; "" = tidak ada); GalatEDMBelumSelesai - galatnya.
 	EDMTerbuka           string
 	GalatEDMBelumSelesai error
@@ -71,6 +80,37 @@ func (g *Gudang) Transaksi(_ context.Context, fn func(tx *db.Tx) error) error {
 		return err
 	}
 	return nil
+}
+
+func (g *Gudang) BisnisProduksi(context.Context, string) ([]repository.BarisBisnis, error) {
+	g.catat("BisnisProduksi")
+	return g.Bisnis, g.GalatBisnis
+}
+
+// JenisBisnisTiruan - kontrak.JenisBisnisFacIn uji: peta "groupPanel/oldID" → BusinessType; tidak ada = "UNKNOWN".
+// Mencatat masukan terakhir.
+type JenisBisnisTiruan struct {
+	Peta    map[string]string
+	Masukan []string
+}
+
+// BusinessType memenuhi kontrak.JenisBisnisFacIn.
+func (j *JenisBisnisTiruan) BusinessType(groupPanel, oldID string) string {
+	j.Masukan = append(j.Masukan, groupPanel+"/"+oldID)
+	if v, ada := j.Peta[groupPanel+"/"+oldID]; ada {
+		return v
+	}
+	return "UNKNOWN"
+}
+
+func (g *Gudang) PolisSistemBaru(context.Context, string) (bool, error) {
+	g.catat("PolisSistemBaru")
+	return g.SistemBaru, nil
+}
+
+func (g *Gudang) EdmTypeSelesaiProduksi(context.Context, string) (string, bool, error) {
+	g.catat("EdmTypeSelesaiProduksi")
+	return g.EdmTypeProduksi, g.EdmTypeProduksi != "", g.GalatEdmTypeProduksi
 }
 
 func (g *Gudang) EDMBelumSelesai(context.Context, string) (string, bool, error) {

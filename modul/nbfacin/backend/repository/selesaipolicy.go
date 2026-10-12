@@ -14,6 +14,10 @@ package repository
 //   - FACINPRODUCTION (langkah 23 -> SaveTreatyProduction_Act -> SaveFacinProdFireNB_Act): hanya bila IDPEGA belum ada (CekFacin,
 //     K69a2-7). Tanggal 24 jam (K69a2-2), teks "NULL" ditiru (K69a2-4), MARKETINGOFFICERCODE = GetMOID_Sql (K69a2-3).
 // Tidak diport: JSON_POLIS_ERROR (langkah 17) dan UpdateFacProdObjItemID_SQL (langkah 27) - K69a2-1.
+//   - T_GENERAL_POLIS identitas polis TAHAP 1 (keputusan work owner 12-10-2026, migrasi 252): POLICY_NO (langkah 12),
+//     PROD_DATE_TIME (langkah 5; teks Pega UTC dari TGL_PROD JSON_POLIS), PROD_KE (= JSON_POLIS.PRODKE; NB '0',
+//     INSERTJSON_JSONPOLIS_FACIN). Tanpa migrasi 252 (ORA-00904) dilewati + log - Selesai Policy yang sudah berhasil tidak
+//     bergantung pada kolom baru.
 
 import (
 	"context"
@@ -37,7 +41,7 @@ const (
 	bentukTanggalPolis = "02/01/2006 15:04:05"
 )
 
-type tabelPolicy struct{ jp, ceding, risiko, prod, mo string }
+type tabelPolicy struct{ jp, ceding, risiko, prod, mo, general string }
 
 func (r *SubmitOracle) tabelPolicy() (tabelPolicy, error) {
 	var t tabelPolicy
@@ -45,7 +49,7 @@ func (r *SubmitOracle) tabelPolicy() (tabelPolicy, error) {
 		nama string
 		ke   *string
 	}{{TabelJSONPolis, &t.jp}, {TabelCedingProduksi, &t.ceding}, {TabelProfilRisikoLoss, &t.risiko},
-		{TabelFacInProduction, &t.prod}, {TabelMarketingOfficer, &t.mo}} {
+		{TabelFacInProduction, &t.prod}, {TabelMarketingOfficer, &t.mo}, {TabelGeneralPolis, &t.general}} {
 		q, err := r.db.Qualify(x.nama)
 		if err != nil {
 			return t, err
@@ -68,6 +72,33 @@ func sqlSisipJSONPolis(jp string) string {
 	return "INSERT INTO " + jp + " (IDPEGA, DATA_JSON, TGL_INPUT, NOPOLIS, PRODKE, OLDNOPOLIS, TGL_PROD, USERNAME, NOENDORS)" +
 		" VALUES (:1, :2, SYSDATE, :3, '0', NULL, TO_DATE(:4, 'DD/MM/YYYY HH24:MI:SS'), :5, NULL)"
 }
+
+// sqlIdentitasPolis - T_GENERAL_POLIS tahap 1 (migrasi 252): :1 POLICY_NO, :2 PROD_DATE_TIME, :3 / :4 IDPEGA dua bentuk JSON_POLIS
+// (PROD_KE = PRODKE baris JSON_POLIS case, seperti PRODKE CEDING_FACINPRODUCTION; PRODKE VARCHAR2 bukan angka -> NULL, bukan
+// ORA-01722 yang menggagalkan Selesai Policy), :5 GENERATE_DATE_POLICY_NO (NULL = tetap; diisi hanya saat nomor polis TERBIT -
+// keputusan work owner 12-10-2026, pendekatan GenerateNopolis_Act langkah 10), :6 ID case.
+func sqlIdentitasPolis(general, jp string) string {
+	return "UPDATE " + general + " SET POLICY_NO = :1, PROD_DATE_TIME = :2, PROD_KE = (SELECT CASE WHEN REGEXP_LIKE(MAX(j.PRODKE)," +
+		" '^[0-9]{1,5}$') THEN TO_NUMBER(MAX(j.PRODKE)) END FROM " + jp + " j WHERE j.IDPEGA IN (:3, :4))," +
+		" GENERATE_DATE_POLICY_NO = NVL(:5, GENERATE_DATE_POLICY_NO) WHERE ID = :6"
+}
+
+// prodDateTimePega - TGL_PROD JSON_POLIS ("DD/MM/YYYY HH24:MI:SS", jam dinding WIB - CARI21 SaveJsonPolicy langkah 13) -> teks
+// Pega DateTime UTC `YYYYMMDDTHHMMSS.000 GMT` (pola START_DATE_TIME). Tak terurai / kosong -> NULL. Milidetik .000: TGL_PROD
+// (DATE) adalah sumber yang tersimpan, sama dengan backfill docs/alat `[keputusan agent]`.
+func prodDateTimePega(prod string) any {
+	t, err := time.ParseInLocation(bentukTanggalPolis, strings.TrimSpace(prod), models.ZonaWIB)
+	if err != nil {
+		return nil
+	}
+	return t.UTC().Format(bentukWaktuPegaPolis)
+}
+
+// bentukWaktuPegaPolis - teks Pega DateTime UTC (services.BentukWaktuPega).
+const bentukWaktuPegaPolis = "20060102T150405.000 GMT"
+
+// kolomBelumAda - ORA-00904 (kolom tak dikenal) = migrasi belum dijalankan (pola inti/backend/login galatHak).
+func kolomBelumAda(err error) bool { return err != nil && strings.Contains(err.Error(), "ORA-00904") }
 
 func sqlHapusCedingProduksi(ceding string) string {
 	return "DELETE FROM " + ceding + " WHERE IDPEGA IN (:1, :2)" // dua bentuk: ganti seluruh ceding case
@@ -281,6 +312,15 @@ func (r *SubmitOracle) tulisPolicy(ctx context.Context, tx *db.Tx, caseID string
 			k(p.Username)); err != nil {
 			return err
 		}
+	}
+	// Tahap 1 identitas polis (migrasi 252). Pernyataan gagal di Oracle tidak membatalkan transaksi: ORA-00904 -> lanjut + log.
+	var terbit any // GenerateNopolis_Act langkah 10 @CurrentDateTime() - hanya nomor BARU
+	if baru {
+		terbit = p.Sekarang.UTC().Format(bentukWaktuPegaPolis)
+	}
+	if err := jalankanKolomMigrasi(ctx, tx, "252", sqlIdentitasPolis(t.general, t.jp), "identitas polis "+TabelGeneralPolis, caseID,
+		noPolis, prodDateTimePega(prod), idPega, awalan, terbit, caseID); err != nil {
+		return err
 	}
 	if _, err := jalankan(ctx, tx, sqlHapusCedingProduksi(t.ceding), "hapus "+TabelCedingProduksi, idPega, awalan); err != nil {
 		return err

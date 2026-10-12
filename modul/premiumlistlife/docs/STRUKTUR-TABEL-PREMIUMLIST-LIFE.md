@@ -50,6 +50,7 @@ polis**. Bukan anak `T_PREMIUM_LIST`.
 | `CREATE_OP_NAME` | teks | ya | | NB + EDM | keputusan work owner 01-10-2026 — sama dengan `T_WORK_CLAIM`; diisi akun pembuat sampai login menyediakan nama tampilan; baris lama dari `T_PREMIUM_LIST.CREATE_OP_NAME` |
 | `TGL_CREATE` | DATE | ya | | NB + EDM | keputusan work owner 01-10-2026 — waktu lahir kasus, sama dengan `T_WORK_CLAIM`; baris lama dari `T_PREMIUM_LIST.TGL_INPUT` |
 | `TGL_UPDATE` | DATE | ya | | NB + EDM | keputusan work owner 01-10-2026 — waktu ubah terakhir baris kasus, sama dengan `T_WORK_CLAIM` |
+| `POSITION_NOTE` | teks | ya | | NB Fac In + EDM Fac In | workbasket pemegang case (PositionNote Pega; NULL sesudah Decline); untuk LINI FAC `POSITION` = tahap Offer / Binding / Policy; juga dipakai endorsmentfacin (LINI FACEDM, migrasi endorsmentfacin 263) — ditambah nbfacin 254, tiket 77, izin work owner 12-10-2026 |
 
 ⛔ Kolom **audit** yang tiket 00 sebut tanpa nama kini **dinamai** oleh keputusan work owner 01-10-2026:
 `CREATE_OP`, `CREATE_OP_NAME`, `TGL_CREATE`, `TGL_UPDATE` — nama dan tipe sama dengan `T_WORK_CLAIM`.

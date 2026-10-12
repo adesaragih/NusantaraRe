@@ -48,6 +48,8 @@ type General struct {
 	CedingList []Ceding
 	CedingIDs  []string
 	Tersimpan  bool
+	// Bisnis - salinan bisnis T_QUOTATIONDATA (migrasi 253, tiket 76b); nil / "" per medan = kolom tetap (NVL).
+	Bisnis *BisnisQuotation
 }
 
 // MarketingOfficer - satu pilihan dropdown Marketing Name (sel 75): ID disimpan ke MOID,
@@ -123,4 +125,11 @@ type BarisRW struct {
 // InsertUpdateRISKADDRESS tanpa P_ID.
 type AlamatBaru struct {
 	NationName, ProvinceName, DistrictName, CityName, TerritoryName, Title, Address, PostalCode string
+}
+
+// BisnisQuotation - salinan bisnis QuotationData (tiket 76b, keputusan work owner 12-10-2026): BUSINESS baris kasus (NOTE = Class of
+// Business + BUSINESSGROUPID, ber-GROUPPANEL, tepat satu - services kasusBisnisDari) dan BusinessType_DeT (businessTypeDari).
+// "" = tidak diketahui (kolom tetap).
+type BisnisQuotation struct {
+	Code, Name, OldID, GroupPanel, Type, Type2 string
 }

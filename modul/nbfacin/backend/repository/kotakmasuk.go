@@ -71,7 +71,7 @@ func teamCase(quo, mo string) string {
 }
 
 // saringKotakMasuk - WHERE kotak masuk; argumen menurut urutan kemunculan sesudah `awal` argumen sebelumnya.
-func saringKotakMasuk(s SaringanKotakMasuk, awal int, quo, mo string) (string, []any) {
+func saringKotakMasuk(s SaringanKotakMasuk, awal int, quo, mo, posisi string) (string, []any) {
 	var args []any
 	pen := func(v any) string {
 		args = append(args, v)
@@ -88,18 +88,19 @@ func saringKotakMasuk(s SaringanKotakMasuk, awal int, quo, mo string) (string, [
 	var syarat []string
 	for _, t := range s.Tim {
 		if len(t.Posisi) > 0 && len(t.Team) > 0 {
-			syarat = append(syarat, "(w.POSITION IN ("+daftar(t.Posisi)+") AND "+teamCase(quo, mo)+" IN ("+daftar(t.Team)+"))")
+			syarat = append(syarat, "("+posisi+" IN ("+daftar(t.Posisi)+") AND "+teamCase(quo, mo)+" IN ("+daftar(t.Team)+"))")
 		}
 	}
 	if len(s.Lain) > 0 {
-		syarat = append(syarat, "w.POSITION IN ("+daftar(s.Lain)+")")
+		syarat = append(syarat, posisi+" IN ("+daftar(s.Lain)+")")
 	}
 	return q + " AND (" + strings.Join(syarat, " OR ") + ")", args
 }
 
 func sqlHitungKotakMasuk(t tabelPortal, s SaringanKotakMasuk) (string, []any) {
-	where, args := saringKotakMasuk(s, 0, t.quo, t.mo)
-	return "SELECT w.POSITION, COUNT(*) FROM " + t.work + " w" + where + " GROUP BY w.POSITION", args
+	p := kolomPosisi(t)
+	where, args := saringKotakMasuk(s, 0, t.quo, t.mo, p)
+	return "SELECT " + p + ", COUNT(*) FROM " + t.work + " w" + where + " GROUP BY " + p, args
 }
 
 // sqlTeamMarketing / sqlTeamLeader - TeamKotakMasuk (bind :1 = login).
@@ -114,7 +115,7 @@ func sqlTeamLeader(limit string) string {
 // sqlDaftarMenunggu - kolom inbox "New Business"; aksi terakhir = APPROVAL / PIC baris HISTORYAKSEPTASIPRODUCTION TERAKHIR
 // (KEEP DENSE_RANK LAST atas TGL_INP, NOURUT) ber-IDPEGA = :1 / :2 || ID (awalan pzInsKey). Bind :1, :2 lalu saringan.
 func sqlDaftarMenunggu(t tabelPortal, produksi string, s SaringanKotakMasuk) (string, []any) {
-	where, args := saringKotakMasuk(s, 2, t.quo, t.mo)
+	where, args := saringKotakMasuk(s, 2, t.quo, t.mo, kolomPosisi(t))
 	q := fmt.Sprintf(`SELECT w.ID,
   (SELECT MAX(a.INSUREDNAME) FROM %s a WHERE a.ID = o.ACCOUNT_ID),
   o.CLASS_OF_BUSINESS, q.SOB_NAME, q.CEDING_CO_NAME, g.START_DATE_TIME, %s,
@@ -150,6 +151,9 @@ func (r *PortalOracle) HitungKotakMasuk(ctx context.Context, s SaringanKotakMasu
 	if err != nil {
 		return nil, err
 	}
+	if adaCatatanPosisi(ctx, r.db, t.work) {
+		t.posisi = sqlPosisiEfektif("w") // tiket 77
+	}
 	q, args := sqlHitungKotakMasuk(t, s)
 	baris, err := r.db.QueryContext(ctx, q, args...)
 	if err != nil {
@@ -183,6 +187,9 @@ func (r *PortalOracle) DaftarMenunggu(ctx context.Context, s SaringanKotakMasuk)
 	produksi, err := r.db.Qualify(TabelRiwayatProduksi)
 	if err != nil {
 		return nil, err
+	}
+	if adaCatatanPosisi(ctx, r.db, t.work) {
+		t.posisi = sqlPosisiEfektif("w") // tiket 77
 	}
 	q, args := sqlDaftarMenunggu(t, produksi, s)
 	baris, err := r.db.QueryContext(ctx, q, args...)
@@ -281,4 +288,12 @@ func (r *PortalOracle) daftarTeks(ctx context.Context, q string, args ...any) ([
 		}
 	}
 	return out, baris.Err()
+}
+
+// kolomPosisi - ekspresi posisi baris `w` kotak masuk: posisi efektif bila migrasi 254 sudah jalan (tiket 77), selain itu w.POSITION.
+func kolomPosisi(t tabelPortal) string {
+	if t.posisi != "" {
+		return t.posisi
+	}
+	return "w.POSITION"
 }

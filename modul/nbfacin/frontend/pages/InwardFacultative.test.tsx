@@ -244,3 +244,13 @@ describe('Inward Facultative tahap 1 = tangkapan layar kasus FIRE + XML Periode'
     expect(SUMBER).toMatch(/: tab === 'Coverage' && kasusFire \? \(\s*<TabCoverage caseId=\{kasus\.caseId\} hanyaAkumulasi=\{akumulasiTerbuka\} \/>/)
   })
 })
+
+describe('Marketing Name otomatis dari pembuat case (work owner 12-10-2026)', () => {
+  it('dipilih hanya bila belum ada pilihan, layar dapat diubah, dan ID-nya ada di daftar dropdown', () => {
+    const SUMBER = readFileSync(join(__dirname, 'InwardFacultative.tsx'), 'utf8').replace(/\r\n/g, '\n')
+    expect(SUMBER).toContain("setMarketingBawaan(g.marketingId ? '' : (k.marketingBawaan ?? ''))")
+    expect(SUMBER).toContain(
+      "if (!hanyaLihat && marketing === '' && marketingBawaan !== '' && opsiMarketing.some((o) => o.value === marketingBawaan)) {",
+    )
+  })
+})

@@ -15,6 +15,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"nusantarare/inti/backend/db"
@@ -201,6 +202,19 @@ VALUES (:1, :2, :3, SYSDATE, :4, :5, :6, :7, :8, :9)`
 
 // sqlPosisiSubmit - POSITION baru; STATUS_WORK baru bila diisi (NULL = tetap). Penjaga serentak: posisi lama dan case belum
 // selesai (selesai Policy tiket 69a-2 tidak mengubah POSITION).
+// sqlKonteksSubmitCatatan - sqlKonteksSubmit dengan posisi efektif (tiket 77).
+func sqlKonteksSubmitCatatan(t tabelSubmit) string {
+	return gantiSekali(sqlKonteksSubmit(t), "SELECT w.POSITION, ", "SELECT "+sqlPosisiEfektif("w")+", ")
+}
+
+// sqlPosisiSubmitCatatan - tiket 77 (migrasi 254): :1 = POSITION_NOTE (CatatanPosisiDari PosisiBaru); penjaga 409 atas posisi efektif
+// = :5 (PosisiLama kosakata lama). POSITION (tahap) disinkronkan di akhir transaksi (sqlSinkronTahap).
+func sqlPosisiSubmitCatatan(work string) string {
+	return "UPDATE " + work + " w SET POSITION_NOTE = :1, STATUS_WORK = NVL(:2, STATUS_WORK), TGL_UPDATE = SYSDATE" +
+		" WHERE w.ID = :3 AND w.LINI = :4 AND " + sqlPosisiEfektif("w") + " = :5 AND (w.STATUS_WORK IS NULL OR w.STATUS_WORK NOT LIKE '" +
+		polaSelesai + "')"
+}
+
 func sqlPosisiSubmit(work string) string {
 	return "UPDATE " + work + " SET POSITION = :1, STATUS_WORK = NVL(:2, STATUS_WORK), TGL_UPDATE = SYSDATE" +
 		" WHERE ID = :3 AND LINI = :4 AND POSITION = :5 AND (STATUS_WORK IS NULL OR STATUS_WORK NOT LIKE '" + polaSelesai + "')"
@@ -254,7 +268,11 @@ func (r *SubmitOracle) KonteksSubmit(ctx context.Context, id string) (models.Kon
 	for i := range v {
 		tujuan[i] = &v[i]
 	}
-	err = r.db.QueryRowContext(ctx, sqlKonteksSubmit(t), id, LiniFacIn).Scan(tujuan...)
+	q := sqlKonteksSubmit(t)
+	if adaCatatanPosisi(ctx, r.db, t.work) {
+		q = sqlKonteksSubmitCatatan(t)
+	}
+	err = r.db.QueryRowContext(ctx, q, id, LiniFacIn).Scan(tujuan...)
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.KonteksSubmit{}, ErrKasusTidakAda
 	}
@@ -501,8 +519,13 @@ func (r *SubmitOracle) TulisSubmit(ctx context.Context, tx *db.Tx, w models.Tuli
 		return err
 	}
 	k := db.KosongJadiNil
-	hasil, err := jalankan(ctx, tx, sqlPosisiSubmit(t.work), "posisi Submit", w.PosisiBaru, k(w.StatusWorkBaru), w.CaseID, LiniFacIn,
-		w.PosisiLama)
+	// Tiket 77: POSITION_NOTE (workbasket) + sinkron POSITION (tahap) di akhir; tanpa migrasi 254 -> POSITION seperti sebelumnya.
+	catatan := adaCatatanPosisi(ctx, r.db, t.work)
+	qPosisi, posisiBaru := sqlPosisiSubmit(t.work), any(w.PosisiBaru)
+	if catatan {
+		qPosisi, posisiBaru = sqlPosisiSubmitCatatan(t.work), CatatanPosisiDari(w.PosisiBaru)
+	}
+	hasil, err := jalankan(ctx, tx, qPosisi, "posisi Submit", posisiBaru, k(w.StatusWorkBaru), w.CaseID, LiniFacIn, w.PosisiLama)
 	if err != nil {
 		return err
 	}
@@ -572,9 +595,51 @@ func (r *SubmitOracle) TulisSubmit(ctx context.Context, tx *db.Tx, w models.Tuli
 			return err
 		}
 	}
+	if g := w.Ringkasan; g != nil {
+		if err := jalankanKolomMigrasi(ctx, tx, "252", sqlRingkasanTotalPolis(t.general), "total "+TabelGeneralPolis, w.CaseID,
+			ikatDesimal(g.TotalTSINusaRe), ikatDesimal(g.TotalTSITopRisk), ikatDesimal(g.TotalTSINusaReSpreading),
+			ikatDesimal(g.TotalPremiNusaRe), w.CaseID); err != nil {
+			return err
+		}
+	}
+	if w.DateOffer != "" {
+		if err := jalankanKolomMigrasi(ctx, tx, "252", sqlDateOffer(t.general), "DATE_OFFER", w.CaseID, w.DateOffer,
+			w.CaseID); err != nil {
+			return err
+		}
+	}
+	if catatan { // tiket 77: tahap dari flag AKHIR (sesudah FlagBaru / Transition38 tulisBinding)
+		if _, err := jalankan(ctx, tx, sqlSinkronTahap(t.work), "tahap "+TabelWorkPolis, w.CaseID, LiniFacIn); err != nil {
+			return err
+		}
+	}
 	if _, err := jalankan(ctx, tx, sqlKunciPenerima(t.pen, t.kor), "kunci penerima korespondensi", w.CaseID); err != nil {
 		return err
 	}
 	_, err = jalankan(ctx, tx, sqlKunciKorespondensi(t.kor), "kunci korespondensi", w.CaseID)
+	return err
+}
+
+// sqlRingkasanTotalPolis - total kasus T_GENERAL_POLIS (migrasi 252, tiket 76): :1 TOTAL_TSI_NUSA_RE, :2 TOTAL_TSI_TOP_RISK,
+// :3 TOTAL_TSI_NUSA_RE_SPREADING, :4 TOTAL_PREMI_NUSA_RE, :5 ID. Nilai terakhir menimpa (Pega: nilai halaman terakhir).
+func sqlRingkasanTotalPolis(general string) string {
+	return "UPDATE " + general + " SET TOTAL_TSI_NUSA_RE = " + angkaMasuk(":1") + ", TOTAL_TSI_TOP_RISK = " + angkaMasuk(":2") +
+		", TOTAL_TSI_NUSA_RE_SPREADING = " + angkaMasuk(":3") + ", TOTAL_PREMI_NUSA_RE = " + angkaMasuk(":4") + " WHERE ID = :5"
+}
+
+// sqlDateOffer - DATE_OFFER (252) hanya bila masih NULL: Submit marketing PERTAMA (keputusan work owner 12-10-2026).
+func sqlDateOffer(general string) string {
+	return "UPDATE " + general + " SET DATE_OFFER = NVL(DATE_OFFER, :1) WHERE ID = :2"
+}
+
+// jalankanKolomMigrasi - pernyataan yang menulis kolom migrasi `nomor` (252 / 253): ORA-00904 (migrasi belum dijalankan) -> log +
+// lanjut (pernyataan gagal Oracle tidak membatalkan transaksi), sehingga alur yang sudah berhasil (Submit, Save General) tidak
+// bergantung pada kolom baru.
+func jalankanKolomMigrasi(ctx context.Context, tx *db.Tx, nomor, q, aksi, caseID string, arg ...any) error {
+	_, err := jalankan(ctx, tx, q, aksi, arg...)
+	if kolomBelumAda(err) {
+		log.Printf("nbfacin: %s kasus %s tidak ditulis - migrasi %s belum dijalankan: %v", aksi, caseID, nomor, err)
+		return nil
+	}
 	return err
 }

@@ -157,9 +157,17 @@ export const ENTRI_MENU: readonly EntriMenu<Halaman>[] = [
     pemilik: m.nama,
     halamanModul: m.halaman,
   })),
-  // Tombol di bawah Beranda milik modul (`MenuModul.menuAtas`, 09-10-2026) - tampil bila tombol modul pemiliknya tampil.
+  // Tombol di bawah Beranda milik modul (`MenuModul.menuAtas`, 09-10-2026) - tampil bila tombol modul pemiliknya tampil, atau
+  // bagi semua akun bila `semua` (aditif 12-10-2026, View Policy NB FacIn).
   ...MODUL_FRONTEND.flatMap((m) =>
-    (m.menuAtas ?? []).map((a) => ({ modul: a.halaman, label: a.label, kelompok: a.label, pemilik: m.nama, atas: true })),
+    (m.menuAtas ?? []).map((a) => ({
+      modul: a.halaman,
+      label: a.label,
+      kelompok: a.label,
+      pemilik: m.nama,
+      atas: true,
+      ...(a.semua === true ? { semua: true } : {}),
+    })),
   ),
 ]
 

@@ -15,22 +15,33 @@ import (
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/endorsmentfacin/backend/models"
 	"nusantarare/modul/endorsmentfacin/backend/repository"
 )
 
-// Service membawa akar bersama.
-type Service struct{ *inti.Dasar }
+// Service membawa akar bersama dan kontrak lintas modul yang dirakit.
+type Service struct {
+	*inti.Dasar
+	// jenisBisnis - kontrak.JenisBisnisFacIn dari nbfacin (BusinessType_DeT); nil = belum tersambung.
+	jenisBisnis kontrak.JenisBisnisFacIn
+}
 
 // DariDasar membungkus akar bersama.
 func DariDasar(d *inti.Dasar) *Service { return &Service{Dasar: d} }
+
+// DenganJenisBisnis memasang kontrak JenisBisnisFacIn (modul.go, dari perakit).
+func (s *Service) DenganJenisBisnis(j kontrak.JenisBisnisFacIn) *Service {
+	s.jenisBisnis = j
+	return s
+}
 
 // PunyaDatabase - Oracle terpasang?
 func (s *Service) PunyaDatabase() bool { return s != nil && s.Dasar.PunyaDatabase() }
 
 // LayananOracle merakit layanan di atas Oracle.
 func LayananOracle(s *Service) *Layanan {
-	return BaruLayanan(repository.Baru(s.DB())).DenganTransaksi(s.DalamTransaksi)
+	return BaruLayanan(repository.Baru(s.DB())).DenganTransaksi(s.DalamTransaksi).DenganJenisBisnis(s.jenisBisnis)
 }
 
 var _ Gudang = (*repository.Gudang)(nil)
@@ -57,6 +68,9 @@ type Gudang interface {
 	PeriodeProduksi(ctx context.Context, polis string) (*repository.PeriodeTeks, error)
 	Pengecualian(ctx context.Context, jenis string) ([]string, error)
 	EDMBelumSelesai(ctx context.Context, polis string) (string, bool, error)
+	PolisSistemBaru(ctx context.Context, polis string) (bool, error)
+	EdmTypeSelesaiProduksi(ctx context.Context, polis string) (string, bool, error)
+	BisnisProduksi(ctx context.Context, polis string) ([]repository.BarisBisnis, error)
 
 	// Tulisan I3 - di dalam transaksi pemanggil.
 	NomorKasusBerikut(ctx context.Context, tx *db.Tx) (string, error)
@@ -71,6 +85,14 @@ type Transaksi func(ctx context.Context, fn func(tx *db.Tx) error) error
 type Layanan struct {
 	gudang Gudang
 	tx     Transaksi
+	// jenisBisnis - kontrak JenisBisnisFacIn; nil = lini polis sistem baru belum dapat dihitung (A52).
+	jenisBisnis kontrak.JenisBisnisFacIn
+}
+
+// DenganJenisBisnis memasang kontrak JenisBisnisFacIn (nil diperbolehkan).
+func (l *Layanan) DenganJenisBisnis(j kontrak.JenisBisnisFacIn) *Layanan {
+	l.jenisBisnis = j
+	return l
 }
 
 // BaruLayanan membuat layanan; tulisan (Buat) butuh DenganTransaksi.
@@ -130,6 +152,20 @@ func (l *Layanan) bacaData(ctx context.Context, d *DataPeriksa) error {
 	if d.JenisBisnis, err = l.gudang.JenisBisnis(ctx, d.PolicyNo); err != nil {
 		return err
 	}
+	// A51 (keputusan work owner 12-10-2026 opsi 1a + urutan sumber): DATA_JSON dulu; HANYA bila kosong dan polisnya
+	// sistem baru, turunkan dari tabel - FACINPRODUCTION.BUSINESSCODE → BUSINESS (GROUPPANEL, OLDID) → kontrak
+	// JenisBisnisFacIn (BusinessType_DeT milik nbfacin). Bukan tepat satu baris → ("", "") → "UNKNOWN" (pola NB).
+	if d.SistemBaru && strings.TrimSpace(d.JenisBisnis) == "" && l.jenisBisnis != nil {
+		baris, err := l.gudang.BisnisProduksi(ctx, d.PolicyNo)
+		if err != nil {
+			return err
+		}
+		var b repository.BarisBisnis
+		if len(baris) == 1 {
+			b = baris[0]
+		}
+		d.JenisBisnis, d.JenisBisnisDariTabel = l.jenisBisnis.BusinessType(b.GroupPanel, b.OldID), true
+	}
 	if d.TanggalEndorsement != nil {
 		return l.bacaTanggal(ctx, d)
 	}
@@ -152,14 +188,18 @@ func (l *Layanan) bacaGerbang(ctx context.Context, d *DataPeriksa) error {
 			d.EDMBelumSelesai = []string{id}
 		}
 	}
+	// A51: penanda polis sistem baru - dibaca sebelum cabang RI slip karena gerbang bisnis (langkah 7-18) juga
+	// memakainya.
+	if d.SistemBaru, err = g.PolisSistemBaru(ctx, d.PolicyNo); err != nil {
+		return err
+	}
 	// 5.1 / 5.10 RI slip: 5.2-5.5 dan 5.11-5.23 dilompati.
 	if d.EdmType == models.EdmPerubahan && d.EdmTypeNew == models.EdmTypeNewRISlip {
 		return nil
 	}
-	if d.StatusEDM, err = g.StatusEDM(ctx, d.PolicyNo); err != nil { // 5.2
+	if err := l.bacaStatusEDM(ctx, d); err != nil { // 5.2
 		return err
 	}
-	d.StatusEDMDibaca = true
 	if d.Klaim, err = g.Klaim(ctx, d.PolicyNo); err != nil { // 5.11
 		return err
 	}
@@ -189,6 +229,31 @@ func (l *Layanan) bacaGerbang(ctx context.Context, d *DataPeriksa) error {
 		}
 	}
 	return l.bacaKlep(ctx, d)
+}
+
+// bacaStatusEDM - CARI20 gerbang 1 (dan StatusEDMPolis OpenCase). Polis era Pega: GetEDMStatus_SQL apa adanya. Polis
+// sistem baru (A51, persetujuan work owner 12-10-2026): EDM_TYPE kasus EDM sistem baru yang berproduksi; tabel 262
+// belum ada → G1TakTerbaca.
+func (l *Layanan) bacaStatusEDM(ctx context.Context, d *DataPeriksa) error {
+	var err error
+	if !d.SistemBaru {
+		if d.StatusEDM, err = l.gudang.StatusEDM(ctx, d.PolicyNo); err != nil {
+			return err
+		}
+		d.StatusEDMDibaca = true
+		return nil
+	}
+	v, _, err := l.gudang.EdmTypeSelesaiProduksi(ctx, d.PolicyNo)
+	switch {
+	case errors.Is(err, repository.ErrBelumAda):
+		d.G1TakTerbaca = true
+	case err != nil:
+		return err
+	default:
+		d.StatusEDM = v
+	}
+	d.StatusEDMDibaca = true
+	return nil
 }
 
 // bacaKlep - `BrowseOpenProteksiEdm_RD` langkah 5.3/5.12/5.16/5.20, Param.Type 1-4. Pega menjalankan keempatnya

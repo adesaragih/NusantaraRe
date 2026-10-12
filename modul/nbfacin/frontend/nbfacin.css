@@ -3280,3 +3280,36 @@
   font-size: 16px;
   font-weight: 600;
 }
+
+/* Scoring Risk (work owner 12-10-2026 "rapikan biar user friendly, kasih jarak antar sub biar ga terlalu dekat"): baris opsi lebih
+   lega, faktor dipisah ruang kosong, tiap sub-faktor (Riot / Flood / ...) diberi ruang + garis tipis di atasnya. */
+.nbfacin .nbf-score__tabel tbody td,
+.nbfacin .nbf-score__tabel tbody th {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+/* Faktor kedua dst.: ruang kosong di atas baris faktor (border transparan, latar tidak ikut melebar ke border). */
+.nbfacin .nbf-score__tabel tbody + tbody > .nbf-score__baris-faktor > th,
+.nbfacin .nbf-score__tabel tbody + tbody > .nbf-score__baris-faktor > td {
+  border-top: 22px solid transparent;
+  background-clip: padding-box;
+}
+.nbfacin .nbf-score__tabel tbody > .nbf-score__baris-faktor > th,
+.nbfacin .nbf-score__tabel tbody > .nbf-score__baris-faktor > td {
+  padding-top: 11px;
+  padding-bottom: 11px;
+}
+/* Judul sub-faktor: ruang di atas + garis pemisah tipis; tepat sesudah baris faktor tanpa garis. */
+.nbfacin .nbf-score__tabel tbody > .nbf-score__judul-sub > td {
+  padding-top: 18px;
+  padding-bottom: 6px;
+  border-top: 1px solid var(--border);
+}
+.nbfacin .nbf-score__tabel tbody > .nbf-score__baris-faktor + .nbf-score__judul-sub > td {
+  padding-top: 12px;
+  border-top: 0;
+}
+/* Baris opsi terakhir sebuah sub-faktor: sedikit ruang sebelum sub-faktor berikutnya. */
+.nbfacin .nbf-score__tabel tbody > tr:has(+ .nbf-score__judul-sub) > td {
+  padding-bottom: 12px;
+}

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { KolomScoring, TampilanScoring } from '../api'
 import { FAKTOR_SCORING, HASIL_SCORING as H, SCORING as S, TEKS_SCORING as T } from '../labels'
-import TabScoring, { nadaKelas, persenLossRatioTerkunci, pilihScoring, subtotalFaktor, terkunciSilang } from './TabScoring'
+import TabScoring, { nadaKelas, persenLossRatioTerkunci, pilihScoring, subtotalFaktor, terkunciPilihanLain, terkunciSilang } from './TabScoring'
 
 const NB = 'D:\\migrasi\\RNM\\NB FacIn\\'
 const SUMBER = readFileSync(join(__dirname, 'TabScoring.tsx'), 'utf8').replace(/\r\n/g, '\n')
@@ -67,6 +67,14 @@ describe.skipIf(!existsSync(NB + 'Section\\ScoringRisk.xml'))('label = korpus', 
 describe('TabScoring - aturan', () => {
   const kolom = (pilihan: Record<string, number>): KolomScoring =>
     ({ indexLocation: '1', occupationNote: '', topRiskLocation: '', pilihan, skor: {}, persenLossRatio: '', total: '' }) as KolomScoring
+
+  it('S54-1 (12-10-2026): sesudah satu dipilih, pilihan lain di sub & kolom yang sama terkunci sampai dilepas', () => {
+    expect(terkunciPilihanLain(kolom({ riot: 2 }), 'riot', 3)).toBe(true)
+    expect(terkunciPilihanLain(kolom({ riot: 2 }), 'riot', 2)).toBe(false)
+    expect(terkunciPilihanLain(kolom({ riot: 2 }), 'flood', 1)).toBe(false)
+    expect(terkunciPilihanLain(kolom({ riot: 0 }), 'riot', 1)).toBe(false)
+    expect(terkunciPilihanLain(kolom({}), 'riot', 1)).toBe(false)
+  })
 
   it('centang saling-eksklusif: pilih pindah, klik yang terpilih = kosong (S54-1)', () => {
     expect(pilihScoring(kolom({ riot: 2 }), 'riot', 3).pilihan.riot).toBe(3)

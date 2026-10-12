@@ -11,8 +11,8 @@
 //
 // Keputusan work owner 06-10-2026: "hanya marketing" = Pega "Write" (posisi kasus tahap marketing & bukan on-going) -
 // backend mengirim `bolehUbah`; selain itu baca-saja ("Read"). Cacat Pega dibetulkan (backend). Kurs TSI = Cedant.
-// Keputusan agent S54-1: centang terpilih diklik lagi = dikosongkan (Pega mengunci centang lain sampai yang terpilih
-// dilepas; di sini memilih centang lain langsung memindahkan pilihan). S54-2 kunci silang Growing Trees ditiru persis.
+// S54-1 (diubah work owner 12-10-2026, ikut Pega): sesudah satu centang dipilih, centang lain di sub-faktor & kolom yang sama
+// dikunci sampai yang terpilih dilepas (diklik lagi = dikosongkan). S54-2 kunci silang Growing Trees ditiru persis.
 
 import { useEffect, useRef, useState } from 'react'
 
@@ -36,6 +36,16 @@ const JEDA_MS = 300
 export function pilihScoring(kolom: KolomScoring, kunci: string, n: number): KolomScoring {
   const kini = kolom.pilihan[kunci] ?? 0
   return { ...kolom, pilihan: { ...kolom.pilihan, [kunci]: kini === n ? 0 : n } }
+}
+
+/**
+ * Kunci satu-pilihan per sub-faktor (S54-1, work owner 12-10-2026 "saat sudah dipilih salah 1, yang lainnya jangan bisa
+ * dicentang lagi, yang masih 1 sub yang sama, kecuali yang tadi dicentang sudah di-uncentang" - seperti `pyDisabledWhen`
+ * Pega): pilihan `n` terkunci bila kolom yang sama sudah memilih pilihan LAIN pada sub-faktor itu. Kolom lain tidak terpengaruh.
+ */
+export function terkunciPilihanLain(kolom: KolomScoring, kunci: string, n: number): boolean {
+  const kini = kolom.pilihan[kunci] ?? 0
+  return kini > 0 && kini !== n
 }
 
 /** Isian % Loss Ratio terkunci bila Nil 5 / 3 / 1 tahun atau No Information dipilih (Pega pyDisabledWhen CB1/2/3/10). */
@@ -176,10 +186,12 @@ export default function TabScoring({
     const dipilih = (kolom.pilihan[s.kunci] ?? 0) === n
     const sistem = (s.terkunci ?? []).includes(n)
     const silang = terkunciSilang(k, kolom, s.kunci, n)
-    const kunci = !v.bolehUbah || sistem || (k === 1 && !adaDominan) || silang
+    const lain = terkunciPilihanLain(kolom, s.kunci, n)
+    const kunci = !v.bolehUbah || sistem || (k === 1 && !adaDominan) || silang || lain
+    const judul = silang ? T.terkunciGrowingTrees : sistem ? T.diisiSistem : lain && v.bolehUbah ? T.terkunciSubSama : undefined
     return (
       <td key={k} className={'nbf-score__sel' + (dipilih ? ' nbf-score__sel--pilih' : '')}>
-        <label title={silang ? T.terkunciGrowingTrees : sistem ? T.diisiSistem : undefined}>
+        <label title={judul}>
           <input
             type="checkbox"
             aria-label={`${NAMA_KOLOM[k]} - ${s.label || s.kunci} - ${s.opsi[n - 1]}`}

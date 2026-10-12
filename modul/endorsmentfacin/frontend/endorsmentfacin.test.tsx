@@ -27,11 +27,18 @@ describe('label = korpus', () => {
 
   it.skipIf(!ada(EDM + 'Section\\WorkPrimaryDetails.xml'))('medan = WorkPrimaryDetails', () => {
     const xml = baca(EDM + 'Section\\WorkPrimaryDetails.xml')
-    for (const l of [FORM.policyNo, FORM.sumber, FORM.catatan, FORM.jenis, FORM.tanggal, FORM.retro]) {
+    for (const l of [FORM.policyNo, FORM.sumber, FORM.catatan, FORM.jenis, FORM.tanggal, FORM.status, FORM.retro]) {
       expect(xml, l).toContain(`<pyLabelFieldValue>${l}</pyLabelFieldValue>`)
     }
-    for (const c of [FORM.biaya, FORM.survey]) expect(xml, c).toContain(`<pyCheckboxCaption>${c}</pyCheckboxCaption>`)
     for (const p of [FORM.pilihJenis, FORM.jenisBaru]) expect(xml, p).toContain(p)
+    // Biaya / Survey tidak dirender: kontainer terdekat sebelum keduanya `pyContainerVisibleWhen = never`.
+    for (const c of ['Biaya', 'Survey']) {
+      const i = xml.indexOf(`<pyCheckboxCaption>${c}</pyCheckboxCaption>`)
+      expect(i, c).toBeGreaterThan(0)
+      const sebelum = xml.slice(0, i)
+      const m = [...sebelum.matchAll(/<pyContainerVisibleWhen>([^<]*)<\/pyContainerVisibleWhen>/g)].pop()
+      expect(m?.[1], c).toBe('never')
+    }
   })
 
   it.skipIf(!ada(EDM + 'Section\\EdmType1.xml'))('Detail EDM Type = EdmType1', () => {
@@ -94,9 +101,14 @@ describe('layar', () => {
 
   it('form awal: medan WorkPrimaryDetails, EDM Type & Detail tersembunyi, Retro bawaan 0, OK mati', () => {
     const html = renderToStaticMarkup(<FormAddendum onBatal={() => {}} onDibuat={() => {}} />)
-    for (const l of [FORM.policyNo, FORM.sumber, FORM.catatan, FORM.jenis, FORM.tanggal, FORM.biaya, FORM.survey, FORM.retro]) {
+    for (const l of [FORM.policyNo, FORM.sumber, FORM.catatan, FORM.jenis, FORM.tanggal, FORM.status, FORM.retro]) {
       expect(html, l).toContain(l)
     }
+    expect(html).not.toContain('Biaya')
+    expect(html).not.toContain('type="checkbox"')
+    // Endorsement Status bawaan Internal; Retro bawaan No (Yes / No, W-EDM-13/14).
+    expect(html).toContain('<option value="0" selected="">Internal</option>')
+    expect(html).toMatch(/name="edmf-retro" checked="" value="0"\/> No/)
     // EdmTypeNew hanya bila Endorsement Type 4; Detail hanya bila EdmTypeNew 1/2/3.
     expect(html).not.toContain(`<label class="field__label">${FORM.jenisBaru}`)
     expect(html).not.toContain(`<label class="field__label">${FORM.detail}`)
@@ -106,8 +118,9 @@ describe('layar', () => {
     // Templat NB FacIn: tanggal teks dd/mm/yyyy (bukan input date bawaan yang tampil mm/dd/yyyy), alasan OK mati tampil.
     expect(html).toContain('placeholder="dd/mm/yyyy"')
     expect(html).not.toMatch(/<input class="field__input" type="date"/)
-    expect(html).toContain(`Required: ${FORM.policyNo}, ${FORM.sumber}, ${FORM.catatan}, ${FORM.tanggal}, ${FORM.jenis}.`)
-    expect(html).toContain(PERIKSA.belumDiperiksa)
+    expect(html).toContain(`Required: ${FORM.policyNo}, ${FORM.sumber}, ${FORM.catatan}, ${FORM.jenis}, ${FORM.tanggal}.`)
+    // Panel rincian gerbang tidak ditampilkan (work owner 12-10-2026 "ini tidak perlu ditampilkan").
+    expect(html).not.toContain("edmf-periksa")
   })
 
   it('portal menampilkan pesan kasus lahir, dan tanpa pesan bila kosong', () => {
@@ -166,10 +179,8 @@ describe('api', () => {
         note: 'UJI catatan',
         endorsementSource: '',
         endorsementSourceNote: 'UJI sumber',
-        endorsementStatus: '',
+        endorsementStatus: '0',
         detailType: '',
-        adminCharge: true,
-        survey: false,
       }
       const h = await buatKasus(isi)
       expect(url).toMatch(/\/api\/endorsmentfacin\/kasus$/)

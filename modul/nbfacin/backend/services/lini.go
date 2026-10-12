@@ -24,74 +24,16 @@ import (
 
 	"nusantarare/modul/nbfacin/backend/models"
 	"nusantarare/modul/nbfacin/backend/repository"
+	"nusantarare/modul/nbfacin/backend/services/jenisbisnis"
 	"nusantarare/modul/nbfacin/backend/services/rules"
 )
 
-// barisBusinessType - satu baris BusinessType_DeT; oldID kosong = cocok apa pun.
-type barisBusinessType struct {
-	groupPanel string
-	oldID      []string
-	hasil      string
-}
-
 // businessTypeBawaan - pyDefaultResult BusinessType_DeT.
-const businessTypeBawaan = "UNKNOWN"
+const businessTypeBawaan = jenisbisnis.Bawaan
 
-// tabelBusinessType - BusinessType_DeT baris 1-36 urut (first match).
-var tabelBusinessType = []barisBusinessType{
-	{"001", nil, "Medicare"},
-	{"002", []string{"03"}, "PA"},
-	{"003", []string{"36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "C2", "C3",
-		"C4", "C5", "C6", "C7", "C8", "C9", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "F1", "F2", "F3", "F4", "F5"}, "Bonding"},
-	{"003", []string{"95", "96", "97", "98", "99", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "B4", "B5", "B6", "B8", "B9",
-		"C1"}, "BondingKBG"},
-	{"003", []string{"20"}, "HE"},
-	{"003", []string{"05", "55"}, "MarineHull"},
-	{"003", []string{"21"}, "Glass"},
-	{"003", []string{"15", "24", "89", "90", "91", "E7", "E9"}, "Liability"},
-	{"003", []string{"16"}, "AllRisk"},
-	{"003", []string{"06"}, "AviationHull"},
-	{"003", []string{"14"}, "Burglary"},
-	{"003", []string{"07"}, "Car"},
-	{"003", []string{"08"}, "Ear"},
-	{"003", []string{"09"}, "ElectronicEquipment"},
-	{"003", []string{"19"}, "Fidelity"},
-	{"003", []string{"27"}, "GolfInsurance"},
-	{"003", []string{"17"}, "CIT"},
-	{"003", []string{"18"}, "CIS"},
-	{"003", []string{"11"}, "Boiler"},
-	{"003", []string{"93"}, "Workmen"},
-	{"003", []string{"10"}, "MBD"},
-	{"003", []string{"12"}, "ContractorsPM"},
-	{"003", []string{"79", "80", "81", "82", "83", "84", "85", "86", "87", "88"}, "CustomBond"},
-	{"003", []string{"28"}, "FireStyle1"},
-	{"003", []string{"B3"}, "LandRig"},
-	{"003", nil, "Aneka"},
-	{"004", nil, "MarineCargo"},
-	{"005", nil, "Travel"},
-	{"006", []string{"78"}, "OilGas"},
-	{"006", []string{"22", "26", "29", "57"}, "FireStyle1"},
-	{"006", []string{"01", "34", "59"}, "FireStyle2"},
-	{"006", nil, "Fire"},
-	{"007", []string{"02"}, "MBUCar"},
-	{"007", []string{"60"}, "MBUMotorCycle"},
-	{"009", []string{"L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8", "L9", "L10", "L11", "L12", "L13", "L14", "L15", "L16", "L17", "L18",
-		"L19", "L20", "L21"}, "Life"},
-	{"008", nil, "Medicare"},
-}
-
-// businessTypeDari - BusinessType_DeT first match atas (GroupPanel, BusinessOldId); tanpa baris cocok -> "UNKNOWN".
-func businessTypeDari(groupPanel, oldID string) string {
-	for _, b := range tabelBusinessType {
-		if b.groupPanel != groupPanel {
-			continue
-		}
-		if len(b.oldID) == 0 || dalam(b.oldID, oldID) {
-			return b.hasil
-		}
-	}
-	return businessTypeBawaan
-}
+// businessTypeDari - BusinessType_DeT first match atas (GroupPanel, BusinessOldId); tanpa baris cocok -> "UNKNOWN". Tabel di
+// services/jenisbisnis (dipakai bersama kontrak.JenisBisnisFacIn).
+func businessTypeDari(groupPanel, oldID string) string { return jenisbisnis.Dari(groupPanel, oldID) }
 
 // LiniKasus - `businessType` + `lini` GET kasus (tiket 73 P0) dan `tampilanAneka` (tiket 73 P1): hasil predikat When korpus.
 type LiniKasus struct {
@@ -191,7 +133,7 @@ var predikatLini = []struct {
 // kasusBisnis - rules.Kasus jalur Quotation yang dibaca predikat lini (dicacah sesi c3 dari registry_gen.go, rekursif):
 // BusinessType dalam empat bentuk jalur (pyWorkPage.Quotation, pyWorkPage.OfferFacIn.QuotationData, pyWorkPage.Policy.Quotation,
 // `.Quotation` relatif) - satu nilai; BusinessCode = BUSINESS.ID; BusinessName = BUSINESS.NOTE (Class of Business).
-type kasusBisnis struct{ businessType, businessCode, businessName string }
+type kasusBisnis struct{ businessType, businessCode, businessName, oldID, groupPanel string }
 
 func (k kasusBisnis) Nilai(jalur string) (string, bool) {
 	switch jalur {
@@ -259,7 +201,8 @@ func (s *Service) kasusBisnisDari(ctx context.Context, id string) (kasusBisnis, 
 		}
 	}
 	return kasusBisnis{businessType: businessTypeDari(strings.TrimSpace(b.GroupPanel), strings.TrimSpace(b.OldID)),
-		businessCode: strings.TrimSpace(b.ID), businessName: nama}, true
+		businessCode: strings.TrimSpace(b.ID), businessName: nama, oldID: strings.TrimSpace(b.OldID),
+		groupPanel: strings.TrimSpace(b.GroupPanel)}, true
 }
 
 // salahSatu - OR predikat lewat rules.Eval; galat (ErrTafsirBerbeda) = predikat itu salah, dicatat.
@@ -308,4 +251,25 @@ func samaDuaPuluh(kode string) bool {
 		return n == 20
 	}
 	return false
+}
+
+// bisnisQuotation - salinan bisnis QuotationData (tiket 76b, migrasi 253) dari kasusBisnisDari; nil bila kasus / BUSINESS tak
+// terbaca (kolom tetap). Nilai lebih lebar dari kolom rancangan -> "" (tetap), bukan ORA-12899.
+func (s *Service) bisnisQuotation(ctx context.Context, id string) *models.BisnisQuotation {
+	kb, ok := s.kasusBisnisDari(ctx, id)
+	if !ok {
+		return nil
+	}
+	tipe2 := "NONLIFE" // InwardFacultative_PreDT: @if(.Quotation.BusinessType = "Life","LIFE","NONLIFE")
+	if kb.businessType == "Life" {
+		tipe2 = "LIFE"
+	}
+	muat := func(v string, lebar int) string {
+		if len(v) > lebar {
+			return ""
+		}
+		return v
+	}
+	return &models.BisnisQuotation{Code: muat(kb.businessCode, 50), Name: muat(kb.businessName, 500), OldID: muat(kb.oldID, 50),
+		GroupPanel: muat(kb.groupPanel, 50), Type: muat(kb.businessType, 50), Type2: tipe2}
 }

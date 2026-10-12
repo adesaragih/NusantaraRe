@@ -238,6 +238,8 @@ func (s *Service) TampilanSubmit(ctx context.Context, pelaku inti.Pelaku, id str
 	if err := s.siapSubmit(id); err != nil {
 		return TampilanSubmit{}, err
 	}
+	u := ukurBaru()
+	defer u.lambat("Tampilan Submit", id)
 	k, err := s.konteksSubmit(ctx, id)
 	if err != nil {
 		return TampilanSubmit{}, err
@@ -246,31 +248,41 @@ func (s *Service) TampilanSubmit(ctx context.Context, pelaku inti.Pelaku, id str
 		CommentDeductible: k.CommentDeductible}
 	t.Alasan, _ = alasanTidakBoleh(k, pelaku)
 	t.BolehSubmit = t.Alasan == ""
-	if tahapTL(t.Tahap) {
-		objek, err := s.BacaObjek(ctx, id)
-		if err != nil {
-			return TampilanSubmit{}, err
-		}
-		t.DeductibleBedaMataUang = deductibleBedaMataUang(objek)
-	}
 	if tahapUWForm(t.Tahap) {
 		t.DaysValidity, t.DateValidity, t.WaitingBindDate = validitasTampilan(k)
 	}
 	if t.Tahap == TahapBinding {
 		t.ConfirmBinding, t.ReceivedRiSlip = k.ConfirmBinding == "1", k.ReceivedRiSlip == "true"
 	}
-	if t.Riwayat, err = s.submit.RiwayatAkseptasi(ctx, idPega(id)); err != nil {
+	// Laporan work owner 12-10-2026: sesudah konteks, objek (Team Leader) ‖ riwayat ‖ opsi Banding ‖ sebab Decline PARALEL
+	// (bacaparalel.go), hasil identik.
+	var (
+		objek   []models.ObjekFire
+		banding []string
+		baris   []models.BarisCauseOfDecline
+	)
+	u.tandai("konteks")
+	langkah := []langkahBaca{
+		{"riwayat", func(c context.Context) (err error) {
+			t.Riwayat, err = s.submit.RiwayatAkseptasi(c, idPega(id))
+			return err
+		}},
+		{"banding", func(c context.Context) (err error) {
+			banding, err = s.submit.OpsiBanding(c, idPega(id), k.TeamGroup)
+			return err
+		}},
+		{"sebab", func(c context.Context) (err error) { baris, err = s.submit.SebabDecline(c); return err }},
+	}
+	if tahapTL(t.Tahap) {
+		langkah = append(langkah, langkahBaca{"objek", func(c context.Context) (err error) { objek, err = s.BacaObjek(c, id); return err }})
+	}
+	if err := bacaParalel(ctx, u, langkah...); err != nil {
 		return TampilanSubmit{}, err
 	}
-	banding, err := s.submit.OpsiBanding(ctx, idPega(id), k.TeamGroup)
-	if err != nil {
-		return TampilanSubmit{}, err
+	if tahapTL(t.Tahap) {
+		t.DeductibleBedaMataUang = deductibleBedaMataUang(objek)
 	}
 	t.OpsiBanding = bandingAktif(banding)
-	baris, err := s.submit.SebabDecline(ctx)
-	if err != nil {
-		return TampilanSubmit{}, err
-	}
 	t.SebabTc, t.SebabNonTc = susunSebabDecline(baris)
 	if k.RICommision != nil {
 		t.PctRnmRIComm = utils.FormatDecimal(k.RICommision)
@@ -536,10 +548,13 @@ func (s *Service) AjukanSubmit(ctx context.Context, pelaku inti.Pelaku, id strin
 	if s.transaksi == nil {
 		return HasilSubmit{}, ErrSubmitTanpaDatabase
 	}
+	u := ukurBaru()
+	defer u.lambat("Submit", id)
 	k, err := s.konteksSubmit(ctx, id)
 	if err != nil {
 		return HasilSubmit{}, err
 	}
+	u.tandai("konteks")
 	if _, err := alasanTidakBoleh(k, pelaku); err != nil {
 		return HasilSubmit{}, err
 	}
@@ -592,11 +607,16 @@ func (s *Service) AjukanSubmit(ctx context.Context, pelaku inti.Pelaku, id strin
 			return HasilSubmit{}, GalatProteksi{Pesan: pesan}
 		}
 	}
+	u.tandai("periksa")
 	akun, err := s.submit.AkunSubmit(ctx, pelaku.AkunID)
 	if err != nil {
 		return HasilSubmit{}, err
 	}
 	w := s.tulisanSubmit(tahap, id, pelaku, isi, k, akun)
+	// Tiket 76 (migrasi 252): total kasus tiap Submit, DATE_OFFER Submit marketing pertama.
+	u.tandai("akun")
+	w.Ringkasan, w.DateOffer = s.ringkasanTotalPolis(ctx, id), s.dateOfferSubmit(tahap)
+	u.tandai("total")
 	if tahap == TahapMarketing && isi.EmailType == models.EmailTypeAccept { // tiket 57 "IS ada Ask ?" (submitask.go)
 		posisi, status, ask, err := s.tujuanAskMarketing(ctx, id)
 		if err != nil {
@@ -619,7 +639,10 @@ func (s *Service) AjukanSubmit(ctx context.Context, pelaku inti.Pelaku, id strin
 			return HasilSubmit{}, err
 		}
 	}
-	if err := s.transaksi(ctx, func(tx *db.Tx) error { return s.submit.TulisSubmit(ctx, tx, w) }); err != nil {
+	u.tandai("lengkapi")
+	err = s.transaksi(ctx, func(tx *db.Tx) error { return s.submit.TulisSubmit(ctx, tx, w) })
+	u.tandai("tulis")
+	if err != nil {
 		if errors.Is(err, repository.ErrPosisiBerubah) {
 			return HasilSubmit{}, ErrSubmitBukanTahapMarketing
 		}
@@ -645,9 +668,10 @@ func (s *Service) tulisanSubmit(tahap, id string, pelaku inti.Pelaku, isi models
 	}
 	label := labelApproval[isi.EmailType]
 	posisi, status := nbStatusSubmit(tahap, isi, k, akun)
+	pr := posisiRiwayatFlag(k.FlagOnGoingPolicy) // bug DEV NB-151039: POSISI / PUTARAN dari FlagOnGoingPolicy, bukan konstanta
 	w := models.TulisanSubmit{CaseID: id, IDPega: idPega(id), PosisiLama: k.Position, PosisiBaru: posisi, NBStatus: status,
-		Riwayat: models.RiwayatProduksi{TypePolis: awalanNBStatus(), Posisi: posisiCedingConfirmOffer, PIC: nama,
-			TglInp: s.sekarang().In(WIB).Format(bentukTglInp), Div: akun.Divisi, Type: "F", Putaran: "1", Approval: label.riwayat,
+		Riwayat: models.RiwayatProduksi{TypePolis: awalanNBStatus(), Posisi: pr, PIC: nama,
+			TglInp: s.sekarang().In(WIB).Format(bentukTglInp), Div: akun.Divisi, Type: "F", Putaran: putaranRiwayat(pr), Approval: label.riwayat,
 			Keterangan: isi.Comment, AksesLogin: pelaku.AkunID, PercentRNM: k.PercentShare},
 		Pega: models.RiwayatPega{Status: label.pega, Username: nama, Workbasket: workbasketTahap[tahap]}}
 	if tahapTL(tahap) {
@@ -851,4 +875,24 @@ func periksaSebab(pilihan []models.PilihanSebabTc, nonTc string, tc []models.Bar
 		return nil, fmt.Errorf("%w: %s", ErrMasukanSubmit, strings.Join(masalah, "; "))
 	}
 	return dipakai, nil
+}
+
+// posisiRiwayatFlag - HISTORYAKSEPTASIPRODUCTION.POSISI dasar Submit = `.IsCedingConfirm` baris ViewSuggest TERAKHIR `[terverifikasi]`
+// NB FacIn\Activity\SaveViewSuggest.xml langkah 1.2 CARI3 -> RDBList\InsertViewSuggest_SQL.xml POSISI; baris diisi post-activity Submit
+// SetValidateDate_PostAct 3.3 / 3.4 (SetValidateDateUW_PostAct 5.3 / 5.4) = pyWorkPage.IsCedingConfirm menurut FlagOnGoingPolicy:
+// 0 -> "Offer" (konektor InputInwardFacultativeOffer), 1 -> "Policy" (konektor InputInwardFacultativeRISlip). Flag 2 (Binding) ditimpa
+// lengkapiTulisanBinding (K64-2). Satu fungsi tahap dengan T_WORK_POLIS.POSITION tiket 77 (repository.TahapDariFlag: flag lain ->
+// "Policy"). Bug DEV 12-10-2026 NB-151039 (sesi 9d): dulu konstanta.
+func posisiRiwayatFlag(flag string) string { return repository.TahapDariFlag(flag) }
+
+// putaranRiwayat - PUTARAN = SaveViewSuggest langkah 1.2 CARI8 `[terverifikasi]` `@if(.IsCedingConfirm="Offer","1",
+// @if(.IsCedingConfirm="Binding"||.IsCedingConfirm="Accepted"||.IsCedingConfirm="Policy","2",""))`.
+func putaranRiwayat(posisi string) string {
+	switch posisi {
+	case "Offer":
+		return "1"
+	case "Binding", "Accepted", "Policy":
+		return "2"
+	}
+	return ""
 }

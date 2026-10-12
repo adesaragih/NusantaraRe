@@ -255,6 +255,12 @@ func sqlStatusBinding(general string) string {
 }
 
 // sqlSentuhTahap - penjaga serentak tombol Binding: kasus masih di posisi + flag ini.
+// sqlSentuhTahapCatatan - sqlSentuhTahap dengan posisi efektif (tiket 77).
+func sqlSentuhTahapCatatan(work string) string {
+	return "UPDATE " + work + " w SET TGL_UPDATE = SYSDATE WHERE w.ID = :1 AND w.LINI = :2 AND " + sqlPosisiEfektif("w") +
+		" = :3 AND w.FLAG_ONGOING_POLICY = :4"
+}
+
 func sqlSentuhTahap(work string) string {
 	return "UPDATE " + work + " SET TGL_UPDATE = SYSDATE WHERE ID = :1 AND LINI = :2 AND POSITION = :3 AND FLAG_ONGOING_POLICY = :4"
 }
@@ -291,7 +297,11 @@ func (r *SubmitOracle) TulisTekanBinding(ctx context.Context, tx *db.Tx, b model
 		}
 		return nil
 	}
-	if err := satu(sqlSentuhTahap(t.work), "posisi Binding", ErrPosisiBerubah, b.CaseID, LiniFacIn, b.Position, b.Flag); err != nil {
+	qSentuh := sqlSentuhTahap(t.work)
+	if adaCatatanPosisi(ctx, r.db, t.work) {
+		qSentuh = sqlSentuhTahapCatatan(t.work) // tiket 77
+	}
+	if err := satu(qSentuh, "posisi Binding", ErrPosisiBerubah, b.CaseID, LiniFacIn, b.Position, b.Flag); err != nil {
 		return err
 	}
 	if err := satu(sqlKonfirmasiBinding(t.general), "CONFIRM_BINDING", ErrSudahBinding, b.CaseID); err != nil {

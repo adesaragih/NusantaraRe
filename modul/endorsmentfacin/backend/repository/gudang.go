@@ -85,7 +85,17 @@ func SqlNilaiPolisTerakhir(t, jalurJSON string) string {
 const (
 	JalurEdmType      = "$.QuotationData.EdmType"
 	JalurBusinessType = "$.QuotationData.BusinessType"
+	// JalurIDNewBisnis - penanda polis buatan NB FacIn sistem baru: DATA_JSON minimal `{"IDNewBisnis": caseId}`
+	// (nbfacin services/selesaipolicy.go, keputusan work owner 09-10-2026 "sistem baru tidak pakai data_json lgi").
+	JalurIDNewBisnis = "$.IDNewBisnis"
 )
+
+// PolisSistemBaru - baris JSON_POLIS versi terakhir (PRODKE = COUNT-1, baris yang sama dengan G1) memuat IDNewBisnis
+// tidak kosong (A51). Tanpa baris = false.
+func (g *Gudang) PolisSistemBaru(ctx context.Context, polis string) (bool, error) {
+	v, err := g.nilaiPolisTerakhir(ctx, "membaca penanda IDNewBisnis polis", JalurIDNewBisnis, polis)
+	return strings.TrimSpace(v) != "", err
+}
 
 func (g *Gudang) nilaiPolisTerakhir(ctx context.Context, apa, jalur, polis string) (string, error) {
 	t, err := g.db.Qualify(TabelJSONPolis)
@@ -106,7 +116,54 @@ func (g *Gudang) JenisBisnis(ctx context.Context, polis string) (string, error) 
 	return g.nilaiPolisTerakhir(ctx, "membaca BusinessType polis (GetBusinessType_Sql)", JalurBusinessType, polis)
 }
 
-// SqlKlaimTerakhir - `RDBList/GetDataClaim_SQL.xml` `[terverifikasi]`: `Select CaseID, sts_reject as CARI1 from
+// TabelBisnis - master Class of Business warisan POOLDATA (DDL\BUSINESS.txt: ID, OLDID, GROUPPANEL VARCHAR2).
+const TabelBisnis = "BUSINESS"
+
+// BarisBisnis - GROUPPANEL + OLDID satu baris BUSINESS (masukan kontrak JenisBisnisFacIn).
+type BarisBisnis struct {
+	GroupPanel, OldID string
+}
+
+// SqlBisnisProduksi - jenis bisnis polis SISTEM BARU dari tabel (A51/A52, keputusan work owner 12-10-2026 opsi 1a):
+// FACINPRODUCTION.BUSINESSCODE polis → BUSINESS (ID sama). Saringan `GROUPPANEL IS NOT NULL` = saringan NB
+// (nbfacin repository/tableoflimit.go sqlBisnisLini, Pega GetOldIDBusiness_SQL). DISTINCT, maks 2 baris: pemanggil
+// memakai baris hanya bila TEPAT satu (pola NB: selain itu UNKNOWN).
+func SqlBisnisProduksi(produksi, bisnis string) string {
+	return fmt.Sprintf(`SELECT DISTINCT b.GROUPPANEL, b.OLDID FROM %s f JOIN %s b ON b.ID = f.BUSINESSCODE
+	  WHERE f.NOPOLIS = :1 AND b.GROUPPANEL IS NOT NULL FETCH FIRST 2 ROWS ONLY`, produksi, bisnis)
+}
+
+// BisnisProduksi - baris BUSINESS (GROUPPANEL, OLDID) kode bisnis polis di FACINPRODUCTION; nol, satu, atau dua.
+func (g *Gudang) BisnisProduksi(ctx context.Context, polis string) ([]BarisBisnis, error) {
+	f, err := g.db.Qualify(TabelFacinProduction)
+	if err != nil {
+		return nil, err
+	}
+	b, err := g.db.Qualify(TabelBisnis)
+	if err != nil {
+		return nil, err
+	}
+	q := SqlBisnisProduksi(f, b)
+	if err := db.PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	rows, err := g.db.QueryContext(ctx, q, polis)
+	if err != nil {
+		return nil, bungkus(err, "membaca BUSINESS polis")
+	}
+	defer func() { _ = rows.Close() }()
+	out := []BarisBisnis{}
+	for rows.Next() {
+		var gp, old sql.NullString
+		if err := rows.Scan(&gp, &old); err != nil {
+			return nil, bungkus(err, "memindai BUSINESS polis")
+		}
+		out = append(out, BarisBisnis{GroupPanel: strings.TrimSpace(gp.String), OldID: strings.TrimSpace(old.String)})
+	}
+	return out, bungkus(rows.Err(), "membaca BUSINESS polis")
+}
+
+// SqlKlaimTerakhir -`RDBList/GetDataClaim_SQL.xml` `[terverifikasi]`: `Select CaseID, sts_reject as CARI1 from
 // os_akseptasi_klaim where nopolis = {InputData.CARI17} order by tanggal desc fetch first row only`. CaseID tidak
 // dibaca langkah mana pun. `TO_CHAR`: tipe STS_REJECT tidak ada di DDL kiriman - teks dan angka sama-sama terbaca teks.
 func SqlKlaimTerakhir(t string) string {

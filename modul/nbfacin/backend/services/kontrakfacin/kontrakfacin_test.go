@@ -142,3 +142,17 @@ func TestMasukanSemuaMedan(t *testing.T) {
 		}
 	}
 }
+
+// TestJenisBisnis - kontrak.JenisBisnisFacIn (Endorsement Fac In, keputusan work owner 12-10-2026 opsi "1a"): BusinessType_DeT NB
+// lewat kontrak; sampel permintaan sesi Endorsement + DEV (FACINPRODUCTION.BUSINESSCODE 10045 -> GROUPPANEL 006 / OLDID 22).
+func TestJenisBisnis(t *testing.T) {
+	var j kontrak.JenisBisnisFacIn = JenisBisnis{}
+	for _, c := range []struct{ gp, old, mau string }{
+		{"006", "22", "FireStyle1"}, {"006", "99", "Fire"}, {"006", "78", "OilGas"}, {"004", "apa pun", "MarineCargo"},
+		{"009", "L1", "Life"}, {"999", "x", "UNKNOWN"}, {"003", "30", "Aneka"}, {"", "", "UNKNOWN"},
+	} {
+		if got := j.BusinessType(c.gp, c.old); got != c.mau {
+			t.Errorf("%s/%s: %q mau %q", c.gp, c.old, got, c.mau)
+		}
+	}
+}

@@ -134,32 +134,18 @@
   margin-bottom: 12px;
 }
 
-/* Form Create Addendum - pola FormOpportunity NB FacIn: kepala (judul + tombol), dua kolom bertumpuk. */
+/* Form Create Addendum - tata letak tangkapan layar Pega (work owner 11-10-2026): dua kolom, label di KIRI medan,
+   tombol OK lalu Cancel di kanan bawah di luar kotak form; tema NB FacIn. */
 .endorsmentfacin .edmf-form {
-  max-width: 1100px;
-}
-.endorsmentfacin .edmf-form__kepala {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.endorsmentfacin .edmf-form__aksi {
-  display: flex;
-  gap: 10px;
-}
-.endorsmentfacin .edmf-form__alasan {
-  margin: 4px 0 12px;
-  color: var(--edt-teks-redup);
-  font-size: 0.9rem;
+  max-width: 1180px;
 }
 .endorsmentfacin .edmf-form__panel {
-  padding: 18px 22px;
+  padding: 20px 24px;
 }
 .endorsmentfacin .edmf-form__kolom {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 40px;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 0 48px;
   align-items: start;
 }
 .endorsmentfacin .edmf-form__tumpuk {
@@ -167,27 +153,61 @@
   gap: 14px;
   align-content: start;
 }
-/* Judul bagian: kecil, huruf besar, bergaris bawah - pemisah kolom. */
-.endorsmentfacin .edmf-form__bagian {
+/* Satu medan = satu baris: label kiri (rata kanan, lebar tetap), kotak isian kanan, galat di bawah kotak. */
+.endorsmentfacin .edmf-form__panel .field {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: center;
   margin: 0;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--edt-garis);
-  color: var(--edt-teks-redup);
-  font-size: 0.78rem;
+}
+.endorsmentfacin .edmf-form__panel .field > .field__label {
+  grid-column: 1;
+  margin: 0;
+  text-align: right;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  color: var(--edt-teks);
+}
+.endorsmentfacin .edmf-form__panel .field > :not(.field__label) {
+  grid-column: 2;
+}
+/* Label textarea dan radio sejajar baris pertamanya, bukan tengah. */
+.endorsmentfacin .edmf-form__panel .field:has(textarea),
+.endorsmentfacin .edmf-form__panel .field:has(.edmf-pilihan) {
+  align-items: start;
+}
+.endorsmentfacin .edmf-form__panel .field:has(textarea) > .field__label,
+.endorsmentfacin .edmf-form__panel .field:has(.edmf-pilihan) > .field__label {
+  padding-top: 8px;
 }
 .endorsmentfacin .edmf-form textarea {
   resize: vertical;
-  min-height: 96px;
+  min-height: 110px;
+}
+/* Kaki: alasan OK mati di kiri, OK + Cancel di kanan (crmNewHarnessButtons: OK lalu Cancel). */
+.endorsmentfacin .edmf-form__kaki {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+}
+.endorsmentfacin .edmf-form__alasan {
+  margin: 0;
+  color: var(--edt-teks-redup);
+  font-size: 0.9rem;
+}
+.endorsmentfacin .edmf-form__aksi {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
 }
 
-/* Kelompok radio / centang di bawah label medan (pola nbf-inward__radio). */
+/* Radio Endorsement Internal Retro - vertikal seperti layar Pega. */
 .endorsmentfacin .edmf-pilihan {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 32px;
+  flex-direction: column;
+  gap: 8px;
   padding: 6px 0;
 }
 .endorsmentfacin .edmf-pilihan__butir {
@@ -214,73 +234,24 @@
   pointer-events: none;
 }
 
-/* Hasil pemeriksaan. */
-.endorsmentfacin .edmf-periksa {
-  margin-top: 16px;
-  padding: 16px 22px;
-}
-.endorsmentfacin .edmf-periksa__kosong {
-  margin: 10px 0 0;
-  color: var(--edt-teks-redup);
-}
-.endorsmentfacin .edmf-periksa__daftar {
-  list-style: none;
-  margin: 8px 0 0;
-  padding: 0;
-}
-.endorsmentfacin .edmf-periksa__butir {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--edt-garis);
-}
-.endorsmentfacin .edmf-periksa__butir:last-child {
-  border-bottom: 0;
-}
-.endorsmentfacin .edmf-periksa__nama {
-  flex: 1 1 260px;
-}
-.endorsmentfacin .edmf-periksa__catatan {
-  flex-basis: 100%;
-  font-size: 0.85rem;
-  color: var(--edt-teks-redup);
-}
-/* Chip hasil: hijau lolos, merah tolak, kuning belum diperiksa, biru klep, abu dilewati. */
-.endorsmentfacin .edmf-chip {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  background: var(--edt-lembut);
-  color: var(--edt-teks-redup);
-}
-.endorsmentfacin .edmf-chip--lolos {
-  background: light-dark(#dcfae6, #12372a);
-  color: light-dark(#067647, #75e0a7);
-}
-.endorsmentfacin .edmf-chip--tolak {
-  background: light-dark(#fee4e2, #4a1a17);
-  color: light-dark(#b42318, #fda29b);
-}
-.endorsmentfacin .edmf-chip--belum-diperiksa {
-  background: light-dark(#fef0c7, #4a3410);
-  color: light-dark(#b54708, #fec84b);
-}
-.endorsmentfacin .edmf-chip--diklep {
-  background: var(--edt-aksen-lembut);
-  color: var(--edt-aksen-teks);
-}
-
 /* Layar sempit: satu kolom. */
-@media (max-width: 860px) {
+@media (max-width: 960px) {
   .endorsmentfacin .edmf-form__kolom {
     grid-template-columns: minmax(0, 1fr);
     gap: 14px;
   }
-  .endorsmentfacin .edmf-form__kepala {
+}
+/* Layar sangat sempit: label kembali di atas kotak isian. */
+@media (max-width: 560px) {
+  .endorsmentfacin .edmf-form__panel .field {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .endorsmentfacin .edmf-form__panel .field > .field__label,
+  .endorsmentfacin .edmf-form__panel .field > :not(.field__label) {
+    grid-column: 1;
+    text-align: left;
+  }
+  .endorsmentfacin .edmf-form__kaki {
     flex-wrap: wrap;
   }
 }

@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -86,6 +87,8 @@ type KasusKabel struct {
 	General                      GeneralKabel
 	// RiskScoring - Scoring Risk tersimpan (tiket 54); FinalScore nil / NoteFinalScore "" = belum disimpan.
 	RiskScoring models.RingkasanScoring
+	// MarketingBawaan - saran awal Marketing Name (ID MARKETINGOFFICER pembuat case) bila MOID belum tersimpan; "" selain itu.
+	MarketingBawaan string
 }
 
 // IsianGeneral - badan PUT .../general: medan yang dapat diubah (tanpa medan tampil-saja).
@@ -248,7 +251,33 @@ func (s *Service) BacaKasus(ctx context.Context, id string) (KasusKabel, error) 
 	if err != nil {
 		return KasusKabel{}, err
 	}
-	return s.keKabel(k), nil
+	kk := s.keKabel(k)
+	if strings.TrimSpace(k.General.MarketingID) == "" {
+		kk.MarketingBawaan = s.marketingBawaan(ctx, id)
+	}
+	return kk, nil
+}
+
+// marketingBawaan - keputusan work owner 12-10-2026: Marketing Name otomatis dari pembuat case bila ada di MARKETINGOFFICER aktif
+// (saringan dropdown), selain itu kosong. Hanya saran - tidak menulis apa pun (tersimpan saat Save General). Lebih dari satu baris
+// -> "" (dropdown tetap "Choose"; koreksi work owner 12-10-2026) + log; galat baca -> "" + log (GET kasus tidak gagal).
+func (s *Service) marketingBawaan(ctx context.Context, id string) string {
+	mb, ok := s.marketing.(repository.PembacaMarketingBawaan)
+	if !ok {
+		return ""
+	}
+	v, err := mb.MarketingBawaan(ctx, id)
+	if err != nil {
+		log.Printf("nbfacin: marketing bawaan kasus %s: %v", id, err)
+		return ""
+	}
+	if len(v) > 1 {
+		log.Printf("nbfacin: marketing bawaan kasus %s: pembuat case cocok dengan lebih dari satu MARKETINGOFFICER aktif - dikosongkan", id)
+	}
+	if len(v) != 1 {
+		return ""
+	}
+	return strings.TrimSpace(v[0])
 }
 
 // SimpanGeneral - tombol "Save for later": simpan blok General lalu kembalikan case.
@@ -273,6 +302,7 @@ func (s *Service) SimpanGeneral(ctx context.Context, pelaku inti.Pelaku, id stri
 	if err := s.wajibPeriodeTetap(ctx, id, isian); err != nil {
 		return KasusKabel{}, err
 	}
+	g.Bisnis = s.bisnisQuotation(ctx, id) // tiket 76b (migrasi 253)
 	err = s.transaksi(ctx, func(tx *db.Tx) error { return s.kasus.SimpanGeneral(ctx, tx, id, g) })
 	if errors.Is(err, repository.ErrKasusTidakAda) {
 		return KasusKabel{}, ErrKasusTidakAda

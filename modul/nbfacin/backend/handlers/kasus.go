@@ -71,6 +71,9 @@ type kasusKabel struct {
 	JumlahLokasi *int `json:"jumlahLokasi"`
 	// JenisCsv - tiket 73 P6: template CSV objek ('fire' | 'cargo' | 'aneka' | 'marinehull' | 'cpm' | ''), services.LiniKasus.
 	JenisCsv string `json:"jenisCsv"`
+	// MarketingBawaan - saran awal Marketing Name (ID MARKETINGOFFICER pembuat case) bila MOID belum tersimpan; "" selain itu
+	// (keputusan work owner 12-10-2026).
+	MarketingBawaan string `json:"marketingBawaan"`
 }
 
 // tampilanAnekaKabel - services.TampilanAneka; kontainer selalu larik ("C1".."C9", [] di luar gerbang tab Object Aneka).
@@ -164,7 +167,7 @@ const batasBadanGeneral = 16 << 10
 func keKasusKabel(k services.KasusKabel) kasusKabel {
 	o, g := k.Opportunity, k.General
 	return kasusKabel{CaseID: k.CaseID, Position: k.Position, StatusWork: k.StatusWork, InsuredName: k.InsuredName,
-		RiskScoring: riskScoringKabel{teks(k.RiskScoring.FinalScore), k.RiskScoring.NoteFinalScore},
+		RiskScoring: riskScoringKabel{teks(k.RiskScoring.FinalScore), k.RiskScoring.NoteFinalScore}, MarketingBawaan: k.MarketingBawaan,
 		Opportunity: isianOpportunity{EstimatedClosingDate: o.EstimatedClosingDate, BusinessProspectName: o.BusinessProspectName,
 			AccountID: o.AccountID, InsuredID: o.InsuredID, GroupBusinessID: o.GroupBusinessID, GroupBusiness: o.GroupBusiness,
 			ClassOfBusiness: o.ClassOfBusiness, TypeOfInward: o.TypeOfInward, TypeOfFacultative: o.TypeOfFacultative,

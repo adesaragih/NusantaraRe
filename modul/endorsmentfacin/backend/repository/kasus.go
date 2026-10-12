@@ -62,20 +62,21 @@ func (g *Gudang) NomorKasusBerikut(ctx context.Context, tx *db.Tx) (string, erro
 	return models.RakitIDKasusEDM(n), nil
 }
 
-// SqlSisipWorkPolis - baris T_WORK_POLIS berkeadaan awal kasus EDM.
+// SqlSisipWorkPolis - bentuk LAMA (W-EDM-11, tanpa kolom POSITION_NOTE / sebelum migrasi nbfacin 254): POSITION =
+// workbasket. Dipakai SisipWorkPolisMenurut bila kolomnya belum ada; JANGAN diubah (dikunci uji).
 func SqlSisipWorkPolis(t string) string {
 	return fmt.Sprintf(`INSERT INTO %s (ID, LINI, POSITION, FLAG_ONGOING_POLICY, STATUS_WORK, CREATE_OP, CREATE_OP_NAME,
 	  TGL_CREATE, TGL_UPDATE) VALUES (:1, :2, :3, :4, :5, :6, :7, SYSDATE, SYSDATE)`, t)
 }
 
-// SisipWorkPolis - satu baris T_WORK_POLIS.
+// SisipWorkPolis - satu baris T_WORK_POLIS; bentuknya menurut keberadaan POSITION_NOTE (posisinote.go).
 func (g *Gudang) SisipWorkPolis(ctx context.Context, tx *db.Tx, id, akun string) error {
 	t, err := g.db.Qualify(TabelWorkPolis)
 	if err != nil {
 		return err
 	}
-	return g.sisipSatu(ctx, tx, SqlSisipWorkPolis(t), "menyisipkan "+TabelWorkPolis,
-		id, models.LiniEDMFacIn, models.PosisiAwalEDM, models.FlagAwalEDM, models.StatusAwalEDM, akun, akun)
+	q, arg := SisipWorkPolisMenurut(t, g.adaCatatanPosisi(ctx, t), id, akun)
+	return g.sisipSatu(ctx, tx, q, "menyisipkan "+TabelWorkPolis, arg...)
 }
 
 // KolomKasus - urutan kolom T_EDM_FACIN_KASUS = urutan bind ArgSisipKasus.
@@ -121,6 +122,30 @@ func (g *Gudang) sisipSatu(ctx context.Context, tx *db.Tx, q, apa string, args .
 		return bungkus(err, apa)
 	}
 	return db.PastikanSatuBaris(h, apa)
+}
+
+// SqlEdmTypeSelesaiProduksi - gerbang 1 polis SISTEM BARU (A51, persetujuan work owner 12-10-2026): EDM_TYPE kasus
+// EDM sistem baru atas polis lama itu yang sudah berproduksi, terbaru menurut TGL_UPDATE - padanan Pega `EdmType`
+// versi polis terakhir (GetEDMStatus_SQL). Status berproduksi = models.StatusEDMSelesaiProduksi (pertanyaan terbuka).
+func SqlEdmTypeSelesaiProduksi(work, kasus string) string {
+	return fmt.Sprintf(`SELECT k.EDM_TYPE FROM %s w JOIN %s k ON k.ID = w.ID
+	  WHERE w.LINI = :1 AND k.OLD_POLICY_NO = :2 AND w.STATUS_WORK = :3
+	  ORDER BY w.TGL_UPDATE DESC, w.ID DESC FETCH FIRST 1 ROWS ONLY`, work, kasus)
+}
+
+// EdmTypeSelesaiProduksi - EDM_TYPE kasus EDM sistem baru terbaru yang berproduksi; ("", false) bila tidak ada. Tabel
+// 262 belum ada → ErrBelumAda.
+func (g *Gudang) EdmTypeSelesaiProduksi(ctx context.Context, polis string) (string, bool, error) {
+	w, err := g.db.Qualify(TabelWorkPolis)
+	if err != nil {
+		return "", false, err
+	}
+	k, err := g.db.Qualify(TabelKasus)
+	if err != nil {
+		return "", false, err
+	}
+	return g.satuTeks(ctx, "membaca EDM berproduksi polis", SqlEdmTypeSelesaiProduksi(w, k),
+		models.LiniEDMFacIn, polis, models.StatusEDMSelesaiProduksi)
 }
 
 // SqlEDMBelumSelesai - gerbang 2: kasus EDM sistem baru ber-polis lama sama yang STATUS_WORK-nya belum "Resolved-…".

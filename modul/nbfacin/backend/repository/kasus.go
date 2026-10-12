@@ -10,6 +10,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"nusantarare/inti/backend/db"
@@ -90,6 +91,16 @@ LEFT JOIN %s q ON q.PARENT_ID = w.ID
 WHERE w.ID = :1 AND w.LINI = :2`, strings.Join(pilih, ", "), work, opp, general, quo)
 }
 
+// sqlBacaKasusCatatan - sqlBacaKasus dengan posisi efektif (tiket 77, migrasi 254).
+func sqlBacaKasusCatatan(work, opp, akun, general, quo, skor string) string {
+	return gantiSekali(sqlBacaKasus(work, opp, akun, general, quo, skor), "SELECT w.ID, w.POSITION, ", "SELECT w.ID, "+sqlPosisiEfektif("w")+", ")
+}
+
+// sqlTahapKasusCatatan - sqlTahapKasus dengan posisi efektif (tiket 77).
+func sqlTahapKasusCatatan(work, general string) string {
+	return gantiSekali(sqlTahapKasus(work, general), "SELECT w.POSITION, ", "SELECT "+sqlPosisiEfektif("w")+", ")
+}
+
 // sqlTahapKasus - POSITION / FLAG_ONGOING_POLICY T_WORK_POLIS + CONFIRM_BINDING T_GENERAL_POLIS (tiket 64 lanjutan: tahap
 // Binding dapat diubah sampai tombol Binding ditekan).
 func sqlTahapKasus(work, general string) string {
@@ -108,7 +119,11 @@ func (r *KasusOracle) TahapKasus(ctx context.Context, id string) (models.TahapKa
 		return models.TahapKasus{}, err
 	}
 	var pos, flag, confirm, status sql.NullString
-	err = r.db.QueryRowContext(ctx, sqlTahapKasus(work, general), id, LiniFacIn).Scan(&pos, &flag, &confirm, &status)
+	q := sqlTahapKasus(work, general)
+	if adaCatatanPosisi(ctx, r.db, work) {
+		q = sqlTahapKasusCatatan(work, general)
+	}
+	err = r.db.QueryRowContext(ctx, q, id, LiniFacIn).Scan(&pos, &flag, &confirm, &status)
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.TahapKasus{}, ErrKasusTidakAda
 	}
@@ -140,7 +155,11 @@ func (r *KasusOracle) BacaKasus(ctx context.Context, id string) (models.Kasus, e
 		teks[k] = &sql.NullString{}
 		tujuan[i] = teks[k]
 	}
-	err := r.db.QueryRowContext(ctx, sqlBacaKasus(t[0], t[1], t[2], t[3], t[4], t[5]), id, LiniFacIn).Scan(tujuan...)
+	q := sqlBacaKasus(t[0], t[1], t[2], t[3], t[4], t[5])
+	if adaCatatanPosisi(ctx, r.db, t[0]) {
+		q = sqlBacaKasusCatatan(t[0], t[1], t[2], t[3], t[4], t[5])
+	}
+	err := r.db.QueryRowContext(ctx, q, id, LiniFacIn).Scan(tujuan...)
 	if errors.Is(err, sql.ErrNoRows) {
 		return models.Kasus{}, ErrKasusTidakAda
 	}
@@ -256,8 +275,61 @@ func (r *KasusOracle) SimpanGeneral(ctx context.Context, tx *db.Tx, id string, g
 			return err
 		}
 	}
+	// Tiket 76b (migrasi 253): salinan nama / kode / status QuotationData dari master lewat rujukan.
+	if err := r.salinanQuotation(ctx, tx, quo, id, g.Bisnis); err != nil {
+		return err
+	}
 	// Tiket 34: daftar Ceding Co diganti utuh (kosong = dikosongkan).
 	return r.simpanCeding(ctx, tx, quo, id, g.CedingIDs)
+}
+
+// sqlSalinanQuotation - tiket 76b (keputusan work owner 12-10-2026 "Ya, bertahap"; migrasi 253): salinan QuotationData Pega dari
+// master yang sudah dibaca sistem baru, dalam transaksi Save General (baris T_QUOTATIONDATA ada sejak Save General pertama).
+// `[terverifikasi]` sumber Pega:
+//   - MARKETING_CODE / MARKETING_NAME / TEAM_GROUP / BRANCH_CODE / BRANCH_NAME = `NB FacIn\Activity\CheckDataQuotation.xml` langkah 6
+//     (MARKETINGOFFICER per ID = MOID: CLIENTID / CLIENTNAME / TEAMGROUP / BRANCHDETAILID / BRANCHDETAILNAME), lalu Page-Copy
+//     Quotation -> QuotationData `InputOfferFacInEngineer_preACT` langkah 14. Penyimpangan: Pega menjelajah ulang menurut ClientID
+//     bila MOSTATUS 2 (langkah 5.2, baris pertama tak tentu) - di sini baris ber-ID = MOID saja (seperti sqlKonteksSubmit);
+//   - IS_MOP = `SetMOP_Act` langkah 1 / 2: PolicyType "0" -> "NonMOP", "1" / "2" -> "MOP", selain itu tetap;
+//   - BUSINESS_FAC = `InputQuotation_PreDT` ("F" untuk workgroup ReasFacIn); STATUS_BUSINESS = "1" (NB, statusBusinessNB);
+//   - INSURED_ID / INSURED_NAME = rujukan sistem baru (T_NB_OPPORTUNITY.INSURED_ID; T_M_ACCOUNT.INSUREDNAME per ACCOUNT_ID, seperti
+//     sqlBacaKasus) `[keputusan agent]` - Pega mengisinya dari POOLDATA.CLIENT (GetInsuredID / Change Insured Name);
+//   - bisnis (:1-:6, NVL = tetap bila tak diketahui): BUSINESS_CODE / BUSINESS_NAME / BUSINESS_OLD_ID / GROUP_PANEL / BUSINESS_TYPE /
+//     BUSINESS_TYPE2 (InwardFacultative_PreDT `@if(BusinessType = "Life","LIFE","NONLIFE")`).
+//
+// Lebar: nilai master yang lebih lebar dari kolom rancangan -> NULL (bukan ORA-12899 yang menggagalkan Save General).
+func sqlSalinanQuotation(quo, mo, opp, akun string) string {
+	m := func(kolom string, lebar int) string {
+		return "(SELECT MAX(CASE WHEN LENGTHB(m." + kolom + ") <= " + strconv.Itoa(lebar) + " THEN m." + kolom + " END) FROM " + mo +
+			" m WHERE m.ID = q.MOID)"
+	}
+	return "UPDATE " + quo + " q SET MARKETING_CODE = " + m("CLIENTID", 50) + ", MARKETING_NAME = " + m("CLIENTNAME", 500) +
+		", TEAM_GROUP = " + m("TEAMGROUP", 50) + ", BRANCH_CODE = " + m("BRANCHDETAILID", 50) + ", BRANCH_NAME = " + m("BRANCHDETAILNAME", 500) +
+		", INSURED_ID = (SELECT MAX(CASE WHEN LENGTHB(o.INSURED_ID) <= 50 THEN o.INSURED_ID END) FROM " + opp + " o WHERE o.ID = q.PARENT_ID)" +
+		", INSURED_NAME = (SELECT MAX(CASE WHEN LENGTHB(a.INSUREDNAME) <= 500 THEN a.INSUREDNAME END) FROM " + opp + " o JOIN " + akun +
+		" a ON a.ID = o.ACCOUNT_ID WHERE o.ID = q.PARENT_ID)" +
+		", IS_MOP = CASE WHEN q.POLICY_TYPE = '0' THEN 'NonMOP' WHEN q.POLICY_TYPE IN ('1', '2') THEN 'MOP' ELSE q.IS_MOP END" +
+		", BUSINESS_FAC = 'F', STATUS_BUSINESS = '1', BUSINESS_CODE = NVL(:1, BUSINESS_CODE), BUSINESS_NAME = NVL(:2, BUSINESS_NAME)" +
+		", BUSINESS_OLD_ID = NVL(:3, BUSINESS_OLD_ID), GROUP_PANEL = NVL(:4, GROUP_PANEL), BUSINESS_TYPE = NVL(:5, BUSINESS_TYPE)" +
+		", BUSINESS_TYPE2 = NVL(:6, BUSINESS_TYPE2) WHERE q.PARENT_ID = :7"
+}
+
+// salinanQuotation - lihat sqlSalinanQuotation; toleran ORA-00904 (253 belum dijalankan).
+func (r *KasusOracle) salinanQuotation(ctx context.Context, tx *db.Tx, quo, id string, b *models.BisnisQuotation) error {
+	var t [3]string
+	for i, n := range []string{TabelMarketingOfficer, TabelOpportunity, TabelAkun} {
+		q, err := r.db.Qualify(n)
+		if err != nil {
+			return err
+		}
+		t[i] = q
+	}
+	if b == nil {
+		b = &models.BisnisQuotation{}
+	}
+	k := db.KosongJadiNil
+	return jalankanKolomMigrasi(ctx, tx, "253", sqlSalinanQuotation(quo, t[0], t[1], t[2]), "salinan "+TabelQuotationData, id,
+		k(b.Code), k(b.Name), k(b.OldID), k(b.GroupPanel), k(b.Type), k(b.Type2), id)
 }
 
 func (r *KasusOracle) ubah(ctx context.Context, tx *db.Tx, q, aksi string, arg ...any) (int64, error) {

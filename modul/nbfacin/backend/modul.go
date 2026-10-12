@@ -31,7 +31,7 @@ const Nama = "nbfacin"
 
 // Pendaftaran menyerahkan modul ini kepada perakit (`inti/backend/daftar`).
 //
-// Kontrak: MENYEDIAKAN `kontrak.PenilaiPredikatFacIn` (registry `When` NB) dan
+// Kontrak: MENYEDIAKAN `kontrak.PenilaiPredikatFacIn` (registry `When` NB), `kontrak.JenisBisnisFacIn` (BusinessType_DeT) dan
 // `kontrak.MesinPremiFacIn` (premi coverage NB) - keduanya mesin murni, tanpa data.
 // `kontrak.TanggaAkseptasiFacIn` BELUM disediakan lewat perakit: tangga butuh tabel
 // limit Oracle per permintaan, dan pemakai pertamanya (`rnwfacin`) dibekukan. Modul
@@ -44,10 +44,12 @@ func Pendaftaran() inti.Pendaftaran {
 		Menyediakan: []inti.Kontrak{
 			inti.KontrakDari[kontrak.PenilaiPredikatFacIn](),
 			inti.KontrakDari[kontrak.MesinPremiFacIn](),
+			inti.KontrakDari[kontrak.JenisBisnisFacIn](),
 		},
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
 			inti.Sediakan[kontrak.PenilaiPredikatFacIn](p, kontrakfacin.Predikat{})
 			inti.Sediakan[kontrak.MesinPremiFacIn](p, kontrakfacin.Premi{})
+			inti.Sediakan[kontrak.JenisBisnisFacIn](p, kontrakfacin.JenisBisnis{})
 			cfg := p.Config()
 			// Tiket 56: SMTP korespondensi dari NBFACIN_SMTP_* (persetujuan work owner 06-10-2026); kosong = Send 503.
 			// ⛔ Sandi tidak pernah dicetak (config.SMTP.String menyembunyikannya).

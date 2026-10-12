@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 
 // spreadingTiruan - PenyimpanSpreading dalam memori. baca dikembalikan berurutan (yang terakhir diulang).
 type spreadingTiruan struct {
+	mu        sync.Mutex // bacaan paralel (bacaparalel.go) - kali dinaikkan bersamaan
 	baca      []models.KasusSpreading
 	kali      int
 	tulis     []models.KasusSpreading
@@ -29,6 +31,8 @@ type spreadingTiruan struct {
 }
 
 func (s *spreadingTiruan) BacaSpreading(context.Context, *db.Tx, string) (models.KasusSpreading, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	i := s.kali
 	if i >= len(s.baca) {
 		i = len(s.baca) - 1

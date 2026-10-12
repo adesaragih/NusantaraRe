@@ -99,7 +99,7 @@ describe('ViewPolicy', () => {
     for (const c of V.kolomRingkasan) expect(html).toContain(`<th scope="col">${c}</th>`)
   })
   it('menu View Policy di bawah Home (menuAtas, work owner 09-10-2026); rute merender halamannya', () => {
-    expect(baca('..', 'menu.ts')).toContain("menuAtas: [{ label: VIEW_POLICY.judul, halaman: 'nbfacin-view-policy' }]")
+    expect(baca('..', 'menu.ts')).toContain("menuAtas: [{ label: VIEW_POLICY.judul, halaman: 'nbfacin-view-policy', semua: true }]")
     const rute = baca('..', 'rute.tsx')
     expect(rute).toContain("<div hidden={halaman !== 'nbfacin-view-policy'}>")
     expect(rute).toContain('<ViewPolicy onLihatBerkas={onLihatBerkas} onBukaModul={onBukaModul} />')

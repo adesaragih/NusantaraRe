@@ -35,7 +35,8 @@ func tipeAkhirMigrasi(t *testing.T) map[string]map[string]string {
 		"193_t_coveragelist.sql", "194_t_deductiblelist.sql", "195_t_coveragelist_unit_akumulasi.sql",
 		"198_spreading.sql", "199_cedant.sql", "200_premium_deduction.sql", "201_payment.sql", "202_ppn_check_teks.sql",
 		"203_coverage_zona.sql", "204_coverage_zona_4000.sql", "205_scoring_risk.sql", "208_nb_status.sql", "210_submit_team_leader.sql", "212_submit_uw.sql",
-		"213_form_binding.sql", "214_objek_aneka.sql", "251_lebar_coverage_note.sql", "255_pro_rate_percent.sql"} {
+		"213_form_binding.sql", "214_objek_aneka.sql", "251_lebar_coverage_note.sql", "252_general_polis_lengkap.sql",
+		"253_quotationdata_lengkap.sql", "255_pro_rate_percent.sql"} {
 		b, err := os.ReadFile("../../migrations/" + berkas)
 		if err != nil {
 			t.Fatal(err)
@@ -159,6 +160,14 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 		"T_COVERAGELIST.MIN_PREMIUM": "NUMBER(38,8)", "T_COVERAGELIST.TYPE_OF_DISCOUNT": "VARCHAR2(10)",
 		// tiket 73 P2 (255): % Pro Rate case, persen NUMBER(38,8) - rancangan NUMBER polos.
 		"T_GENERAL_POLIS.PRO_RATE_PERCENT": "NUMBER(38,8)",
+		// 252 (keputusan work owner 12-10-2026): NUMBER polos rancangan -> presisi sah penjaga - uang / persen / share NUMBER(38,8)
+		// (ADR-0016), identitas NUMBER(19) (A92), kode NUMBER(5) (A170).
+		"T_GENERAL_POLIS.CEDING_RETENTION": "NUMBER(38,8)", "T_GENERAL_POLIS.CEDING_RETENTION_NOMINAL": "NUMBER(38,8)",
+		"T_GENERAL_POLIS.OLD_POLIS_ID": "NUMBER(19)", "T_GENERAL_POLIS.PRO_RATE_TYPE": "NUMBER(5)",
+		"T_GENERAL_POLIS.SHARE_RNML": "NUMBER(38,8)", "T_GENERAL_POLIS.SUM_TOTAL_TSI": "NUMBER(38,8)",
+		"T_GENERAL_POLIS.TOTAL_PREMI_NUSA_RE": "NUMBER(38,8)", "T_GENERAL_POLIS.TOTAL_TSI_NUSA_RE": "NUMBER(38,8)",
+		"T_GENERAL_POLIS.TOTAL_TSI_NUSA_RE_SPREADING": "NUMBER(38,8)", "T_GENERAL_POLIS.TOTAL_TSI_TOP_RISK": "NUMBER(38,8)",
+		"T_GENERAL_POLIS.TREATY_CAPACITY": "NUMBER(38,8)",
 	}
 	akhir := tipeAkhirMigrasi(t)
 	diperiksa := 0
@@ -213,8 +222,10 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 	// 209 MODIFY NULL (tipe tetap). + 4 T_GENERAL_POLIS (210) = 338. 211 data saja. + 4 T_GENERAL_POLIS (212) = 342.
 	// + 2 T_GENERAL_POLIS (213) = 344. + 50 T_ANEKALIST + 13 T_MARINEHULL + 10 T_AVIATIONHULL + 12 T_VEHICLEHE
 	// + 20 T_MEMORANDUMACCEPT + 8 T_COVERAGELIST (214) = 457. + 1 T_GENERAL_POLIS PRO_RATE_PERCENT (255) = 458.
-	if diperiksa != 458 {
-		t.Errorf("%d kolom diperiksa, mau 458", diperiksa)
+	// + 48 T_GENERAL_POLIS (252: 53 rancangan belum ada dikurangi 5 Endorsement) = 506.
+	// + 40 T_QUOTATIONDATA (253: 51 rancangan belum ada dikurangi 11 Endorsement / Renewal) = 546.
+	if diperiksa != 546 {
+		t.Errorf("%d kolom diperiksa, mau 546", diperiksa)
 	}
 	// Butir 87/88: Risk Location / Address VARCHAR2(4000), delapan kolom alamat lain VARCHAR2(100) sesudah 192.
 	for tk, mau := range map[string]string{"T_RISKLOCATION.ASM_ADDRESS": "VARCHAR2(4000)", "T_PROPERTY.ROAD_NAME": "VARCHAR2(4000)",
@@ -237,5 +248,102 @@ func TestMigrasiFlatSebagianCocokRancangan(t *testing.T) {
 	}
 	if akhir["T_QUOTATIONDATA"]["CEDING_CO_NAME"] != "VARCHAR2(4000)" || akhir["T_QUOTATIONDATA"]["CEDING_CO"] != "VARCHAR2(1000)" {
 		t.Errorf("kolom gabungan Ceding Co: %v (butir 80)", akhir["T_QUOTATIONDATA"])
+	}
+}
+
+// TestMigrasi252GeneralPolisLengkap - keputusan work owner 12-10-2026, dua arah: sesudah 252 setiap kolom rancangan T_GENERAL_POLIS
+// (sesudah amandemen) ADA di migrasi KECUALI tepat lima kolom khusus Endorsement; dan setiap kolom migrasi ada di rancangan (dijaga
+// TestMigrasiFlatSebagianCocokRancangan, tipe sama / selisih presisi). Jumlah akhir 25 + 48 = 73.
+func TestMigrasi252GeneralPolisLengkap(t *testing.T) {
+	akhir := tipeAkhirMigrasi(t)["T_GENERAL_POLIS"]
+	edm := map[string]bool{"ENDORSEMENT_NO": true, "ENDORSMENT_REASON": true, "PRORATE_START_EDM": true, "PRORATE_EDM_END": true,
+		"ERRMSG": true}
+	var hilang []string
+	for _, k := range skemaTabel["T_GENERAL_POLIS"] {
+		if akhir[k.nama] == "" && !edm[k.nama] {
+			hilang = append(hilang, k.nama)
+		}
+		if akhir[k.nama] != "" && edm[k.nama] {
+			t.Errorf("%s khusus Endorsement ikut dibuat", k.nama)
+		}
+	}
+	if len(hilang) > 0 {
+		t.Errorf("kolom rancangan belum dibuat migrasi: %v", hilang)
+	}
+	for k := range akhir {
+		if indeksKolom("T_GENERAL_POLIS", k) < 0 {
+			t.Errorf("%s di migrasi, tidak di rancangan", k)
+		}
+	}
+	if len(akhir) != 73 || len(skemaTabel["T_GENERAL_POLIS"]) != 78 {
+		t.Errorf("fisik %d (mau 73), rancangan %d (mau 78)", len(akhir), len(skemaTabel["T_GENERAL_POLIS"]))
+	}
+	for k, mau := range map[string]string{"POLICY_NO": "VARCHAR2(50)", "PROD_DATE_TIME": "VARCHAR2(30)", "PROD_KE": "NUMBER(5)"} {
+		if akhir[k] != mau {
+			t.Errorf("tahap 1 %s = %s, mau %s", k, akhir[k], mau)
+		}
+	}
+	turun, err := os.ReadFile("../../migrations/252_general_polis_lengkap_down.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	naik, _ := os.ReadFile("../../migrations/252_general_polis_lengkap.sql")
+	for _, baris := range strings.Split(strings.ReplaceAll(string(naik), "\r", ""), "\n") {
+		if f := strings.Fields(strings.TrimSuffix(strings.TrimSpace(baris), ",")); len(f) == 2 && strings.HasPrefix(f[1], "N") ||
+			len(f) == 2 && strings.HasPrefix(f[1], "V") {
+			if !strings.Contains(string(turun), "  "+f[0]+",") && !strings.Contains(string(turun), "  "+f[0]+"\n") {
+				t.Errorf("_down tidak membuang %s", f[0])
+			}
+		}
+	}
+}
+
+// TestMigrasi253QuotationDataLengkap - tiket 76b (keputusan work owner 12-10-2026), dua arah: sesudah 253 setiap kolom rancangan
+// T_QUOTATIONDATA ADA di migrasi KECUALI tepat sebelas kolom Endorsement / Renewal; setiap kolom migrasi ada di rancangan; 16 + 40 =
+// 56; _down membuang ke-40 kolom 253.
+func TestMigrasi253QuotationDataLengkap(t *testing.T) {
+	akhir := tipeAkhirMigrasi(t)["T_QUOTATIONDATA"]
+	edm := map[string]bool{"EDM_CHARGE_FEE": true, "EDM_DATE": true, "EDM_NOTE": true, "EDM_SOURCE": true, "EDM_SOURCE_NOTE": true,
+		"EDM_STATUS": true, "EDM_SURVEY": true, "EDM_TYPE": true, "EDM_TYPE_NEW": true, "ENDORSEMENT_INTERNAL_RETRO": true, "RNW_DATE": true}
+	var hilang []string
+	for _, k := range skemaTabel["T_QUOTATIONDATA"] {
+		if akhir[k.nama] == "" && !edm[k.nama] {
+			hilang = append(hilang, k.nama)
+		}
+		if akhir[k.nama] != "" && edm[k.nama] {
+			t.Errorf("%s khusus Endorsement / Renewal ikut dibuat", k.nama)
+		}
+	}
+	if len(hilang) > 0 {
+		t.Errorf("kolom rancangan belum dibuat migrasi: %v", hilang)
+	}
+	for k := range akhir {
+		if indeksKolom("T_QUOTATIONDATA", k) < 0 {
+			t.Errorf("%s di migrasi, tidak di rancangan", k)
+		}
+	}
+	if len(akhir) != 56 || len(skemaTabel["T_QUOTATIONDATA"]) != 67 {
+		t.Errorf("fisik %d (mau 56), rancangan %d (mau 67)", len(akhir), len(skemaTabel["T_QUOTATIONDATA"]))
+	}
+	naik, err := os.ReadFile("../../migrations/253_quotationdata_lengkap.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	turun, err := os.ReadFile("../../migrations/253_quotationdata_lengkap_down.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	n := 0
+	for _, baris := range strings.Split(strings.ReplaceAll(string(naik), "\r", ""), "\n") {
+		f := strings.Fields(strings.TrimSuffix(strings.TrimSpace(baris), ","))
+		if len(f) == 2 && strings.HasPrefix(f[1], "VARCHAR2(") {
+			n++
+			if !strings.Contains(string(turun), "  "+f[0]+",") && !strings.Contains(string(turun), "  "+f[0]+"\n") {
+				t.Errorf("_down tidak membuang %s", f[0])
+			}
+		}
+	}
+	if n != 40 {
+		t.Errorf("253 menambah %d kolom, mau 40", n)
 	}
 }

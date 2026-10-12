@@ -228,6 +228,8 @@ export default function InwardFacultative({
   const [bukaFollowing, setBukaFollowing] = useState(false)
   const [dariServer, setDariServer] = useState<KasusNB | null>(null)
   const [opsiMarketing, setOpsiMarketing] = useState<Opsi[]>([])
+  // Saran Marketing Name dari pembuat case (work owner 12-10-2026); dipilih otomatis hanya bila case belum punya marketing.
+  const [marketingBawaan, setMarketingBawaan] = useState('')
   const [galatMuat, setGalatMuat] = useState<unknown>(null)
   const [menyimpan, setMenyimpan] = useState(false)
   const [galatSimpan, setGalatSimpan] = useState<unknown>(null)
@@ -249,6 +251,7 @@ export default function InwardFacultative({
     setPolicyType(kodePolicyType(g.policyType))
     setTypeFac(g.typeFacultative || k.opportunity.typeOfFacultative)
     setMarketing(g.marketingId)
+    setMarketingBawaan(g.marketingId ? '' : (k.marketingBawaan ?? ''))
     setHari(g.day)
     setSob({ id: g.sourceOfBusinessId, nama: g.sourceOfBusiness })
     setCeding(g.cedingList ?? [])
@@ -277,6 +280,15 @@ export default function InwardFacultative({
       batal = true
     }
   }, [kasus.caseId])
+
+  // Marketing Name otomatis = marketing officer pembuat case (work owner 12-10-2026 "otomatis terpilih dari user yang buat,
+  // kalau usernya tidak ada di marketingofficer baru dikosongin"): hanya bila belum ada pilihan, layar dapat diubah, dan ID-nya
+  // ada di daftar dropdown - tidak pernah nilai tersembunyi. Tersimpan saat Save seperti pilihan manual.
+  useEffect(() => {
+    if (!hanyaLihat && marketing === '' && marketingBawaan !== '' && opsiMarketing.some((o) => o.value === marketingBawaan)) {
+      setMarketing(marketingBawaan)
+    }
+  }, [marketingBawaan, opsiMarketing])
 
   const tanggalSalah = endSebelumBegin(mulai, selesai)
 

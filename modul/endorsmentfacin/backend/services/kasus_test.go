@@ -28,7 +28,6 @@ func masukanKasus() models.MasukanKasus {
 			EndorsementDate: "01-06-2025", EndorsementInternalRetro: "0"},
 		Note: "Catatan uji", EndorsementSource: "Ceding", EndorsementSourceNote: "Surat uji", DetailType: "2",
 		EndorsementStatus: "0",
-		AdminCharge:       true,
 	}
 }
 
@@ -48,7 +47,8 @@ func TestBuatKasusLahir(t *testing.T) {
 	}
 	want := models.KepalaKasus{ID: "EDM-00001", OldPolicyNo: polisUji, EdmType: "4", EdmTypeNew: "1", DetailType: "2",
 		EndorsementReason: "Catatan uji", EndorsementSource: "Ceding", EndorsementSourceNote: "Surat uji",
-		EndorsementStatus: "0", AdminCharge: "true", Survey: "false", InternalRetro: "0", NBStatus: "NEW EDM",
+		// AdminCharge / Survey kosong → NULL (A50).
+		EndorsementStatus: "0", AdminCharge: "", Survey: "", InternalRetro: "0", NBStatus: "NEW EDM",
 		IsCedingConfirm: "Policy"}
 	got := g.Kasus["EDM-00001"]
 	tanggal := got.EndorsementDate
@@ -82,6 +82,76 @@ func TestBuatKasusTanpaTransaksi(t *testing.T) {
 	}
 }
 
+// Wajib bersyarat bukan-Life (pyRequiredWhen CARI2!='Life'): kosong lolos ValidasiKasus, ditagih sesudah pemeriksaan.
+func TestValidasiSesudahPeriksa(t *testing.T) {
+	for _, k := range []struct {
+		ubah  func(*models.MasukanKasus)
+		jenis string
+		teks  string // "" = lolos
+	}{
+		{func(m *models.MasukanKasus) { m.EndorsementStatus = " " }, "Fire", "Endorsement Status is required"},
+		{func(m *models.MasukanKasus) { m.EndorsementInternalRetro = "" }, "Fire", "Endorsement Internal Retro is required"},
+		// Urut layar: Detail EDM Type (Section EdmType1) lalu Status (L8906) lalu Retro (L9968).
+		{func(m *models.MasukanKasus) { m.EndorsementStatus, m.EndorsementInternalRetro = "", "" }, "Fire", "Endorsement Status is required"},
+		{func(m *models.MasukanKasus) { m.DetailType, m.EndorsementStatus = "", "" }, "Fire", "Detail EDM Type is required"},
+		// Life: ketiganya tersembunyi, dikirim "".
+		{func(m *models.MasukanKasus) {
+			m.DetailType, m.EndorsementStatus, m.EndorsementInternalRetro = "", "", ""
+		}, "Life", ""},
+		{func(*models.MasukanKasus) {}, "Fire", ""},
+	} {
+		m := masukanKasus()
+		k.ubah(&m)
+		if err := ValidasiKasus(m); err != nil {
+			t.Fatalf("%q: ValidasiKasus menolak yang kosong: %v", k.teks, err)
+		}
+		err := validasiSesudahPeriksa(m, k.jenis)
+		if k.teks == "" {
+			if err != nil {
+				t.Errorf("%s: galat = %v", k.jenis, err)
+			}
+			continue
+		}
+		if !errors.Is(err, ErrMasukanTidakSah) || !strings.Contains(err.Error(), k.teks) {
+			t.Errorf("ingin %q, galat = %v", k.teks, err)
+		}
+	}
+}
+
+// Polis bukan Life tanpa Status / Retro: 422 sesudah pemeriksaan, nol tulisan.
+func TestBuatKasusBukanLifeWajibStatusRetro(t *testing.T) {
+	for _, k := range []struct {
+		status, retro, teks string
+	}{
+		{"", "0", "Endorsement Status is required"},
+		{"0", "", "Endorsement Internal Retro is required"},
+	} {
+		g := gudangKasus()
+		m := masukanKasus()
+		m.EndorsementStatus, m.EndorsementInternalRetro = k.status, k.retro
+		_, err := layananKasus(g).Buat(context.Background(), akunUji, m)
+		if !errors.Is(err, ErrMasukanTidakSah) || !strings.Contains(err.Error(), k.teks) {
+			t.Errorf("ingin %q, galat = %v", k.teks, err)
+		}
+		tanpaTulisan(t, g)
+	}
+}
+
+// Polis Life dengan Status/Retro "" (layar menyembunyikannya): jawabannya penolakan bisnis, bukan 422.
+func TestBuatKasusLifeTanpaStatusRetro(t *testing.T) {
+	g := gudangKasus()
+	m := masukanKasus()
+	m.PolicyNo, m.DetailType, m.EndorsementStatus, m.EndorsementInternalRetro = polisUjiLife, "", "", ""
+	h, err := layananKasus(g).Buat(context.Background(), akunUji, m)
+	if err != nil {
+		t.Fatalf("galat = %v", err)
+	}
+	if h.CaseID != "" || h.Periksa == nil || h.Periksa.Bisnis.JenisBisnis != "Life" || h.Periksa.Bisnis.Hasil != T {
+		t.Fatalf("hasil = %+v", h.Periksa)
+	}
+	tanpaTulisan(t, g)
+}
+
 func TestValidasiKasus(t *testing.T) {
 	for _, k := range []struct {
 		ubah func(*models.MasukanKasus)
@@ -93,11 +163,7 @@ func TestValidasiKasus(t *testing.T) {
 		{func(m *models.MasukanKasus) { m.EdmType = "" }, "Endorsement Type is required"},
 		{func(m *models.MasukanKasus) { m.EdmTypeNew = "" }, "EDM Type is required"},
 		{func(m *models.MasukanKasus) { m.EndorsementDate = "" }, "Endorsement Date is required"},
-		{func(m *models.MasukanKasus) { m.EndorsementStatus = " " }, "Endorsement Status is required"},
-		{func(m *models.MasukanKasus) { m.EndorsementInternalRetro = "" }, "Endorsement Internal Retro is required"},
-		// Status sebelum Retro (urut layar korpus L8906 lalu L9968).
-		{func(m *models.MasukanKasus) { m.EndorsementStatus, m.EndorsementInternalRetro = "", "" }, "Endorsement Status is required"},
-		// Prompt List (work owner 11-10-2026).
+		// Prompt List (work owner 11-10-2026), diperiksa bila terisi.
 		{func(m *models.MasukanKasus) { m.EndorsementStatus = "4" }, `Endorsement Status "4" is not an option`},
 		{func(m *models.MasukanKasus) { m.EndorsementStatus = "Internal" }, `Endorsement Status "Internal" is not an option`},
 		{func(m *models.MasukanKasus) { m.EndorsementInternalRetro = "2" }, `Endorsement Internal Retro "2" is not an option`},

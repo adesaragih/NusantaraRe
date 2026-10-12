@@ -11,6 +11,7 @@ import (
 	"net/http"
 
 	inti "nusantarare/inti/backend"
+	"nusantarare/inti/backend/kontrak"
 	"nusantarare/modul/endorsmentfacin/backend/handlers"
 	"nusantarare/modul/endorsmentfacin/backend/services"
 )
@@ -25,12 +26,18 @@ var berkasMigrasi embed.FS
 const Nama = "endorsmentfacin"
 
 // Pendaftaran menyerahkan modul ini kepada perakit (`inti/backend/daftar`). Tanpa HakLihat: menu berakses penuh.
+//
+// Kontrak: MEMBUTUHKAN `kontrak.JenisBisnisFacIn` (BusinessType_DeT, disediakan nbfacin) - jenis bisnis polis NB sistem
+// baru yang DATA_JSON-nya minimal (keputusan work owner 12-10-2026 opsi 1a). Perakit membangun semua modul terdaftar,
+// jadi kontrak tersambung apa pun MODUL_AKTIF.
 func Pendaftaran() inti.Pendaftaran {
 	return inti.Pendaftaran{
-		Nama:    Nama,
-		Migrasi: berkasMigrasi,
+		Nama:        Nama,
+		Migrasi:     berkasMigrasi,
+		Membutuhkan: []inti.Kontrak{inti.KontrakDari[kontrak.JenisBisnisFacIn]()},
 		Bangun: func(p *inti.Perakitan) (inti.Modul, error) {
-			return Modul{svc: services.DariDasar(p.Dasar()), stubPelaku: p.Config().AuthStub}, nil
+			svc := services.DariDasar(p.Dasar()).DenganJenisBisnis(inti.Ambil[kontrak.JenisBisnisFacIn](p))
+			return Modul{svc: svc, stubPelaku: p.Config().AuthStub}, nil
 		},
 	}
 }

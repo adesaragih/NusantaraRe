@@ -83,6 +83,10 @@ ke sesi c3 — menunggu "stabil scoring" lalu diverifikasi sesi 0f.
 - **S54-1** Centang per sub-faktor saling-eksklusif: memilih centang lain langsung memindahkan pilihan; mengklik yang
   terpilih = mengosongkan. Pega mengunci centang lain sampai yang terpilih dilepas (`pyDisabledWhen` per ChechBox) — hasil
   akhirnya sama (paling banyak satu centang), langkahnya lebih sedikit.
+  **Diubah work owner 12-10-2026 — ikut Pega:** *"saat sudah dipilih salah 1, yang lainnya jangan bisa dicentang lagi, yang
+  masih 1 sub yang sama, kecuali yang tadi dicentang sudah di-uncentang"*. `TabScoring.tsx` `terkunciPilihanLain`: pilihan
+  lain pada sub-faktor & kolom (Top Risk / Dominant Risk) yang sama dikunci selama ada yang terpilih; klik yang terpilih
+  tetap mengosongkan. Frontend saja (backend tetap menyimpan paling banyak satu pilihan per sub-faktor).
 - **S54-2 — diputuskan work owner 06-10-2026: "ditiru persis seperti Pega".** `[terverifikasi]` `ScoringRiskForm2.xml`
   memuat aturan silang: pilihan "Not Available (Growing Trees)" Portable Fire Extinguisher (pilihan 3, kolom 1 dan 2)
   serta Hydrant / Sprinkler (pilihan 2, **hanya kolom 1**) **dikunci bila Class Construction = Growing Trees**

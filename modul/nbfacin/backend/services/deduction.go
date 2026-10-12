@@ -194,15 +194,30 @@ func (s *Service) dasarDeduction(ctx context.Context, id string) ([]models.Baris
 	if !idKasusSah(id) {
 		return nil, k, tarif, false, nil, ErrKasusTidakAda
 	}
-	k, err := s.deduction.BacaDeduction(ctx, id)
-	if err != nil {
-		return nil, k, tarif, false, nil, galatKasus(err)
-	}
-	sp, err := s.bacaSpreadingRingkas(ctx, nil, id)
-	if err != nil {
-		return nil, k, tarif, false, nil, galatKasus(err)
-	}
-	tarif, ada, err := s.deduction.TarifPajak(ctx)
+	// Laporan work owner 12-10-2026: tiga bacaan independen PARALEL (bacaparalel.go), hasil identik.
+	var (
+		sp  models.KasusSpreading
+		ada bool
+	)
+	u := ukurBaru()
+	defer u.lambat("Deduction", id)
+	err := bacaParalel(ctx, u,
+		langkahBaca{"deduction", func(c context.Context) (err error) {
+			if k, err = s.deduction.BacaDeduction(c, id); err != nil {
+				return galatKasus(err)
+			}
+			return nil
+		}},
+		langkahBaca{"spreading", func(c context.Context) (err error) {
+			if sp, err = s.bacaSpreadingRingkas(c, nil, id); err != nil {
+				return galatKasus(err)
+			}
+			return nil
+		}},
+		langkahBaca{"pajak", func(c context.Context) (err error) {
+			tarif, ada, err = s.deduction.TarifPajak(c)
+			return err
+		}})
 	if err != nil {
 		return nil, k, tarif, false, nil, err
 	}

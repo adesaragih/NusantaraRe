@@ -1820,6 +1820,7 @@ export const TEKS_SCORING = {
   kosong: '—',
   diisiSistem: 'Diisi sistem',
   terkunciGrowingTrees: 'Terkunci: Class Construction = Growing Trees',
+  terkunciSubSama: 'Terkunci: lepas dulu centang yang sudah dipilih pada sub ini',
   tanpaDominan: 'Pilih lokasi Dominant Risk di atas untuk mengisi kolom Dominant Risk.',
   belumDipilih: 'Belum dipilih',
 } as const

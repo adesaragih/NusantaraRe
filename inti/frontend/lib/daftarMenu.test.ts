@@ -84,6 +84,19 @@ describe('susunMenu: satu tombol per modul di bawah GROUPMENU', () => {
   })
 })
 
+describe('susunMenu: tombol atas `semua` (aditif 12-10-2026)', () => {
+  const rute: readonly EntriMenu<H>[] = [
+    ...RUTE,
+    { modul: 'register', label: 'Atas Biasa', kelompok: 'Atas Biasa', pemilik: 'modullain', atas: true },
+    { modul: 'outstanding', label: 'Atas Semua', kelompok: 'Atas Semua', pemilik: 'modullain', atas: true, semua: true },
+  ]
+  it('tombol atas biasa milik modul yang tidak tampil disembunyikan; tombol `semua` tetap tampil', () => {
+    const m = susunMenu(TABEL, rute)
+    expect(m.atas.map((e) => e.label)).toEqual(['Atas Semua'])
+    expect(m.entri.map((e) => e.label)).toContain('Atas Semua')
+  })
+})
+
 describe('bentukMenuTabel', () => {
   it('menerima bentuk GET /api/menu', () => {
     expect(bentukMenuTabel(TABEL)).toBe(true)

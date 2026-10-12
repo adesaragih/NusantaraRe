@@ -1,18 +1,19 @@
-// Form Create Addendum - irisan I1-I3 (keputusan work owner 11-10-2026, W-EDM-01…12).
+// Form Create Addendum - irisan I1-I3 (keputusan work owner 11-10-2026, W-EDM-01…14).
 //
 // Port `Section/WorkPrimaryDetails.xml` (kelas `ASM-SFAGIS-Work-Endorsement`) dan tombolnya
-// `Section/crmNewHarnessButtons.xml`. Medan, label, dan syarat tampil mengikuti section itu:
-//   1 Policy Number / Cover Number (`.PolicyNo`, teks bebas)      7 Endorsement Date (`.EndorsementDate`)
-//   2 Endorsement Source (`.EndorsementSourceNote`)              9 Biaya (`.AdminCharge`)  10 Survey (`.Survey`)
-//   3 Endorsement Note (`.Note`)                                 11 Endorsement Internal Retro - bukan Life
-//   4 Endorsement Type (`.Quotation.EdmType`)
-//   5 EDM Type (`.Quotation.EdmTypeNew`) - hanya EdmType 4
-//   6 Detail EDM Type (`.Quotation.Type`, `EdmType1/2/3`) - EdmType 4, bukan Life, EdmTypeNew 1/2/3
+// `Section/crmNewHarnessButtons.xml`. Tata letak = tangkapan layar Pega dari work owner (11-10-2026): dua kolom, label di
+// KIRI medan, tombol OK lalu Cancel di kanan bawah di luar kotak form. Tema = templat NB FacIn ("TEMPLATE NYA JUGA SAMAIN
+// KAYA NB FACIN"; pola `modul/nbfacin/frontend/pages/FormOpportunity.tsx` disalin, tidak diimpor).
 //
-// Tata letak = templat form NB FacIn (work owner 11-10-2026: "INI RAPIKAN DONG, BIAR USER FRIENDLY. TEMPLATE NYA JUGA
-// SAMAIN KAYA NB FACIN"; pola `modul/nbfacin/frontend/pages/FormOpportunity.tsx`, disalin, tidak diimpor): kartu bertema,
-// judul + tombol di kepala, dua kolom (kiri: medan 1-3 dan 7; kanan: 4-6, 11, 9-10 - urutan baca Pega per kolom), tanggal
-// dd/mm/yyyy (`components/TanggalDMY.tsx`), alasan tombol OK mati di bawah kepala, hasil pemeriksaan di bawah form.
+//   kiri:  Policy Number / Cover Number (`.PolicyNo`, teks bebas) · Endorsement Source (`.EndorsementSourceNote`) ·
+//          Endorsement Note (`.Note`) · Endorsement Type (`.Quotation.EdmType`) · EDM Type (`.Quotation.EdmTypeNew`,
+//          hanya EdmType 4) · Detail EDM Type (`.Quotation.Type`, `EdmType1/2/3`: EdmType 4, bukan Life, EdmTypeNew 1/2/3)
+//   kanan: Endorsement Date (`.EndorsementDate`, dd/mm/yyyy) · Endorsement Status (`.EndorsementStatus`, bukan Life,
+//          bawaan Internal) · Endorsement Internal Retro (`.EndorsementInternalRetro`, bukan Life, radio vertikal,
+//          bawaan No)
+//
+// ⛔ `[terverifikasi]` `.AdminCharge` ("Biaya") dan `.Survey` TIDAK dirender: kontainernya `pyContainerVisibleWhen =
+// never` (WorkPrimaryDetails L9174) - di Pega tidak pernah tampil.
 //
 // Pemeriksaan (I2): di Pega `SetErrorBatalEndorsement_Act` berjalan saat PolicyNo / Endorsement Type / EDM Type /
 // Internal Retro berubah, `CheckEDMPolisDate` saat Endorsement Date berubah; tombol OK aktif hanya bila keduanya lolos
@@ -21,18 +22,16 @@
 //
 // OK (irisan I3): `POST /api/endorsmentfacin/kasus` = `SetValueToEDMWork`. Aktif bila pemeriksaan terakhir lolos dan
 // lengkap serta medan wajib terisi; server memeriksa ulang. Ditolak di server = jawaban 200 tanpa `caseId` (hasil bisnis,
-// spec 07 §7.2) - rinciannya menggantikan hasil pemeriksaan di layar.
-//
-// Belum (laporan modul): Endorsement Status (`.EndorsementStatus`, prompt list tidak ada di korpus - A46) dan sumber
-// pilihan Endorsement Source (`D_EnumerationList` `Type=sumberedm`, isi tabelnya tidak ada di korpus - sementara teks
-// bebas, sama dengan autocomplete Pega yang mengizinkan isian bebas).
+// spec 07 §7.2) - pesannya tampil di bawah medannya. Sumber pilihan Endorsement Source
+// (`D_EnumerationList` `Type=sumberedm`) belum ada di korpus - sementara teks bebas, sama dengan autocomplete Pega yang
+// mengizinkan isian bebas.
 
 import { useEffect, useRef, useState } from 'react'
 
 import { Area, Field, Gagal, Pilih } from '../../../../inti/frontend/components/ui/dasar'
 import { buatKasus, periksaAddendum, type HasilPeriksa } from '../api'
 import TanggalDMY from '../components/TanggalDMY'
-import { DETAIL_EDM, FORM, JENIS_EDM, JENIS_EDM_BARU, PERIKSA, PILIHAN_RETRO, type Pilihan } from '../labels'
+import { DETAIL_EDM, FORM, JENIS_EDM, JENIS_EDM_BARU, PERIKSA, PILIHAN_RETRO, STATUS_EDM, type Pilihan } from '../labels'
 
 /** Jeda sebelum pemeriksaan dijalankan sesudah isian berubah (ms). */
 const JEDA_PERIKSA = 400
@@ -48,9 +47,9 @@ export default function FormAddendum({ onBatal, onDibuat }: { onBatal: () => voi
   const [edmTypeNew, setEdmTypeNew] = useState('')
   const [detail, setDetail] = useState('')
   const [tanggal, setTanggal] = useState('')
-  const [biaya, setBiaya] = useState(false)
-  const [survey, setSurvey] = useState(false)
-  // Bawaan `0` - WorkPrimaryDetails L10212.
+  // Bawaan tampil "Internal" (tangkapan layar Pega, W-EDM-13).
+  const [status, setStatus] = useState('0')
+  // Bawaan `0` = No - WorkPrimaryDetails L10212.
   const [retro, setRetro] = useState('0')
 
   const [hasil, setHasil] = useState<HasilPeriksa | null>(null)
@@ -103,17 +102,17 @@ export default function FormAddendum({ onBatal, onDibuat }: { onBatal: () => voi
       .map((p) => p.teks)
       .join(' · ') || undefined
 
-  // Medan wajib (`pyRequired` WorkPrimaryDetails) yang masih kosong, urut layar; Endorsement Status tidak (A46).
+  // Medan wajib (`pyRequired` WorkPrimaryDetails) yang masih kosong, urut layar.
   const kosong = (
     [
       [FORM.policyNo, polis],
       [FORM.sumber, sumber.trim()],
       [FORM.catatan, catatan.trim()],
-      [FORM.tanggal, tanggal],
       [FORM.jenis, edmType],
       ...(edmType === '4' ? ([[FORM.jenisBaru, edmTypeNew]] as [string, string][]) : []),
       ...(daftarDetail ? ([[FORM.detail, detail]] as [string, string][]) : []),
-      [FORM.retro, retro],
+      [FORM.tanggal, tanggal],
+      ...(!life ? ([[FORM.status, status], [FORM.retro, retro]] as [string, string][]) : []),
     ] as [string, string][]
   )
     .filter(([, v]) => v === '')
@@ -142,14 +141,12 @@ export default function FormAddendum({ onBatal, onDibuat }: { onBatal: () => voi
         edmType,
         edmTypeNew: edmType === '4' ? edmTypeNew : '',
         endorsementDate: tanggal,
-        endorsementInternalRetro: retro,
+        endorsementInternalRetro: life ? '' : retro,
         note: catatan,
         endorsementSource: '',
         endorsementSourceNote: sumber.trim(),
-        endorsementStatus: '',
+        endorsementStatus: life ? '' : status,
         detailType: daftarDetail ? detail : '',
-        adminCharge: biaya,
-        survey,
       })
       if (h.caseId !== '') onDibuat(h.caseId)
       else if (h.periksa) setHasil(h.periksa)
@@ -162,49 +159,17 @@ export default function FormAddendum({ onBatal, onDibuat }: { onBatal: () => voi
 
   return (
     <section className="inbox edmf-tema edmf-form">
-      <header className="inbox__kepala edmf-form__kepala">
+      <header className="inbox__kepala">
         <h2 className="inbox__judul edmf-tema__judul">{FORM.judul}</h2>
-        <div className="edmf-form__aksi">
-          <button type="button" className="btn edmf-tombol" onClick={onBatal}>
-            {FORM.batal}
-          </button>
-          <button
-            type="button"
-            className="btn btn--primary edmf-tombol edmf-tombol--utama"
-            disabled={!bolehOK}
-            title={bolehOK ? undefined : PERIKSA.okMati}
-            onClick={() => void simpan()}
-          >
-            {menyimpan ? PERIKSA.menyimpan : FORM.ok}
-          </button>
-        </div>
       </header>
-      {alasan !== '' && (
-        <p className="edmf-form__alasan" role="status">
-          {alasan}
-        </p>
-      )}
       <Gagal galat={galat} />
 
       <div className="panel edmf-form__panel">
         <div className="edmf-form__kolom">
           <div className="edmf-form__tumpuk">
-            <h3 className="edmf-form__bagian">{FORM.bagianPolis}</h3>
             <Field label={FORM.policyNo} value={policyNo} onChange={setPolicyNo} required autoFocus error={pesanMedan('PolicyNo')} />
-            <TanggalDMY
-              label={FORM.tanggal}
-              value={tanggal}
-              onChange={setTanggal}
-              required
-              error={pesanMedan('EndorsementDate')}
-              labelKalender={FORM.kalender}
-              pesanFormat={FORM.formatTanggal}
-            />
             <Field label={FORM.sumber} value={sumber} onChange={setSumber} required />
             <Area label={FORM.catatan} value={catatan} onChange={setCatatan} required baris={4} />
-          </div>
-          <div className="edmf-form__tumpuk">
-            <h3 className="edmf-form__bagian">{FORM.bagianJenis}</h3>
             <Pilih
               label={FORM.jenis}
               value={edmType}
@@ -233,6 +198,18 @@ export default function FormAddendum({ onBatal, onDibuat }: { onBatal: () => voi
             {daftarDetail && (
               <Pilih label={FORM.detail} value={detail} onChange={setDetail} opsi={opsi(daftarDetail)} kosong={FORM.detail} required />
             )}
+          </div>
+          <div className="edmf-form__tumpuk">
+            <TanggalDMY
+              label={FORM.tanggal}
+              value={tanggal}
+              onChange={setTanggal}
+              required
+              error={pesanMedan('EndorsementDate')}
+              labelKalender={FORM.kalender}
+              pesanFormat={FORM.formatTanggal}
+            />
+            {!life && <Pilih label={FORM.status} value={status} onChange={setStatus} opsi={opsi(STATUS_EDM)} required />}
             {!life && (
               <div className="field">
                 <span className="field__label">
@@ -249,58 +226,29 @@ export default function FormAddendum({ onBatal, onDibuat }: { onBatal: () => voi
                 </div>
               </div>
             )}
-            <div className="field">
-              <span className="field__label">{FORM.bagianLain}</span>
-              <div className="edmf-pilihan">
-                <label className="edmf-pilihan__butir">
-                  <input type="checkbox" checked={biaya} onChange={(e) => setBiaya(e.target.checked)} /> {FORM.biaya}
-                </label>
-                <label className="edmf-pilihan__butir">
-                  <input type="checkbox" checked={survey} onChange={(e) => setSurvey(e.target.checked)} /> {FORM.survey}
-                </label>
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-      <HasilPemeriksaan hasil={hasil} memeriksa={memeriksa} adaPolis={polis !== ''} />
+      <div className="edmf-form__kaki">
+        <p className="edmf-form__alasan" role="status">
+          {alasan}
+        </p>
+        <div className="edmf-form__aksi">
+          <button
+            type="button"
+            className="btn btn--primary edmf-tombol edmf-tombol--utama"
+            disabled={!bolehOK}
+            title={bolehOK ? undefined : PERIKSA.okMati}
+            onClick={() => void simpan()}
+          >
+            {menyimpan ? PERIKSA.menyimpan : FORM.ok}
+          </button>
+          <button type="button" className="btn edmf-tombol" onClick={onBatal}>
+            {FORM.batal}
+          </button>
+        </div>
+      </div>
     </section>
-  )
-}
-
-function HasilPemeriksaan({ hasil, memeriksa, adaPolis }: { hasil: HasilPeriksa | null; memeriksa: boolean; adaPolis: boolean }) {
-  return (
-    <div className="panel edmf-periksa" aria-live="polite">
-      <h3 className="edmf-form__bagian">{PERIKSA.judulGerbang}</h3>
-      {!adaPolis && <p className="edmf-periksa__kosong">{PERIKSA.belumDiperiksa}</p>}
-      {adaPolis && !hasil && memeriksa && <p className="edmf-periksa__kosong">{PERIKSA.memeriksa}</p>}
-      {hasil && (
-        <>
-          {!hasil.ditolak && hasil.lengkap && <div className="alert alert--ok">{PERIKSA.lolos}</div>}
-          {!hasil.lengkap && <div className="alert alert--warn">{PERIKSA.belumLengkap}</div>}
-          <ul className="edmf-periksa__daftar">
-            {hasil.gerbang.map((g) => (
-              <li key={g.no} className="edmf-periksa__butir">
-                <span className="edmf-periksa__nama">{PERIKSA.gerbang[g.no] ?? String(g.no)}</span>
-                <span className={`edmf-chip edmf-chip--${g.hasil}`}>{PERIKSA.hasil[g.hasil] ?? g.hasil}</span>
-                {g.catatan !== '' && <span className="edmf-periksa__catatan">{g.catatan}</span>}
-              </li>
-            ))}
-            <li className="edmf-periksa__butir">
-              <span className="edmf-periksa__nama">{PERIKSA.bisnis}</span>
-              <span className={`edmf-chip edmf-chip--${hasil.bisnis.hasil}`}>{hasil.bisnis.jenisBisnis || PERIKSA.hasil[hasil.bisnis.hasil]}</span>
-            </li>
-            {hasil.tanggal && (
-              <li className="edmf-periksa__butir">
-                <span className="edmf-periksa__nama">{PERIKSA.periode(hasil.tanggal.mulai, hasil.tanggal.akhir)}</span>
-                <span className={`edmf-chip edmf-chip--${hasil.tanggal.hasil}`}>{PERIKSA.hasil[hasil.tanggal.hasil] ?? hasil.tanggal.hasil}</span>
-                {hasil.tanggal.catatan && <span className="edmf-periksa__catatan">{hasil.tanggal.catatan}</span>}
-              </li>
-            )}
-          </ul>
-        </>
-      )}
-    </div>
   )
 }

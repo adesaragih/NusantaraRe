@@ -56,6 +56,13 @@ type PenilaiPredikatFacIn interface {
 	Eval(nama string, k KasusFacIn) (bool, error)
 }
 
+// JenisBisnisFacIn - BusinessType_DeT (ASM-FW-GISFW-WORK!BUSINESSTYPE_DET): first match atas (GroupPanel, BusinessOldId) baris
+// BUSINESS; tanpa baris cocok -> "UNKNOWN". Dipakai Endorsement Fac In untuk polis NB sistem baru yang DATA_JSON-nya minimal
+// (keputusan work owner 12-10-2026 opsi "1a": pakai perhitungan NB, bukan salinan).
+type JenisBisnisFacIn interface {
+	BusinessType(groupPanel, oldID string) string
+}
+
 // MasukanPremiFacIn - masukan perhitungan premi satu coverage; medan dan artinya
 // sama dengan `premium.Input` nbfacin (teks apa adanya dari halaman kerja).
 type MasukanPremiFacIn struct {

@@ -92,7 +92,7 @@ func pilihModulAktif(terdaftar []inti.Modul, namaLama map[string]string, diminta
 // ⛔ GERBANG MENU (Kelola User, keputusan work owner 01-10-2026): rute milik
 // modul AKTIF hanya dilayani bila akun yang login memegang menu modul itu
 // (`M_LOGIN_GO_MENU`) - atau rute itu dipinjam modul yang dipegangnya
-// (`ruteDipinjam`). Sesi tanpa menunya 403; tanpa sesi 401, kecuali
+// (`ruteDipinjam`), atau rute BACA modul `modulBacaSemuaLogin`. Sesi tanpa menunya 403; tanpa sesi 401, kecuali
 // AUTH_STUB=true (pengembangan, tanpa login). Pemilik rute dikenali dari
 // mux terpisah per modul - nol modul diubah.
 //
@@ -181,6 +181,14 @@ func pemilikPola(milik []ruteModul, r *http.Request, pola string) string {
 	return ""
 }
 
+// modulBacaSemuaLogin - modul yang rute BACA-nya (GET / HEAD) terbuka bagi SETIAP sesi login walau akunnya tidak memegang menu
+// modul itu; tulis (POST / PUT / PATCH / DELETE) tetap lewat gerbang menu (403 tanpa menunya), tanpa sesi tetap 401 (kecuali
+// AUTH_STUB). Modul lain tidak tersentuh.
+//   - nbfacin: menu View Policy "samain aksesnya kaya menu home, selalu muncul untuk ke semua" dan "detail untuk semua, tapi
+//     cuma bisa baca saja" (keputusan work owner 12-10-2026, disetujui pemegang sesi). ⚠️ Beberapa GET nbfacin ikut menulis
+//     (mis. lampiran /office) - daftarnya di modul/nbfacin/docs/issues/71-view-policy.md; tidak diubah tanpa keputusan.
+var modulBacaSemuaLogin = map[string]bool{"nbfacin": true}
+
 // ruteDipinjam - rute modul yang DIPANGGIL LAYAR modul lain, menurut pola mux
 // pemiliknya: pemegang menu peminjam boleh memakainya walau tidak memegang
 // menu pemiliknya. Daftarnya dijaga dua arah (`TestPanggilanLintasModulTerdaftar`).
@@ -239,6 +247,9 @@ func izinMenu(w http.ResponseWriter, r *http.Request, stubPelaku bool, pemilik s
 	}
 	if inti.PunyaMenu(kode, pemilik) {
 		return true
+	}
+	if modulBacaSemuaLogin[pemilik] && (r.Method == http.MethodGet || r.Method == http.MethodHead) {
+		return true // sesi login saja; tulis tetap lewat gerbang menu
 	}
 	for _, p := range peminjam {
 		if inti.PunyaMenu(kode, p) {

@@ -23,6 +23,9 @@ import { HAK_PENUH, KonteksHakMenu, type HakMenu } from '../inti/frontend/lib/ha
 import { Modal } from '../inti/frontend/components/ui/dasar'
 import { ENTRI_MENU, halamanAktif, MODUL_FRONTEND, type Halaman } from './daftar'
 
+/** Halaman tombol atas `semua` - boleh dibuka akun yang tidak memegang menu modul pemiliknya (12-10-2026). */
+const HALAMAN_SEMUA = new Set<string>(ENTRI_MENU.filter((e) => e.semua === true).map((e) => e.modul))
+
 // App = identitas + Shell.
 //
 // ⭐ LOGIN SUNGGUHAN (M_LOGIN_GO, keputusan work owner 01-10-2026): saat
@@ -160,6 +163,15 @@ export default function App() {
     const menuDipegang = modulUntukAkun(modulAktif, menuAkun, MODUL_FRONTEND.map((m) => m.nama))
     return tambahModulDipinjam(menuDipegang, modulAktif, MODUL_DIPINJAM)
   }, [modulAktif, menuAkun])
+  // Tombol atas `semua` (View Policy NB FacIn, work owner 12-10-2026 "samain aksesnya kaya menu home, selalu muncul untuk ke
+  // semua"): RUTE modul pemiliknya dipasang bagi SEMUA akun selama modul itu aktif, walau menunya tidak dipegang - hanya
+  // halaman tombol itu yang boleh dicapai (penjaga di bawah). Beranda, jendela berkas, dan buka-menu tetap `modulBoleh`.
+  // Backend: GET modul itu dibuka bagi setiap sesi login, tulis tetap bergerbang menu (cmd/api/rakit.go).
+  const modulRute = useMemo(() => {
+    if (modulBoleh === null) return null
+    const semua = ENTRI_MENU.filter((e) => e.semua === true && e.pemilik !== null && modulDipasang(e.pemilik, modulAktif))
+    return [...new Set([...modulBoleh, ...semua.map((e) => e.pemilik as string)])]
+  }, [modulBoleh, modulAktif])
   const bolehKelola = menuAkun !== null && menuAkun.includes(KODE_MENU_KELOLA_USER)
   // Template Manager (04-10-2026): sama dengan Kelola User - hanya bagi pemegang menunya.
   const bolehTemplat = menuAkun !== null && menuAkun.includes(KODE_MENU_TEMPLATE_MANAGER)
@@ -231,13 +243,14 @@ export default function App() {
   // (temuan /code-review). Tanpa MODUL_AKTIF tidak pernah terjadi. Sama bila
   // menu akunnya dicabut, dan bila Kelola User tidak (lagi) dipegang.
   useEffect(() => {
-    if (!halamanAktif(halaman, modulBoleh) || (halaman === HALAMAN_KELOLA_USER && !bolehKelola)) {
+    const halamanSemua = HALAMAN_SEMUA.has(halaman) && halamanAktif(halaman, modulAktif)
+    if ((!halamanAktif(halaman, modulBoleh) && !halamanSemua) || (halaman === HALAMAN_KELOLA_USER && !bolehKelola)) {
       setHalaman('beranda')
     }
     if (halaman === HALAMAN_TEMPLATE_MANAGER && !bolehTemplat) {
       setHalaman('beranda')
     }
-  }, [halaman, modulBoleh, bolehKelola, bolehTemplat])
+  }, [halaman, modulBoleh, modulAktif, bolehKelola, bolehTemplat])
 
   if (!stub && galatSesi !== null) {
     return (
@@ -301,7 +314,8 @@ export default function App() {
       onPindah={(h) => {
         pilihDariMenu(h)
       }}
-      menu={ENTRI_MENU}
+      // Tombol atas `semua` hanya bila modul pemiliknya aktif - selain itu halamannya tidak terpasang (aditif 12-10-2026).
+      menu={ENTRI_MENU.filter((e) => e.semua !== true || halamanAktif(e.modul, modulAktif))}
       menuTabel={menuTabel}
       onKeluar={
         stub
@@ -346,7 +360,7 @@ export default function App() {
         pindah halaman, persis seperti ketika ia hidup di sini.
       */}
       <KonteksHakMenu.Provider value={hakMenu}>
-        {MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulBoleh)).map((m) => (
+        {MODUL_FRONTEND.filter((m) => modulDipasang(m.nama, modulRute)).map((m) => (
           <m.Rute
             key={m.nama}
             halaman={halaman}

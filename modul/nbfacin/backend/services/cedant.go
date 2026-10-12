@@ -280,16 +280,33 @@ func (s *Service) TampilanCedant(ctx context.Context, id string) (TampilanCedant
 	if !idKasusSah(id) {
 		return TampilanCedant{}, ErrKasusTidakAda
 	}
-	k, err := s.cedant.BacaCedant(ctx, id)
+	// Laporan work owner 12-10-2026: BacaCedant ‖ bacaSpreadingRingkas (bacaparalel.go), hasil identik; kurs dan wajibTipeCedant
+	// (butuh baris cedant) sesudahnya.
+	var (
+		k  models.KasusCedant
+		sp models.KasusSpreading
+	)
+	u := ukurBaru()
+	defer u.lambat("Cedant", id)
+	err := bacaParalel(ctx, u,
+		langkahBaca{"cedant", func(c context.Context) (err error) {
+			if k, err = s.cedant.BacaCedant(c, id); err != nil {
+				return galatKasus(err)
+			}
+			return nil
+		}},
+		langkahBaca{"spreading", func(c context.Context) (err error) {
+			if sp, err = s.bacaSpreadingRingkas(c, nil, id); err != nil {
+				return galatKasus(err)
+			}
+			return nil
+		}})
 	if err != nil {
-		return TampilanCedant{}, galatKasus(err)
-	}
-	sp, err := s.bacaSpreadingRingkas(ctx, nil, id)
-	if err != nil {
-		return TampilanCedant{}, galatKasus(err)
+		return TampilanCedant{}, err
 	}
 	_, jumlah, dasar := ringkasanRNM(sp)
 	tsi, premi, tidakAda, err := totalKeIDR(ctx, s.spreading, sp.StartDateTime, jumlah)
+	u.tandai("kurs")
 	if err != nil {
 		return TampilanCedant{}, err
 	}
