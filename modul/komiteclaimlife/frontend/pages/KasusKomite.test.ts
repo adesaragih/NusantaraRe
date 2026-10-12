@@ -23,19 +23,20 @@ describe('keputusan komite', () => {
     expect(KEPUTUSAN_KOMITE.cancel).toBe('Cancel')
   })
 
+  // 12-10-2026 (work owner 'perbaiki tampilannya'): kalimat layar berbahasa Inggris; kata server Setuju/Tolak diterjemahkan.
   it('kalimat hasil menyebut naik atau berhenti', () => {
     expect(
       kalimatHasilKeputusan({ kataKeputusan: 'Setuju', tingkatDiputus: 1, berlanjut: true, tingkatBerikut: 2 }),
-    ).toBe('Setuju tercatat di tingkat 1. Kasus naik ke tingkat 2.')
+    ).toBe('Approved recorded at level 1. The case moves up to level 2.')
     expect(
       kalimatHasilKeputusan({ kataKeputusan: 'Tolak', tingkatDiputus: 2, berlanjut: false, tingkatBerikut: 0 }),
-    ).toBe('Tolak tercatat di tingkat 2. Tangga berhenti.')
+    ).toBe('Rejected recorded at level 2. The approval ladder has ended.')
     expect(
       kalimatHasilKeputusan({
         kataKeputusan: 'Setuju', tingkatDiputus: 3, berlanjut: false, tingkatBerikut: 0,
         nomorAkseptasi: 'RNML-AL01.09.26.00007',
       }),
-    ).toBe('Setuju tercatat di tingkat 3. Nomor akseptasi RNML-AL01.09.26.00007.')
+    ).toBe('Approved recorded at level 3. Acceptance No RNML-AL01.09.26.00007.')
   })
 
   it('eskalasi hanya untuk admin dan hanya bila ada tingkat di atas (tiket 03)', () => {
@@ -70,8 +71,17 @@ describe('keputusan komite', () => {
 // keputusan dan komentar ASLI-nya; yang tidak tertimpa menampilkan tanda kosong.
 describe('keputusan asli tingkat tertimpa', () => {
   it('kata dan komentar asli, atau tanda kosong', () => {
-    expect(teksKeputusanAsli({ status: 'Setuju', comment: 'UJI ok' })).toBe('Setuju — UJI ok')
-    expect(teksKeputusanAsli({ status: 'Setuju', comment: '' })).toBe('Setuju')
+    expect(teksKeputusanAsli({ status: 'Setuju', comment: 'UJI ok' })).toBe('Approved — UJI ok')
+    expect(teksKeputusanAsli({ status: 'Setuju', comment: '' })).toBe('Approved')
     expect(teksKeputusanAsli(undefined)).toBe('—')
+  })
+})
+
+describe('Remarks penyerahan dari Claim Life (12-10-2026, opsi A)', () => {
+  it('blok Date / PIC / Remarks baca saja dari riwayat.penyerahan', () => {
+    const src = readFileSync(join(__dirname, 'KasusKomite.tsx'), 'utf8')
+    expect(src).toContain('{riwayat?.penyerahan !== undefined && (')
+    expect(src).toContain("{riwayat.penyerahan.remarks || '—'}")
+    expect(src).not.toMatch(/penyerahan[^\n]*<(textarea|input)/)
   })
 })

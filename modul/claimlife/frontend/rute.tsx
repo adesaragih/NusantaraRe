@@ -38,8 +38,8 @@ export function RuteClaimLife({ halaman, masuk, onPindah, onBukaModul }: PropsRu
             onPindah('outstanding')
           }}
           onRegister={() => {
-            setTerdaftar([])
             onPindah('register')
+            setTerdaftar([])
           }}
           terdaftar={terdaftar}
           onTutupTerdaftar={() => setTerdaftar([])}

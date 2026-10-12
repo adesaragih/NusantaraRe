@@ -90,7 +90,8 @@ describe('penyerahan ke Komite', () => {
   it('menyerahkan BARIS, bukan klaim - pengenal peserta ikut di jalurnya', () => {
     // Unit keputusan adalah baris (ADR-U-0011). Jalur yang hanya membawa
     // pengenal klaim akan memaksa server menebak baris mana yang dimaksud.
-    expect(serahkanKeKomite.length).toBe(3)
+    // 12-10-2026 (opsi A): + Remarks wajib - klaim, peserta, baris, remarks.
+    expect(serahkanKeKomite.length).toBe(4)
     expect(serahkanKeKomite.constructor.name).toBe('AsyncFunction')
   })
 

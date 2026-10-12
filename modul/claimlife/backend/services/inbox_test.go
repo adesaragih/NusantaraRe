@@ -8,6 +8,7 @@ package services_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	inti "nusantarare/inti/backend"
@@ -120,27 +121,44 @@ func TestInboxMenolakSebelumMenyentuhOracle(t *testing.T) {
 	// ⛔ Pelaku KOSONG ditolak, bukan dijawab daftar kosong. Daftar kosong
 	// terbaca "tidak ada pekerjaan" - kalimat yang berbeda artinya dari
 	// "saya tidak tahu siapa Anda".
-	if _, err := in.Ambil(ctx, inti.Pelaku{}, models.TahapOutstanding, 0, 50); !errors.Is(
+	if _, err := in.Ambil(ctx, inti.Pelaku{}, models.TahapOutstanding, 0, 50, ""); !errors.Is(
 		err, inti.ErrTanpaIdentitas) {
 		t.Errorf("pelaku kosong: galat = %v, mau ErrTanpaIdentitas", err)
 	}
 
 	// Tahap di luar keempat yang ada.
 	if _, err := in.Ambil(ctx, pelakuUji(models.PeranAdminLife),
-		models.TahapTidakDikenal, 0, 50); !errors.Is(err, services.ErrTahapTidakSah) {
+		models.TahapTidakDikenal, 0, 50, ""); !errors.Is(err, services.ErrTahapTidakSah) {
 		t.Errorf("tahap tidak dikenal: galat = %v, mau ErrTahapTidakSah", err)
 	}
 
 	// ⛔ Peran yang tidak memegang tahap itu DITOLAK - bukan diberi daftar
 	// kosong. Admin tidak boleh mengintip antrian Medical Check.
 	if _, err := in.Ambil(ctx, pelakuUji(models.PeranAdminLife),
-		models.TahapMedicalCheck, 0, 50); !errors.Is(err, inti.ErrTanpaWewenang) {
+		models.TahapMedicalCheck, 0, 50, ""); !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("peran salah: galat = %v, mau ErrTanpaWewenang", err)
 	}
 
 	// Baru sesudah semua gerbang lolos, ketiadaan Oracle yang terasa.
 	if _, err := in.Ambil(ctx, pelakuUji(models.PeranAdminLife),
-		models.TahapOutstanding, 0, 50); !errors.Is(err, db.ErrTanpaOracle) {
+		models.TahapOutstanding, 0, 50, ""); !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("tanpa Oracle: galat = %v, mau ErrTanpaOracle", err)
+	}
+}
+
+// 12-10-2026 - kotak cari inbox: 2..100 karakter (sesudah dipangkas); kosong = tanpa saringan.
+func TestAmbilInboxMenolakKataCariTidakSah(t *testing.T) {
+	in := services.New(nil).KotakMasuk()
+	ctx := context.Background()
+	admin := pelakuUji(models.PeranAdminLife)
+	for _, kata := range []string{"x", " y ", strings.Repeat("a", 101)} {
+		if _, err := in.Ambil(ctx, admin, models.TahapOutstanding, 0, 50, kata); !errors.Is(err, services.ErrCariInboxTidakSah) {
+			t.Errorf("%q: galat = %v, mau ErrCariInboxTidakSah", kata, err)
+		}
+	}
+	for _, kata := range []string{"", "   ", "ab", strings.Repeat("a", 100)} {
+		if _, err := in.Ambil(ctx, admin, models.TahapOutstanding, 0, 50, kata); !errors.Is(err, db.ErrTanpaOracle) {
+			t.Errorf("%q: galat = %v, mau ErrTanpaOracle (lolos gerbang cari)", kata, err)
+		}
 	}
 }

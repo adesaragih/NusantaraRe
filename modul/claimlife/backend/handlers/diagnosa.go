@@ -30,6 +30,7 @@ import (
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/galat"
 	"nusantarare/inti/backend/kontrak"
+	"nusantarare/modul/claimlife/backend/models"
 	"nusantarare/modul/claimlife/backend/services"
 )
 
@@ -50,7 +51,7 @@ type isiDiagnosa struct {
 func tambahDiagnosa(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		lahir, err := svc.Diagnosa().Tambah(r.Context(), inti.PelakuDari(r, stubPelaku),
@@ -65,10 +66,21 @@ func tambahDiagnosa(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 }
 
 // ubahDiagnosa melayani PUT - `Choose` b2509 -> `SetDisease`.
+// kelompokDiagnosa melayani GET /api/klaim-life/kelompok-diagnosa - daftar pilihan GROUP DIAGNOSE (keputusan work owner
+// 12-10-2026), SATU sumber: models.KelompokDiagnosa. Baca saja, tanpa database.
+func kelompokDiagnosa() http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(struct {
+			Daftar []string `json:"daftar"`
+		}{Daftar: models.KelompokDiagnosa()})
+	}
+}
+
 func ubahDiagnosa(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		diagID, ok := pengenalDiagnosa(w, r)
@@ -77,7 +89,7 @@ func ubahDiagnosa(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		}
 		var isi isiDiagnosa
 		if err := json.NewDecoder(r.Body).Decode(&isi); err != nil {
-			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "The request body is not valid JSON.")
 			return
 		}
 		err := svc.Diagnosa().Ubah(r.Context(), inti.PelakuDari(r, stubPelaku),
@@ -94,7 +106,7 @@ func ubahDiagnosa(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func hapusDiagnosa(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		diagID, ok := pengenalDiagnosa(w, r)
@@ -122,7 +134,7 @@ func hapusDiagnosa(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func pengenalDiagnosa(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	n, err := strconv.ParseInt(r.PathValue("diagId"), 10, 64)
 	if err != nil || n <= 0 {
-		galat.Tulis(w, http.StatusBadRequest, "pengenal diagnosa bukan angka yang sah")
+		galat.Tulis(w, http.StatusBadRequest, "The diagnosis ID is not a valid number.")
 		return 0, false
 	}
 	return n, true
@@ -140,31 +152,33 @@ func jawabGalatDiagnosa(w http.ResponseWriter, err error) bool {
 	case err == nil:
 		return false
 	case errors.Is(err, inti.ErrTanpaIdentitas):
-		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		galat.Tulis(w, http.StatusUnauthorized, "The request has no user identity.")
 	case errors.Is(err, inti.ErrTanpaWewenang):
 		galat.Tulis(w, http.StatusForbidden,
-			"hanya pemegang tahap ini yang dapat mengubah diagnosanya")
+			"Only the holder of this stage can change the diagnosis.")
 	case errors.Is(err, services.ErrDiagnosaTerkunci):
 		// 409: bukan permintaan yang salah, melainkan bentrokan dengan
 		// keadaan yang sudah ada. Padanan `pyDisabledWhen` b4682/b5059/
 		// b5870/b6152 - di Pega tombolnya mati, di sini permintaannya
 		// ditolak dengan kalimat yang menyebut sebabnya.
 		galat.Tulis(w, http.StatusConflict,
-			"peserta sudah diputus; diagnosanya tidak dapat diubah lagi")
+			"This insured has been decided; the diagnosis cannot be changed.")
 	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
-		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+		galat.Tulis(w, http.StatusConflict, "The case is already closed and cannot be changed.")
 	case errors.Is(err, services.ErrTahapTidakBergridPeserta):
 		galat.Tulis(w, http.StatusConflict,
-			"tahap ini tidak membuka layar detail peserta")
+			"This stage does not open the insured detail.")
 	case errors.Is(err, services.ErrDiagnosaBukanMedicalCheck):
 		galat.Tulis(w, http.StatusConflict,
 			"the diagnosis can only be changed at the Medical Check stage")
+	case errors.Is(err, services.ErrKelompokDiagnosaTidakDikenal):
+		galat.Tulis(w, http.StatusUnprocessableEntity, "Group Diagnose must be one of the listed groups.")
 	case errors.Is(err, services.ErrNilaiDiagnosaKepanjangan):
 		galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 	case errors.Is(err, galat.ErrPermintaanTidakSah):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	default:
-		galat.Tulis(w, http.StatusInternalServerError, "gagal mengubah diagnosa")
+		galat.Tulis(w, http.StatusInternalServerError, "Failed to change the diagnosis.")
 	}
 	return true
 }

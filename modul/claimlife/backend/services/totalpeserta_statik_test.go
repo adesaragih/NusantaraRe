@@ -64,24 +64,14 @@ func TestMigrasiTidakMenyimpanTotalPeserta(t *testing.T) {
 // kolomTotalTerlarang - kolom TOTAL_* yang dilarang di migrasi itu (lingkup 10-10-2026, pindai_bantu_test.go).
 //
 // ⛔ Keenam total peserta adalah turunan KLAIM. Migrasi Claim Life diperiksa utuh; migrasi modul lain hanya
-// PERNYATAAN yang menyebut tabel Claim Life (mis. `ALTER TABLE T_CLAIMLF_... ADD TOTAL_...`). Kolom TOTAL_* di tabel
-// modul lain (nbfacin 188/193/199) adalah keputusan modul itu, bukan turunan peserta klaim.
+// PERNYATAAN yang SASARANNYA tabel Claim Life (mis. `ALTER TABLE T_CLAIMLF_... ADD TOTAL_...`). Kolom TOTAL_* di tabel
+// modul lain (nbfacin 188/193/199; claimfacin 562, claimnonprop 609, claimprop 527/528 yang hanya menautkan
+// `REFERENCES T_GENERAL_CLAIM`) adalah keputusan modul itu, bukan turunan peserta klaim (sqlLingkupClaimLife,
+// 11-10-2026).
 func kolomTotalTerlarang(jalur, isi string) []string {
-	var bersih strings.Builder
-	for _, baris := range strings.Split(isi, "\n") {
-		if !strings.HasPrefix(strings.TrimSpace(baris), "--") {
-			bersih.WriteString(baris)
-			bersih.WriteString("\n")
-		}
-	}
-	if milikClaimLife(jalur) {
-		return polaKolomTotal.FindAllString(isi, -1)
-	}
 	var hasil []string
-	for _, pernyataan := range strings.Split(bersih.String(), ";") {
-		if polaTabelClaimLife.MatchString(pernyataan) {
-			hasil = append(hasil, polaKolomTotal.FindAllString(pernyataan, -1)...)
-		}
+	for _, bagian := range sqlLingkupClaimLife(jalur, isi) {
+		hasil = append(hasil, polaKolomTotal.FindAllString(bagian, -1)...)
 	}
 	return hasil
 }

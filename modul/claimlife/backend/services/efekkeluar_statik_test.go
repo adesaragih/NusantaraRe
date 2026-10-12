@@ -71,7 +71,7 @@ func TestFlagLingkunganTidakMenggerbangiPenyimpanan(t *testing.T) {
 	svc := services.New(nil)
 	err := svc.Komite().Serahkan(context.Background(),
 		inti.Pelaku{AkunID: "UJI-AKUN", Peran: []string{inti.PeranAdmin}},
-		"CLM-1", "P-1", "A-1", saatUji)
+		"CLM-1", "P-1", "A-1", "UJI REMARKS", saatUji)
 	if err == nil {
 		t.Fatal("penyimpanan pulang tanpa galat di lingkungan bukan produksi; " +
 			"flag lingkungan menggerbangi SIMPAN, bukan hanya efek keluar - " +

@@ -58,7 +58,7 @@ func TestKeputusanAsingDitolakSebelumBasisData(t *testing.T) {
 	if _, err := kk.Putuskan(context.Background(), p, "K", "3", "", time.Now()); !errors.Is(err, ErrKeputusanKomiteTidakDikenal) {
 		t.Errorf("keputusan 3: %v", err)
 	}
-	if _, err := kk.Putuskan(context.Background(), p, "K", "1", "", time.Now()); !errors.Is(err, db.ErrTanpaOracle) {
+	if _, err := kk.Putuskan(context.Background(), p, "K", "1", "UJI note", time.Now()); !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("keputusan sah tanpa Oracle: %v", err)
 	}
 }
@@ -115,5 +115,16 @@ func TestEskalasiBukanPintuBelakangKeputusan(t *testing.T) {
 	k.Baris.KomiteCount, k.Baris.KomiteLoop = 2, 3
 	if err := periksaGiliran(k, "UJI-ADM"); !errors.Is(err, inti.ErrTanpaWewenang) {
 		t.Errorf("admin dapat memutuskan atas nama tingkat berjalan: %v", err)
+	}
+}
+
+// TestNoteKomiteWajib - ShowTransfer b32893-b32940: Note (.Comment) pyRequired true; ditolak sebelum basis data.
+func TestNoteKomiteWajib(t *testing.T) {
+	kk := New(nil).KeputusanKomite()
+	p := inti.Pelaku{AkunID: "UJI"}
+	for _, note := range []string{"", "   ", "\n\t"} {
+		if _, err := kk.Putuskan(context.Background(), p, "K", "1", note, time.Now()); !errors.Is(err, ErrNoteKomiteWajib) {
+			t.Errorf("note %q: %v, mau ErrNoteKomiteWajib", note, err)
+		}
 	}
 }

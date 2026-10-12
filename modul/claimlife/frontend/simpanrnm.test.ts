@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ApiFailure, pesanGalat } from '../../../inti/frontend/klien'
-import { GagalSimpanRNM, pindahTahap, simpanKeRNM, simpanMedis } from './api'
+import { ambilKotakMasuk, ambilPratinjauKomite, GagalSimpanRNM, kataCariInbox, pindahTahap, serahkanKeKomite, simpanKeRNM, simpanMedis } from './api'
 
 // Uji klien `Save to RNM` — `InputOSClaimLife.xml` b21102 → SaveOutStandingLife_Act.
 
@@ -96,5 +96,43 @@ describe('simpanMedis: tombol Save layar Medical Check (11-10-2026)', () => {
     const e = await simpanMedis('K-1', { rekomendasi: { P1: 'x' } }).catch((x: unknown) => x)
     expect(e).toBeInstanceOf(ApiFailure)
     expect(pesanGalat(e)).toBe('Only the Medical Advisor can save the Medical Check.')
+  })
+})
+
+describe('kotak cari inbox (12-10-2026)', () => {
+  it('kata kunci < 2 karakter tidak dikirim; dipangkas; dipotong 100', () => {
+    expect(kataCariInbox('')).toBe('')
+    expect(kataCariInbox(' a ')).toBe('')
+    expect(kataCariInbox('  clmlf-1 ')).toBe('clmlf-1')
+    expect(kataCariInbox('x'.repeat(150))).toHaveLength(100)
+  })
+
+  it('ambilKotakMasuk: ?cari= hanya bila ada kata kunci', async () => {
+    jawab(200, { baris: [], total: 0, halaman: 1, ukuran: 50, namaTahap: 'Outstanding Claim' })
+    await ambilKotakMasuk(2, 1, undefined, 'UJI NAMA')
+    expect(permintaan?.url).toContain('cari=UJI')
+    expect(permintaan?.url).toContain('tahap=2')
+    await ambilKotakMasuk(2, 1)
+    expect(permintaan?.url).not.toContain('cari=')
+  })
+})
+
+describe('Send Claim to Committee (12-10-2026, opsi A)', () => {
+  it('POST membawa remarks; GET pratinjau di jalur yang sama', async () => {
+    jawab(200, {})
+    await serahkanKeKomite('K/1', 'P1', 'A1', 'UJI alasan')
+    expect(permintaan?.init.method).toBe('POST')
+    expect(permintaan?.url).toContain('/api/klaim-life/K%2F1/peserta/P1/adjustment/A1/komite')
+    expect(JSON.parse(String(permintaan?.init.body))).toEqual({ remarks: 'UJI alasan' })
+    jawab(200, { waktu: '2026-10-12T02:05:00Z', pic: 'UJI', jumlahKlaim: '1', mataUang: 'IDR', anggota: [] })
+    const h = await ambilPratinjauKomite('K/1', 'P1', 'A1')
+    expect(permintaan?.init.method ?? 'GET').toBe('GET')
+    expect(permintaan?.url).toContain('/adjustment/A1/komite')
+    expect(h.pic).toBe('UJI')
+  })
+  it('422 diteruskan apa adanya (mis. Name of bank cannot be empty)', async () => {
+    jawab(422, { galat: 'Name of bank cannot be empty' })
+    const e = await serahkanKeKomite('K1', 'P1', 'A1', 'x').catch((x: unknown) => x)
+    expect(pesanGalat(e)).toBe('Name of bank cannot be empty')
   })
 })

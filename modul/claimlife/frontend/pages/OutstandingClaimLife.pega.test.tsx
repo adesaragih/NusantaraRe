@@ -116,7 +116,7 @@ describe('kerangka: kepala dan tab (b1607)', () => {
 
 describe('grid Participant Details (b15924)', () => {
   it('kolom urut Pega; nama dan tanggal lahir dd/mm/yyyy tampil', () => {
-    expect(KOLOM_PESERTA).toEqual(['No.', 'PL NUMBER', 'NAME OF INSURED', 'DATE OF BIRTH', 'Accept', 'DELETE'])
+    expect(KOLOM_PESERTA).toEqual(['No.', 'PL Number', 'Name of Insured', 'Date of Birth', 'Accept', 'Delete'])
     const html = en(
       <GridPeserta
         klaim={klaimUji()}
@@ -130,7 +130,7 @@ describe('grid Participant Details (b15924)', () => {
         rincian={() => null}
       />,
     )
-    for (const k of ['<th>PL NUMBER</th>', '<th>NAME OF INSURED</th>', '<th>DATE OF BIRTH</th>', '>SELECT ALL</button>', '<th>DELETE</th>'])
+    for (const k of ['<th>PL Number</th>', '<th>Name of Insured</th>', '<th>Date of Birth</th>', '>Select All</button>', '<th>Delete</th>'])
       expect(html).toContain(k)
     expect(html).toContain('<td>UJI NAMA 1</td>')
     expect(html).toContain('<td>03/02/1980</td>')
@@ -159,7 +159,7 @@ describe('grid Participant Details (b15924)', () => {
         rincian={() => null}
       />,
     )
-    expect(bernomor).not.toContain('DELETE')
+    expect(bernomor).not.toContain('Delete')
     expect(SUMBER).toContain('await cabutPeserta(klaimID, pesertaID)')
     // Klik DELETE hanya membuka konfirmasi; cabut hanya dari tombol modal.
     expect(SUMBER).toContain('onHapus={setHapus}')
@@ -271,8 +271,8 @@ describe('View Detail peserta polis (DetailPolisLife b13267, 11-10-2026)', () =>
   }
   it('kolom VERBATIM XML, tanggal dd/mm/yyyy, paginasi Halaman inti 500 per halaman', () => {
     const html = en(<GridPesertaPolis hal={hal} onPindah={() => {}} />)
-    for (const k of ['No.', 'POLICY NO', 'CERTIFICATE NO', 'NAME OF INSURED', 'SEX', 'DATE OF BIRTH', 'AGE', 'PLAN',
-      'BEGIN DATE', 'EFFECTIVE DATE', 'EXPIRED DATE'])
+    for (const k of ['No.', 'Policy No', 'Certificate No', 'Name of Insured', 'Sex', 'Date of Birth', 'Age', 'Plan',
+      'Begin Date', 'Effective Date', 'Expired Date'])
       expect(html).toContain(`<th>${k}</th>`)
     expect(html).toContain('<td>501</td><td>UJI-POL-1</td><td>UJI-001</td><td>UJI NAMA POLIS</td><td>M</td><td>03/02/1980</td><td>45</td><td>UJI-PLAN</td><td>01/01/2025</td><td>02/01/2025</td><td>01/01/2026</td>')
     expect(html).toMatch(/Page\s*(<!-- -->)?2(<!-- -->)?\s*of\s*(<!-- -->)?3/)
@@ -347,6 +347,8 @@ describe('rincian peserta tiga kolom + sub-tab (screenshot ke-4, 11-10-2026)', (
     plan: 'UJI-PLAN', umur: '45', jenisKelamin: 'M', tanggalMulai: '2025-01-01', tanggalExpired: '2026-01-01',
     tanggalEfektif: '2025-01-02', valuasiMulai: '2025-01-03', valuasiSelesai: '2025-12-31', stnc: '',
     maksKlaimKadaluarsa: '90', catatanAnalis: 'UJI ANALIS', total: {},
+    // 12-10-2026: tiga MAX disembunyikan bila kosong - fixture urutan diberi nilai supaya urutannya tetap teruji.
+    tanggalMaksData: '2025-06-30', penandaTerimaKlaim: '05/07/2025',
   } as unknown as Peserta
   it('medan per kolom urut screenshot; LOCATION OF DEATH baca saja; sub-tab Adjustment | Document', () => {
     const html = en(<RincianPeserta klaim={klaimUji()} p={p} onMuatUlang={async () => {}} catatanAdmin="UJI CATATAN" onUbahCatatan={() => {}} />)
@@ -359,19 +361,19 @@ describe('rincian peserta tiga kolom + sub-tab (screenshot ke-4, 11-10-2026)', (
       }
     }
     // Tata letak 11-10-2026: kelompok Insured | Coverage | Claim Dates (bukan urutan Pega 100%).
-    urut(['CERTIFICATE NO', 'POLICY NO', 'PLAN', 'AGE', 'SEX', 'DOB'])
-    urut(['DOB', 'BEGIN DATE', 'EXPIRED DATE', 'EFFECTIVE DATE', 'VALUATION BEGIN DATE', 'VALUATION EXPIRED DATE', 'RECEIVED DATE', 'STNC TREATY'])
-    urut(['STNC TREATY', 'DATE OF LOSS', 'CLAIM RECEIVED DATE', 'CONFIRMATION DATE', 'DOCUMENT COMPLETE DATE', 'MAX DATA RECEIVED', 'MAX EXPIRED CLAIM', 'MAX CLAIM RECEIVED', 'STNC DATA'])
-    expect(html).toContain('LOCATION OF DEATH')
+    urut(['Certificate No', 'Policy No', 'Plan', 'Age', 'Sex', 'DOB'])
+    urut(['DOB', 'Begin Date', 'Expired Date', 'Effective Date', 'Valuation Begin Date', 'Valuation Expired Date', 'Received Date', 'STNC Treaty'])
+    urut(['STNC Treaty', 'Date of Loss', 'Claim Received Date', 'Confirmation Date', 'Document Complete Date', 'Max Data Received', 'Max Expired Claim', 'Max Claim Received', 'STNC Data'])
+    expect(html).toContain('Location of Death')
     expect(html).toContain('<dt>Place of Death</dt><dd>—</dd>')
     expect(html).toContain('>UJI CATATAN</textarea>')
     // CLAIM ANALYST hanya di tahap Claim Analis (11-10-2026).
-    expect(html).not.toContain('CLAIM ANALYST')
+    expect(html).not.toContain('Claim Analyst')
     const analis = en(<RincianPeserta klaim={{ ...klaimUji(), tahap: TAHAP.claimAnalis } as Klaim} p={p} onMuatUlang={async () => {}} />)
     expect(analis).toContain('UJI ANALIS')
     expect(html).toContain('>Edit Date</button>')
     expect(html).toMatch(/role="tab"[^>]*>Adjustment<\/button>[\s\S]*role="tab"[^>]*>Document<\/button>/)
-    for (const k of ['Status', 'OutStanding Date', 'Acceptation No', 'Acceptation Date']) expect(html).toContain(`<th>${k}</th>`)
+    for (const k of ['Status', 'Outstanding Date', 'Acceptation No', 'Acceptation Date']) expect(html).toContain(`<th>${k}</th>`)
     // Diagnosa hanya di tahap Medical Check (b4908).
     expect(html).not.toContain('Find Disease')
   })
@@ -396,7 +398,7 @@ describe('isian adjustment tiga kolom + bank + Spreading (11-10-2026)', () => {
         i = j
       }
     }
-    urut(['Currency', 'Percent Claim (%)', 'Claim Paid', 'Share Nusantara Re', 'Ceding Retention', 'Claim RNM', 'Sum Reasured', 'Sum Insured'])
+    urut(['Currency', 'Percent Claim (%)', 'Claim Paid', 'Share Nusantara Re', 'Ceding Retention', 'Claim RNM', 'Sum Reinsured', 'Sum Insured'])
     expect(html).toContain('<dt>Claim Paid</dt><dd class="os__angka">94.695,705</dd>')
     expect(html).toContain('<dt>Ceding Retention</dt><dd class="os__angka">1.234.567,5</dd>')
     // Dihitung langsung dari isian (aturan backend): 94.695,705 / 100.000 -> pecahan 0,94696 -> 94,696%.
@@ -434,8 +436,8 @@ describe('isian adjustment tiga kolom + bank + Spreading (11-10-2026)', () => {
       rekap: [{ reinsurer: 'UJI RE A', currency: 'IDR', gross: m('1200.5'), net: m('108') }],
     }
     const html = en(<IsianAdjustment klaim={klaimUji()} b={b} spreading={sp as unknown as SpreadingBaris} spreadingTerbuka />)
-    for (const k of ['Reins Type', 'Retroceded Share', 'Reinsurer', '% Share', 'Amount', 'Rate', 'Commision %', 'Ovr Comm %', 'Gross', 'Net',
-      'Premium Spreaded Gross', 'Premium Spreaded Net']) expect(html).toContain(k)
+    for (const k of ['Reins Type', 'Retroceded Share', 'Reinsurer', '% Share', 'Amount', 'Rate', 'Commission %', 'Ovr Comm %', 'Gross', 'Net',
+      'Premium Spread Gross', 'Premium Spread Net']) expect(html).toContain(k)
     expect(html).toContain('<tr class="os__lapisan-awal"><td>QS</td><td class="os__angka">1.000,5</td><td>UJI RE A</td><td class="os__angka">60</td><td class="os__angka">600,3</td>')
     expect(html).toContain('<tr><td></td><td class="os__angka"></td><td>UJI RE B</td>')
     expect(html).toContain('<td>UJI RE A</td><td>IDR</td><td class="os__angka">1.200,5</td><td class="os__angka">108</td>')
@@ -459,26 +461,26 @@ describe('grid adjustment, Reject, tanggal isian (11-10-2026)', () => {
     const sebelum = en(<RincianPeserta klaim={klaimUji()} p={pAdj('', '')} onMuatUlang={async () => {}} />)
     expect(sebelum).toMatch(/<tr class="inbox__baris"><td>—<\/td><td>—<\/td><td>—<\/td><td>—<\/td><\/tr>/)
     const sesudah = en(<RincianPeserta klaim={klaimUji({ nomorKlaim: 'UJI-CLM-1' })} p={pAdj('0', '2026-10-11 09:00:00')} onMuatUlang={async () => {}} />)
-    expect(sesudah).toMatch(/<tr class="inbox__baris"><td>OutStanding<\/td><td>11\/10\/2026<\/td>/)
-    for (const k of ['<th>Status</th>', '<th>OutStanding Date</th>', '<th>Acceptation No</th>', '<th>Acceptation Date</th>']) expect(sesudah).toContain(k)
+    expect(sesudah).toMatch(/<tr class="inbox__baris"><td>Outstanding<\/td><td>11\/10\/2026<\/td>/)
+    for (const k of ['<th>Status</th>', '<th>Outstanding Date</th>', '<th>Acceptation No</th>', '<th>Acceptation Date</th>']) expect(sesudah).toContain(k)
     expect(sesudah).not.toContain('<th>Action</th>')
   })
   it('Reject Outstanding di kaki isian, hanya sesudah bernomor dan baris berstatus 0 (b15399)', () => {
     const sumber = readFileSync(join(__dirname, '..', 'components', 'RincianPeserta.tsx'), 'utf8')
-    expect(sumber).toContain('{b.status === STATUS_OUTSTANDING && klaim.nomorKlaim ? (')
+    expect(sumber).toContain('{bolehTolakOutstanding && b.status === STATUS_OUTSTANDING && klaim.nomorKlaim ? (')
     expect(sumber).toContain('aksi={')
   })
   it('lima tanggal: isian sebelum Save to RNM, baca saja sesudahnya; Edit Date tidak ada di Outstanding', () => {
     const t = { kejadian: '2026-01-02', terimaKlaim: '2026-01-03', dokumenLengkap: '', maksData: '', konfirmasi: '' }
     const sebelum = en(<RincianPeserta klaim={klaimUji()} p={{ ...pesertaUji('1'), total: {} } as unknown as Peserta} onMuatUlang={async () => {}} tanggal={t} onUbahTanggal={() => {}} />)
-    for (const l of ['DATE OF LOSS', 'CLAIM RECEIVED DATE', 'DOCUMENT COMPLETE DATE', 'MAX DATA RECEIVED', 'CONFIRMATION DATE'])
+    for (const l of ['Date of Loss', 'Claim Received Date', 'Document Complete Date', 'Max Data Received', 'Confirmation Date'])
       expect(sebelum).toContain(`aria-label="${l}"`)
     expect(sebelum).toContain('value="2026-01-02"')
     // Wajib di Save to RNM: DATE OF LOSS, CLAIM RECEIVED DATE, CONFIRMATION DATE.
     expect(sebelum.match(/class="os__wajib"/g) ?? []).toHaveLength(3)
     expect(sebelum).not.toContain('>Edit Date</button>')
     const sesudah = en(<RincianPeserta klaim={klaimUji({ nomorKlaim: 'UJI-CLM-1' })} p={{ ...pesertaUji('1'), total: {} } as unknown as Peserta} onMuatUlang={async () => {}} tanggal={t} onUbahTanggal={() => {}} />)
-    expect(sesudah).not.toContain('aria-label="DATE OF LOSS"')
+    expect(sesudah).not.toContain('aria-label="Date of Loss"')
     expect(sesudah).toContain('<span>02/01/2026</span>')
   })
 })
@@ -557,7 +559,7 @@ describe('konsistensi isian, Claim RNM, Register Claim, Spreading (11-10-2026)',
       />,
     )
     expect(html.indexOf('Spreading Detail')).toBeLessThan(html.indexOf('Spreading Summary'))
-    expect(html).toContain('<tr class="os__total"><th scope="row">TOTAL</th><td>IDR</td><td class="os__angka">1.000,5</td><td class="os__angka">900</td></tr>')
+    expect(html).toContain('<tr class="os__total"><th scope="row">Total</th><td>IDR</td><td class="os__angka">1.000,5</td><td class="os__angka">900</td></tr>')
   })
 })
 
@@ -660,7 +662,7 @@ describe('Save to RNM: kolom wajib semua peserta (keputusan work owner 11-10-202
       <RincianPeserta klaim={klaimLengkap(p)} p={p} onMuatUlang={async () => {}} tanggal={t} onUbahTanggal={() => {}}
         kolomKurang={new Set(['Date of Loss'])} />,
     )
-    expect(html).toMatch(/class="field__input os__isian-tanggal field__input--error"[^>]*aria-label="DATE OF LOSS"[^>]*aria-invalid="true"/)
+    expect(html).toMatch(/class="field__input os__isian-tanggal field__input--error"[^>]*aria-label="Date of Loss"[^>]*aria-invalid="true"/)
     expect(html.match(/field__input--error/g)).toHaveLength(1)
     const isi = en(<IsianAdjustment klaim={klaimLengkap(p)} b={barisUji('1', '100')} isi={{ jumlah: '', namaBank: '' }} onUbah={() => {}} />)
     expect(isi).toContain('Claim RNM<span class="os__wajib" aria-hidden="true">*</span>')
@@ -752,7 +754,7 @@ describe('DOL dalam periode valuation, alur Save to RNM, galat tunggal, rincian 
     const html = en(
       <RincianPeserta klaim={k} p={p} onMuatUlang={async () => {}} tanggal={{ ...tanggalAwal(p), kejadian: '2026-10-11' }} onUbahTanggal={() => {}} />,
     )
-    expect(html).toMatch(/class="field__input os__isian-tanggal field__input--error"[^>]*aria-label="DATE OF LOSS"[^>]*aria-invalid="true"/)
+    expect(html).toMatch(/class="field__input os__isian-tanggal field__input--error"[^>]*aria-label="Date of Loss"[^>]*aria-invalid="true"/)
     expect(html).toContain('<span role="alert" class="os__galat-isian">' + RENTANG + '</span>')
     const isian = { ...isianAwal(k), tanggal: { '1': { ...tanggalAwal(p), kejadian: '2026-10-11' } } }
     // 11-10-2026 (terbaru): peringatan tetap tampil, Save tidak diblokir; Save to RNM yang menolak.
@@ -808,10 +810,10 @@ describe('DOL dalam periode valuation, alur Save to RNM, galat tunggal, rincian 
     expect(d).toBeGreaterThan(c)
     // Susunan lama (11-10-2026): di kolom Insured, sesudah DOB, LOCATION OF DEATH lalu ADMIN NOTES di bawahnya.
     const insured = html.slice(i, c)
-    expect(insured.indexOf('<dt>DOB</dt>')).toBeLessThan(insured.indexOf('LOCATION OF DEATH'))
-    expect(insured.indexOf('LOCATION OF DEATH')).toBeLessThan(insured.indexOf('ADMIN NOTES'))
+    expect(insured.indexOf('<dt>DOB</dt>')).toBeLessThan(insured.indexOf('Location of Death'))
+    expect(insured.indexOf('Location of Death')).toBeLessThan(insured.indexOf('Admin Notes'))
     expect(html).not.toContain('rincian__bawah')
-    expect(html).toContain('<dt>CERTIFICATE NO</dt><dd class="rincian__nilai-kode">')
+    expect(html).toContain('<dt>Certificate No</dt><dd class="rincian__nilai-kode">')
     const css = readFileSync(join(__dirname, '..', 'claimlife.css'), 'utf8').replace(/\s+/g, ' ')
     expect(css).toContain('.claimlife .rincian__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));')
     expect(css).toMatch(/@media \(max-width: 1280px\) \{ \.claimlife \.rincian__grid \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \}/)
@@ -981,15 +983,16 @@ describe('tombol committee, konfirmasi Save to RNM (11-10-2026)', () => {
   })
 })
 
-describe('MAX CLAIM RECEIVED tanpa teks galat teknis (11-10-2026)', () => {
-  it('alasan tidak dirender: "—" + tooltip ringkas; penanda terisi tampil apa adanya', () => {
+describe('MAX CLAIM RECEIVED tanpa teks galat teknis (11-10-2026; 12-10-2026 disembunyikan bila kosong)', () => {
+  it('alasan tidak dirender; tidak dihitung = baris tidak ada (tanpa ⓘ); penanda terisi tampil apa adanya', () => {
     const p = { ...pesertaUji('1'), penandaTerimaKlaim: '', penandaTerimaKlaimAlasan: 'models: ambang hari produk belum diisi di Master Product Name Life' } as unknown as Peserta
     const html = en(<RincianPeserta klaim={klaimUji()} p={p} onMuatUlang={async () => {}} />)
     expect(html).not.toContain('not computed')
     expect(html).not.toContain('models:')
-    expect(html).toContain('<dt>MAX CLAIM RECEIVED</dt><dd title="Not available: product threshold not set">— <span class="os__info" aria-label="Not available: product threshold not set">ⓘ</span></dd>')
+    expect(html).not.toContain('Max Claim Received')
+    expect(html).not.toContain('ⓘ')
     const ada = en(<RincianPeserta klaim={klaimUji()} p={{ ...p, penandaTerimaKlaim: '05/07/2025', penandaTerimaKlaimAlasan: '' } as Peserta} onMuatUlang={async () => {}} />)
-    expect(ada).toContain('<dt>MAX CLAIM RECEIVED</dt><dd>05/07/2025</dd>')
+    expect(ada).toContain('<dt>Max Claim Received</dt><dd>05/07/2025</dd>')
   })
 })
 
@@ -1115,47 +1118,46 @@ describe('proteksi Send to Medical Check (11-10-2026)', () => {
 })
 
 describe('konfirmasi Send to Medical Check (11-10-2026)', () => {
-  const kk = () =>
-    ({
-      ...klaimUji({ nomorKlaim: 'UJI-CLM-1', tersimpan: true }),
-      peserta: [pesertaUji('1', 'true'), pesertaUji('2', 'false')],
-    }) as Klaim
-
-  it('modal: judul, pertanyaan, peringatan, ringkas Claim No / peserta / Accept, tombol', () => {
-    const el = KonfirmasiKirimMedis({ klaim: kk(), sibuk: false, onLanjut: () => {}, onTutup: () => {} })
+  it('modal: judul, pertanyaan, peringatan, tombol - TANPA ringkasan Claim No / peserta (12-10-2026)', () => {
+    const el = KonfirmasiKirimMedis({ sibuk: false, onLanjut: () => {}, onTutup: () => {} })
     expect(el.props.judul).toBe('Send to Medical Check')
     expect(el.props.labelBatal).toBe('Cancel')
     const isi = renderToStaticMarkup(<>{el.props.children}</>)
-    expect(isi).toContain('<p>Are you sure you want to send this claim to Medical Check?</p>')
-    expect(isi).toContain('<p role="note" class="alert alert--warn">After sending, the claim moves to the Medical Advisor queue and can no longer be edited from the Outstanding screen.</p>')
-    expect(isi).toContain('<dt>Claim No</dt><dd class="os__nilai-kode">UJI-CLM-1</dd>')
-    expect(isi).toContain('<dt>Insured</dt><dd>2</dd>')
-    expect(isi).toContain('<dt>Accepted insured</dt><dd>1</dd>')
+    expect(isi).toContain('<p>Are you sure you want to send this claim to Medical Advisor?</p>')
+    expect(isi).toContain('<p role="note" class="alert alert--warn">After sending, the claim moves to the Medical Advisor queue and can no longer be edited from the Claim Admin screen.</p>')
+    expect(isi).not.toContain('Claim No')
+    expect(isi).not.toContain('<dl')
     expect(renderToStaticMarkup(el.props.aksi)).toBe('<button type="button" class="btn btn--primary">Yes, Send to Medical Check</button>')
   })
 
   it('Cancel tidak memanggil; Yes sekali; saat proses nonaktif "Sending…" dan tak dapat ditutup', () => {
     let lanjut = 0
     let tutup = 0
-    const el = KonfirmasiKirimMedis({ klaim: kk(), sibuk: false, onLanjut: () => lanjut++, onTutup: () => tutup++ })
+    const el = KonfirmasiKirimMedis({ sibuk: false, onLanjut: () => lanjut++, onTutup: () => tutup++ })
     el.props.onTutup()
     expect([lanjut, tutup]).toEqual([0, 1])
     el.props.aksi.props.onClick()
     expect([lanjut, tutup]).toEqual([1, 1])
-    const proses = KonfirmasiKirimMedis({ klaim: kk(), sibuk: true, onLanjut: () => {}, onTutup: () => {} })
+    const proses = KonfirmasiKirimMedis({ sibuk: true, onLanjut: () => {}, onTutup: () => {} })
     expect(proses.props.tanpaTutup).toBe(true)
     expect(renderToStaticMarkup(proses.props.aksi)).toBe('<button type="button" class="btn btn--primary" disabled="">Sending…</button>')
   })
 
   it('pra-periksa lolos membuka modal; satu pemanggil pindahTahap; sukses ke Inbox dengan pita', () => {
     expect(SUMBER).toContain('setKonfirmasiMedis(true)\n                      return false')
-    expect(SUMBER.split('pindahTahap(').length - 1).toBe(1)
+    // Satu pemanggil per alur (12-10-2026): halaman Outstanding (Send to Medical Check) dan TombolBawahTahap (Medical Check /
+    // Claim Analis, sesudah Modal konfirmasi) - masing-masing tepat satu.
+    const halaman = SUMBER.slice(SUMBER.indexOf('export default function OutstandingClaimLife'))
+    const tahap = SUMBER.slice(SUMBER.indexOf('export function TombolBawahTahap'), SUMBER.indexOf('export function KonfirmasiKirimMedis'))
+    expect(halaman.split('pindahTahap(').length - 1).toBe(1)
+    expect(tahap.split('pindahTahap(').length - 1).toBe(1)
+    expect(SUMBER.split('pindahTahap(').length - 1).toBe(2)
     expect(SUMBER.split('void jalankanKirimMedis()').length - 1).toBe(1)
     const jalan = SUMBER.slice(SUMBER.indexOf('async function jalankanKirimMedis()'))
     expect(jalan).toContain('if (sibukMedis) return')
     expect(jalan).toContain('onPindah(kabarTerkirimMedis(klaimID))')
     expect(SUMBER).toContain('if (!sibukMedis) setKonfirmasiMedis(false)')
-    expect(kabarTerkirimMedis('CLMLF-000012')).toBe('Claim CLMLF-000012 sent to Medical Check.')
+    expect(kabarTerkirimMedis('CLMLF-000012')).toBe('Claim CLMLF-000012 sent to Medical Advisor.')
     const rute = readFileSync(join(__dirname, '..', 'rute.tsx'), 'utf8')
     expect(rute).toContain("setKabar(k ?? '')")
     expect(rute).toContain('kabar={kabar}')

@@ -55,6 +55,8 @@ var layananPengubah = map[string][]string{
 	"isianoutstanding.go": {"Simpan"},
 	// 11-10-2026 - tombol Save layar Medical Check (MedicalCheckClaimLife).
 	"medis.go": {"Simpan"},
+	// 12-10-2026 - tombol Save catatan Claim Analyst (layar Claim Analis).
+	"analis.go": {"Simpan"},
 }
 
 // tubuhFungsi mengembalikan teks satu fungsi (atau metode) bernama, dari
@@ -211,6 +213,7 @@ var rutePengubah = map[string]string{
 	"POST /api/klaim-life/{id}/outstanding":                                   "simpanrnm.go",
 	"PUT /api/klaim-life/{id}/outstanding/isian":                              "isianoutstanding.go",
 	"PUT /api/klaim-life/{id}/medis":                                          "medis.go",
+	"PUT /api/klaim-life/{id}/analis":                                         "analis.go",
 	"POST /api/klaim-life/{id}/tutup":                                         "tutup.go",
 	"POST /api/klaim-life/{id}/adjustment/{adjId}/tolak":                      "statusbaris.go",
 	"PUT /api/klaim-life/{id}/peserta/{pesertaId}/tanggal-kejadian":           "dol.go",

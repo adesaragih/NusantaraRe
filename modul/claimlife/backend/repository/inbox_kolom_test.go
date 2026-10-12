@@ -10,7 +10,7 @@ import (
 // 11-10-2026: kotak masuk membawa PL Number (peserta aktif) dan Update Operator Name (jejak terakhir, cadangan pembuat)
 // lewat subkueri skalar berindeks - satu kueri, tanpa N+1.
 func TestSQLInboxPLNumberDanOperatorPengubah(t *testing.T) {
-	q := strings.Join(strings.Fields(sqlInbox("S.W", "S.H", "S.P", "S.J", true)), " ")
+	q := strings.Join(strings.Fields(sqlInbox("S.W", "S.H", "S.P", "S.J", "", true)), " ")
 	if err := db.PeriksaSQL(q); err != nil {
 		t.Fatal(err)
 	}

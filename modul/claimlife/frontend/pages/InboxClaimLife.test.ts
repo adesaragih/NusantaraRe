@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest'
 import { PERAN } from '../../../../inti/frontend/labels'
 import { TAHAP } from '../labels'
 import { TAHAP_NOMOR } from '../api'
-import { KOLOM_EKSPOR, tabTampil, tabUntuk, tanggalTampil } from './InboxClaimLife'
+import { CARI_INBOX, JEDA_CARI_MS, KOLOM_EKSPOR, tabTampil, tabUntuk, tanggalTampil } from './InboxClaimLife'
 
 const KORPUS = 'D:\\XML\\RNM_BRD\\Claim Life'
 const adaKorpus = existsSync(KORPUS)
@@ -199,3 +199,24 @@ describe('kolom PL Number dan Update Operator Name (11-10-2026)', () => {
     expect(sumber).toContain("<td>{b.plNumber === '' ? '—' : b.plNumber}</td>")
   })
 })
+
+describe('kotak cari inbox (work owner 12-10-2026)', () => {
+  const src = readFileSync(join(__dirname, 'InboxClaimLife.tsx'), 'utf8').replace(/\r\n/g, '\n')
+  it('placeholder, jeda 300 ms, kata kunci ke server per antrian aktif, kembali ke halaman 1, tombol Clear', () => {
+    expect(CARI_INBOX).toBe('Search case ID, claim no, PL number, insured name')
+    expect(JEDA_CARI_MS).toBe(300)
+    expect(src).toContain('setHal(await ambilKotakMasuk(t, h, undefined, c))')
+    expect(src).toContain('void muat(aktif, halaman, cari)')
+    expect(src).toContain('if (lama !== k) setHalaman(1)')
+    expect(src).toContain("onClick={() => setKata('')}")
+    expect(src).toContain('<input\n          className="field__input claimlife__cari"')
+  })
+  it('badge tetap jumlah seluruh antrian; Export xlsx = baris yang tampil (ikut kata kunci)', () => {
+    expect(src).toContain("if (aktif !== null && hal !== null && cari === '')")
+    // Hitungan badge tanpa kata kunci.
+    expect(src).toContain('void ambilKotakMasuk(t.nomor, 1)')
+    expect(src).toContain('KOLOM_EKSPOR, hal.baris)')
+    expect(src).toContain('<Kosong pesan="No cases match the search." />')
+  })
+})
+

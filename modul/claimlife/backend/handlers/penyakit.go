@@ -28,7 +28,7 @@ import (
 func cariPenyakit(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		// Batas yang tidak terbaca menjadi 0, dan 0 dijepit ke ukuran
@@ -41,13 +41,13 @@ func cariPenyakit(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		switch {
 		case err == nil:
 		case errors.Is(err, inti.ErrTanpaIdentitas):
-			galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+			galat.Tulis(w, http.StatusUnauthorized, "The request has no user identity.")
 			return
 		case errors.Is(err, inti.ErrTanpaWewenang):
-			galat.Tulis(w, http.StatusForbidden, "wewenang tidak mencukupi")
+			galat.Tulis(w, http.StatusForbidden, "You are not authorized to do this.")
 			return
 		default:
-			galat.Tulis(w, http.StatusInternalServerError, "gagal mencari diagnosa")
+			galat.Tulis(w, http.StatusInternalServerError, "Failed to search the disease list.")
 			return
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")

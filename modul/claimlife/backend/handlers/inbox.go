@@ -82,22 +82,22 @@ func bilanganKueri(r *http.Request, nama string, bawaan int) (int, bool) {
 func kotakMasuk(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		nomorTahap, sah := bilanganKueri(r, "tahap", int(models.TahapOutstanding))
 		if !sah {
-			galat.Tulis(w, http.StatusBadRequest, "parameter tahap harus bilangan 1..4")
+			galat.Tulis(w, http.StatusBadRequest, "The stage must be a number from 1 to 4.")
 			return
 		}
 		halaman, sah := bilanganKueri(r, "halaman", 1)
 		if !sah {
-			galat.Tulis(w, http.StatusBadRequest, "parameter halaman harus bilangan")
+			galat.Tulis(w, http.StatusBadRequest, "The page must be a number.")
 			return
 		}
 		ukuran, sah := bilanganKueri(r, "ukuran", 0)
 		if !sah {
-			galat.Tulis(w, http.StatusBadRequest, "parameter ukuran harus bilangan")
+			galat.Tulis(w, http.StatusBadRequest, "The page size must be a number.")
 			return
 		}
 		if halaman < 1 {
@@ -110,25 +110,28 @@ func kotakMasuk(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		offset := (halaman - 1) * services.BatasUkuran(ukuran)
 
 		hal, err := svc.KotakMasuk().Ambil(r.Context(), inti.PelakuDari(r, stubPelaku),
-			tahap, offset, ukuran)
+			tahap, offset, ukuran, r.URL.Query().Get("cari"))
 		switch {
+		case errors.Is(err, services.ErrCariInboxTidakSah):
+			galat.Tulis(w, http.StatusBadRequest, "Search text must be 2 to 100 characters.")
+			return
 		case errors.Is(err, inti.ErrTanpaIdentitas):
-			galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+			galat.Tulis(w, http.StatusUnauthorized, "The request has no user identity.")
 			return
 		case errors.Is(err, services.ErrTahapTidakSah):
-			galat.Tulis(w, http.StatusBadRequest, "tahap harus 1..4")
+			galat.Tulis(w, http.StatusBadRequest, "The stage must be 1 to 4.")
 			return
 		case errors.Is(err, inti.ErrTanpaWewenang):
 			// ⛔ 403, BUKAN daftar kosong. Daftar kosong terbaca sebagai
 			// "tidak ada pekerjaan".
-			galat.Tulis(w, http.StatusForbidden, "peran tidak memegang tahap ini")
+			galat.Tulis(w, http.StatusForbidden, "Your role does not hold this stage.")
 			return
 		case err != nil:
 			// ⚠️ Sebabnya DICATAT di log server (GILIRAN-12 paket 3): uji asap
 			// DEV menjumpai satu 500 sesaat di sini yang tidak dapat
 			// direproduksi, dan tanpa baris log ia tidak dapat ditelusuri.
 			log.Printf("kotak masuk Claim Life: %v", err)
-			galat.Tulis(w, http.StatusInternalServerError, "gagal membaca kotak masuk")
+			galat.Tulis(w, http.StatusInternalServerError, "Failed to load the inbox.")
 			return
 		}
 

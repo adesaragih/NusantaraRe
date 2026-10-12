@@ -29,6 +29,25 @@ var pelakuAdminUji = inti.Pelaku{
 	AkunID: "UJI-DIAG", Peran: []string{models.PeranAdminLife},
 }
 
+// pelakuMedisUji - sejak 11-10-2026 diagnosa diubah HANYA di tahap Medical Check oleh Medical Advisor
+// (services.ErrDiagnosaBukanMedicalCheck).
+var pelakuMedisUji = inti.Pelaku{
+	AkunID: "UJI-DIAG-MEDIS", Peran: []string{models.PeranMedicalLife},
+}
+
+// setelTahapUji memindah kasus uji langsung di kolom TAHAP (fixture; perpindahan sungguhan diuji di tahap.go).
+func setelTahapUji(t *testing.T, svc *services.Service, workID string, tahap models.Tahap) {
+	t.Helper()
+	work, err := svc.DB().Qualify("T_WORK_CLAIM")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.DB().ExecContext(context.Background(), "UPDATE "+work+" SET TAHAP = :1 WHERE ID = :2",
+		tahap.String(), workID); err != nil {
+		t.Fatalf("menyetel tahap uji: %v", err)
+	}
+}
+
 // TestDiagnosaTambahUbahHapus menempuh ketiga tombol grid berurutan.
 func TestDiagnosaTambahUbahHapus(t *testing.T) {
 	svc, tutup := siapkanPendaftaran(t)
@@ -44,11 +63,12 @@ func TestDiagnosaTambahUbahHapus(t *testing.T) {
 	}
 	pesertaID := peserta[0].ID
 	diag := svc.Diagnosa()
+	setelTahapUji(t, svc, pohon.Work.ID, models.TahapMedicalCheck)
 
 	// `Add` b4690 - tiga kali, dan URUTANNYA 1, 2, 3.
 	var lahir []models.Diagnosa
 	for i := 1; i <= 3; i++ {
-		d, err := diag.Tambah(ctx, pelakuAdminUji, pohon.Work.ID, pesertaID)
+		d, err := diag.Tambah(ctx, pelakuMedisUji, pohon.Work.ID, pesertaID)
 		if err != nil {
 			t.Fatalf("Tambah ke-%d: %v", i, err)
 		}
@@ -64,8 +84,8 @@ func TestDiagnosaTambahUbahHapus(t *testing.T) {
 	}
 
 	// `Choose` b2509 -> `SetDisease` b260/b307.
-	if err := diag.Ubah(ctx, pelakuAdminUji, pohon.Work.ID, pesertaID,
-		lahir[1].ID, "E11", "Diabetes mellitus tipe 2", "Metabolik"); err != nil {
+	if err := diag.Ubah(ctx, pelakuMedisUji, pohon.Work.ID, pesertaID,
+		lahir[1].ID, "E11", "Diabetes mellitus tipe 2", "Endocrine, nutritional and metabolic diseases"); err != nil {
 		t.Fatalf("Ubah: %v", err)
 	}
 	perPeserta, err := repository.NewDiagnosa(db).AmbilDiagnosa(ctx, pohon.Work.ID)
@@ -79,8 +99,8 @@ func TestDiagnosaTambahUbahHapus(t *testing.T) {
 	if daftar[1].Nama != "Diabetes mellitus tipe 2" || daftar[1].KodeICD != "E11" {
 		t.Errorf("baris kedua = %+v", daftar[1])
 	}
-	if daftar[1].GroupDiagnose != "Metabolik" {
-		t.Errorf("GROUP_DIAGNOSE = %q, mau %q", daftar[1].GroupDiagnose, "Metabolik")
+	if daftar[1].GroupDiagnose != "Endocrine, nutritional and metabolic diseases" {
+		t.Errorf("GROUP_DIAGNOSE = %q, mau %q", daftar[1].GroupDiagnose, "Endocrine, nutritional and metabolic diseases")
 	}
 	// ⛔ Dan HANYA baris itu yang berubah. Pembaruan yang menyentuh baris lain
 	// tidak akan terlihat dari uji satu-baris mana pun.
@@ -89,7 +109,7 @@ func TestDiagnosaTambahUbahHapus(t *testing.T) {
 	}
 
 	// `Delete` b6160 atas baris TENGAH - dan urutannya dirapatkan.
-	if err := diag.Hapus(ctx, pelakuAdminUji, pohon.Work.ID, pesertaID,
+	if err := diag.Hapus(ctx, pelakuMedisUji, pohon.Work.ID, pesertaID,
 		lahir[0].ID); err != nil {
 		t.Fatalf("Hapus: %v", err)
 	}
@@ -126,8 +146,9 @@ func TestKeputusanPesertaMencerminKeSeluruhDiagnosa(t *testing.T) {
 	}
 	pesertaID := peserta[0].ID
 	diag := svc.Diagnosa()
+	setelTahapUji(t, svc, pohon.Work.ID, models.TahapMedicalCheck)
 	for i := 0; i < 2; i++ {
-		if _, err := diag.Tambah(ctx, pelakuAdminUji, pohon.Work.ID, pesertaID); err != nil {
+		if _, err := diag.Tambah(ctx, pelakuMedisUji, pohon.Work.ID, pesertaID); err != nil {
 			t.Fatalf("Tambah: %v", err)
 		}
 	}
@@ -141,7 +162,8 @@ func TestKeputusanPesertaMencerminKeSeluruhDiagnosa(t *testing.T) {
 		t.Fatalf("baris adjustment = %d, mau 1", len(adj))
 	}
 
-	// Keputusan peserta: aksep.
+	// Keputusan peserta: aksep - oleh pemegang tahap Outstanding (pohon uji kembali ke tahap awalnya).
+	setelTahapUji(t, svc, pohon.Work.ID, models.TahapOutstanding)
 	saat := time.Date(2026, 9, 27, 10, 0, 0, 0, time.UTC)
 	if err := svc.Status().DenganJejak(&jejakUji{}).Ubah(ctx, pelakuAdminUji,
 		pohon.Work.ID, pesertaID, adj[0].ID, kontrak.StatusAksep, saat); err != nil {
@@ -164,17 +186,18 @@ func TestKeputusanPesertaMencerminKeSeluruhDiagnosa(t *testing.T) {
 		}
 	}
 
+	setelTahapUji(t, svc, pohon.Work.ID, models.TahapMedicalCheck)
 	// ⛔ Dan SESUDAH itu ketiga tombolnya tertutup - gerbang b4682/b5059/
 	// b5870/b6152. Di Pega tombolnya mati; di sini permintaannya ditolak.
-	if _, err := diag.Tambah(ctx, pelakuAdminUji, pohon.Work.ID, pesertaID); !errors.Is(
+	if _, err := diag.Tambah(ctx, pelakuMedisUji, pohon.Work.ID, pesertaID); !errors.Is(
 		err, services.ErrDiagnosaTerkunci) {
 		t.Errorf("Tambah sesudah diputus: %v, mau ErrDiagnosaTerkunci", err)
 	}
-	if err := diag.Ubah(ctx, pelakuAdminUji, pohon.Work.ID, pesertaID,
+	if err := diag.Ubah(ctx, pelakuMedisUji, pohon.Work.ID, pesertaID,
 		daftar[0].ID, "A00", "x", ""); !errors.Is(err, services.ErrDiagnosaTerkunci) {
 		t.Errorf("Ubah sesudah diputus: %v, mau ErrDiagnosaTerkunci", err)
 	}
-	if err := diag.Hapus(ctx, pelakuAdminUji, pohon.Work.ID, pesertaID,
+	if err := diag.Hapus(ctx, pelakuMedisUji, pohon.Work.ID, pesertaID,
 		daftar[0].ID); !errors.Is(err, services.ErrDiagnosaTerkunci) {
 		t.Errorf("Hapus sesudah diputus: %v, mau ErrDiagnosaTerkunci", err)
 	}
@@ -199,7 +222,8 @@ func TestDiagnosaBukanMilikPesertaDitolak(t *testing.T) {
 		t.Fatalf("membaca peserta: %v", err)
 	}
 	diag := svc.Diagnosa()
-	if _, err := diag.Tambah(ctx, pelakuAdminUji, pohon.Work.ID, peserta[0].ID); err != nil {
+	setelTahapUji(t, svc, pohon.Work.ID, models.TahapMedicalCheck)
+	if _, err := diag.Tambah(ctx, pelakuMedisUji, pohon.Work.ID, peserta[0].ID); err != nil {
 		t.Fatalf("Tambah: %v", err)
 	}
 	// Pengenal yang tidak pernah lahir pada peserta ini.
@@ -208,11 +232,11 @@ func TestDiagnosaBukanMilikPesertaDitolak(t *testing.T) {
 		jalan func() error
 	}{
 		{"ubah", func() error {
-			return diag.Ubah(ctx, pelakuAdminUji, pohon.Work.ID, peserta[0].ID,
+			return diag.Ubah(ctx, pelakuMedisUji, pohon.Work.ID, peserta[0].ID,
 				999999999, "A00", "x", "")
 		}},
 		{"hapus", func() error {
-			return diag.Hapus(ctx, pelakuAdminUji, pohon.Work.ID, peserta[0].ID, 999999999)
+			return diag.Hapus(ctx, pelakuMedisUji, pohon.Work.ID, peserta[0].ID, 999999999)
 		}},
 	} {
 		if err := uji.jalan(); !errors.Is(err, galat.ErrPermintaanTidakSah) {

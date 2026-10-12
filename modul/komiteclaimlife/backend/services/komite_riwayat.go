@@ -75,6 +75,30 @@ type RiwayatKomite struct {
 	AdjustmentID string               `json:"adjustmentId"`
 	Tangga       []BarisRiwayatKomite `json:"tangga"`
 	Eskalasi     []EskalasiRiwayat    `json:"eskalasi"`
+	// Penyerahan - Date / PIC / Remarks pop-up Send Claim to Committee (Claim Life, keputusan work owner 12-10-2026 opsi
+	// A): dibaca dari baris jejak klaim induk "diserahkan ke Komite <kasus>". Baca saja; nil bila tidak ada.
+	Penyerahan *PenyerahanRiwayat `json:"penyerahan,omitempty"`
+}
+
+// PenyerahanRiwayat - satu baris jejak penyerahan dari Claim Life.
+type PenyerahanRiwayat struct {
+	Tanggal string `json:"tanggal"`
+	PIC     string `json:"pic"`
+	Remarks string `json:"remarks"`
+}
+
+// awalanJejakPenyerahan - KE baris jejak yang ditulis Claim Life services.Penyerahan.Serahkan.
+const awalanJejakPenyerahan = "diserahkan ke Komite "
+
+// penyerahanDariJejak - murni: baris penyerahan TERAKHIR kasus ini, atau nil.
+func penyerahanDariJejak(kasusID string, jejak []repository.JejakKomite) *PenyerahanRiwayat {
+	var out *PenyerahanRiwayat
+	for _, j := range jejak {
+		if j.Ke == awalanJejakPenyerahan+kasusID {
+			out = &PenyerahanRiwayat{Tanggal: j.Waktu.Format("2006-01-02 15:04:05"), PIC: j.AkunID, Remarks: j.Komentar}
+		}
+	}
+	return out
 }
 
 // KataStatusTangga menerjemahkan `KOMITE_APPROVAL` - murni.
@@ -186,5 +210,12 @@ func (i *InboxKomite) Riwayat(ctx context.Context, pelaku inti.Pelaku, kasusID s
 	if err != nil {
 		return RiwayatKomite{}, err
 	}
-	return susunRiwayat(k, jejak), nil
+	hasil := susunRiwayat(k, jejak)
+	// Remarks penyerahan (12-10-2026): baris jejak klaim induk ber-KE persis "diserahkan ke Komite <kasus>".
+	serah, err := baca.JejakEskalasi(ctx, k.AdjID, awalanJejakPenyerahan+kasusID)
+	if err != nil {
+		return RiwayatKomite{}, err
+	}
+	hasil.Penyerahan = penyerahanDariJejak(kasusID, serah)
+	return hasil, nil
 }

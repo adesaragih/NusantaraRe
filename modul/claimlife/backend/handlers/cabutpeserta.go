@@ -20,7 +20,7 @@ import (
 func cabutPeserta(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		err := svc.Status().DenganJejak(jejak.PerekamJejakOracle(svc)).CabutPeserta(r.Context(),
@@ -37,19 +37,19 @@ func cabutPeserta(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func jawabGalatCabut(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, inti.ErrTanpaIdentitas):
-		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		galat.Tulis(w, http.StatusUnauthorized, "The request has no user identity.")
 	case errors.Is(err, inti.ErrTanpaWewenang):
-		galat.Tulis(w, http.StatusForbidden, "hanya ReasLifeAdmin yang dapat mencabut peserta")
+		galat.Tulis(w, http.StatusForbidden, "Only ReasLifeAdmin can remove an insured.")
 	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
-		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+		galat.Tulis(w, http.StatusConflict, "The case is already closed and cannot be changed.")
 	case errors.Is(err, services.ErrPesertaTidakDapatDicabut):
 		galat.Tulis(w, http.StatusConflict,
-			"peserta hanya dapat dicabut di tahap Outstanding Claim sebelum Save to RNM")
+			"An insured can only be removed at the Claim Admin stage before Save to RNM.")
 	case errors.Is(err, galat.ErrPermintaanTidakSah):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, services.ErrTahapTidakDikenal):
-		galat.Tulis(w, http.StatusUnprocessableEntity, "tahap kasus tidak dikenal")
+		galat.Tulis(w, http.StatusUnprocessableEntity, "The stage of this case is not recognized.")
 	default:
-		galat.Tulis(w, http.StatusInternalServerError, "gagal mencabut peserta")
+		galat.Tulis(w, http.StatusInternalServerError, "Failed to remove the insured.")
 	}
 }

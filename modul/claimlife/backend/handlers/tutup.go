@@ -44,17 +44,17 @@ import (
 func bolehTutup(svc *services.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		hasil, err := svc.Tutup().Periksa(r.Context(), r.PathValue("id"))
 		switch {
 		case err == nil:
 		case errors.Is(err, services.ErrKlaimTidakAda):
-			galat.Tulis(w, http.StatusNotFound, "klaim tidak ditemukan")
+			galat.Tulis(w, http.StatusNotFound, "The claim was not found.")
 			return
 		default:
-			galat.Tulis(w, http.StatusInternalServerError, "gagal memeriksa kesiapan tutup klaim")
+			galat.Tulis(w, http.StatusInternalServerError, "Failed to check whether the claim can be closed.")
 			return
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -82,7 +82,7 @@ type jawabanPenghalang struct {
 func tutupKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		err := svc.Tutup().DenganJejak(jejak.PerekamJejakOracle(svc)).
@@ -102,28 +102,28 @@ func tutupKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(http.StatusConflict)
 			_ = json.NewEncoder(w).Encode(jawabanPenghalang{
-				Galat:      "klaim belum boleh ditutup: ada peserta yang belum diaksep",
+				Galat:      "The claim cannot be closed yet: some insured are not accepted.",
 				Penghalang: halangan.Penghalang,
 			})
 		case errors.Is(err, inti.ErrTanpaIdentitas):
-			galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+			galat.Tulis(w, http.StatusUnauthorized, "The request has no user identity.")
 		case errors.Is(err, inti.ErrTanpaWewenang):
 			galat.Tulis(w, http.StatusForbidden,
-				"hanya pemegang tahap kasus ini yang dapat menutupnya")
+				"Only the holder of this case stage can close it.")
 		case errors.Is(err, services.ErrTahapTidakMenutup):
 			// ⛔ 409, bukan 403: perannya mungkin benar, TAHAPNYA yang tidak
 			// menawarkan tombol itu. `pyLocalAction>CloseClaim` hanya ada di
 			// InputOSClaimLife dan InputAkseptasiClaimLife.
 			galat.Tulis(w, http.StatusConflict,
-				"Close Claim hanya ada pada tahap Outstanding Claim dan Claim Analis")
+				"Close Claim is only available at the Claim Admin and Claim Analyst stages.")
 		case errors.Is(err, kontrak.ErrKasusSudahTertutup):
-			galat.Tulis(w, http.StatusConflict, "kasus ini sudah ditutup")
+			galat.Tulis(w, http.StatusConflict, "This case is already closed.")
 		case errors.Is(err, services.ErrKlaimTidakAda):
-			galat.Tulis(w, http.StatusNotFound, "klaim tidak ditemukan")
+			galat.Tulis(w, http.StatusNotFound, "The claim was not found.")
 		case errors.Is(err, services.ErrTahapTidakDikenal):
-			galat.Tulis(w, http.StatusConflict, "tahap kasus ini tidak dikenal")
+			galat.Tulis(w, http.StatusConflict, "The stage of this case is not recognized.")
 		default:
-			galat.Tulis(w, http.StatusInternalServerError, "gagal menutup klaim")
+			galat.Tulis(w, http.StatusInternalServerError, "Failed to close the claim.")
 		}
 	}
 }

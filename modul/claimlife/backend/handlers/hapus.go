@@ -64,14 +64,14 @@ func jawabGalatHapus(w http.ResponseWriter, err error) bool {
 	case err == nil:
 		return false
 	case errors.Is(err, inti.ErrTanpaIdentitas):
-		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		galat.Tulis(w, http.StatusUnauthorized, "The request has no user identity.")
 	case errors.Is(err, inti.ErrTanpaWewenang):
-		galat.Tulis(w, http.StatusForbidden, "hanya ReasLifeAdmin yang dapat menghapus klaim")
+		galat.Tulis(w, http.StatusForbidden, "Only ReasLifeAdmin can delete a claim.")
 	case errors.Is(err, services.ErrKlaimTidakAda):
-		galat.Tulis(w, http.StatusNotFound, "klaim tidak ada")
+		galat.Tulis(w, http.StatusNotFound, "The claim does not exist.")
 	case errors.Is(err, services.ErrKlaimSudahDiKomite):
 		galat.Tulis(w, http.StatusConflict,
-			"klaim sudah diserahkan ke Komite dan tidak dapat dihapus")
+			"The claim has been sent to the committee and cannot be deleted.")
 	case errors.Is(err, services.ErrHapusFisikDilarang):
 		// ⛔ 405, BUKAN 501. Ronde sebelumnya menjawab 501 - dan 501
 		// berarti "server ini belum bisa", yaitu janji bahwa suatu hari ia
@@ -85,15 +85,15 @@ func jawabGalatHapus(w http.ResponseWriter, err error) bool {
 		// sebagai gantinya, dan 405 menjadi penolakan buta.
 		w.Header().Set("Allow", metodeKlaimDiizinkan)
 		galat.Tulis(w, http.StatusMethodNotAllowed,
-			"penghapusan klaim selalu berupa penanda dan nilai pembalik, "+
-				"tidak pernah hapus fisik (ADR-U-0031); DELETE tidak berlaku "+
-				"atas sumber daya ini")
+			"Claims are deleted with a marker and a reversing value, "+
+				"never physically (ADR-U-0031); DELETE does not apply "+
+				"to this resource.")
 	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
-		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+		galat.Tulis(w, http.StatusConflict, "The case is already closed and cannot be changed.")
 	case errors.Is(err, galat.ErrPermintaanTidakSah):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	default:
-		galat.Tulis(w, http.StatusInternalServerError, "gagal memproses penghapusan klaim")
+		galat.Tulis(w, http.StatusInternalServerError, "Failed to process the claim deletion.")
 	}
 	return true
 }
@@ -102,7 +102,7 @@ func jawabGalatHapus(w http.ResponseWriter, err error) bool {
 func dampakHapus(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		d, err := svc.Penghapusan().Dampak(r.Context(), inti.PelakuDari(r, stubPelaku),
@@ -123,7 +123,7 @@ func dampakHapus(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func hapusKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		d, err := svc.Penghapusan().Hapus(r.Context(), inti.PelakuDari(r, stubPelaku),

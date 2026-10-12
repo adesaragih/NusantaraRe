@@ -88,3 +88,19 @@ func TestKotakMasukTanpaMedanUang(t *testing.T) {
 		}
 	}
 }
+
+// 12-10-2026 - parameter ?cari= diteruskan ke layanan; kata kunci tidak sah dijawab 400.
+func TestInboxMeneruskanCari(t *testing.T) {
+	isi, err := os.ReadFile("inbox.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(isi)
+	if !strings.Contains(s, `tahap, offset, ukuran, r.URL.Query().Get("cari"))`) {
+		t.Error("parameter cari tidak diteruskan ke KotakMasuk().Ambil")
+	}
+	i := strings.Index(s, "case errors.Is(err, services.ErrCariInboxTidakSah):")
+	if i < 0 || !strings.Contains(s[i:i+200], "http.StatusBadRequest") {
+		t.Error("ErrCariInboxTidakSah tidak dijawab 400")
+	}
+}

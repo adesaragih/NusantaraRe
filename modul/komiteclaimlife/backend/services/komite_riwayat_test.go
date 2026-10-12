@@ -95,3 +95,19 @@ func TestRiwayatMenampilkanKeputusanAsliTingkatTertimpa(t *testing.T) {
 		t.Errorf("jejak keputusan terbaca sebagai eskalasi: %+v", r.Eskalasi)
 	}
 }
+
+// 12-10-2026 (opsi A Claim Life) - Remarks penyerahan dibaca dari baris jejak "diserahkan ke Komite <kasus>".
+func TestPenyerahanDariJejak(t *testing.T) {
+	w := time.Date(2026, 10, 12, 9, 30, 0, 0, time.UTC)
+	jejak := []repository.JejakKomite{
+		{Ke: "diserahkan ke Komite KMT-LAIN", AkunID: "UJI-X", Waktu: w, Komentar: "bukan ini"},
+		{Ke: "diserahkan ke Komite KMT-UJI1", AkunID: "UJI-SPV", Waktu: w, Komentar: "UJI REMARKS"},
+	}
+	got := penyerahanDariJejak("KMT-UJI1", jejak)
+	if got == nil || got.Remarks != "UJI REMARKS" || got.PIC != "UJI-SPV" || got.Tanggal != "2026-10-12 09:30:00" {
+		t.Errorf("penyerahan = %+v", got)
+	}
+	if penyerahanDariJejak("KMT-TIDAK-ADA", jejak) != nil {
+		t.Error("kasus tanpa jejak penyerahan tidak nil")
+	}
+}

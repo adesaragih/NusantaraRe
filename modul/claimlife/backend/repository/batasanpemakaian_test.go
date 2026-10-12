@@ -230,7 +230,9 @@ func TestSetiapPemanggilBukaMemeriksaBolehDilewati(t *testing.T) {
 	// TUJUH BELAS sejak NB Treaty In (03-10-2026):
 	// nbtreatyin/repository/polis_db_test.go - pulang-pergi halaman lewat
 	// katalog, generasi tertutup, dan nomor polis unik lawan Oracle.
-	const mau = 17
+	// ENAM BELAS lagi sejak merge 942a16d1 (11-10-2026): treatyin/repository/invarian_db_test.go versi remote tidak
+	// lagi memanggil skemauji.Buka() (berkasnya milik modul Treaty In; tidak diubah dari sini).
+	const mau = 16
 	if diperiksa != mau {
 		t.Errorf("pemanggil skemauji.Buka() ditemukan %d, mau %d; "+
 			"bila memang bertambah, perbarui angkanya di sini", diperiksa, mau)
@@ -302,6 +304,12 @@ func TestNamaTabelDokumenLamaHanyaUntukWarisan(t *testing.T) {
 		isi, err := os.ReadFile(nama)
 		if err != nil {
 			t.Fatal(err)
+		}
+		// Lingkup 11-10-2026: berkas Claim Life selalu; berkas lain hanya bila kodenya menyebut tabel Claim Life.
+		// `DOCUMENT_CLAIM` juga nama tabel dokumen klaim Prop / FacIn (mis. inti/backend/kontrak/lampiranklaim.go) -
+		// di sana ia bukan nama lama tabel dokumen Claim Life.
+		if !dalamLingkupClaimLife(nama, buangKomentarSumber(nama, string(isi))) {
+			continue
 		}
 		for i, baris := range strings.Split(string(isi), "\n") {
 			if !strings.Contains(baris, lama) {

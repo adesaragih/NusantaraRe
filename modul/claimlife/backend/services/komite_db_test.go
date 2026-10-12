@@ -133,6 +133,10 @@ func TestGerbangRekeningDitegakkanDiLayananBukanDiLayar(t *testing.T) {
 	defer tutup()
 	db, tutupDB := repoUji(t)
 	defer tutupDB()
+	// Gerbang rekening MATI sementara (keputusan work owner 12-10-2026); uji ini menyalakannya.
+	lama := services.GerbangRekeningKomiteAktif
+	services.GerbangRekeningKomiteAktif = true
+	defer func() { services.GerbangRekeningKomiteAktif = lama }()
 
 	// Rekening kosong - persis keadaan yang layar biarkan lewat.
 	pohon := pohonUjiKomite(t, svc, db, "CLM-UJI710", "", "", "")
@@ -143,7 +147,7 @@ func TestGerbangRekeningDitegakkanDiLayananBukanDiLayar(t *testing.T) {
 	err := svc.Komite().DenganRoster(roster).DenganKasus(kasus).
 		DenganJejak(&jejakUji{}).Serahkan(context.Background(),
 		inti.Pelaku{AkunID: "UJI-AKUN", Peran: []string{inti.PeranAdmin}},
-		pohon.Work.ID, pesertaID, baris.ID, saatUjiKomite)
+		pohon.Work.ID, pesertaID, baris.ID, "UJI REMARKS", saatUjiKomite)
 
 	if !errors.Is(err, services.ErrRekeningBelumLengkap) {
 		t.Fatalf("galat = %v, mau ErrRekeningBelumLengkap", err)
@@ -178,9 +182,14 @@ func TestPenyerahanMenautkanBarisDanMembawaMuatannya(t *testing.T) {
 	err := svc.Komite().DenganRoster(roster).DenganKasus(kasus).DenganJejak(jejak).
 		Serahkan(ctx, inti.Pelaku{AkunID: "UJI-AKUN",
 			Peran: []string{inti.PeranAdmin}},
-			pohon.Work.ID, pesertaID, baris.ID, saatUjiKomite)
+			pohon.Work.ID, pesertaID, baris.ID, "UJI REMARKS", saatUjiKomite)
 	if err != nil {
 		t.Fatalf("menyerahkan: %v", err)
+	}
+	// 12-10-2026 opsi A: Remarks pop-up masuk KOMENTAR baris jejak penyerahan; PIC = AKUN_ID, Date = WAKTU.
+	if len(jejak.catatan) != 1 || jejak.catatan[0].Komentar != "UJI REMARKS" ||
+		jejak.catatan[0].AkunID != "UJI-AKUN" || !jejak.catatan[0].Waktu.Equal(saatUjiKomite) {
+		t.Errorf("jejak penyerahan = %+v, mau Komentar UJI REMARKS / AkunID UJI-AKUN / Waktu saat", jejak.catatan)
 	}
 
 	// ⭐ AC 24: nilai klaim, mata uangnya, dan status baris SAAT penyerahan -
@@ -227,7 +236,7 @@ func TestPenyerahanMenautkanBarisDanMembawaMuatannya(t *testing.T) {
 	err = svc.Komite().DenganRoster(roster).DenganKasus(kasus).DenganJejak(jejak).
 		Serahkan(ctx, inti.Pelaku{AkunID: "UJI-AKUN",
 			Peran: []string{inti.PeranAdmin}},
-			pohon.Work.ID, pesertaID, baris.ID, saatUjiKomite)
+			pohon.Work.ID, pesertaID, baris.ID, "UJI REMARKS", saatUjiKomite)
 	if !errors.Is(err, services.ErrBarisSudahDiserahkan) {
 		t.Errorf("penyerahan kedua: galat = %v, mau ErrBarisSudahDiserahkan", err)
 	}
@@ -249,7 +258,7 @@ func TestPenyerahanGagalTidakMeninggalkanPenautanSeparuh(t *testing.T) {
 		DenganKasus(&kasusUji{id: "KMT-UJI-712"}).DenganJejak(jejakGagal{}).
 		Serahkan(context.Background(), inti.Pelaku{AkunID: "UJI-AKUN",
 			Peran: []string{inti.PeranAdmin}},
-			pohon.Work.ID, pesertaID, baris.ID, saatUjiKomite)
+			pohon.Work.ID, pesertaID, baris.ID, "UJI REMARKS", saatUjiKomite)
 	if !errors.Is(err, errJejakSengaja) {
 		t.Fatalf("galat = %v, mau errJejakSengaja", err)
 	}
@@ -294,7 +303,7 @@ func TestEfekKeluarGagalTidakMenGagalkanPenyerahan(t *testing.T) {
 		DenganPenyalur(penyalur).
 		Serahkan(context.Background(), inti.Pelaku{AkunID: "UJI-AKUN",
 			Peran: []string{inti.PeranAdmin}},
-			pohon.Work.ID, pesertaID, baris.ID, saatUjiKomite)
+			pohon.Work.ID, pesertaID, baris.ID, "UJI REMARKS", saatUjiKomite)
 
 	// ⛔ Penyerahannya BERHASIL meski efek keluarnya gagal.
 	if err != nil {
@@ -315,5 +324,34 @@ func TestEfekKeluarGagalTidakMenGagalkanPenyerahan(t *testing.T) {
 	if antre.catatan[0].KlaimID != pohon.Work.ID {
 		t.Errorf("catatan menunjuk klaim %q, mau %q",
 			antre.catatan[0].KlaimID, pohon.Work.ID)
+	}
+}
+
+// 12-10-2026 - saklar gerbang rekening MATI (bawaan): rekening kosong TIDAK menolak penyerahan; muatan tetap membawa data
+// bank apa adanya (kosong).
+func TestGerbangRekeningMatiTidakMenolak(t *testing.T) {
+	svc, tutup := siapkanPendaftaran(t)
+	defer tutup()
+	db, tutupDB := repoUji(t)
+	defer tutupDB()
+	lama := services.GerbangRekeningKomiteAktif
+	services.GerbangRekeningKomiteAktif = false
+	defer func() { services.GerbangRekeningKomiteAktif = lama }()
+
+	pohon := pohonUjiKomite(t, svc, db, "CLM-UJI712", "", "", "")
+	pesertaID, baris := barisPertama(t, db, pohon.Work.ID)
+	roster := &rosterUji{tingkat: 1}
+	kasus := &kasusUji{id: "KMT-UJI-712"}
+	err := svc.Komite().DenganRoster(roster).DenganKasus(kasus).DenganJejak(&jejakUji{}).Serahkan(context.Background(),
+		inti.Pelaku{AkunID: "UJI-AKUN", Peran: []string{inti.PeranAdmin}},
+		pohon.Work.ID, pesertaID, baris.ID, "UJI REMARKS", saatUjiKomite)
+	if errors.Is(err, services.ErrRekeningBelumLengkap) {
+		t.Fatalf("rekening kosong ditolak padahal gerbang mati: %v", err)
+	}
+	if err != nil {
+		t.Fatalf("menyerahkan: %v", err)
+	}
+	if len(kasus.muatan) != 1 || len(roster.ambang) != 1 {
+		t.Errorf("muatan %d, roster %d - mau masing-masing 1", len(kasus.muatan), len(roster.ambang))
 	}
 }

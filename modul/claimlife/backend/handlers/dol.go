@@ -39,17 +39,17 @@ type permintaanDOLJSON struct {
 func setTanggalKejadian(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		var masuk permintaanDOLJSON
 		if err := json.NewDecoder(r.Body).Decode(&masuk); err != nil {
-			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "The request body is not valid JSON.")
 			return
 		}
 		dol, err := utils.ParseTanggal(masuk.TanggalKejadian)
 		if err != nil {
-			galat.Tulis(w, http.StatusBadRequest, "tanggalKejadian bukan tanggal yang dikenal")
+			galat.Tulis(w, http.StatusBadRequest, "Date of Loss is not a valid date.")
 			return
 		}
 
@@ -73,21 +73,21 @@ func setTanggalKejadian(svc *services.Service, stubPelaku bool) http.HandlerFunc
 			}{dolSalah.Kalimat(), dolSalah.Error(), dolSalah.PesertaID})
 			return
 		case errors.Is(err, services.ErrDOLKosong):
-			galat.Tulis(w, http.StatusBadRequest, "tanggal kejadian belum diisi")
+			galat.Tulis(w, http.StatusBadRequest, "Date of Loss is empty.")
 			return
 		case errors.Is(err, services.ErrTypeTidakDikenal):
 			// ⛔ 422, bukan 500: datanya yang belum lengkap, bukan aplikasinya
 			// yang rusak. Type klaim di luar keempat nilai yang dikenal berarti
 			// jendela valuasi mana yang berlaku belum dapat ditentukan.
 			galat.Tulis(w, http.StatusUnprocessableEntity,
-				"Type klaim tidak dikenal; jendela valuasi tidak dapat ditentukan")
+				"The claim type is not recognized; the valuation period cannot be determined.")
 			return
 		case errors.Is(err, models.ErrValuasiKosong):
 			galat.Tulis(w, http.StatusUnprocessableEntity,
-				"tanggal valuasi peserta kosong; DOL tidak dapat divalidasi")
+				"The valuation dates of the insured are empty; Date of Loss cannot be validated.")
 			return
 		case err != nil:
-			jawabGalatTanggal(w, err, "gagal menyimpan tanggal kejadian")
+			jawabGalatTanggal(w, err, "Failed to save Date of Loss.")
 			return
 		}
 
@@ -105,19 +105,19 @@ func jawabGalatTanggal(w http.ResponseWriter, err error, gagal string) {
 	case errors.Is(err, galat.ErrPermintaanTidakSah):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	case errors.Is(err, inti.ErrTanpaIdentitas):
-		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		galat.Tulis(w, http.StatusUnauthorized, "The request has no user identity.")
 	case errors.Is(err, inti.ErrTanpaWewenang):
-		galat.Tulis(w, http.StatusForbidden, "peran tidak mencukupi")
+		galat.Tulis(w, http.StatusForbidden, "Your role is not authorized to do this.")
 	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
-		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+		galat.Tulis(w, http.StatusConflict, "The case is already closed and cannot be changed.")
 	case errors.Is(err, services.ErrTahapTidakBolehUbahTanggal):
-		galat.Tulis(w, http.StatusConflict, "tanggal klaim hanya dapat diubah di tahap Outstanding Claim")
+		galat.Tulis(w, http.StatusConflict, "The claim dates can only be changed at the Claim Admin stage.")
 	case errors.Is(err, services.ErrTanggalTerkunciSesudahSaveRNM):
 		// OQ-M1 (GILIRAN-17): b1000 `CLAIM_NO!=''` - sesudah Save to RNM.
-		galat.Tulis(w, http.StatusConflict, "tanggal klaim terkunci sesudah Save to RNM pertama berhasil")
+		galat.Tulis(w, http.StatusConflict, "The claim dates are locked after the first successful Save to RNM.")
 	case errors.Is(err, services.ErrTahapTidakDikenal):
 		// 422: datanya yang tidak lengkap - tahap kasus tidak dapat dibaca.
-		galat.Tulis(w, http.StatusUnprocessableEntity, "tahap kasus tidak dikenal")
+		galat.Tulis(w, http.StatusUnprocessableEntity, "The stage of this case is not recognized.")
 	default:
 		galat.Tulis(w, http.StatusInternalServerError, gagal)
 	}
@@ -150,12 +150,12 @@ func uraiTanggalOpsional(teks string) (*time.Time, error) {
 func setTanggalKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		var masuk permintaanTanggalKlaimJSON
 		if err := json.NewDecoder(r.Body).Decode(&masuk); err != nil {
-			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "The request body is not valid JSON.")
 			return
 		}
 		var tgl models.TanggalKlaim
@@ -170,14 +170,14 @@ func setTanggalKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		} {
 			t, err := uraiTanggalOpsional(isian.teks)
 			if err != nil {
-				galat.Tulis(w, http.StatusBadRequest, isian.nama+" bukan tanggal yang dikenal")
+				galat.Tulis(w, http.StatusBadRequest, isian.nama+" is not a valid date.")
 				return
 			}
 			*isian.ke = t
 		}
 		if err := svc.TanggalKejadian().SetTanggalKlaim(r.Context(), inti.PelakuDari(r, stubPelaku),
 			r.PathValue("id"), r.PathValue("pesertaId"), tgl); err != nil {
-			jawabGalatTanggal(w, err, "gagal menyimpan tanggal klaim")
+			jawabGalatTanggal(w, err, "Failed to save the claim dates.")
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)

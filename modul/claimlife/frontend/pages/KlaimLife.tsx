@@ -55,7 +55,7 @@ export default function KlaimLife() {
     try {
       setDampak(await dampakHapusKlaim(klaim.id))
     } catch {
-      setGalat('Gagal menghitung dampak penghapusan.')
+      setGalat('Failed to calculate the deletion impact.')
     }
   }
 
@@ -82,13 +82,13 @@ export default function KlaimLife() {
         // "Gagal menghapus klaim." - kalimat yang menyembunyikan sebabnya.
         kode === 405 || kode === 501
           ? (pesanGalat(err) ??
-            'Penghapusan klaim adalah penanda, bukan hapus fisik (ADR-U-0031). Kolom penandanya belum diputuskan work owner.')
+            'Claim deletion is a marker, not a physical delete (ADR-U-0031). The marker column has not been decided by the work owner.')
           : kode === 409
             ? // Kalimat server lebih dulu: 409 kini juga berarti kasus tertutup.
-              (pesanGalat(err) ?? 'Klaim sudah diserahkan ke Komite dan tidak dapat dihapus.')
+              (pesanGalat(err) ?? 'The claim has been sent to the committee and cannot be deleted.')
             : kode === 403
-              ? 'Hanya ReasLifeAdmin yang dapat menghapus klaim.'
-              : 'Gagal menghapus klaim.',
+              ? 'Only ReasLifeAdmin can delete a claim.'
+              : 'Failed to delete the claim.',
       )
       setDampak(null)
     } finally {
@@ -104,7 +104,7 @@ export default function KlaimLife() {
     try {
       await cabutPeserta(klaim.id, pesertaID)
     } catch (err: unknown) {
-      setGalat(pesanGalat(err) ?? 'Gagal mencabut peserta.')
+      setGalat(pesanGalat(err) ?? 'Failed to remove the insured.')
       setMencabut(null)
       return
     }
@@ -112,7 +112,7 @@ export default function KlaimLife() {
     try {
       setKlaim(await ambilKlaimLife(klaim.id))
     } catch {
-      setGalat('Peserta sudah dicabut, tetapi klaim gagal dibaca ulang; tekan Buka.')
+      setGalat('The insured was removed, but the claim could not be reloaded; press Open.')
     } finally {
       setMencabut(null)
     }
@@ -128,7 +128,7 @@ export default function KlaimLife() {
     try {
       setKlaim(await ambilKlaimLife(klaim.id))
     } catch {
-      setGalat('Gagal membaca ulang klaim sesudah perpindahan.')
+      setGalat('Failed to reload the claim after the move.')
     }
   }
 
@@ -144,7 +144,7 @@ export default function KlaimLife() {
     try {
       setKlaim(await ambilKlaimLife(id.trim()))
     } catch (err: unknown) {
-      setGalat(kodeStatusGalat(err) === 404 ? 'Klaim tidak ada.' : 'Gagal membaca klaim.')
+      setGalat(kodeStatusGalat(err) === 404 ? 'The claim does not exist.' : 'Failed to load the claim.')
     } finally {
       setMemuat(false) // apa pun hasilnya, berhenti "memuat"
     }
@@ -152,18 +152,18 @@ export default function KlaimLife() {
 
   return (
     <section>
-      <h2>Klaim Life</h2>
+      <h2>Claim Life</h2>
 
       <form onSubmit={cari}>
-        <label htmlFor="idKlaim">Pengenal klaim</label>{' '}
+        <label htmlFor="idKlaim">Case ID</label>{' '}
         <input
           id="idKlaim"
           value={id}
           onChange={(e) => setId(e.target.value)}
-          placeholder="mis. UJI-KLAIM-1"
+          placeholder="e.g. CLMLF-000001"
         />{' '}
         <button type="submit" disabled={memuat || id.trim() === ''}>
-          {memuat ? 'Memuat…' : 'Buka'}
+          {memuat ? 'Loading…' : 'Open'}
         </button>
       </form>
 
@@ -175,8 +175,8 @@ export default function KlaimLife() {
           tiba, dan orang akan menekan Buka lagi untuk memeriksa. */}
       {tutupSelesai !== null && (
         <p role="status">
-          Klaim {tutupSelesai} ditutup. Kasusnya selesai dan hilang dari kotak
-          masuk; tidak ada lagi yang dapat diubah padanya.
+          Claim {tutupSelesai} closed. The case is completed and removed from the inbox;
+          nothing can be changed on it anymore.
         </p>
       )}
 
@@ -184,16 +184,16 @@ export default function KlaimLife() {
         <article>
           <h3>{klaim.nomorKlaim || klaim.id}</h3>
           <dl>
-            <dt>Nomor polis</dt>
+            <dt>Policy No</dt>
             <dd>{klaim.nomorPolis || '—'}</dd>
-            <dt>Nama bisnis</dt>
+            <dt>Business Name</dt>
             <dd>{klaim.namaBisnis || '—'}</dd>
-            <dt>Jumlah baris</dt>
+            <dt>Number of Rows</dt>
             <dd>{klaim.cacahBaris}</dd>
             {/* Status klaim adalah TURUNAN dari baris-barisnya, bukan kolom
                 tersimpan. Yang ditampilkan kata, bukan angka - dan bukan pula
                 terjemahan `kodeStatus`, yang hanya cerminan baris terakhir. */}
-            <dt>Status klaim</dt>
+            <dt>Claim Status</dt>
             <dd>{klaim.statusTurunan}</dd>
           </dl>
 
@@ -201,7 +201,7 @@ export default function KlaimLife() {
               `key` wajib ada supaya React tahu baris mana yang berubah. */}
           <p>
             <button type="button" onClick={() => void bukaKonfirmasiHapus()}>
-              Hapus klaim…
+              Delete Claim…
             </button>
           </p>
 
@@ -210,36 +210,36 @@ export default function KlaimLife() {
               yang ternyata lebih besar dari dugaan. */}
           {dampak && (
             <aside>
-              <h4>Hapus klaim {klaim.nomorKlaim || klaim.id}?</h4>
-              <p>Yang akan ikut terhapus:</p>
+              <h4>Delete claim {klaim.nomorKlaim || klaim.id}?</h4>
+              <p>The following will also be deleted:</p>
               <ul>
-                <li>Header klaim: {dampak.header}</li>
-                <li>Peserta: {dampak.peserta}</li>
-                <li>Baris adjustment: {dampak.adjustment}</li>
+                <li>Claim header: {dampak.header}</li>
+                <li>Insured: {dampak.peserta}</li>
+                <li>Adjustment rows: {dampak.adjustment}</li>
                 <li>Spreading: {dampak.spreading}</li>
                 <li>Spreading retro: {dampak.spreadingRetro}</li>
-                <li>Dokumen: {dampak.dokumen}</li>
-                <li>Baris work: {dampak.barisWork}</li>
+                <li>Documents: {dampak.dokumen}</li>
+                <li>Work rows: {dampak.barisWork}</li>
               </ul>
-              <p>Total {dampak.total} baris.</p>
+              <p>Total {dampak.total} rows.</p>
               {/* ⛔ Baris datar warisan BUKAN bagian daftar di atas dan tidak
                   dijumlahkan ke totalnya. Nasibnya saat klaim dihapus belum
                   diputuskan work owner; menaruhnya di bawah judul "yang akan
                   ikut terhapus" berarti menjawab pertanyaan itu diam-diam. */}
               <p>
-                ⚠️ Selain itu terdapat {dampak.barisDatarWarisan} baris datar warisan
-                ber-CASEID sama. <strong>Nasibnya belum diputuskan</strong>: apakah ikut
-                terhapus atau ditinggal karena hilir sudah membacanya.
+                ⚠️ There are also {dampak.barisDatarWarisan} legacy flat rows with the same CASEID.{' '}
+                <strong>Their handling has not been decided</strong>: whether they are deleted too or kept
+                because downstream systems already read them.
               </p>
               <button
                 type="button"
                 disabled={menghapus}
                 onClick={() => void lanjutkanHapus()}
               >
-                {menghapus ? 'Menghapus…' : 'Ya, hapus'}
+                {menghapus ? 'Deleting…' : 'Yes, delete'}
               </button>{' '}
               <button type="button" onClick={batalHapus}>
-                Batal
+                Cancel
               </button>
             </aside>
           )}
@@ -247,18 +247,18 @@ export default function KlaimLife() {
           {klaim.peserta.map((p) => (
             <section key={p.id}>
               <h4>
-                Peserta {p.nomorSertifikat || p.id}{' '}
-                <small>({p.baris.length} baris)</small>
+                Insured {p.nomorSertifikat || p.id}{' '}
+                <small>({p.baris.length} rows)</small>
                 {bolehCabutPeserta(klaim) && (
                   <>
                     {' '}
                     <button
                       type="button"
-                      aria-label={`${TOMBOL.cabutPeserta} peserta ${p.nomorSertifikat || p.id}`}
+                      aria-label={`${TOMBOL.cabutPeserta} insured ${p.nomorSertifikat || p.id}`}
                       disabled={mencabut === p.id}
                       onClick={() => void cabut(p.id)}
                     >
-                      {mencabut === p.id ? 'Mencabut…' : TOMBOL.cabutPeserta}
+                      {mencabut === p.id ? 'Removing…' : TOMBOL.cabutPeserta}
                     </button>
                   </>
                 )}

@@ -1324,3 +1324,283 @@ Keputusan work owner: "tanggal awal valuation masih termasuk".
   digabung "; " urut URUTAN (dipotong aman ke 1000 byte, PeriksaLebarWarisan); ICD_CODE = ICD diagnosa PERTAMA yang terisi
   (kolom VARCHAR2(10) tidak muat gabungan); STATUS, NOTES (catatan Claim Analyst) tidak disentuh; KETERANGAN = Recommendation
   hanya bila WO menyetujui (tidak ada padanan XML). Menunggu keputusan WO.
+
+## 12-10-2026 — GROUP DIAGNOSE (daftar WO), satu tombol Add, subjudul DISEASE
+
+- Keputusan work owner 12-10-2026: daftar 26 GROUP DIAGNOSE diberikan VERBATIM dan berurutan ("jika tabelnya belum ada
+  buatkan"); "tombol add ada 2, buat 1 saja yang atas"; "di atas disease buat subjudul seperti recommendation dengan tulisan
+  Disease".
+- Pencarian tabel master: TIDAK ada di repo (grep GROUPDIAGNOSE / GROUP_DIAGNOSE / DIAGNOSE_GROUP / GROUP_DISEASE di seluruh
+  modul termasuk diseaselife, katalog/STRUKTUR) maupun di korpus (rule properti `.GROUPDIAGNOSE` kelas `Data-DiagnoseLife` tidak
+  diekspor - OQ-L, butir bf). Membuat tabel = migrasi; jatah Claim Life 001-029 HABIS - TIDAK dibuat berkas migrasi.
+- Sekarang: SATU sumber `models.KelompokDiagnosa` (backend, urutan WO) → `GET /api/klaim-life/kelompok-diagnosa`
+  `{daftar:[...]}` (baca saja, tanpa DB). Layar membacanya saat grid dapat diubah; tidak menyalin daftar.
+- Kolom simpan: `T_CLAIMLF_DIAGNOSE.GROUP_DIAGNOSE VARCHAR2(255)` (migrasi 018); teks terpanjang 99 byte ("Diseases of the
+  blood ... immune mechanism") - muat, tidak dipotong.
+- Validasi server (`DiagnosaPeserta.Ubah`): nilai kosong, salah satu daftar, ATAU sama dengan nilai yang sudah tersimpan di
+  baris itu (warisan, tidak diubah) → simpan; selain itu 422 `ErrKelompokDiagnosaTidakDikenal` ("Group Diagnose must be one of
+  the listed groups."). Nilai warisan di luar daftar tampil sebagai pilihannya sendiri (terpilih) di dropdown.
+- Layar: catatan "Group Diagnose list is not configured yet." dibuang; dropdown aktif sesuai gerbang yang ada (Medical Check +
+  Medical Advisor + peserta belum diputus); lebar 32-60ch, nilai utuh di `title`. Subjudul DISEASE (`os__label`, gaya
+  RECOMMENDATION) di kiri atas grid, SATU "+ Add" di kanannya; "+ Add" bawah dibuang.
+- Uji db `diagnosa_db_test.go` disesuaikan dengan gerbang 11-10-2026 (Medical Check + Medical Advisor; tahap fixture lewat
+  UPDATE TAHAP) dan nilai kelompok dari daftar. Belum dijalankan terhadap Oracle di sesi ini.
+- DDL USULAN (dipasang begitu rentang migrasi Claim Life baru tersedia; BELUM dibuat, tidak dijalankan tanpa nomor migrasi):
+
+```sql
+CREATE TABLE {skema}.M_GROUPDIAGNOSE_LIFE (
+  ID         NUMBER        NOT NULL,
+  URUT       NUMBER(3)     NOT NULL,
+  NAMA       VARCHAR2(150) NOT NULL,
+  STS_AKTIF  CHAR(1)       DEFAULT '1' NOT NULL,
+  CONSTRAINT PK_M_GROUPDIAGNOSE_LIFE PRIMARY KEY (ID),
+  CONSTRAINT UQ_M_GROUPDIAGNOSE_LIFE_URUT UNIQUE (URUT),
+  CONSTRAINT UQ_M_GROUPDIAGNOSE_LIFE_NAMA UNIQUE (NAMA),
+  CONSTRAINT CK_M_GROUPDIAGNOSE_LIFE_AKTIF CHECK (STS_AKTIF IN ('0', '1'))
+)
+/
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (1, 1, 'Certain infectious and parasitic diseases', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (2, 2, 'Neoplasms', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (3, 3, 'Diseases of the blood and blood-forming organs and certain disorders involving the immune mechanism', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (4, 4, 'Endocrine, nutritional and metabolic diseases', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (5, 5, 'Mental and behavioural disorders', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (6, 6, 'Diseases of the nervous system', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (7, 7, 'Diseases of the eye and adnexa', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (8, 8, 'Diseases of the ear and mastoid process', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (9, 9, 'Diseases of the circulatory system', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (10, 10, 'Diseases of the respiratory system', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (11, 11, 'Diseases of the digestive system', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (12, 12, 'Diseases of the skin and subcutaneous tissue', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (13, 13, 'Diseases of the musculoskeletal system and connective tissue', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (14, 14, 'Diseases of the genitourinary system', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (15, 15, 'Pregnancy, childbirth and the puerperium', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (16, 16, 'Certain conditions originating in the perinatal period', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (17, 17, 'Congenital malformations, deformations and chromosomal abnormalities', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (18, 18, 'Symptoms, signs and abnormal clinical and laboratory findings, not elsewhere classified', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (19, 19, 'Injury, poisoning and certain other consequences of external causes', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (20, 20, 'External causes of morbidity and mortality', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (21, 21, 'Factors influencing health status and contact with health services', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (22, 22, 'Codes for special purposes', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (23, 23, 'Unknown cause of death/ Sudden death', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (24, 24, 'Unknown cause of death/ Death on arrival', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (25, 25, 'Multi organ failure', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (26, 26, 'Multi organ disease', '1');
+```
+
+  NAMA 150 byte: teks terpanjang 99 + ruang; tetap <= GROUP_DIAGNOSE 255 sehingga setiap nama muat di kolom simpan. Sesudah
+  tabel ada, `models.KelompokDiagnosa` diganti pembacaan tabel (STS_AKTIF = '1' ORDER BY URUT) tanpa mengubah rute maupun layar.
+
+## 12-10-2026 (lanjutan) — Medical Check: Save Adjustment, Reject Outstanding, konfirmasi perpindahan
+
+- Save Adjustment (work owner "hilangkan tombol save adjustment di medical"): TIDAK dirender di tahap Medical Check
+  (`tampilSimpanAdjustment` = prasyarat `SaveAdjustment_Act` + bukan Medical Check). PARITAS: di Pega sel tombolnya
+  `pyCondition 1=2` (ClaimLifeDetailGCNM b22808-b22810) — tersembunyi di SEMUA tahap; di aplikasi ini masih tampil di tahap
+  Outstanding dan Claim Analis bila prasyaratnya terpenuhi (keputusan WO hanya menyebut Medical). Server tetap: pemegang tahap
+  (`SimpanAdjustment`). `Add` putaran sudah hanya Claim Analis (`bolehAddAdjustment`; b18160 pyPosition ReasLifeSPV).
+- Reject Outstanding (work owner "hanya ada di admin saja"): layar — `bolehTolakOutstanding` (tahap Outstanding Claim +
+  ReasLifeAdmin + kasus terbuka) DAN kondisi baris lama (bernomor, baris Outstanding; b15399). Disembunyikan di Medical Check,
+  Claim Analis, dan tahap lain; layar Detail lama (KlaimLife.tsx) tidak lagi menampilkannya. Server `Status.Tolak`: 401
+  identitas, 403 bukan ReasLifeAdmin (sudah ada), 422 klaim belum bernomor (sudah ada), BARU 409 `ErrTolakBukanOutstanding`
+  bila tahap bukan Outstanding Claim ("Reject Outstanding is only available at the Outstanding Claim stage."), lalu kasus
+  terbuka (bb) dan kefinalan baris.
+- Konfirmasi perpindahan (work owner "pastikan ada pesan validasi terlebih dahulu"): setiap tombol perpindahan layar Medical
+  Check (Send Back to Admin, Send to Claim Analyst) dan Claim Analis (Send Back to Admin, Send Back to Medical) membuka Modal
+  inti `KonfirmasiPindah` (pola KonfirmasiKirimMedis): pertanyaan + alert--warn per tujuan, ringkas Claim No + jumlah peserta,
+  Cancel / "Yes, …", nonaktif "Sending…" + tanpaTutup selama proses, penjaga klik ganda; SATU pemanggil pindahTahap
+  (TombolBawahTahap); galat ke PitaGalat halaman; sukses → Inbox dengan pita "Claim … sent to Claim Analyst." / "Claim … sent
+  back to Admin." / "Claim … sent to Medical Check.". Perubahan Recommendation belum disimpan tetap menonaktifkan tombol
+  ("Save your changes first.").
+  - XML `SendtoAdmin_Section`: hanya "Send Back to Admin?" + Submit — TANPA isian alasan; modal pun tanpa isian.
+  - XML `FlowAction/MedicalCheck` tidak punya aktivitas validasi: tidak ada kewajiban diagnosa / Recommendation sebelum Send to
+    Claim Analyst — tidak ditambahkan aturan wajib (menunggu keputusan WO bila diinginkan).
+  - Close Claim (Claim Analis) TETAP memakai konfirmasi PanelTutupKlaim (kalimat Pega VERBATIM b499, alertdialog di tempat),
+    bukan Modal baru.
+- Uji db disesuaikan: fixture `pohonUjiStatus` / `pohonUjiG17` kini bertahap Outstanding (pemegang Admin); `hasilkomite`
+  memindah fixture ke Outstanding untuk penolakan lalu kembali ke Claim Analis (setelTahapUji). Belum dijalankan terhadap
+  Oracle di sesi ini.
+
+## 12-10-2026 (lanjutan 2) — MAX disembunyikan bila kosong, modal tanpa ringkasan, kulit layar kasus
+
+- Kode status literal claimprop / claimnonprop `acuan.go`: WO memilih pemilik modul yang memperbaiki;
+  `TestKodeStatusLiteralHanyaDiModels` tetap merah sampai itu. Tidak diubah dari Claim Life.
+- MAX (work owner "kolomnya di-hide jika datanya kosong"): di kelompok Claim Dates rincian peserta, MAX EXPIRED CLAIM dan MAX
+  CLAIM RECEIVED (baca saja, dihitung backend) TIDAK dirender bila kosong / tidak dihitung - keadaan "— ⓘ" dan tooltip
+  "Not available: product threshold not set" dibuang (berikut aturan CSS `.os__info`). MAX DATA RECEIVED tetap ISIAN selama
+  dapat diisi (Outstanding sebelum Save to RNM); dalam mode baca saja disembunyikan bila kosong (`tampilBila`). STNC DATA
+  tidak disebut WO - dibiarkan (kini selalu "—" karena ValidasiSTNC_Act belum ditiru; kandidat diperlakukan sama).
+- Modal perpindahan (work owner "cukup validasinya saja, tidak perlu tampilkan nomor claim atau apapun"): KonfirmasiPindah
+  (Send Back to Admin / Send to Claim Analyst / Send Back to Medical) hanya pertanyaan + peringatan + Cancel/Yes. Demi
+  konsistensi modal Send to Medical Check (Outstanding) juga tanpa ringkasan Claim No / Insured / Accepted insured. Modal Save
+  to RNM TETAP dengan ringkasannya (WO tidak menyebut; ia aksi tak terbalikkan yang menerbitkan nomor klaim).
+- Kulit layar kasus seperti Claim Fac In: section kasus `os claimlife__akar claimlife__kasus` (kelas saja). Token --cl-*,
+  kotak, tombol (primary merah gradasi, ghost kapsul putih timbul), pita, judul dari blok inbox; tambahan `.claimlife__kasus`:
+  tab Register Claim / Policy Details / Claim Details bersegmen (jalur cekung, kapsul putih aktif), sub-tab Adjustment /
+  Document di rincian (jalur tenang, kapsul aksen lembut), kartu `register__kartu` / `polis` putih timbul radius 18, kotak
+  rincian bergaris lembut, isian putih timbul-ke-dalam dengan cincin fokus, semua tabel (Participant Details, adjustment,
+  spreading, dokumen, diagnosa, peserta polis, hasil Find Disease) kartu putih berkepala biru muda dengan baris berselang /
+  hover aksen, baris rinci tetap putih tanpa bayangan kedua, baris peserta terpilih aksen lembut, tombol buka baris yang sudah
+  ada (`os__buka`) bertanda ▸ / ▾ lewat `::before` (tanpa kolom baru, tanpa transform). Struktur, kolom, teks, alur tidak
+  berubah; aturan lebar isian / PL Number / responsif lama tetap (tidak ditimpa).
+
+## 12-10-2026 (lanjutan 3) — Save Medical di kaki grid, Save Adjustment disembunyikan, MEDICAL ADVISOR semua tahap, cari inbox
+
+- Save Medical Check (work owner "tambahkan tombol save juga di medical seperti di admin, fungsinya hanya save data"): tombol
+  Save kecil di kaki kanan grid Participant Details (posisi/gaya sama dengan Save Outstanding), hanya bila `bolehUbahMedis`.
+  Menyimpan Recommendation yang berubah (PUT /medis); diagnosa sudah tersimpan per aksi, jadi tanpa perubahan pun memberi
+  "Progress saved." tanpa permintaan. Tombol Save di baris bawah (sebelah Send Back to Admin) DIBUANG; petunjuk "Save your
+  changes first." dan penonaktifan perpindahan tetap.
+- Save Adjustment (work owner "sembunyikan saja di semua tahap"): tidak dirender di tahap mana pun (XML sel tombol
+  `pyCondition 1=2`). Fungsi layar `aksep` dibuang; `api.simpanAdjustment` tidak lagi punya pemakai di layar. Rute server
+  `POST /api/klaim-life/{id}/peserta/{pesertaId}/akseptasi` (SimpanAdjustment) TETAP ada - tanpa pemakai frontend.
+- STNC DATA: tetap seperti sekarang (WO: "tidak usah disembunyikan").
+- MEDICAL ADVISOR (work owner "tetap bisa terlihat di semua tahap tapi hanya read only, kecuali di inbox medical"): kotak
+  DISEASE + RECOMMENDATION dirender di SEMUA tahap; dapat diubah hanya Medical Check + Medical Advisor + peserta belum diputus.
+  Baca saja: tanpa + Add / Find Disease / Delete, kelompok sebagai teks, Recommendation sebagai teks ("—" bila kosong); grid
+  kosong = "No diagnosis yet." (tanpa ajakan + Add).
+- Cari di inbox (work owner "tambahkan juga filter untuk mencari seperti claim facin"): acuan Claim Fac In (server-side
+  `UPPER(kolom) LIKE`, jeda 300 ms, toolbar di bawah tab). Claim Life: `GET /api/klaim-life?tahap=&halaman=&cari=`.
+  - Server: 2..100 karakter sesudah dipangkas (di luar itu 400 "Search text must be 2 to 100 characters."); pola LIKE tak
+    peka huruf dengan `\ % _` diloloskan + `ESCAPE '\'`; bind berpenanda (4 bind). Dicocokkan: Case ID (w.ID), CLAIM_NO
+    (header), PL Number peserta aktif (EXISTS T_CLAIMLF_PREMIUMLIST_DETAIL), nama tertanggung peserta aktif (EXISTS peserta
+    klaim → baris sumber M_LIFE_PREMIUM_DETAIL lewat kunci PL_NUMBER + CERTIFICATE_NO + ID = SOURCE_ID). Saringan yang sama
+    untuk baris dan cacah total.
+  - Indeks / privasi: nama tidak disimpan di tabel klaim; pencarian nama TIDAK memindai tabel sumber (66,8 juta baris) -
+    `NO_UNNEST` + `ROWNUM = 1` membuat Oracle menelusuri dari kasus antrian → peserta klaim (IX_PLD_CLAIM_ID) → satu baris
+    sumber per kunci (indeks kunci yang sama dengan sqlTertanggungPeserta). Biaya ∝ jumlah peserta klaim pada antrian itu,
+    bukan ukuran tabel sumber. Nama hanya di WHERE, tidak pernah dikeluarkan. SQL di `repository/inbox_cari.go` (penjaga
+    tabel peserta berindeks + berbatas). Rencana eksekusi Oracle belum diperiksa di DEV.
+  - Layar: kotak cari di toolbar sesudah strip tab, placeholder "Search case ID, claim no, PL number, insured name", jeda
+    300 ms, kata < 2 karakter tidak dikirim, halaman kembali ke 1 saat kata kunci berubah, tombol Clear, kosong = "No cases
+    match the search.". Berlaku untuk antrian (tab) aktif. Badge tab TETAP jumlah seluruh antrian (hitungan badge tanpa kata
+    kunci; hasil cari tampil di paginasi). Export xlsx mengekspor baris yang tampil (halaman aktif hasil saringan) - aturan
+    lama "ekspor hanya yang tampil". Saklar "Technical" Claim Fac In (workbasket ReasKlaimTeknik) tidak ditiru - tidak ada
+    padanannya di Claim Life.
+
+## 12-10-2026 (lanjutan 4) — Nama tab inbox, Register, Close Claim, catatan CLAIM ANALYST
+
+- Nama tab inbox (work owner "ubah nama tabnya menjadi Claim Admin, Medical Advisor, Claim Analyst"): LABEL tampilan
+  terpisah `LABEL_TAB_INBOX` (bukan nama korpus) - Outstanding Claim → Claim Admin, Medical Check → Medical Advisor, Claim
+  Analis → Claim Analyst; Input Register tetap. `Tab.judul` tetap nama tahap korpus (dikunci uji, dipakai Export dan tahap);
+  nilai TAHAP di basis data, kode tahap, dan logika tidak berubah.
+  - Kalimat yang diselaraskan dengan nama baru: pita Inbox "Claim … sent to Medical Advisor." / "Claim … sent back to Claim
+    Admin." ("sent to Claim Analyst." sudah); isi modal: Send to Medical Check ("send this claim to Medical Advisor?", "…
+    no longer be edited from the Claim Admin screen."), Send Back to Admin ("back to Claim Admin?", "returns to the Claim
+    Admin queue."), Send to Claim Analyst ("…Claim Analyst queue… from the Medical Advisor screen."), Send Back to Medical
+    ("back to Medical Advisor?"). Label TOMBOL (Send to Medical Check, Send Back to Admin, Send Back to Medical, Send to Claim
+    Analyst) dan judul modal = label tombol VERBATIM korpus - tidak diubah.
+- Register (work owner "tombol Register hanya ada di tab Claim Admin"): dirender hanya bila tab aktif = Claim Admin
+  (Outstanding); Export xlsx di semua tab.
+- Close Claim di layar Claim Analyst: "Check readiness: Close Claim" DIBUANG dari layar kasus. Ia memanggil
+  `GET /api/klaim-life/{id}/boleh-tutup` (ProtectCloseClaim_act: setiap peserta harus sudah diputus/diaksep) dan menampilkan
+  penghalangnya tanpa menutup. Gerbang yang sama TETAP dijalankan server saat `POST …/tutup` (409 berdaftar `penghalang`);
+  layar mengubahnya menjadi satu kalimat ("The claim cannot be closed yet: …") di PitaGalat halaman. Close Claim kini tombol
+  MERAH (`btn--danger`, kapsul kulit) PALING KANAN, sesudah Send Back to Admin / Send Back to Medical (ghost); konfirmasinya
+  Modal `KonfirmasiTutup` (pola modal perpindahan: pertanyaan VERBATIM b499 "Are you sure want to Close Claim?" + peringatan
+  + Cancel / "Yes, Close Claim", nonaktif "Closing…", tanpaTutup); SATU pemanggil `tutupKlaim`; perubahan belum disimpan
+  menonaktifkannya. PanelTutupKlaim (dengan Check readiness) tetap dipakai layar Detail lama (KlaimLife.tsx) saja.
+- CLAIM ANALYST (work owner "dibuat text area dan hanya bisa diedit oleh claim analyst, pada tahap lain hanya read only"):
+  kolom `T_CLAIMLF_PREMIUMLIST_DETAIL.NOTES VARCHAR2(1000)` (migrasi 003) - tanpa migrasi. Textarea per peserta di tahap
+  Claim Analis bagi ReasLifeSPV (`bolehUbahAnalis`), disimpan tombol Save kecil di kaki grid Participant Details (pola Save
+  Medical) → `PUT /api/klaim-life/{id}/analis` `{catatan:{pesertaId:teks}}` → `SimpanAnalis.Simpan`: identitas, kasus
+  terbuka (bb), tahap Claim Analis 409, pemegang tahap SPV 403, peserta aktif, ≤ 1000 byte 422, UPDATE ber-STS_HAPUS IS NULL
+  (409 bila peserta tak lagi aktif), satu transaksi; "Progress saved."; perubahan belum disimpan menahan perpindahan dan Close
+  Claim ("Save your changes first."). Tahap lain: teks baca saja ("—" bila kosong) - TETAP disembunyikan di Claim Admin
+  (Outstanding / Input Register) sesuai keputusan 11-10-2026; tidak ada konflik. Catatan tidak dibekukan oleh STS_REJECT
+  (WO tidak menyebut; keputusan Claim Analyst justru terjadi di tahap ini).
+
+## 12-10-2026 (lanjutan 5) — Title Case label; pop-up Send Claim to Committee DITUNDA (kolom penyimpan)
+
+- Title Case (work owner "untuk kata-katanya dibuat konsisten pakai capital di depan saja"): 43 label HURUF BESAR di
+  `labels.ts` diubah ke Title Case (huruf besar di awal kata; singkatan PL/ICD/DOB/ID/RNM/KPR/STNC/SOB/WPC tetap; of/to/and
+  kecil kecuali di awal) - mis. PL Number, Name of Insured, Date of Birth, Select All, Delete, Certificate No, Policy No,
+  Location of Death, Country, City, Admin Notes, Valuation Begin Date, Date of Loss, Claim Received Date, Max Expired Claim,
+  Max Claim Received, Max Data Received, Claim Analyst, Medical Advisor, Recommendation, Diagnose, ICD Code, Group Diagnose,
+  Disease, Total, Currency; "OutStanding Date" → "Outstanding Date". Nomor baris korpus tetap di komentar; uji baris XML
+  (labels.test, kutipan korpus) TIDAK diubah - hanya ekspektasi atas konstanta / HTML layar ("keputusan WO 12-10-2026 Title
+  Case"). `text-transform: uppercase` subjudul kelompok rincian (`.rincian__judul`) dicabut. CSS inti yang meng-uppercase
+  (`.table thead th`, `.badge`, …) tidak dipakai Claim Life. Penjaga baru: tidak ada label SEMUA HURUF BESAR selain singkatan.
+- Pop-up Send Claim to Committee - DITUNDA, menunggu keputusan WO (penyimpan Remarks / Date):
+  - XML `Section/ClaimComite.xml` (Harness `Committe_Life`): Date `.DataCommitteeTreaty.TanggalComitee` (pxDateTime, DAPAT
+    diubah - pyEditOptions Auto b819), PIC `OperatorID.pyUserName` (baca saja b1006), label "Adjustment" (LABEL b2018),
+    Remarks* `.DataCommitteeTreaty.Remarks` (pxTextArea, wajib), grid `.KomiteList`: Committee Name (.IDKomite) | Status
+    (.KomiteAproval, dropdown) | Date Approve (.DateApprove) | Comment (.KomiteComment); tombol "Send Claim to Committee"
+    pyDisabledWhen `.KomiteList(1).IDKomite = '' || .DataCommitteeTreaty.Remarks='' || pyWorkPage.ClaimData.IsKPR=''` →
+    runActivity `CreateKMTLife_Act` lalu runScript (TANPA konfirmasi kedua); Cancel.
+  - `Activity/CreateKMTLife_Act.xml` hanya MENDEKLARASIKAN parameter `Remarks` (b402) dan tidak menulis Remarks maupun
+    TanggalComitee ke mana pun - di Pega keduanya hidup di halaman kerja (BLOB) saja.
+  - Skema: `T_GENERAL_KOMITE` (ID, ADJUSTMENT_ID, KOMITE_LOOP, KOMITE_COUNT, ACCEPT_STATUS; migrasi 013) dan
+    `T_KOMITE_KOMITELIST` (…, KOMITE_COMMENT, DATE_APPROVE per anggota) TIDAK punya kolom Remarks / tanggal komite / PIC.
+    komiteclaimlife 030 hanya kaskade + lebar ID.
+  - Opsi tanpa migrasi: Remarks ke `T_CLAIMLF_JEJAK.KOMENTAR` (VARCHAR2(4000), migrasi 021) pada baris jejak yang SUDAH ditulis
+    `Penyerahan.Serahkan` di transaksinya (services/komite.go:479) - preseden: Remarks Reject Outstanding (OQ-M5). PIC =
+    AKUN_ID jejak; Date = WAKTU jejak (waktu server, baca saja). Konsekuensi: Date TIDAK dapat diubah (beda dengan Pega), dan
+    layar Komite membaca Remarks dari jejak klaim induk.
+  - Opsi bermigrasi: kolom REMARKS / TANGGAL_KOMITE / PIC di T_GENERAL_KOMITE - jatah migrasi Claim Life habis.
+  - Pratinjau roster (grid "Waiting"): butuh rute baca baru dengan gerbang Serahkan sampai sebelum menulis (identitas, kasus
+    terbuka, tahap Claim Analis, wewenang Type, baris Outstanding, ambang nilai klaim → RosterKomiteOracle/EMAILKOMITE) - siap
+    dikerjakan begitu penyimpan Remarks diputuskan.
+
+## 12-10-2026 (lanjutan 6) — Pop-up Send Claim to Committee (opsi A: Remarks di jejak, Date waktu server)
+
+- Keputusan work owner: "Tanpa migrasi: Remarks disimpan di jejak audit, dan Date memakai waktu server sehingga tidak bisa
+  diubah."
+- Server:
+  - `GET /api/klaim-life/{id}/peserta/{pesertaId}/adjustment/{adjId}/komite` → `Penyerahan.Pratinjau`: gerbang Serahkan
+    SAMPAI SEBELUM menulis (identitas, pengenal, kasus terbuka, Type + WajibWewenangKomite, tahap Claim Analis, lalu
+    `siapkanPenyerahan` bersama: baris milik peserta, mata uang tunggal, Outstanding & belum diserahkan, rekening, ambang,
+    roster EMAILKOMITE, cacah tingkat). Keluaran: waktu server, PIC (AKUN_ID), Claim RNM + mata uang baris, anggota
+    (Committee Name = jabatan, urut) - TANPA email/operator. Nol tulisan.
+  - `POST …/komite` badan `{remarks}` → `Serahkan(…, remarks, saat)`: Remarks wajib, ≤ 4000 byte (422
+    `ErrRemarksKomiteKosong` / `ErrRemarksKomiteKepanjangan`), ditulis ke `KOMENTAR` baris `T_CLAIMLF_JEJAK` "diserahkan ke
+    Komite <kasus>" yang sudah ditulis di transaksi Serahkan; PIC = AKUN_ID, Date = WAKTU baris itu. Remarks TIDAK ikut
+    `MuatanEfek` (email/outbox).
+  - Kalimat galat (Inggris) `jawabGalatKomite`: 401 "The request has no user identity." · 403 "Your role is not allowed to
+    send this claim type to the committee." · 422 "Remarks is required." / "Remarks cannot exceed 4000 characters." · 422 "The
+    claim type is not recognized; sending to the committee requires a valid type." · 422 "Name of bank cannot be empty"
+    (VERBATIM sistem lama, rekening: Name of Bank / ID Bank / Account No) · 409 "Send Claim to Committee is only available at
+    the Claim Analyst stage." · 409 "This row has already been sent to the committee." · 409 "Only Outstanding rows can be sent
+    to the committee." · 422 "The rows of this claim use more than one currency; sending to the committee requires a single
+    currency." · 422 "Claim RNM of this row is empty; the committee level cannot be determined." (`ErrNilaiKlaimKomiteKosong`,
+    baru) · 422 "No committee level covers this claim amount." · 409 "The case is already closed and cannot be changed." · 409
+    "The stage of this case is not recognized." · 400 (permintaan tidak sah, teks teknis) · 500 "Failed to send the row to
+    the committee.".
+- Layar Claim Life (`components/KonfirmasiKomite.tsx`): tombol baris "Send Claim to Committee" (Claim Analis) membuka Modal:
+  Date (dd/mm/yyyy HH:mm, BACA SAJA), PIC, Adjustment ("Claim RNM <nilai> <mata uang>"), Remarks* (≤ 4000), grid Committee
+  Name | Status "Waiting" | Date Approve — | Comment —. Tombol kirim nonaktif bila tanpa anggota, Remarks kosong, atau Is KPR
+  klaim kosong (XML ClaimComite pyDisabledWhen; keterangan tampil bila Is KPR kosong). Tanpa konfirmasi kedua (Pega). Cancel
+  menutup; "Sending…" + tanpaTutup; satu pemanggil. Galat pratinjau / kirim di PitaGalat DALAM modal. Sukses: modal tutup,
+  pita "Claim sent to committee.", muat ulang; kolom Status baris menampilkan "<status> · In Committee (<kasus>)".
+- Komite Claim Life (baca saja): `Riwayat` kini membawa `penyerahan {tanggal, pic, remarks}` dari baris jejak klaim induk
+  "diserahkan ke Komite <kasus>" (pembaca jejak yang sudah ada, `JejakEskalasi`); layar Kasus Komite menampilkan blok "Sent
+  to Committee" (Date / PIC / Remarks). Tanpa tulisan baru di modul itu.
+- LAPORAN rekening (tidak diubah): `PeriksaRekening` menuntut NAME_OF_BANK, ID_BANK, DAN ACCOUNT_NO (GetListKomiteLife b655).
+  ID_BANK / ACCOUNT_NO hanya terisi dari migrasi data warisan (repository/migrasidata.go:303-309, OS_AKSEPTASI IDBANK /
+  ACCOUNTNO) dan disalin saat baris disisip (pohonklaim.sisipBarisAdjustment, putaran baru); tidak ada isian layar (keputusan
+  11-10: hanya Name of Bank yang ditulis, sebelum Save to RNM). Akibatnya klaim baru SELALU ditolak 422 "Name of bank cannot
+  be empty" saat diserahkan, walau Name of Bank terisi - menunggu keputusan WO.
+
+## 12-10-2026 (lanjutan 7) — Saklar rekening Komite, pop-up saat pratinjau ditolak, ejaan dan bahasa teks layar
+
+- Rekening (work owner "tunggu master bank dari DBA" + "untuk proteksi bank account dimatikan dulu sementara, jangan
+  dihapus"): `services.GerbangRekeningKomiteAktif = false` (pola endorsementlife `GerbangPembayaranAktif`); `PeriksaRekening`
+  (GetListKomiteLife b655) hanya dijalankan bila saklar menyala, di `siapkanPenyerahan` - berlaku untuk Pratinjau DAN
+  Serahkan. Kode, pesan "Name of bank cannot be empty", dan uji gerbang TETAP (uji menyalakan saklarnya). Muatan ke Komite
+  tetap membawa data bank apa adanya. Menyalakan kembali: ubah ke true (catatan juga di MODUL.md).
+- Pop-up saat pratinjau ditolak: konteks tetap tampil di bawah pita galat - Date (waktu peramban saat itu), PIC "—",
+  Adjustment dari baris layar (Claim RNM + mata uang), Remarks NONAKTIF, grid "No committee members found."; tombol kirim
+  tetap nonaktif.
+- Ejaan / kapitalisasi / bahasa teks layar (work owner "jika ada yang seperti itu lagi diperbaiki"):
+  - Status baris `kataStatusBaris('0')`: "OutStanding" → "Outstanding".
+  - Label: "Commision %" → "Commission %"; "Sum Reasured" → "Sum Reinsured" (ejaan korpus Pega diperbaiki untuk layar; nomor
+    baris korpus tetap di komentar); "Premium Spreaded Gross / Net" → "Premium Spread Gross / Net". "Ovr Comm %"
+    (singkatan), "Retroceded Share" (benar), "Acceptation No / Date" (istilah Pega/reasuransi) DIBIARKAN.
+    `DETAIL.totalSumReasured` ("Total Sum Reasured") tidak dirender di layar mana pun (enam total dibuang 11-10) - dibiarkan.
+  - Layar Detail lama (`pages/KlaimLife.tsx`) dan panel bersama (`PanelPindahTahap`, `PanelTanggalKlaim`): seluruh teks
+    Indonesia ke Inggris (mis. "Klaim Life" → "Claim Life", "Pengenal klaim" → "Case ID", "Memuat…/Buka" → "Loading…/Open",
+    "Hapus klaim…" → "Delete Claim…", "Memindahkan…" → "Moving…", "Perpindahan dari" → "Move from", "Tanggal klaim gagal
+    disimpan." → "The claim dates could not be saved.").
+  - Pesan galat handler backend Claim Life (≈ 95 kalimat unik, 178 kemunculan) ke Inggris, mis. "database belum
+    dikonfigurasi" → "The database is not configured.", "kasus sudah ditutup dan tidak dapat diubah" → "The case is already
+    closed and cannot be changed.", "klaim tidak ada" → "The claim does not exist.", "Save hanya tersedia pada tahap
+    Outstanding Claim" → "Save is only available at the Claim Admin stage.". Pesan VERBATIM sistem lama ("Name of bank cannot
+    be empty", "Invalid DOL" dsb.) tetap. Penjaga baru: tidak ada pesan galat handler berbahasa Indonesia.
