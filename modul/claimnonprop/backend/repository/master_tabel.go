@@ -19,15 +19,14 @@ package repository
 //
 //	header            T_TREATY_REVISION `MASTERID = IDMaster` (baris terakhir) - kolom `medanMaster`;
 //	                  AccountingMode kosong -> AccountingModeNonProp (`modePembukuanMaster`)
-//	Limits            T_TREATY_LIMITS
+//	Limits            T_TREATY_LIMITS; ReinstatementPct kosong -> baris pertama T_TREATY_LIMIT_REINSTATEMENT
 //	  .TreatyGroups   T_TREATY_LIMIT_GROUP (anak Limits, KunciAnak TreatyGroupList)
 //	  .MDPList        T_TREATY_LIMIT_MEASURE `JENIS = 'MDPList'`
 //	LimitSummaryList  T_TREATY_LIMIT_SUMMARY (LIMITVAL dst. tidak dibaca rule Claim Non Prop)
 //	CurrencyList      T_TREATY_KURS -> TREATYEXCHANGEYEARLY (`Conversion` = TOIDR, `CurrencyList` dokumen adalah salinan
 //	                  tabel ini - pendaratan_akar.go Treaty In); kontrak tanpa baris kurs sendiri: kurs tahun treaty
 //	                  yang periodenya mencakup Commencement
-//	Share             T_TREATY_SHARE; jenis spreading kosong + rincian satu baris -> jenis baris itu
-//	                  (`lengkapiJenisSpreading`)
+//	Share             T_TREATY_SHARE (spreading manual dirapikan `MasterTreaty` -> `rapikanSpreading`)
 //	  .SpreadingListXOL  T_TREATY_SHARE_SPREADING (anak Share)
 
 import (
@@ -78,6 +77,22 @@ func (a *Acuan) masterDariTabel(ctx context.Context, id string) (models.MasterTr
 			Deductible: angkaMaster(l[9]), Deductible2: angkaMaster(l[10]), ReinstatementPct: angkaMaster(l[11]),
 			IsCombineMDP: l[12], NoRIPCalculation: l[13]})
 	}
+	// ⭐ 12-10-2026 (laporan pemakai, Reinstatement Premium XOL akseptasi 0 - Pega 13.918.139,04): kolom
+	// REINSTATEMENTPCT layer kosong di SEMUA 45 layer Non Prop tabel (DEV); persennya ada di baris reinstatement layer
+	// (T_TREATY_LIMIT_REINSTATEMENT, 100). Dokumen Pega: `Limits(n).ReinstatementPct` = `Reinstatement_List(1)`.
+	if t, err = a.q("T_TREATY_LIMIT_REINSTATEMENT"); err != nil {
+		return models.MasterTreaty{}, false, err
+	}
+	reins, err := a.banyak(ctx, fmt.Sprintf(`SELECT TO_CHAR(IDINDUK), REINSTATEMENTPCT FROM %s
+		WHERE MASTERID = :1 AND REINSTATEMENTPCT IS NOT NULL ORDER BY IDINDUK, URUTAN, ID`, t), 2, id)
+	if err != nil {
+		return models.MasterTreaty{}, false, err
+	}
+	for _, r := range reins {
+		if i, ok := idxLimit[r[0]]; ok && strings.TrimSpace(m.Limits[i].ReinstatementPct) == "" {
+			m.Limits[i].ReinstatementPct = angkaMaster(r[1])
+		}
+	}
 	if t, err = a.q("T_TREATY_LIMIT_GROUP"); err != nil {
 		return models.MasterTreaty{}, false, err
 	}
@@ -127,7 +142,7 @@ func (a *Acuan) masterDariTabel(ctx context.Context, id string) (models.MasterTr
 		return models.MasterTreaty{}, false, err
 	}
 	share, err := a.banyak(ctx, fmt.Sprintf(`SELECT TO_CHAR(ID), SPREADINGTYPEIDXOL, SPREADINGTYPEXOL,
-		SPREADINGTOTALPCTXOL FROM %s WHERE MASTERID = :1 ORDER BY URUTAN, ID`, t), 4, id)
+		SPREADINGTOTALPCTXOL, RNMSHARE FROM %s WHERE MASTERID = :1 ORDER BY URUTAN, ID`, t), 5, id)
 	if err != nil {
 		return models.MasterTreaty{}, false, err
 	}
@@ -135,7 +150,7 @@ func (a *Acuan) masterDariTabel(ctx context.Context, id string) (models.MasterTr
 	for i, s := range share {
 		idxShare[s[0]] = i
 		m.Share = append(m.Share, models.ShareXOL{SpreadingTypeIDXOL: s[1], SpreadingTypeXOL: s[2],
-			SpreadingTotalPctXOL: angkaMaster(s[3])})
+			SpreadingTotalPctXOL: angkaMaster(s[3]), RNMShare: angkaMaster(s[4])})
 	}
 	if t, err = a.q("T_TREATY_SHARE_SPREADING"); err != nil {
 		return models.MasterTreaty{}, false, err
@@ -151,9 +166,6 @@ func (a *Acuan) masterDariTabel(ctx context.Context, id string) (models.MasterTr
 			m.Share[i].SpreadingListXOL = append(m.Share[i].SpreadingListXOL,
 				models.SpreadingMaster{ReinsTypeID: s[1], ReinsTypeName: s[2], Pct: angkaMaster(s[3])})
 		}
-	}
-	for i := range m.Share {
-		lengkapiJenisSpreading(&m.Share[i])
 	}
 	return m, true, nil
 }

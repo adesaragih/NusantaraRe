@@ -120,7 +120,19 @@ var medanMaster = []string{"ProportionType", "Ceding", "CedingID", "LeadingReins
 //
 // ⭐ 11-10-2026 (laporan pemakai, master Non Prop 1002320): dokumen JSON tidak lagi ditulis sejak 07-10-2026, jadi
 // master tanpa dokumen dibaca dari tabel `T_TREATY_*` (`masterDariTabel`) - bentuk keluaran sama.
+//
+// Spreading manual kedua sumber dirapikan ke bentuk spreading bernama (`rapikanSpreading`).
 func (a *Acuan) MasterTreaty(ctx context.Context, id string) (models.MasterTreaty, bool, error) {
+	m, ada, err := a.bacaMasterSumber(ctx, id)
+	if err != nil || !ada {
+		return m, ada, err
+	}
+	rapikanSpreading(&m)
+	return m, true, nil
+}
+
+// bacaMasterSumber - dokumen JSON (M_TREATY_IN lalu M_TREATY_IN_EDM), cadangan tabel `T_TREATY_*`.
+func (a *Acuan) bacaMasterSumber(ctx context.Context, id string) (models.MasterTreaty, bool, error) {
 	for _, tabel := range []string{"M_TREATY_IN", "M_TREATY_IN_EDM"} {
 		m, ada, err := a.bacaMaster(ctx, tabel, id)
 		if err != nil || ada {
@@ -128,6 +140,16 @@ func (a *Acuan) MasterTreaty(ctx context.Context, id string) (models.MasterTreat
 		}
 	}
 	return a.masterDariTabel(ctx, id)
+}
+
+// rapikanSpreading - spreading MANUAL (Spreading Type kosong): persen relatif terhadap bagian RNM
+// (`models.NormalkanSpreadingManual`), lalu jenis spreading dari rincian tunggal (`lengkapiJenisSpreading`).
+// Urutannya wajib: keduanya mengenali spreading manual dari jenisnya yang kosong.
+func rapikanSpreading(m *models.MasterTreaty) {
+	for i := range m.Share {
+		models.NormalkanSpreadingManual(&m.Share[i], m.RNMShare)
+		lengkapiJenisSpreading(&m.Share[i])
+	}
 }
 
 func jv(p string) string {
@@ -206,16 +228,17 @@ func (a *Acuan) bacaMaster(ctx context.Context, objek, id string) (models.Master
 	for _, k := range kurs {
 		m.CurrencyList = append(m.CurrencyList, models.KursMaster{Currency: k[0], Conversion: k[1]})
 	}
-	share, err := a.banyak(ctx, fmt.Sprintf(`SELECT jt.si, jt.tid, jt.tnm, jt.pct FROM %s m,
+	share, err := a.banyak(ctx, fmt.Sprintf(`SELECT jt.si, jt.tid, jt.tnm, jt.pct, jt.rnm FROM %s m,
 		JSON_TABLE(m.JSONDATA, '$.Share[*]' COLUMNS (si FOR ORDINALITY, tid VARCHAR2(100) PATH '$.SpreadingTypeIDXOL',
-		tnm VARCHAR2(400) PATH '$.SpreadingTypeXOL', pct VARCHAR2(100) PATH '$.SpreadingTotalPctXOL')) jt
-		WHERE m.ID = :1 ORDER BY jt.si`, t), 4, id)
+		tnm VARCHAR2(400) PATH '$.SpreadingTypeXOL', pct VARCHAR2(100) PATH '$.SpreadingTotalPctXOL',
+		rnm VARCHAR2(100) PATH '$.RNMShare')) jt
+		WHERE m.ID = :1 ORDER BY jt.si`, t), 5, id)
 	if err != nil {
 		return models.MasterTreaty{}, false, err
 	}
 	for _, s := range share {
 		m.Share = append(m.Share, models.ShareXOL{SpreadingTypeIDXOL: s[1], SpreadingTypeXOL: s[2],
-			SpreadingTotalPctXOL: s[3]})
+			SpreadingTotalPctXOL: s[3], RNMShare: s[4]})
 	}
 	spr, err := a.banyak(ctx, fmt.Sprintf(`SELECT jt.si, jt.ri, jt.rn, jt.pct FROM %s m,
 		JSON_TABLE(m.JSONDATA, '$.Share[*]' COLUMNS (si FOR ORDINALITY, NESTED PATH '$.SpreadingListXOL[*]' COLUMNS

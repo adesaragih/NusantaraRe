@@ -260,15 +260,7 @@ func AdjClaimCNP(h *Halaman, n, idx int) error {
 	if kal.B(r, "TotalClaim").IsZero() { // 9
 		r["ClaimSpreaded"], r["AdjusterFee"], r["Salvage"], r["CNPOthersFee"] = "0", "0", "0", "0"
 	}
-	for _, s := range xol { // 11
-		if s["TreatyType"] == TreatyUR {
-			s["CNPReinstatement"] = "0"
-		} else {
-			s["CNPReinstatement"] = Teks(kal.Kali(kal.Kali(kal.BagiPega(kal.B(s, "TotalClaim"), kal.B(s, "CNPLimit")),
-				kal.B(s, "CNPMDP")), kal.BagiPega(kal.B(s, "CNPPctReinstate"), k100())))
-		}
-		s["CNPReinstatementRNM"] = Teks(kal.Kali(kal.B(s, "CNPReinstatement"), kal.BagiPega(kal.B(s, "ClaimPercentage"), k100())))
-	}
+	reinstatementXOL(&kal, xol) // 11
 	if err := kal.Galat(); err != nil {
 		return err
 	}
@@ -729,4 +721,17 @@ func SusunMuatanKasir(h *Halaman, n int, email, pelaku string, cfg KonfigKasir, 
 			LkuID: s["CurrencyID"], LbgID: s["IDOfBank"], TglBolehBayar: boleh, Email: email, UserInput: user})
 	}
 	return out, kal.Galat()
+}
+
+// reinstatementXOL = AdjClaimCNP_Act langkah 11: reinstatement premium tiap layer XOL Allocation akseptasi (UR = 0).
+func reinstatementXOL(kal *Kalkulator, xol []Baris) {
+	for _, s := range xol {
+		if s["TreatyType"] == TreatyUR {
+			s["CNPReinstatement"] = "0"
+		} else {
+			s["CNPReinstatement"] = Teks(kal.Kali(kal.Kali(kal.BagiPega(kal.B(s, "TotalClaim"), kal.B(s, "CNPLimit")),
+				kal.B(s, "CNPMDP")), kal.BagiPega(kal.B(s, "CNPPctReinstate"), k100())))
+		}
+		s["CNPReinstatementRNM"] = Teks(kal.Kali(kal.B(s, "CNPReinstatement"), kal.BagiPega(kal.B(s, "ClaimPercentage"), k100())))
+	}
 }

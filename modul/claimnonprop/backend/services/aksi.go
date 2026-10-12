@@ -62,6 +62,8 @@ type penanganAksi func(j *jalanAksi) error
 
 // aksiPanel - aksi panel detail akseptasi `Indeks` (AdjustmentDetailNP_Section dan modal komite / reinstatement).
 var aksiPanel = map[string]bool{"SetInterimXOL": true, "HapusKlaimAkseptasi": true, "HapusLossAkseptasi": true,
+	"TambahKlaimAkseptasi": true, "SetCurrencyAkseptasi": true, "HitungKlaimAkseptasi": true, "TambahLossAkseptasi": true,
+	"HitungLossAkseptasi": true, "HitungLossJumlahAkseptasi": true, "HitungXOLAkseptasi": true,
 	"AdjClaimCNP": true, "SetPayableTreatyNP": true, "PilihRekening": true, "PilihRekening2": true, "BukaKomite": true,
 	"CreateChildKomiteCNP": true, "HitServiceToKasir": true, "GenerateCACNP": true, "SaveCNPLayerList": true}
 
@@ -341,9 +343,26 @@ func init() {
 			return models.HapusBarisDaftar(j.h, models.JalurAdj(j.r.Indeks, models.AnakClaimAccept), j.r.Baris)
 		},
 		"HapusLossAkseptasi": func(j *jalanAksi) error {
-			return models.HapusBarisDaftar(j.h, models.JalurAdj(j.r.Indeks, models.AnakLossAlloc), j.r.Baris)
+			if err := models.HapusBarisDaftar(j.h, models.JalurAdj(j.r.Indeks, models.AnakLossAlloc), j.r.Baris); err != nil {
+				return err
+			}
+			return xolAkseptasi(j) // penyimpangan 12-10-2026: XOL Allocation mengikuti Loss Allocation
 		},
 		"AdjClaimCNP": func(j *jalanAksi) error { return models.AdjClaimCNP(j.h, j.r.Indeks, j.r.Baris) },
+		// grid Claim Acceptation / Loss Allocation akseptasi - penyimpangan OQ-CNP-33 (models/akseptasi_hitung.go)
+		"TambahKlaimAkseptasi": func(j *jalanAksi) error { return models.TambahKlaimAkseptasi(j.k, j.h, j.r.Indeks) },
+		"SetCurrencyAkseptasi": func(j *jalanAksi) error {
+			return lalu(models.SetCurrencyAkseptasi(j.k, j.h, j.m, j.r.Indeks, j.r.Baris), j)
+		},
+		"HitungKlaimAkseptasi": func(j *jalanAksi) error { return lalu(models.HitungKlaimAkseptasi(j.h, j.r.Indeks), j) },
+		"TambahLossAkseptasi":  func(j *jalanAksi) error { return models.TambahLossAkseptasi(j.h, j.r.Indeks) },
+		"HitungLossAkseptasi": func(j *jalanAksi) error {
+			return lalu(models.HitungLossAkseptasi(j.h, j.r.Indeks, j.r.Baris), j)
+		},
+		"HitungLossJumlahAkseptasi": func(j *jalanAksi) error {
+			return lalu(models.HitungLossJumlahAkseptasi(j.h, j.r.Indeks, j.r.Baris), j)
+		},
+		"HitungXOLAkseptasi": xolAkseptasi,
 		"SetPayableTreatyNP": func(j *jalanAksi) error {
 			if err := models.SetPayableNP(j.k, j.h, j.r.Indeks, j.r.Param); err != nil {
 				return err
@@ -362,4 +381,16 @@ func init() {
 		},
 		"SaveCNPLayerList": aksiSimpanDibayar,
 	}
+}
+
+// xolAkseptasi - XOL Allocation akseptasi `Indeks` disusun ulang dari Loss Allocation-nya (penyimpangan OQ-CNP-33,
+// keputusan pemakai 12-10-2026; models/akseptasi_hitung.go).
+func xolAkseptasi(j *jalanAksi) error { return models.HitungXOLAkseptasi(j.k, j.h, j.m, j.r.Indeks) }
+
+// lalu - galat langkah pertama, atau XOL Allocation akseptasi disusun ulang sesudahnya (`xolAkseptasi`).
+func lalu(err error, j *jalanAksi) error {
+	if err != nil {
+		return err
+	}
+	return xolAkseptasi(j)
 }

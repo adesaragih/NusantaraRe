@@ -283,6 +283,22 @@ func HitungXOL(k *Konteks, h *Halaman, m MasterTreaty, calc string, idx int, cur
 	h.SetelDaftar(DaftarXOL, nil)
 	h.SetelDaftar(DaftarSpreading, nil)
 	h.SetelDaftar(DaftarBreakQS, nil)
+	xol, err := alokasiXOL(k, h, m, loss, h.AmbilDaftar(DaftarClaimAmount))
+	if err != nil {
+		return err
+	}
+	if err := kal.Galat(); err != nil {
+		return err
+	}
+	h.SetelDaftar(DaftarXOL, xol)
+	return SusunSpreadingXOL(h, m) // 19, 21 (22 CountReinstatement_Act: grid NEVER, OQ-CNP-12)
+}
+
+// alokasiXOL = CountLossAllocation_act langkah 11-17: baris XOL Allocation (UR lalu layer master) dari Loss Allocation
+// ber-To XOL (`loss`) dan baris Claim Amount (`klaim`, kurs dan prorata per mata uang). Dipakai tingkat klaim
+// (`HitungXOL`) dan panel akseptasi (`HitungXOLAkseptasi`).
+func alokasiXOL(k *Konteks, h *Halaman, m MasterTreaty, loss, klaim []Baris) ([]Baris, error) {
+	var kal Kalkulator
 	limits := limitGrup(h, m) // 11-12
 	noRIP := ""
 	if len(m.Limits) > 0 { // `Local.NoRIPCalculation` di-set pada SETIAP Limits -> nilai Limits terakhir
@@ -302,7 +318,7 @@ func HitungXOL(k *Konteks, h *Halaman, m MasterTreaty, calc string, idx int, cur
 		g := &grupMU{cur: l["Currency"], curID: l["CurrencyID"], value: kal.B(l, "ClaimAmountAdjust"),
 			adj: kal.B(l, "AdjusterFee"), salv: kal.B(l, "Salvage"), oth: kal.B(l, "CNPOthersFee"),
 			kurs: apd.New(0, 0), prorate: apd.New(0, 0)}
-		for _, r := range h.AmbilDaftar(DaftarClaimAmount) { // 13.2
+		for _, r := range klaim { // 13.2
 			if r["Currency"] == g.cur {
 				g.curID, g.prorate, g.kurs = r["CurrencyID"], kal.B(r, "PctProrateClaim"), kal.B(r, "AltValue")
 			}
@@ -402,7 +418,7 @@ func HitungXOL(k *Konteks, h *Halaman, m MasterTreaty, calc string, idx int, cur
 			}
 			jenis, err := k.Acuan.JenisReasXOL(k.Ctxt(), nama) // 17.2.4
 			if err != nil {
-				return err
+				return nil, err
 			}
 			if li == 0 { // 17.2.5 baris UR
 				xol = append(xol, Baris{"TreatyType": TreatyUR, "TreatyName": TreatyUR, "ClaimEstimation": Teks(ur),
@@ -499,11 +515,7 @@ func HitungXOL(k *Konteks, h *Halaman, m MasterTreaty, calc string, idx int, cur
 			xol = append(xol, b)
 		}
 	}
-	if err := kal.Galat(); err != nil {
-		return err
-	}
-	h.SetelDaftar(DaftarXOL, xol)
-	return SusunSpreadingXOL(h, m) // 19, 21 (22 CountReinstatement_Act: grid NEVER, OQ-CNP-12)
+	return xol, kal.Galat()
 }
 
 // NamaLayerXOL = CountLossAllocation_act langkah 17.2.1 `InputSpreading.CARI1`: "XL " + digit pertama Layer + ST/ND/RD/TH

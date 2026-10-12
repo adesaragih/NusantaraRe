@@ -4,7 +4,12 @@ package models
 // Definition baca-saja). Port activity di paket ini tetap murni: setiap bacaan lewat antarmuka `Acuan`, diisi services
 // dari repository (Oracle) atau dari gudang tiruan (uji).
 
-import "context"
+import (
+	"context"
+	"strings"
+
+	"github.com/cockroachdb/apd/v3"
+)
 
 // MasterTreaty - halaman `pyWorkPage.TreatyInMaster` Non Prop: JSON master treaty (`GetLimitsTreatyIn_SQL`: M_TREATY_IN
 // UNION ALL M_TREATY_IN_EDM `where id = IDMaster`, lalu Java `adoptJSONObject` - SetValueClaimTNP_Act langkah 3-4).
@@ -67,7 +72,50 @@ type KursMaster struct {
 // ShareXOL - `TreatyInMaster.Share(n)` (spreading XoL, CountLossAllocation_act langkah 21).
 type ShareXOL struct {
 	SpreadingTypeIDXOL, SpreadingTypeXOL, SpreadingTotalPctXOL string
-	SpreadingListXOL                                           []SpreadingMaster
+	// RNMShare - `.RNMShare` baris Share (% RNM Share layer; dasar `NormalkanSpreadingManual`).
+	RNMShare         string
+	SpreadingListXOL []SpreadingMaster
+}
+
+// NormalkanSpreadingManual - spreading MANUAL master (Spreading Type kosong, grid `Reins Type · Pct Share`) ke bentuk
+// spreading bernama yang dibaca CountLossAllocation_act langkah 21: persen RELATIF terhadap bagian RNM (total 100).
+//
+// ⭐ 12-10-2026 (laporan pemakai, CLMNP-000017 / master 1002320): Spreading List klaim berpersen 40 padahal rincian
+// spreading master ORS 100 %. Spreading bernama (`FetchQSfromMasterXOL`) menyimpan persen relatif - total 100 di 761
+// dari 773 dokumen Non Prop DEV, rincian `QS (OR)` 40 / `QS (R/I)` 60, ORS 100. Spreading manual (`SetSpreadingXOL`,
+// "Total share must equal RNM share.!!") menyimpan persen TREATY yang jumlahnya = % RNM Share: dokumen Pega 1002304
+// 14 + 2,5 + 2,5 = 19, master 1002320 ORS 40 dari RNM 40. Summary XOL klaim sudah dikali % RNM Share, jadi persen
+// manual yang dipakai apa adanya memotong klaim dua kali (40 % × 40 %). Diubah: Pct ÷ % RNM Share × 100 - total 100,
+// ORS 100. `.RNMShare` baris Share, cadangan `rnmMaster`. Bilangan tak terbaca / % RNM 0 = dibiarkan.
+func NormalkanSpreadingManual(sh *ShareXOL, rnmMaster string) {
+	if strings.TrimSpace(sh.SpreadingTypeIDXOL) != "" || strings.TrimSpace(sh.SpreadingTypeXOL) != "" ||
+		len(sh.SpreadingListXOL) == 0 {
+		return
+	}
+	rnm := sh.RNMShare
+	if strings.TrimSpace(rnm) == "" {
+		rnm = rnmMaster
+	}
+	var kal Kalkulator
+	r := kal.Teks(".RNMShare", rnm)
+	if kal.Galat() != nil || !Lebih(r, apd.New(0, 0)) {
+		return
+	}
+	relatif := func(pct string) string {
+		return Teks(kal.Kali(kal.BagiPega(kal.Teks(".Pct", pct), r), k100()))
+	}
+	pcts := make([]string, len(sh.SpreadingListXOL))
+	for i, sp := range sh.SpreadingListXOL {
+		pcts[i] = relatif(sp.Pct)
+	}
+	total := relatif(sh.SpreadingTotalPctXOL)
+	if kal.Galat() != nil {
+		return
+	}
+	for i := range sh.SpreadingListXOL {
+		sh.SpreadingListXOL[i].Pct = pcts[i]
+	}
+	sh.SpreadingTotalPctXOL = total
 }
 
 // SpreadingMaster - `Share(1).SpreadingListXOL(k)`.

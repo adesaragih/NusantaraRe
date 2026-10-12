@@ -43,6 +43,11 @@ func HitungTurunan(h *Halaman) error {
 		if err := SetAccountNo(h, n); err != nil {
 			return err
 		}
+		idr, cedant, err := TotalKlaimAkseptasi(h, n)
+		if err != nil {
+			return err
+		}
+		b[PropTotalKlaimIDR], b[PropTotalCedantIDR] = idr, cedant
 	}
 	return nil
 }
