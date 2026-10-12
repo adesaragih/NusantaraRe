@@ -39,6 +39,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"nusantarare/inti/backend/uang"
 )
@@ -131,19 +132,30 @@ const JumlahKolomTotal = 6
 // mataUang adalah mata uang peserta. Bila kosong, mata uang baris pertama
 // yang mengisinya; bila baris pun tidak menyebut, hasilnya bermata uang
 // kosong - dan itu jujur, sebab memang tidak ada yang menyebutnya.
+//
+// ⛔ RALAT 10-10-2026 (uji DEV, CLMLF-000012 "bermata uang beragam: "IDR" dan "10026""): KODE dan PENGENAL tidak
+// pernah dibandingkan satu sama lain. `CURRENCY` / `mataUang` berisi KODE (IDR), `CURRENCY_ID` berisi PENGENAL tabel
+// CURRENCY (10026 = IDR, `GetCurrencyID` / lengkapiPengenalMataUang). Dulu penampung diisi kode peserta lalu
+// dibandingkan dengan CURRENCY_ID - setiap peserta berkode mata uang dengan baris berpengenal ditolak. Kini dua
+// pemeriksaan sejenis: kode baris vs kode peserta/baris, pengenal baris vs pengenal baris. Mata uang yang benar-benar
+// berbeda (IDR vs USD, atau 10026 vs pengenal USD) tetap ditolak.
 func HitungTotalPeserta(baris []BarisAdjustment, mataUang string) (TotalPeserta, error) {
-	kurs := mataUang
+	kurs := strings.TrimSpace(mataUang)
+	pengenal := ""
 	for _, b := range baris {
-		if b.CurrencyID == "" {
-			continue
+		if kode := strings.TrimSpace(b.JumlahKlaim.Currency); kode != "" {
+			if kurs == "" {
+				kurs = kode
+			} else if kode != kurs {
+				return TotalPeserta{}, fmt.Errorf("%w: %q dan %q", ErrTotalMataUangBeragam, kurs, kode)
+			}
 		}
-		if kurs == "" {
-			kurs = b.CurrencyID
-			continue
-		}
-		if b.CurrencyID != kurs {
-			return TotalPeserta{}, fmt.Errorf("%w: %q dan %q",
-				ErrTotalMataUangBeragam, kurs, b.CurrencyID)
+		if id := strings.TrimSpace(b.CurrencyID); id != "" {
+			if pengenal == "" {
+				pengenal = id
+			} else if id != pengenal {
+				return TotalPeserta{}, fmt.Errorf("%w: CURRENCY_ID %q dan %q", ErrTotalMataUangBeragam, pengenal, id)
+			}
 		}
 	}
 

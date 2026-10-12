@@ -96,6 +96,10 @@ func TestRuteDataPolisTerdaftar(t *testing.T) {
 		{http.MethodGet, "/api/polis-life/rincian-produk?id=100003"},
 		{http.MethodGet, "/api/polis-life/rate-produk?id=1"},
 		{http.MethodGet, "/api/polis-life/risk-produk?id=1"},
+		// Spreading retro (06-10-2026).
+		{http.MethodGet, "/api/polis-life/NBLF-1/peserta/UJI-D1/spreading"},
+		{http.MethodGet, "/api/polis-life/NBLF-1/spreading/rekap"},
+		{http.MethodGet, "/api/polis-life/NBLF-1/kesiapan-confirm"},
 	} {
 		w := httptest.NewRecorder()
 		h.ServeHTTP(w, httptest.NewRequest(r.metode, r.jalur, strings.NewReader("{}")))

@@ -679,10 +679,23 @@ func TestTCONolNamaTabelBaruDiKode(t *testing.T) {
 				// cek dari flat table treaty in" - Choose Master membaca
 				// Bordereaux / Accounting Mode dari tabel flat Treaty In.
 				//
+				// ⭐ NB Treaty In ikut dikecualikan sejak 11 Oktober 2026:
+				// izin pemakai ("izin menambahkan nbtreatyin ke daftar
+				// pengecualian penjaga di inti ... di berikan"). Penulisan
+				// `JSONDATA` `M_TREATY_IN` ditutup 7 Oktober 2026, jadi master
+				// Non-Prop baru dibaca dari tabel flat Treaty In
+				// (`repository/masterxol_tabel.go`, BACA-SAJA).
+				//
+				// ⭐ Claim Non Prop ikut dikecualikan sejak 11 Oktober 2026:
+				// izin pemakai ("lanjut + izin penjaga"). Alasan sama dengan NB
+				// Treaty In - master Non Prop tanpa dokumen JSON dibaca dari
+				// tabel flat Treaty In (`repository/master_tabel.go`,
+				// BACA-SAJA).
+				//
 				// ⚠️ Syarat NAMANYA tetap: tabel Treaty Contract Out yang
 				// disebut dari modul-modul ini tetap tertangkap.
 				switch pemilikJalur(jalur) {
-				case "treatyin", "treatyinadjustment", "claimprop":
+				case "treatyin", "treatyinadjustment", "claimprop", "nbtreatyin", "claimnonprop":
 					if milikTreatyIn(treatyin, m) {
 						continue
 					}

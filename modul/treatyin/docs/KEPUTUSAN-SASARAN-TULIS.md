@@ -115,7 +115,7 @@ masing masing table yg dia punya"*. Tiga keputusan tambahan hari itu:
 | Pertanyaan | Jawaban pemilik proses | Yang dibangun |
 |---|---|---|
 | `TREATY_IN` disentuh? | *"saat save boleh menyentuh table treatyin"* | kesembilan belas kolom `PEGA_TREATY_IN` ditulis (`INSERT` kontrak baru, `UPDATE` yang lama) |
-| Kurs `TREATYEXCHANGEYEARLY` | tambah & ubah saja | baris ber-ID diperbarui, baris baru ditambah (ID = situs ‖ `LPAD(TREATYEXCHANGE_SEQ, 4)`); ⛔ nol `DELETE` |
+| Kurs `TREATYEXCHANGEYEARLY` | tambah & ubah saja — ⚠️ **dibalik 10 Oktober 2026**, lihat §5.6 | baris ber-ID diperbarui, baris baru ditambah (ID = situs ‖ `LPAD(TREATYEXCHANGE_SEQ, 4)`); ~~nol `DELETE`~~ |
 | `PositionUsername` jalur naik | *"ambil namanya dari kelola user dan sesuaikan posisinya"* | `LOGIN_ID` akun aktif pemegang workbasket posisi berikutnya (`M_LOGIN_GO_WORKBASKET`), dipisah koma |
 
 **§2 (pemuat menghapus suntingan) TERJAWAB oleh jalan 1:** pemuat membaca `M_TREATY_IN.JSONDATA`,
@@ -354,3 +354,22 @@ Penyimpangan/yang tidak disalin (dinyatakan): lampiran (`M_ATTACHMENTTREATY_2` b
 tahun. Submit/Decline draf = DUA transaksi (Pega: satu `SaveTreatyIn`) — bila langkah kedua gagal,
 salinan tetap tersimpan sebagai draf Admin dan pesannya menyebut ID-nya. Kode:
 `backend/services/salin_kontrak.go`, `backend/handlers/rute_salin_kontrak.go`.
+
+### 5.6 · Grid Rate of Exchange per periode kontrak, dan Delete — 10 Oktober 2026
+
+Dua laporan pemakai hari itu atas kontrak Non-Prop `1002309` (01/01/2026–31/12/2026):
+
+1. *"ketika klik Save, Rate of Exchange bertambah"* — dua baris diisi, sembilan tampil. Grid membaca
+   SELURUH baris tahun kontrak, dan setiap kontrak 2026 yang di-Save menambahkan barisnya ke sana.
+   Pilihan pemilik proses: **"Saring periode"** — grid hanya menampilkan baris yang `Valid From`–`Valid Until`-nya
+   di dalam `Commencement`–`Expiry` kontrak (`services.KursGridKontrak`). Nol tabel, nol migrasi.
+2. *"buat jadi flexibel ketika add, delete dan save sesuai dengan jumlah yang ada"* — baris yang di-Delete
+   di grid kini DIHAPUS dari `TREATYEXCHANGEYEARLY` saat Save. Ini membalik "tambah & ubah saja" di atas
+   dan "tanpa hapus" modul `treatyexchangeyearly` (5 Oktober 2026) — untuk jalur grid Treaty In saja.
+
+| Aturan | Bentuknya |
+|---|---|
+| Kontrak yang dapat di-Save | grid = baris di periode kontrak, persis; Add/Delete/Save menghasilkan jumlah yang tampil |
+| Kontrak `Resolve Complete`, nol baris di periodenya | grid = seluruh tahun, seperti sebelumnya (1.302 kontrak di DEV, kurs 01/07–30/06 atas kontrak 01/01–31/12) |
+| Yang boleh dihapus | HANYA baris tahun kontrak yang berada di periode kontrak yang disimpan (`kursBolehDihapus`); yang lain dilewati |
+| Akibat yang diterima | kontrak berperiode PERSIS sama berbagi baris — menghapus di satu kontrak menghapus untuk yang lain, dan untuk modul pembaca tabel ini (`aggregate`, `treatycontractout`, `nbfacin`) |

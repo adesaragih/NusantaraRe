@@ -287,3 +287,51 @@ export async function unggahBerurutan(
   }
   return gagal
 }
+
+/** Stempel Pega `YYYYMMDDTHHMMSS(.SSS) GMT` → milidetik UTC; teks lain / kosong → null. */
+export function waktuPegaMs(teks: string): number | null {
+  const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(?:\.(\d+))?\s*GMT$/.exec(teks.trim())
+  if (!m) return null
+  const n = (i: number) => Number(m[i] ?? '')
+  const ms = Number(((m[7] ?? '') + '000').slice(0, 3))
+  return Date.UTC(n(1), n(2) - 1, n(3), n(4), n(5), n(6), ms)
+}
+
+/**
+ * Urutan TAMPIL grid History (Date / PIC / Comment): terbaru di atas (keputusan work owner 05-10-2026).
+ * Menurut waktu stempel menurun; tanggal sama atau tidak terurai → indeks asli menurun (baris yang
+ * tersimpan belakangan lebih baru). Baris tanpa stempel sah di bawah yang bertanggal.
+ *
+ * ⛔ Mengembalikan SALINAN berindeks - `commentList` di state TIDAK diurut ulang: ia ikut dikirim saat
+ * Save dan ditulis ulang menurut URUT, jadi membaliknya akan membalik urutan di database.
+ */
+export function urutKomentarTampil<T extends { date: string }>(daftar: readonly T[]): { k: T; i: number }[] {
+  return daftar
+    .map((k, i) => ({ k, i, w: waktuPegaMs(k.date) }))
+    .sort((a, b) => {
+      const wa = a.w ?? Number.NEGATIVE_INFINITY
+      const wb = b.w ?? Number.NEGATIVE_INFINITY
+      if (wa !== wb) return wb - wa
+      return b.i - a.i
+    })
+    .map(({ k, i }) => ({ k, i }))
+}
+
+/** Bussines untuk dibandingkan: tanpa spasi tepi, tidak peka huruf besar. */
+function kunciBisnis(nama: string): string {
+  return nama.trim().toUpperCase()
+}
+
+/**
+ * Pilihan `Plan Name` baris `i` tanpa plan yang Bussines-nya sudah dipakai baris lain PLAN LIST
+ * (keputusan work owner 05-10-2026: satu Bussines hanya sekali). Server tetap menolak ganda
+ * ("Bussines tidak boleh sama"); saringan ini mencegahnya sejak dipilih.
+ */
+export function saringPlanBisnis<T extends { business: string }>(
+  pilihan: readonly T[],
+  planList: readonly { name: string }[],
+  i: number,
+): T[] {
+  const terpakai = new Set(planList.filter((_, j) => j !== i).map((b) => kunciBisnis(b.name)).filter((n) => n !== ''))
+  return pilihan.filter((t) => !terpakai.has(kunciBisnis(t.business)))
+}

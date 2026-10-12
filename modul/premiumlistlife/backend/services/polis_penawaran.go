@@ -45,6 +45,11 @@ var (
 	// AC 3 tiket 01: "case tertutup tidak dapat dilanjutkan maupun diputuskan
 	// ulang".
 	ErrKasusPolisTertutup = errors.New("services: kasus polis sudah ditutup")
+
+	// ErrConfirmPenawaranTidakTersedia - `Confirm` di tahap penawaran untuk kasus
+	// bendera "0" (keputusan work owner 08-10-2026): penutupannya lewat Status
+	// Bind + Save Offer. 409 berpesan, nol tulisan.
+	ErrConfirmPenawaranTidakTersedia = errors.New("services: " + models.PesanConfirmPenawaranTidakTersedia)
 )
 
 // Penawaran melayani keputusan atas penawaran polis.
@@ -152,11 +157,30 @@ func (p *Penawaran) PutuskanDenganNomor(ctx context.Context, pelaku inti.Pelaku,
 	if err != nil {
 		return models.AkibatKeputusan{}, HasilSubmitSummary{}, err
 	}
+	// Pengaman (keputusan work owner 08-10-2026): Confirm tahap penawaran kasus bendera
+	// "0" ditolak SEBELUM gerbang lain dan sebelum tulisan apa pun. Save Offer Bind tidak
+	// lewat sini (`FormPenawaran.Simpan` → `terapkanDalam`).
+	if keadaan.Status == models.TahapPolisPenawaran && keputusan == models.KeputusanConfirm {
+		flag, err := repository.NewWorkPolis(p.svc.DB()).Bendera(ctx, keadaan.ID)
+		if err != nil {
+			return models.AkibatKeputusan{}, HasilSubmitSummary{}, err
+		}
+		if !models.ConfirmPenawaranTersedia(keadaan.Status, keputusan, flag) {
+			return models.AkibatKeputusan{}, HasilSubmitSummary{}, ErrConfirmPenawaranTidakTersedia
+		}
+	}
 	// ⛔ Tiket 01 bagian 3: `Confirm` di tahap penawaran menuntut isian wajib
 	// layar Input Offer SUDAH tersimpan (services/polis_isianpenawaran.go).
 	// `Decline` tidak digerbangi: penawaran yang ditolak tidak perlu lengkap.
 	if keadaan.Status == models.TahapPolisPenawaran && keputusan == models.KeputusanConfirm {
 		if err := p.periksaPenawaranLengkap(ctx, keadaan.ID); err != nil {
+			return models.AkibatKeputusan{}, HasilSubmitSummary{}, err
+		}
+	}
+	// Kesiapan Confirm Premium List Detail (keputusan work owner 06-10-2026): selama
+	// masih ada yang kurang, nomor tidak terbit dan kasus tidak ditutup - nol tulisan.
+	if keputusan == models.KeputusanConfirm {
+		if err := p.periksaSiapConfirm(ctx, pelaku, keadaan); err != nil {
 			return models.AkibatKeputusan{}, HasilSubmitSummary{}, err
 		}
 	}
@@ -196,9 +220,40 @@ func (p *Penawaran) terapkan(ctx context.Context, pelaku inti.Pelaku,
 	keadaan repository.KeadaanPolis, akibat models.AkibatKeputusan,
 	sebab string, saat time.Time) (HasilSubmitSummary, error) {
 
-	kerja := repository.NewWorkPolis(p.svc.DB())
 	var simpan HasilSubmitSummary
 	err := p.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
+		var err error
+		simpan, err = p.terapkanDalam(ctx, tx, pelaku, keadaan, akibat, sebab, saat)
+		return err
+	})
+	if err != nil {
+		return HasilSubmitSummary{}, err
+	}
+	// ⛔ TIKET 06 - efek keluar SESUDAH commit, dan hanya untuk jalur yang
+	// menyimpan (`InsertJsonPolisLife_Act` langkah 14-15). Hasilnya TIDAK
+	// menjadi galat: premium list sudah tersimpan, dan layanan luar yang
+	// gagal tidak boleh membuatnya tampak gagal (ADR-U-0008).
+	if akibat.SimpanPolis {
+		simpan.EfekKeluar = ringkasEfek(p.penyalur.Salurkan(ctx, outbox.MuatanEfek{
+			KlaimID: keadaan.ID,
+			AkunID:  pelaku.AkunID,
+			Waktu:   saat,
+		}))
+	}
+	return simpan, nil
+}
+
+// terapkanDalam - isi transaksi `terapkan`: simpan polis (bila jalurnya),
+// penutupan atau perpindahan, dan jejaknya, di transaksi MILIK PEMANGGIL.
+// Dipakai `terapkan` dan `Save Offer` Bind/Closed (keputusan work owner
+// 08-10-2026) - SATU jalur tutup. Efek keluar bukan urusannya (sesudah commit).
+func (p *Penawaran) terapkanDalam(ctx context.Context, tx *db.Tx, pelaku inti.Pelaku,
+	keadaan repository.KeadaanPolis, akibat models.AkibatKeputusan,
+	sebab string, saat time.Time) (HasilSubmitSummary, error) {
+
+	kerja := repository.NewWorkPolis(p.svc.DB())
+	var simpan HasilSubmitSummary
+	err := func() error {
 		if akibat.SimpanPolis {
 			var err error
 			simpan, err = p.svc.SummaryPremiumList().simpanDalam(ctx, tx, keadaan.ID, saat)
@@ -234,20 +289,9 @@ func (p *Penawaran) terapkan(ctx context.Context, pelaku inti.Pelaku,
 			AkunID:  pelaku.AkunID,
 			Waktu:   saat,
 		})
-	})
+	}()
 	if err != nil {
 		return HasilSubmitSummary{}, err
-	}
-	// ⛔ TIKET 06 - efek keluar SESUDAH commit, dan hanya untuk jalur yang
-	// menyimpan (`InsertJsonPolisLife_Act` langkah 14-15). Hasilnya TIDAK
-	// menjadi galat: premium list sudah tersimpan, dan layanan luar yang
-	// gagal tidak boleh membuatnya tampak gagal (ADR-U-0008).
-	if akibat.SimpanPolis {
-		simpan.EfekKeluar = ringkasEfek(p.penyalur.Salurkan(ctx, outbox.MuatanEfek{
-			KlaimID: keadaan.ID,
-			AkunID:  pelaku.AkunID,
-			Waktu:   saat,
-		}))
 	}
 	return simpan, nil
 }

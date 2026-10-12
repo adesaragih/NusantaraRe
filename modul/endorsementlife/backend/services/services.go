@@ -65,8 +65,12 @@ type Gudang interface {
 	Tandai(ctx context.Context, tx *db.Tx, kasusID, statusBaru string, p models.PilihanHapus) (int, error)
 	HitungRekap(ctx context.Context, tx *db.Tx, kasusID, tipe string) (int, error)
 	RekapKasus(ctx context.Context, tx *db.Tx, kasusID string) ([]map[string]string, error)
+	// PerbandinganKasus - jumlah peserta per (mata uang, kelas EDM_STATUS) - perbandingan summary (08-10-2026).
+	PerbandinganKasus(ctx context.Context, tx *db.Tx, kasusID, tipe string) ([]models.KelompokRekap, error)
 	// Tiket 07 - `SaveCSVEDMLife`.
 	AcuanCSV(ctx context.Context, tx *db.Tx, kasusID string) (models.AcuanCSV, bool, error)
+	// ContohPesertaCSV - nilai peserta Old pertama (baris contoh templat CSV, 10-10-2026).
+	ContohPesertaCSV(ctx context.Context, tx *db.Tx, kasusID string) (map[string]string, bool, error)
 	HapusPesertaBaru(ctx context.Context, tx *db.Tx, kasusID string) (int, error)
 	SisipPesertaCSV(ctx context.Context, tx *db.Tx, kasusID, plNumber string, baris []models.BarisCSV) (int, error)
 	// Tiket 08/04/09/11 - keputusan.
@@ -80,6 +84,10 @@ type Gudang interface {
 	TulisPesertaWarisan(ctx context.Context, tx *db.Tx, r repository.PesertaWarisanTulis) (int, error)
 	// TulisProduksiWarisan - satu baris `LIFEINPRODUCTION` (K4, `SaveLifeinProduction_SQL`).
 	TulisProduksiWarisan(ctx context.Context, tx *db.Tx, r repository.ProduksiWarisanTulis) (int, error)
+	// TulisJSONPolis - satu baris `JSON_POLIS` kasus yang diresmikan (keputusan work owner 08-10-2026).
+	TulisJSONPolis(ctx context.Context, tx *db.Tx, r repository.JSONPolisTulis) (int, error)
+	// HariClosing - hari tutup buku `TANGGAL_CLOSING` (periode produksi TGL_PROD JSON_POLIS).
+	HariClosing(ctx context.Context, tx *db.Tx) (int, error)
 }
 
 // Layanan memegang seluruh aturan modul ini di atas satu Gudang.

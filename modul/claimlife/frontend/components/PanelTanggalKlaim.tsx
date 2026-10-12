@@ -72,7 +72,7 @@ export function PanelTanggalKlaim({
       await ubahTanggalKlaim(klaimID, peserta.id, isi)
       sesudahSimpan?.()
     } catch (e) {
-      setGalat(pesanGalat(e) ?? 'Tanggal klaim gagal disimpan.')
+      setGalat(pesanGalat(e) ?? 'The claim dates could not be saved.')
     } finally {
       setSibuk(false)
     }
@@ -95,7 +95,7 @@ export function PanelTanggalKlaim({
         </label>
       ))}
       <button type="button" disabled={!boleh || sibuk} onClick={() => void simpan()}>
-        {sibuk ? 'Menyimpan…' : EDIT_DATE.simpan}
+        {sibuk ? 'Saving…' : EDIT_DATE.simpan}
       </button>
       {galat !== null && <span role="alert"> {galat}</span>}
     </p>

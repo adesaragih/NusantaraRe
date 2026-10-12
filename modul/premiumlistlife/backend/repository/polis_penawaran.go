@@ -5,7 +5,8 @@ package repository
 // Untuk apa berkas ini: membaca dan menulis kolom header `T_PREMIUM_LIST` yang
 // layar `Section/InputOfferLife.xml` isi, beserta riwayatnya `T_VIEW_SUGGEST`
 // (`Activity/AddHistorySuggest.xml`). Penggantinya `INSERTJSONOFFERLIFE` -
-// yang TIDAK dipanggil (spec §12): penawaran kini kolom bernama.
+// yang TIDAK dipanggil (spec §12): penawaran kini kolom bernama. Salinan datarnya
+// ke `JSON_OFFER_LIFE` (tanpa JSONDATA) ada di polis_jsonoffer.go (06-10-2026).
 //
 // ⛔ Setiap query menyebut skemanya lewat `Qualify` (ADR-U-0033), nol
 // `COMMIT` (ADR-U-0029); tulisan hanya di transaksi PEMANGGIL.

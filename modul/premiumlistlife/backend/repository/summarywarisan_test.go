@@ -20,6 +20,25 @@ import (
 // `ALL_SOURCE` DEV (commit 526fc93) - satu-satunya tempat nama kolomnya.
 const berkasProsedurSummary = "../../docs/dba-procedure-PEGA_M_LIFE_PREMIUM_SUMMARY.md"
 
+// blokSQLProsedur mengambil blok ```sql berkas dokumen tanpa nomor baris.
+//
+// ⛔ Akhir baris DINORMALKAN lebih dulu (CRLF → LF): berkas .md ini di index git ber-LF, tetapi
+// `core.autocrlf=true` di Windows menulisnya ber-CRLF di working tree (.gitattributes hanya
+// mengunci *.go dan *.sql). Asersi kolom VERBATIM tidak berubah - hanya pemisah barisnya.
+func blokSQLProsedur(isi string) (string, bool) {
+	isi = strings.ReplaceAll(isi, "\r\n", "\n")
+	m := regexp.MustCompile("(?s)```sql\n(.*?)```").FindStringSubmatch(isi)
+	if m == nil {
+		return "", false
+	}
+	nomor := regexp.MustCompile(`^\s*\d+ ?`)
+	var baris []string
+	for _, b := range strings.Split(m[1], "\n") {
+		baris = append(baris, nomor.ReplaceAllString(b, ""))
+	}
+	return strings.Join(baris, "\n"), true
+}
+
 // badanProsedurSummary membaca blok SQL berkas itu tanpa nomor baris.
 func badanProsedurSummary(t *testing.T) string {
 	t.Helper()
@@ -27,16 +46,29 @@ func badanProsedurSummary(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("membaca badan prosedur: %v", err)
 	}
-	m := regexp.MustCompile("(?s)```sql\n(.*?)```").FindStringSubmatch(string(isi))
-	if m == nil {
+	badan, ok := blokSQLProsedur(string(isi))
+	if !ok {
 		t.Fatal("blok SQL badan prosedur tidak terbaca; pembacanya yang rusak")
 	}
-	nomor := regexp.MustCompile(`^\s*\d+ ?`)
-	var baris []string
-	for _, b := range strings.Split(m[1], "\n") {
-		baris = append(baris, nomor.ReplaceAllString(b, ""))
+	return badan
+}
+
+// TestBlokSQLProsedurLFdanCRLF - berkas ber-LF dan ber-CRLF terbaca dengan hasil identik
+// (keputusan work owner 08-10-2026).
+func TestBlokSQLProsedurLFdanCRLF(t *testing.T) {
+	lf := "# UJI\n\n```sql\n1 INSERT INTO M_LIFE_PREMIUM_SUMMARY (ID,\n2   PL_NUMBER)\n3 VALUES (:1, :2);\n```\n"
+	crlf := strings.ReplaceAll(lf, "\n", "\r\n")
+	a, okA := blokSQLProsedur(lf)
+	b, okB := blokSQLProsedur(crlf)
+	if !okA || !okB || a != b {
+		t.Fatalf("LF %v %q / CRLF %v %q", okA, a, okB, b)
 	}
-	return strings.Join(baris, "\n")
+	if strings.Contains(b, "\r") || !strings.HasPrefix(a, "INSERT INTO M_LIFE_PREMIUM_SUMMARY (ID,\n  PL_NUMBER)") {
+		t.Errorf("hasil = %q", a)
+	}
+	if _, ok := blokSQLProsedur("tanpa blok sql"); ok {
+		t.Error("isi tanpa blok sql terbaca")
+	}
 }
 
 // pisahKoma memecah daftar SQL dipisah koma menjadi butir yang dipangkas.

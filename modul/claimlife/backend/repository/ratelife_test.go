@@ -1,6 +1,6 @@
 package repository
 
-// Pembaca RATE_LIFE - OQ-M7 (GILIRAN-17), izin sempit seperti butir bh.
+// Pembaca M_RATE_LIFE (dulu view RATE_LIFE, dibuang 10-10-2026) - OQ-M7 (GILIRAN-17), izin sempit seperti butir bh.
 
 import (
 	"context"

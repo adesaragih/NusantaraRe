@@ -58,7 +58,7 @@ export const TOMBOL = {
   /** `Section/InputOSClaimLife.xml:24489` `pyButtonLabel Select All` */
   pilihSemua: 'Select All',
   /** `Section/InputOSClaimLife.xml:17865` `<pyLabel>` — cabut peserta (OQ-M6). */
-  cabutPeserta: 'DELETE',
+  cabutPeserta: 'Delete',
 } as const
 
 /**
@@ -167,6 +167,48 @@ export const REGISTER = {
 } as const
 
 /**
+ * Teks layar Register untuk pendaftaran BANYAK premium list sekaligus - keputusan work owner 10-10-2026 (satu case
+ * per PL number + mata uang). ⛔ BUKAN korpus: Pega mendaftarkan satu polis per register, jadi teks ini tidak punya
+ * baris XML; sengaja di luar REGISTER yang cacahnya dikunci ke korpus.
+ */
+export const REGISTER_BANYAK = {
+  /** Tampilan Register (keputusan work owner 10-10-2026 "rapihkan tampilan"): label layar seragam bahasa Inggris. */
+  judulHalaman: 'Register Claim Life',
+  labelPL: 'Premium List No',
+  kolomPilih: 'Select',
+  kolomSertifikat: 'Certificate No',
+  kolomNama: 'Name of Insured',
+  /** Kolom DOB menggantikan "Policy No" ceding (keputusan work owner 10-10-2026). */
+  kolomTanggalLahir: 'Date of Birth',
+  kolomNo: 'No',
+  daftarkan: 'Register Claim',
+  kosongTerpilih: 'No insured selected yet.',
+  /** Modal konfirmasi Register Claim (10-10-2026). */
+  judulKonfirmasi: 'Register Claim',
+  kalimatKonfirmasi: '{n} claim case(s) will be created:',
+  lanjutkan: 'Continue?',
+  batal: 'Cancel',
+  mendaftarkan: 'Registering…',
+  /** Pemberitahuan inbox sesudah Register berhasil (10-10-2026): {n} jumlah case, {ids} Case ID dipisah koma. */
+  terdaftar: '{n} claim case(s) registered: {ids}',
+  tutup: 'Close',
+  terpilih: 'Selected insured',
+  /** {n} = jumlah case (PL + mata uang). */
+  jumlahCase: '{n} claim case(s) will be created',
+  /** Judul kelompok: "PL {pl}" + chip mata uang + "{n} insured". */
+  judulKelompokPL: 'PL {pl}',
+  jumlahPesertaKelompok: '{n} insured',
+  hapus: 'Remove',
+  kosongkan: 'Clear selection',
+  hasil: 'Claim cases created',
+  /** Hasil Register: Case ID (CLMLF-) - nomor klaim lahir di Save to RNM (10-10-2026). */
+  kolomNomor: 'Case ID',
+  kolomPL: 'PL Number',
+  kolomUang: 'Currency',
+  kolomJumlah: 'Insured',
+} as const
+
+/**
  * Label layar Outstanding — VERBATIM `Section/InputOSClaimLife.xml`.
  *
  * ⚠️ Kesebelas medan datanya SAMA dengan layar Register dan terikat
@@ -199,6 +241,117 @@ export const OUTSTANDING = {
   statusDiperbarui: 'Updated Status',
   /** b12468 */
   tanggalRealisasi: 'Realization Date',
+} as const
+
+/**
+ * Layar Outstanding mengikuti Pega (10-10-2026) — `Section/InputOSClaimLife.xml` korpus
+ * `kelvin/InboxClaimLife (Done)`, nomor baris berkas itu.
+ */
+export const OS_PEGA = {
+  /** Judul kasus Pega "Claim Life (<Case ID>)". */
+  judulKasus: 'Claim Life',
+  /** Tab b1956 / b5909 / b14576 `pyTitle`. */
+  tabRegister: 'Register Claim',
+  tabPolis: 'Policy Details',
+  tabKlaim: 'Claim Details',
+  /** b15524 `pyTitle`. */
+  pesertaDetail: 'Participant Details',
+  /** b3054 */
+  plNumber: 'PL Number',
+  /** b3475 */
+  katastrofe: 'Catastrophe',
+  /** b3781 */
+  isKpr: 'Is KPR',
+  /** b4726 */
+  stnc: 'STNC Treaty',
+  /** b4905 */
+  catatanKatastrofe: 'Catastrophe Note',
+  /** Kepala kolom grid b16101 / b16256 / b16406. */
+  kolomPL: 'PL Number',
+  kolomNama: 'Name of Insured',
+  kolomLahir: 'Date of Birth',
+  /** b17597 `pyCheckboxCaption`. */
+  accept: 'Accept',
+  /** b16609 `pyLabel` - tombol kepala kolom Accept. */
+  pilihSemua: 'Select All',
+  /** b16839 / b17865 */
+  hapus: 'Delete',
+  /** b19413 */
+  simpan: 'Save',
+  /** DetailPolisLife b631 `pyLabel` (11-10-2026). */
+  viewDetail: 'View Detail',
+  /** Kepala kolom grid DetailPolisLife b4700–b6082. */
+  kolomPolis: ['No.', 'Policy No', 'Certificate No', 'Name of Insured', 'Sex', 'Date of Birth', 'Age', 'Plan', 'Begin Date', 'Effective Date', 'Expired Date'],
+  /** Rincian peserta `ClaimLifeDetailGCNM.xml` (11-10-2026), label VERBATIM dengan barisnya. */
+  rincian: {
+    sertifikat: 'Certificate No', // b1395
+    polis: 'Policy No', // b1574
+    plan: 'Plan', // b1753
+    umur: 'Age', // b1932
+    sex: 'Sex', // b2111
+    // Kelompok rincian peserta (11-10-2026, "tidak perlu ikuti pega 100%, hanya jadikan referensi").
+    kelompokTertanggung: 'Insured',
+    kelompokPertanggungan: 'Coverage',
+    kelompokTanggalKlaim: 'Claim Dates',
+    lokasiKematian: 'Location of Death', // screenshot 11-10-2026 - TIDAK ada di korpus
+    tempatKematian: 'Place of Death',
+    negara: 'Country',
+    provinsi: 'Province',
+    kota: 'City',
+    catatanAdmin: 'Admin Notes', // b2588
+    dob: 'DOB', // b8691
+    mulai: 'Begin Date', // b8877
+    expired: 'Expired Date', // b9063
+    efektif: 'Effective Date', // b9249
+    valuasiMulai: 'Valuation Begin Date', // b9435
+    valuasiSelesai: 'Valuation Expired Date', // b9623
+    terima: 'Received Date', // b10187
+    stncTreaty: 'STNC Treaty', // b10373
+    dol: 'Date of Loss', // b11099
+    terimaKlaim: 'Claim Received Date', // b11383
+    maksKadaluarsa: 'Max Expired Claim', // b11921
+    maksTerima: 'Max Claim Received', // b12102
+    dokumenLengkap: 'Document Complete Date', // b12663
+    stncData: 'STNC Data', // b12902
+    maksData: 'Max Data Received', // b13381
+    konfirmasi: 'Confirmation Date', // b13803
+    editDate: 'Edit Date', // b14115
+    analis: 'Claim Analyst', // b15194
+    medis: 'Medical Advisor', // kotak diagnosa + Recommendation (b4908/b6401 pyPosition MedicalAdvisor; judul 11-10-2026)
+    rekomendasi: 'Recommendation', // b7316 `.RECOMMENDATION` b7323
+    tabAdjustment: 'Adjustment', // b16543
+    tabDokumen: 'Document', // b23293
+    kolomAdjustment: ['Status', 'Outstanding Date', 'Acceptation No', 'Acceptation Date'], // grid .AdjustmentList
+  },
+  /** Dialog AdjustmentDetail_Section (11-10-2026), label VERBATIM. */
+  adjustment: {
+    mataUang: 'Currency', // b1484
+    persen: 'Percent Claim (%)', // b1649
+    dibayar: 'Claim Paid', // b1972
+    shareRnm: 'Share Nusantara Re', // b2679
+    retensi: 'Ceding Retention', // b2843
+    klaimRnm: 'Claim RNM', // b3005
+    sumReasured: 'Sum Reinsured', // b4133 (ejaan korpus Sum Reasured diperbaiki 12-10-2026)
+    sumInsured: 'Sum Insured', // b4296
+    shareRetro: 'Share Retro', // b4459
+    retroShare: 'Retroceded Share', // b4649
+    simpan: 'Save to Outstanding', // b16169
+    payableTo: 'Payable To', // b5922
+    namaBank: 'Name of Bank', // b6116
+    cabangBank: 'Branch of Bank', // b6863
+    nomorRekening: 'Account No', // b7042
+    // Bagian Spreading (11-10-2026, bentuk tab Spreading PremiumList Life — PANEL_SPREADING premiumlistlife/labels.ts).
+    spreading: 'Spreading',
+    kolomSpreading: ['Reins Type', 'Retroceded Share', 'Reinsurer', '% Share', 'Amount', 'Rate', 'Commission %', 'Ovr Comm %', 'Gross', 'Net'],
+    kolomSpreadingAngka: [false, true, false, true, true, true, true, true, true, true],
+    kolomRekap: ['Reinsurer', 'Currency', 'Premium Spread Gross', 'Premium Spread Net'],
+    // Subjudul (keputusan work owner 11-10-2026 "tambahkan yang di bawahnya sebagai summary spreading").
+    spreadingDetail: 'Spreading Detail',
+    spreadingSummary: 'Spreading Summary',
+    total: 'Total',
+  },
+  /** Konfirmasi Delete — TAMBAHAN aplikasi (Pega tanpa konfirmasi, b18021; permintaan 10-10-2026). */
+  konfirmasiHapus: 'Remove this insured from the claim?',
 } as const
 
 /**
@@ -259,7 +412,7 @@ export const DETAIL = {
   /** b14115 `pyLabel` -> `pyLocalAction ShowEditClaimLife` b14144. */
   ubahTanggal: 'Edit Date',
   /** b12124 `pyLabelPreview` -> `.MAXCLAIM_RECEIVED` b12131 (butir bk), read-only. */
-  maxClaimReceived: 'MAX CLAIM RECEIVED',
+  maxClaimReceived: 'Max Claim Received',
   /** b22641 `pyLabel` -> `pyActivity SaveAdjustment_Act` b22665. */
   simpanAdjustment: 'Save Adjustment',
   /**
@@ -308,11 +461,11 @@ export const DETAIL = {
  */
 export const EDIT_DATE = {
   /** b1069 → `.CLAIM_RECEIVED_DATE` b1076. */
-  terimaKlaim: 'CLAIM RECEIVED DATE',
+  terimaKlaim: 'Claim Received Date',
   /** b1381 → `.COMPLETE_DATE` b1387. */
-  dokumenLengkap: 'DOCUMENT COMPLETE DATE',
+  dokumenLengkap: 'Document Complete Date',
   /** b1619 → `.CONFIRMATION_DATE` b1626. */
-  konfirmasi: 'CONFIRMATION DATE',
+  konfirmasi: 'Confirmation Date',
   /** b1910 `pyLabel` → `UpdateDateClaimLife_Act` b1929. */
   simpan: 'Save',
 } as const
@@ -467,11 +620,13 @@ export const TOMBOL_KOMITE = {
  */
 export const DIAGNOSA = {
   /** b4188 `pyValue` — kepala kolom pertama. */
-  kolomNama: 'DIAGNOSE',
+  kolomNama: 'Diagnose',
   /** b4337 `pyValue` — kepala kolom kedua. */
-  kolomIcd: 'ICD CODE',
+  kolomIcd: 'ICD Code',
   /** b4490 `pyValue` — kepala kolom ketiga. */
-  kolomKelompok: 'GROUP DIAGNOSE',
+  kolomKelompok: 'Group Diagnose',
+  /** Subjudul grid di kotak MEDICAL ADVISOR, gaya RECOMMENDATION (keputusan work owner 12-10-2026). */
+  subjudul: 'Disease',
   /** b4690 `pyLabel` -> `addRow` b4700 lalu `refresh` b4730. */
   tambah: 'Add',
   /**
@@ -492,19 +647,28 @@ export const DIAGNOSA = {
  * `InboxPremiumList` (`pyFieldLabel` b721/b735/b764): worklist `KomiteRouter` tidak punya section inbox sendiri.
  */
 export const TABEL_KOMITE = {
-  judul: 'Inbox Komite',
-  kosong: 'Tidak ada kasus komite yang menunggu keputusan Anda.',
+  // 11-10-2026 (work owner): teks layar berbahasa Inggris, sejajar Inbox Claim Life; fungsi tidak berubah.
+  judul: 'Committee Inbox',
+  kosong: 'No committee cases are waiting for your decision.',
   kasusId: 'Case ID',
   tglUpdate: 'Update Date/Time',
   statusWork: 'Work Status',
-  nomorKlaim: 'Klaim induk',
-  tingkat: 'Tingkat',
-  nilaiKlaim: 'Nilai klaim',
-  mataUang: 'CURRENCY',
-  statusBaris: 'Status baris',
+  nomorKlaim: 'Parent Claim',
+  tingkat: 'Level',
+  nilaiKlaim: 'Claim Amount',
+  mataUang: 'Currency',
+  statusBaris: 'Row Status',
+  /** Work Status kasus komite terbuka (STATUS_WORK kosong; daftar hanya memuat yang menunggu keputusan pelaku). */
+  menungguKeputusan: 'Waiting for decision',
+  /** Akun tanpa antrian Claim Life DAN tanpa kasus komite (12-10-2026). */
+  kosongAkun: 'No Claim Life or committee cases for your account.',
   /** Laporan "perlu intervensi" — tiket 08 Komite Claim Life, tidak ada di korpus (ADR-0015). */
-  laporan: 'Perlu intervensi hari ini',
-  laporanKosong: 'Laporan hari ini: tidak ada efek keluar yang perlu intervensi.',
+  laporan: 'Needs intervention today',
+  laporanKosong: "Today's report: no outgoing effects need intervention.",
+  /** Pencacah baris: "<n> of <total>". */
+  dari: 'of',
+  /** Kata penghubung laporan: "<jenis> — <keadaan> since <waktu>". */
+  sejak: 'since',
   /** `[tidak ada di korpus]` - modul Komite Claim Life tidak dipasang bagi akun ini. */
-  takTerpasang: 'Kasus komite ini tidak dapat dibuka di sini: modul Komite Claim Life tidak aktif.',
+  takTerpasang: 'This committee case cannot be opened here: the Komite Claim Life module is not active.',
 } as const

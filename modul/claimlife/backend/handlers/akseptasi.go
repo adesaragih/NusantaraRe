@@ -25,7 +25,7 @@ import (
 func simpanAdjustment(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		nomor, err := svc.Akseptasi().DenganJejak(jejak.PerekamJejakOracle(svc)).
@@ -35,48 +35,48 @@ func simpanAdjustment(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 
 		switch {
 		case errors.Is(err, inti.ErrTanpaIdentitas):
-			galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+			galat.Tulis(w, http.StatusUnauthorized, "The request has no user identity.")
 			return
 		case errors.Is(err, inti.ErrTanpaWewenang):
 			// 403: yang boleh mengaksep adalah PEMEGANG TAHAP klaim ini -
 			// Outstanding oleh ReasLifeAdmin, Medical Check oleh
 			// ReasLifeMedicalAdvisor, Claim Analis oleh ReasLifeSPV.
 			galat.Tulis(w, http.StatusForbidden,
-				"hanya pemegang tahap klaim ini yang dapat mengaksep barisnya")
+				"Only the holder of this claim stage can accept its rows.")
 			return
 		case errors.Is(err, services.ErrPesertaTidakDipilih):
 			galat.Tulis(w, http.StatusConflict,
-				"peserta belum dipilih untuk diklaim")
+				"The insured has not been selected for the claim.")
 			return
 		case errors.Is(err, services.ErrBarisSudahBernomorAkseptasi):
-			galat.Tulis(w, http.StatusConflict, "baris sudah punya nomor akseptasi")
+			galat.Tulis(w, http.StatusConflict, "The row already has an acceptance number.")
 			return
 		case errors.Is(err, services.ErrBarisBukanOutstanding):
 			galat.Tulis(w, http.StatusConflict,
-				"hanya baris Outstanding yang dapat diaksep")
+				"Only Outstanding rows can be accepted.")
 			return
 		case errors.Is(err, services.ErrTypeTidakDikenal):
 			galat.Tulis(w, http.StatusUnprocessableEntity,
-				"Type klaim tidak dikenal; nomor akseptasi tidak dapat diterbitkan")
+				"The claim type is not recognized; the acceptance number cannot be issued.")
 			return
 		case errors.Is(err, kontrak.ErrKodeBisnisBelumTersimpan):
 			// 501: temuan audit A0 - kolomnya belum ada, dan nomor akseptasi
 			// memuatnya. Bukan kerusakan, melainkan yang belum dibangun.
 			galat.Tulis(w, http.StatusNotImplemented,
-				"kode bisnis klaim belum tersimpan; nomor akseptasi belum dapat dirakit")
+				"The claim business code is not saved yet; the acceptance number cannot be built.")
 			return
 		case errors.Is(err, services.ErrNomorAkseptasiBerganda):
 			galat.Tulis(w, http.StatusConflict,
-				"nomor akseptasi yang terbit sudah dipakai; coba lagi")
+				"The issued acceptance number is already in use; please try again.")
 			return
 		case errors.Is(err, kontrak.ErrKasusSudahTertutup):
-			galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+			galat.Tulis(w, http.StatusConflict, "The case is already closed and cannot be changed.")
 			return
 		case errors.Is(err, galat.ErrPermintaanTidakSah):
 			galat.Tulis(w, http.StatusBadRequest, err.Error())
 			return
 		case err != nil:
-			galat.Tulis(w, http.StatusInternalServerError, "gagal mengaksep baris")
+			galat.Tulis(w, http.StatusInternalServerError, "Failed to accept the row.")
 			return
 		}
 

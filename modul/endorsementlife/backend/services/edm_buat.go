@@ -61,8 +61,10 @@ func (l *Layanan) fakta(ctx context.Context, tx *db.Tx, nomorPolis, edmType stri
 		return f, models.Versi{}, err
 	}
 	// 3.10 b2319: pembayaran hanya berarti bila `EdmType=="3"` - dan skema
-	// Arasapas tidak dibaca sama sekali di luar itu.
-	if ada && edmType == models.EdmTypeBatal {
+	// Arasapas tidak dibaca sama sekali di luar itu. Gerbang 5 DINONAKTIFKAN SEMENTARA
+	// (`models.GerbangPembayaranAktif`, keputusan work owner 10-10-2026): saat mati, Arasapas tidak dibaca
+	// dan `SudahDibayar` tetap false.
+	if models.GerbangPembayaranAktif && ada && edmType == models.EdmTypeBatal {
 		dibayar, err := l.gudang.SudahDibayar(ctx, models.NomorInvoiceArasapas(nomorPolis))
 		if errors.Is(err, repository.ErrArasapasTakTerbaca) {
 			l.catat(fmt.Sprintf("endorsement life: gerbang 5 polis %q: %v", nomorPolis, err))
@@ -81,8 +83,9 @@ func (l *Layanan) Kelayakan(ctx context.Context, p inti.Pelaku, m MasukanKelayak
 	if err := inti.WajibIdentitas(p); err != nil {
 		return models.Kelayakan{}, err
 	}
-	np := strings.TrimSpace(m.NomorPolis)
-	f, _, err := l.fakta(ctx, nil, np, m.EdmType)
+	// Nomor endorsement diterima: akhiran "/<angka>" dibuang (keputusan work owner 10-10-2026).
+	np, akhiran, adaAkhiran := models.NomorPolisDariMasukan(m.NomorPolis)
+	f, v, err := l.fakta(ctx, nil, np, m.EdmType)
 	if err != nil {
 		return models.Kelayakan{}, err
 	}
@@ -90,7 +93,17 @@ func (l *Layanan) Kelayakan(ctx context.Context, p inti.Pelaku, m MasukanKelayak
 	if pesan == nil {
 		pesan = []string{}
 	}
-	return models.Kelayakan{Pesan: pesan, Boleh: len(pesan) == 0 && models.PeriksaEdmType(m.EdmType) == nil}, nil
+	k := models.Kelayakan{
+		Pesan: pesan, Boleh: len(pesan) == 0 && models.PeriksaEdmType(m.EdmType) == nil,
+		NomorPolis: np, AdaAkhiran: adaAkhiran, AkhiranMasukan: akhiran, PolisAda: f.PolisAda,
+	}
+	// Versi terakhir = PRODKE terbesar (`VersiBerjalan`), bukan akhiran yang diketik.
+	if f.PolisAda {
+		if k.AkhiranVersiTerakhir = models.AkhiranVersi(v.ProdKe); k.AkhiranVersiTerakhir != "" {
+			k.NomorVersiTerakhir = np + "/" + k.AkhiranVersiTerakhir
+		}
+	}
+	return k, nil
 }
 
 // MasukanKasus adalah isian `EndorsmentLife_Section` yang membuat kasus.
@@ -99,6 +112,9 @@ type MasukanKasus struct {
 	EdmType    string `json:"edmType"`
 	EdmDate    string `json:"edmDate"`
 	Deskripsi  string `json:"description"`
+	// Sub-jenis EDM Type (keputusan work owner 07-10-2026, migrasi 483).
+	EdmTypePerubahanData string `json:"edmTypePerubahanData"`
+	EdmTypeBatal         string `json:"edmTypeBatal"`
 }
 
 // HasilBuat - kasus baru dan cacah salinannya.
@@ -119,8 +135,12 @@ func (l *Layanan) BuatKasus(ctx context.Context, p inti.Pelaku, m MasukanKasus) 
 	if err := inti.WajibIdentitas(p); err != nil {
 		return HasilBuat{}, err
 	}
-	np := strings.TrimSpace(m.NomorPolis)
+	// Nomor endorsement diterima: OLD_POLICY_NO = PL Number tanpa akhiran; versi tetap VersiBerjalan (10-10-2026).
+	np, _, _ := models.NomorPolisDariMasukan(m.NomorPolis)
 	if err := models.PeriksaEdmType(m.EdmType); err != nil {
+		return HasilBuat{}, fmt.Errorf("%w: %v", ErrMasukanTidakSah, err)
+	}
+	if err := models.PeriksaSubJenisEdm(m.EdmType, m.EdmTypePerubahanData, m.EdmTypeBatal); err != nil {
 		return HasilBuat{}, fmt.Errorf("%w: %v", ErrMasukanTidakSah, err)
 	}
 	tgl := strings.TrimSpace(m.EdmDate)
@@ -143,7 +163,7 @@ func (l *Layanan) BuatKasus(ctx context.Context, p inti.Pelaku, m MasukanKasus) 
 			return err
 		}
 		if len(rusak) > 0 {
-			l.catat(fmt.Sprintf("endorsement life: tanggal kepala warisan tak terbaca, dikosongkan: %s", strings.Join(rusak, ", ")))
+			l.catat(fmt.Sprintf("endorsement life: tanggal/angka kepala warisan tak terbaca, dikosongkan: %s", strings.Join(rusak, ", ")))
 		}
 		id, err := l.gudang.PengenalKasusBaru(ctx, tx)
 		if err != nil {
@@ -151,6 +171,7 @@ func (l *Layanan) BuatKasus(ctx context.Context, p inti.Pelaku, m MasukanKasus) 
 		}
 		if err := l.gudang.SisipKasus(ctx, tx, repository.KasusTulis{
 			ID: id, NomorPolis: np, EdmType: m.EdmType, EdmDate: tgl, EdmNote: strings.TrimSpace(m.Deskripsi),
+			EdmTypePerubahanData: m.EdmTypePerubahanData, EdmTypeBatal: m.EdmTypeBatal,
 			ProdKe: v.ProdKe + 1, Pembuat: p.AkunID, Kepala: kepala,
 		}); err != nil {
 			if errors.Is(err, repository.ErrKasusTerbukaGanda) {

@@ -15,6 +15,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	inti "nusantarare/inti/backend"
@@ -45,6 +46,9 @@ type barisInboxJSON struct {
 	NomorPolis string `json:"nomorPolis"`
 	NamaBisnis string `json:"namaBisnis"`
 	MataUang   string `json:"mataUang"`
+	// 11-10-2026: kolom "PL Number" (pengganti Policy No) dan "Update Operator Name".
+	PLNumber     string `json:"plNumber"`
+	UpdateOpName string `json:"updateOpName"`
 }
 
 type halamanInboxJSON struct {
@@ -78,22 +82,22 @@ func bilanganKueri(r *http.Request, nama string, bawaan int) (int, bool) {
 func kotakMasuk(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		nomorTahap, sah := bilanganKueri(r, "tahap", int(models.TahapOutstanding))
 		if !sah {
-			galat.Tulis(w, http.StatusBadRequest, "parameter tahap harus bilangan 1..4")
+			galat.Tulis(w, http.StatusBadRequest, "The stage must be a number from 1 to 4.")
 			return
 		}
 		halaman, sah := bilanganKueri(r, "halaman", 1)
 		if !sah {
-			galat.Tulis(w, http.StatusBadRequest, "parameter halaman harus bilangan")
+			galat.Tulis(w, http.StatusBadRequest, "The page must be a number.")
 			return
 		}
 		ukuran, sah := bilanganKueri(r, "ukuran", 0)
 		if !sah {
-			galat.Tulis(w, http.StatusBadRequest, "parameter ukuran harus bilangan")
+			galat.Tulis(w, http.StatusBadRequest, "The page size must be a number.")
 			return
 		}
 		if halaman < 1 {
@@ -106,25 +110,28 @@ func kotakMasuk(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 		offset := (halaman - 1) * services.BatasUkuran(ukuran)
 
 		hal, err := svc.KotakMasuk().Ambil(r.Context(), inti.PelakuDari(r, stubPelaku),
-			tahap, offset, ukuran)
+			tahap, offset, ukuran, r.URL.Query().Get("cari"))
 		switch {
+		case errors.Is(err, services.ErrCariInboxTidakSah):
+			galat.Tulis(w, http.StatusBadRequest, "Search text must be 2 to 100 characters.")
+			return
 		case errors.Is(err, inti.ErrTanpaIdentitas):
-			galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+			galat.Tulis(w, http.StatusUnauthorized, "The request has no user identity.")
 			return
 		case errors.Is(err, services.ErrTahapTidakSah):
-			galat.Tulis(w, http.StatusBadRequest, "tahap harus 1..4")
+			galat.Tulis(w, http.StatusBadRequest, "The stage must be 1 to 4.")
 			return
 		case errors.Is(err, inti.ErrTanpaWewenang):
 			// ⛔ 403, BUKAN daftar kosong. Daftar kosong terbaca sebagai
 			// "tidak ada pekerjaan".
-			galat.Tulis(w, http.StatusForbidden, "peran tidak memegang tahap ini")
+			galat.Tulis(w, http.StatusForbidden, "Your role does not hold this stage.")
 			return
 		case err != nil:
 			// ⚠️ Sebabnya DICATAT di log server (GILIRAN-12 paket 3): uji asap
 			// DEV menjumpai satu 500 sesaat di sini yang tidak dapat
 			// direproduksi, dan tanpa baris log ia tidak dapat ditelusuri.
 			log.Printf("kotak masuk Claim Life: %v", err)
-			galat.Tulis(w, http.StatusInternalServerError, "gagal membaca kotak masuk")
+			galat.Tulis(w, http.StatusInternalServerError, "Failed to load the inbox.")
 			return
 		}
 
@@ -145,12 +152,30 @@ func kotakMasuk(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 				CaseID: b.CaseID, ID: b.WorkID, Tahap: b.Tahap,
 				CreateOpName: b.CreateOpName, TglCreate: stempel,
 				// Status sebagai KATA - `models.StatusBaris.String()`.
-				Status:     kontrak.StatusBarisDariKode(b.StatusKlaim).String(),
+				Status:     kataStatusInbox(b.StatusKlaim),
 				NomorKlaim: b.NomorKlaim, NomorPolis: b.NomorPolis,
+				PLNumber: b.PLNumber, UpdateOpName: b.UpdateOpName,
 				NamaBisnis: b.NamaBisnis, MataUang: b.MataUang,
 			})
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(keluar)
 	}
+}
+
+// kataStatusInbox - kolom `Work Status` kotak masuk dalam bahasa Inggris (10-10-2026), dari STS_REJECT header klaim.
+//
+// ⛔ Header TANPA keputusan (NULL - case yang baru didaftarkan, belum Save to RNM) = "Outstanding": kasusnya memang di
+// antrian Outstanding Claim. Dulu `kontrak.StatusBarisDariKode("")` menjawab "Tidak diketahui" untuk setiap case
+// baru. Kosakata kontrak (inti, dipakai layar Detail) tidak diubah - pemetaan ini khusus kotak masuk.
+func kataStatusInbox(kode string) string {
+	switch strings.TrimSpace(kode) {
+	case "", kontrak.KodeOutstanding:
+		return "Outstanding"
+	case kontrak.KodeAksep:
+		return "Accepted"
+	case kontrak.KodeDitolak:
+		return "Rejected"
+	}
+	return "Unknown"
 }

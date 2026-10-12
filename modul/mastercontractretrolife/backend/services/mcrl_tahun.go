@@ -18,6 +18,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
@@ -81,8 +82,24 @@ func (l *Layanan) SimpanTahun(ctx context.Context, p inti.Pelaku, m TahunMasuk, 
 		return models.TahunTreaty{}, err
 	}
 	t.UserID = p.AkunID
+	idSendiri := ""
+	if !baru {
+		idSendiri = m.ID
+	}
 	var hasil models.TahunTreaty
 	err = l.tx(ctx, func(tx *db.Tx) error {
+		// Kunci tabel lebih dulu, lalu baca di dalam tx: dua simpan bersamaan tidak
+		// dapat sama-sama lolos pemeriksaan di bawah (keputusan work owner 06-10-2026).
+		if err := l.gudang.KunciTahunTreaty(ctx, tx); err != nil {
+			return err
+		}
+		semua, err := l.gudang.DaftarTahunTx(ctx, tx)
+		if err != nil {
+			return err
+		}
+		if err := periksaTahunUnik(semua, idSendiri, t); err != nil {
+			return err
+		}
 		if baru {
 			id, err := l.gudang.SisipTahun(ctx, tx, t)
 			if err != nil {
@@ -105,9 +122,36 @@ func (l *Layanan) SimpanTahun(ctx context.Context, p inti.Pelaku, m TahunMasuk, 
 				l.catat(fmt.Sprintf("master contract retro life: treaty year %s copied to %d child rows%s", t.ID, n, oleh(p)))
 			}
 		}
-		var err error
 		hasil, err = l.ambilTahun(ctx, tx, t.ID)
 		return err
 	})
 	return hasil, err
+}
+
+// periksaTahunUnik - aturan keunikan tahun treaty, di dalam tx sesudah kunci:
+//   - TRANSACTION YEAR dan UNDERWRITING YEAR masing-masing hanya SATU baris
+//     (keputusan work owner 05-10-2026);
+//   - periode START/END DATE tidak bertabrakan dengan tahun treaty lain (inklusif;
+//     bersambung boleh) - keputusan work owner 06-10-2026.
+//
+// Saat Edit, baris itu sendiri (idSendiri) dikecualikan.
+func periksaTahunUnik(semua []models.TahunTreaty, idSendiri string, t models.TahunTreaty) error {
+	var pesan []string
+	if tr, uw := models.TahunTreatyGanda(semua, idSendiri, t.TreatyYear, t.UnderwritingYear); tr != nil || uw != nil {
+		if tr != nil {
+			pesan = append(pesan, fmt.Sprintf(PesanTahunTransaksiGanda, strings.TrimSpace(t.TreatyYear), tr.ID))
+		}
+		if uw != nil {
+			pesan = append(pesan, fmt.Sprintf(PesanTahunUWGanda, strings.TrimSpace(t.UnderwritingYear), uw.ID))
+		}
+	}
+	if lain := models.PeriodeTahunBertabrakan(semua, idSendiri, t.StartDate, t.EndDate); lain != nil {
+		const f = "02/01/2006"
+		pesan = append(pesan, fmt.Sprintf(PesanPeriodeBertabrakan, t.StartDate.Format(f), t.EndDate.Format(f),
+			lain.ID, lain.StartDate.Format(f), lain.EndDate.Format(f)))
+	}
+	if len(pesan) > 0 {
+		return fmt.Errorf("%w: %s", ErrMasukanTidakSah, strings.Join(pesan, " "))
+	}
+	return nil
 }

@@ -54,7 +54,9 @@ import (
 // "Asia/Jakarta")+Local.NextMonth+"01T050000.000 GMT"`.
 //
 // ⚠️ Nol pemakai hari ini: `ProdDateTime` hanya hidup di JSON halaman (langkah
-// 5 b1237), dan `JSON_POLIS` tidak lagi ditulis (pl1); ia juga bukan muatan
+// 5 b1237) dan `JSON_POLIS.TGL_PROD`. Sejak 06-10-2026 `JSON_POLIS` ditulis lagi
+// tanpa `DATA_JSON`, tetapi TGL_PROD-nya memakai aturan periode PL Number
+// (`TanggalProduksi`, polis_tglprod.go), BUKAN ambang ini; ia juga bukan muatan
 // `convertJsonNusareToProduction` (`tglInput` = `.pxCreateDateTime`). Penjaga
 // "nol ambang tertanam" (ambangperiode_test.go) tetap berlaku untuk periode
 // dan penomoran. Uji: `TestAmbangProdDateTimeTertanamB1170`.

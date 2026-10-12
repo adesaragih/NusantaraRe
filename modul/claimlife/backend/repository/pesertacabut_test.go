@@ -62,17 +62,29 @@ func TestSQLCabutPesertaMenandaiBukanMenghapus(t *testing.T) {
 // /code-review): nama fungsi telanjang meloloskan fungsi senama di berkas
 // lain, dan `STS_HAPUS` di komentar bukan saringan.
 var pengecualianSaringCabut = map[string]string{
-	"pohonklaim.go:Simpan":              "menyisip peserta baru saat pendaftaran - belum ada yang dapat dicabut",
-	"pohonklaim.go:HapusFisik":          "hanya dipakai uji - membersihkan klaim uji utuh",
-	"pohonklaim.go:Dampak":              "dampak hapus klaim UTUH (masih 405) - peserta tercabut ikut terhapus",
-	"diagnosa.go:tabel":                 "pembantu nama tabel diagnosa; SQL-nya di sqlAmbilDiagnosa (diperiksa di bawah)",
-	"klaimlife.go:PerbaruiTanggalKlaim": "SQL-nya di sqlTanggalKlaim (diperiksa di bawah)",
-	"klaimlife.go:SudahSaveRNM":         "SQL-nya di sqlSudahSaveRNM (diperiksa di bawah)",
+	"pohonklaim.go:Simpan":                       "menyisip peserta baru saat pendaftaran - belum ada yang dapat dicabut",
+	"pohonklaim.go:HapusFisik":                   "hanya dipakai uji - membersihkan klaim uji utuh",
+	"pohonklaim.go:Dampak":                       "dampak hapus klaim UTUH (masih 405) - peserta tercabut ikut terhapus",
+	"diagnosa.go:tabel":                          "pembantu nama tabel diagnosa; SQL-nya di sqlAmbilDiagnosa (diperiksa di bawah)",
+	"klaimlife.go:PerbaruiTanggalKlaim":          "SQL-nya di sqlTanggalKlaim (diperiksa di bawah)",
+	"klaimlife.go:SudahSaveRNM":                  "SQL-nya di sqlSudahSaveRNM (diperiksa di bawah)",
+	"pesertainapp.go:PesertaAktifDiKlaimLain":    "SQL-nya di sqlPesertaAktifDiKlaimLain (diperiksa di bawah) - cek ganda in-app Register 10-10-2026",
+	"isianoutstanding.go:TertanggungPeserta":     "SQL-nya di sqlTertanggungPeserta (diperiksa di bawah) - grid Participant Details 10-10-2026",
+	"isianoutstanding.go:SetelAcceptPeserta":     "SQL-nya di sqlSetelAcceptPeserta (diperiksa di bawah) - Accept layar Outstanding 10-10-2026",
+	"isianoutstanding.go:SetelCatatanAdmin":      "SQL-nya di sqlSetelCatatanAdmin (diperiksa di bawah) - Admin Notes 11-10-2026",
+	"analis.go:SetelCatatanAnalis":               "SQL-nya di sqlSetelCatatanAnalis (diperiksa di bawah) - catatan Claim Analyst 12-10-2026",
+	"medis.go:SetelRekomendasi":                  "SQL-nya di sqlSetelRekomendasi (diperiksa di bawah) - Recommendation 11-10-2026",
+	"claimrnm.go:SetelClaimRNM":                  "SQL-nya di sqlSetelClaimRNM (diperiksa di bawah) - Claim RNM 11-10-2026",
+	"claimrnm.go:SetelTanggalPeserta":            "SQL-nya di sqlSetelTanggalPeserta (diperiksa di bawah) - lima tanggal 11-10-2026",
+	"dokumenunggah.go:CacahDokumenPesertaAccept": "SQL-nya di sqlCacahDokumenPesertaAccept (diperiksa di bawah) - proteksi Send to Medical 11-10-2026",
+	"inbox.go:AmbilInbox":                        "SQL-nya di sqlInbox (diperiksa di bawah) - PL Number kotak masuk 11-10-2026",
 }
 
 // wajibSaringCabut - pembangun SQL yang menyentuh tabel peserta lewat
 // parameter, sehingga tidak tertangkap pencarian Qualify.
-var wajibSaringCabut = []string{"sqlAmbilDiagnosa", "sqlTanggalKlaim", "sqlSudahSaveRNM"}
+var wajibSaringCabut = []string{"sqlAmbilDiagnosa", "sqlTanggalKlaim", "sqlSudahSaveRNM", "sqlPesertaAktifDiKlaimLain",
+	"sqlTertanggungPeserta", "sqlSetelAcceptPeserta", "sqlSetelCatatanAdmin", "sqlSetelClaimRNM",
+	"sqlSetelTanggalPeserta", "sqlInbox", "sqlCacahDokumenPesertaAccept", "sqlSetelRekomendasi", "sqlSetelCatatanAnalis"}
 
 var polaFungsi = regexp.MustCompile(`(?m)^func (\([^)]*\) )?([A-Za-z0-9_]+)\(`)
 

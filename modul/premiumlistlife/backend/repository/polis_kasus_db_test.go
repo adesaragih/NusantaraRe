@@ -50,7 +50,7 @@ func TestKasusPolisMenulisPembuatDanWaktu(t *testing.T) {
 		t.Fatal(err)
 	}
 	dalamTx(func(tx *intidb.Tx) error {
-		return kerja.SisipKasusBaru(ctx, tx, id, awal.DenganPembuat("UJI-AKUN"), time.Now())
+		return kerja.SisipKasusBaru(ctx, tx, id, awal.DenganPembuat("UJI-AKUN"), "UJI-AKUN", time.Now())
 	})
 	lahir, err := kerja.Keadaan(ctx, id)
 	if err != nil {

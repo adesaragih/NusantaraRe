@@ -38,6 +38,8 @@ dipensiunkan 1 Oktober 2026.
 | `frontend/` | `pages/` `labels.ts` `api.ts` `menu.ts` `rute.tsx` dan berkas `*.test.ts` |
 | `docs/` | spec, tiket (`issues/`), grilling, PARITAS, LAPORAN, OQ — dulu `.scratch/premiumlist-life/` |
 
+> **10-10-2026 (keputusan work owner: "view rate_life sudah tidak digunakan, sekarang gunakan tabel M_RATE_LIFE")**: view `RATE_LIFE` dibuang di DEV (ORA-00942). Calculate CSV (QR) dan Retro Detail / View Rate membaca tabel flat `M_RATE_LIFE` (kolom sama, baca-saja; `repository.ViewRateProduk`). Rujukan: `modul/riratelife/MODUL.md` RALAT R7.
+
 ## Migrasi
 
 Rentang `050-079` *(ralat 30-09-2026: dulu tertulis `050–079` di panduan deploy; sempat `050-099` lalu `050-089` -

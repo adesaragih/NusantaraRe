@@ -67,6 +67,10 @@ func TestSimpanDalamUrutanTerkunci(t *testing.T) {
 		"summaryWarisan.Ganti(",
 		"ringkas.SumberWarisan(",
 		"warisan.Ganti(",
+		// 06-10-2026: LIFEINPRODUCTION sesudah PL Number + WPC, di transaksi yang sama.
+		"NewProduksiLife(s.svc.DB()).Ganti(ctx, tx, polisID, nomor.Nomor)",
+		// 06-10-2026: JSON_POLIS sesudah LIFEINPRODUCTION, di transaksi yang sama.
+		"repository.NewJSONPolis(s.svc.DB()).Ganti(ctx, tx, polisID, nomor.Nomor, tglProd)",
 	}
 	lalu := -1
 	for _, jejak := range urut {
@@ -96,19 +100,29 @@ func TestSimpanSebelumTutupDalamSatuTransaksi(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Sejak 08-10-2026 isi transaksinya di `terapkanDalam` (dipakai juga Save Offer
+	// Bind/Closed); `terapkan` membuka SATU transaksi dan memanggilnya di dalamnya.
 	badan := badanFungsi(t, string(isi), "func (p *Penawaran) terapkan(")
 	iTx := strings.Index(badan, "DalamTransaksi(ctx")
-	iGerbang := strings.Index(badan, "if akibat.SimpanPolis")
-	iSimpan := strings.Index(badan, ".simpanDalam(ctx, tx,")
-	iTutup := strings.Index(badan, "kerja.TutupKasus(")
-	if iTx < 0 || iGerbang < 0 || iSimpan < 0 || iTutup < 0 {
-		t.Fatalf("terapkan kehilangan salah satu dari: transaksi, gerbang SimpanPolis, simpanDalam, TutupKasus")
-	}
-	if !(iTx < iGerbang && iGerbang < iSimpan && iSimpan < iTutup) {
-		t.Error("urutan terapkan harus: transaksi → gerbang SimpanPolis → simpanDalam → TutupKasus")
+	iDalam := strings.Index(badan, "p.terapkanDalam(ctx, tx,")
+	if iTx < 0 || iDalam < iTx {
+		t.Fatalf("terapkan harus memanggil terapkanDalam DI DALAM transaksinya")
 	}
 	if n := strings.Count(badan, "DalamTransaksi("); n != 1 {
 		t.Errorf("terapkan membuka %d transaksi, mau 1", n)
+	}
+	dalam := badanFungsi(t, string(isi), "func (p *Penawaran) terapkanDalam(")
+	iGerbang := strings.Index(dalam, "if akibat.SimpanPolis")
+	iSimpan := strings.Index(dalam, ".simpanDalam(ctx, tx,")
+	iTutup := strings.Index(dalam, "kerja.TutupKasus(")
+	if iGerbang < 0 || iSimpan < 0 || iTutup < 0 {
+		t.Fatalf("terapkanDalam kehilangan salah satu dari: gerbang SimpanPolis, simpanDalam, TutupKasus")
+	}
+	if !(iGerbang < iSimpan && iSimpan < iTutup) {
+		t.Error("urutan terapkanDalam harus: gerbang SimpanPolis → simpanDalam → TutupKasus")
+	}
+	if strings.Contains(dalam, "DalamTransaksi(") {
+		t.Error("terapkanDalam memakai transaksi pemanggil, tidak membuka sendiri")
 	}
 }
 

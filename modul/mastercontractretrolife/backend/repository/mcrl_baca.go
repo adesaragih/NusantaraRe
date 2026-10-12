@@ -195,6 +195,15 @@ func (g *Gudang) DaftarTahun(ctx context.Context) ([]models.TahunTreaty, error) 
 	return daftar(ctx, g.db, q, KolomTahun, keTahun, "treaty year")
 }
 
+// DaftarTahunTx - seluruh tahun treaty dibaca di dalam tx (sesudah KunciTahunTreaty).
+func (g *Gudang) DaftarTahunTx(ctx context.Context, tx *db.Tx) ([]models.TahunTreaty, error) {
+	q, err := g.siapkan(TabelTahun, sqlPilih(KolomTahun, "", "ID ASC"))
+	if err != nil {
+		return nil, err
+	}
+	return daftar(ctx, g.kueri(tx), q, KolomTahun, keTahun, "treaty year")
+}
+
 // AmbilTahun membaca satu tahun treaty (di dalam tx bila ada).
 func (g *Gudang) AmbilTahun(ctx context.Context, tx *db.Tx, id string) (models.TahunTreaty, error) {
 	q, err := g.siapkan(TabelTahun, sqlPilih(KolomTahun, "ID = :1", ""))
@@ -222,9 +231,13 @@ func (g *Gudang) AmbilKontrak(ctx context.Context, tx *db.Tx, id string) (models
 	return satu(ctx, g.kueri(tx), q, KolomKontrak, keKontrak, "treaty contract", id)
 }
 
-// DaftarReinsurer - reinsurer satu kontrak, `ID DESC` (RD b896).
+// UrutReinsurer - Reinsurer List urut ID MENAIK (keputusan work owner 06-10-2026;
+// RD b896 `.ID DESC` tidak lagi ditiru).
+const UrutReinsurer = "ID ASC"
+
+// DaftarReinsurer - reinsurer satu kontrak, urut UrutReinsurer.
 func (g *Gudang) DaftarReinsurer(ctx context.Context, tx *db.Tx, tahunID, kontrakID string) ([]models.Reinsurer, error) {
-	q, err := g.siapkan(TabelReinsurer, sqlPilih(KolomReinsurer, "TREATYYEARID = :1 AND TREATYCONTRACTID = :2", "ID DESC"))
+	q, err := g.siapkan(TabelReinsurer, sqlPilih(KolomReinsurer, "TREATYYEARID = :1 AND TREATYCONTRACTID = :2", UrutReinsurer))
 	if err != nil {
 		return nil, err
 	}

@@ -424,6 +424,11 @@ type BarisUnggah struct {
 	Nomor int
 	// Nilai berkunci NAMA KOLOM CSV, huruf besar.
 	Nilai map[string]string
+	// QR - bahan hitung Type QR presisi penuh (diisi HitungPesertaQR bila baris
+	// terhitung) untuk spreading retro (keputusan work owner 06-10-2026).
+	QR *HasilBarisQR
+	// Spreading - hasil spreading retro baris ini (Calculate CSV, Type QR).
+	Spreading []LapisanSpreading
 }
 
 // Penolakan adalah satu alasan sebuah baris ditolak.
@@ -589,7 +594,11 @@ const KolomPeriodeQR = "PERIOD_MM"
 //
 // RATE ikut sejak 05-10-2026: Calculate CSV Type QR menghitungnya dan
 // `T_PREMIUM_LIST_DETAIL.RATE` (migrasi 052) harus benar-benar tertulis.
-var KolomUangUnggahTambahan = []string{"DEDUCTION", "RI_ADMIN_FEE", "SUM_AT_RISK_GROSS", "FACTOR", "RATE"}
+//
+// SUM_AT_RISK_RETRO dan RETROCEDED_SHARE ikut sejak 06-10-2026 (keputusan work owner):
+// Type QR menghitungnya, Type lain dari CSV apa adanya (kosong → NULL).
+var KolomUangUnggahTambahan = []string{"DEDUCTION", "RI_ADMIN_FEE", "SUM_AT_RISK_GROSS", "FACTOR", "RATE",
+	KolomSumAtRiskRetro, KolomRetrocededShare}
 
 // KolomUangTersimpan - seluruh kolom uang unggahan yang divalidasi bentuknya,
 // dinormalkan desimal komanya, dan disimpan: `KolomUangUnggah` lalu

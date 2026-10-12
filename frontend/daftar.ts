@@ -96,7 +96,7 @@ export function rakitModulFrontend(menu: BerkasMenu, rute: BerkasRute, layar: Be
       if (!m.halaman.includes(m.halamanAwal)) {
         throw new Error(`daftar modul: modul/${folder}/frontend/menu.ts: halaman awal "${m.halamanAwal}" bukan halaman modul itu`)
       }
-      for (const a of m.menuAtas ?? []) {
+      for (const a of mm?.menuAtas ?? []) {
         if (!m.halaman.includes(a.halaman)) {
           throw new Error(`daftar modul: modul/${folder}/frontend/menu.ts: menuAtas "${a.halaman}" bukan halaman modul itu`)
         }
@@ -106,10 +106,11 @@ export function rakitModulFrontend(menu: BerkasMenu, rute: BerkasRute, layar: Be
         kelompok: m.kelompok,
         halaman: m.halaman,
         halamanAwal: m.halamanAwal,
-        ...(m.antreanBeranda !== undefined ? { antreanBeranda: m.antreanBeranda } : {}),
-        ...(m.daftarBeranda !== undefined ? { daftarBeranda: m.daftarBeranda } : {}),
-        ...(m.menuAtas !== undefined ? { menuAtas: m.menuAtas } : {}),
-        ...(m.formBaruBerjendela === true ? { formBaruBerjendela: true } : {}),
+        ...(mm?.antreanBeranda !== undefined ? { antreanBeranda: mm.antreanBeranda } : {}),
+        ...(mm?.daftarBeranda !== undefined ? { daftarBeranda: mm.daftarBeranda } : {}),
+        ...(mm?.menuAtas !== undefined ? { menuAtas: mm.menuAtas } : {}),
+        ...(mm?.formBaruBerjendela === true ? { formBaruBerjendela: true } : {}),
+        ...(l !== undefined ? { tanpaMenu: true as const } : {}),
         Rute: r,
       }
     })

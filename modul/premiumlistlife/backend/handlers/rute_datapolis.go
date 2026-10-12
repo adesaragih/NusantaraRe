@@ -29,7 +29,6 @@ import (
 	"nusantarare/inti/backend/galat"
 	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/premiumlistlife/backend/models"
-	"nusantarare/modul/premiumlistlife/backend/repository"
 	"nusantarare/modul/premiumlistlife/backend/services"
 )
 
@@ -181,7 +180,7 @@ func rincianProdukPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc
 		}
 		hasil, err := svc.FormDataPolis().RincianProduk(r.Context(), inti.PelakuDari(r, stubPelaku),
 			r.URL.Query().Get("id"))
-		if errors.Is(err, repository.ErrRincianProdukTidakAda) {
+		if errors.Is(err, services.ErrRincianProdukTidakAda) {
 			galat.Tulis(w, http.StatusNotFound, "Product not found in Master Product Name Life.")
 			return
 		}

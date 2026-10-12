@@ -97,6 +97,12 @@ func KolomCSVTersimpan() []KolomCSV {
 type AcuanCSV struct {
 	Plan         string
 	PolicyHolder string
+	// Validasi wajib isi (keputusan work owner 10-10-2026, `edm_csvwajib.go`):
+	// Tipe - `.Type` kasus (kolom wajib per Type); MataUang - mata uang peserta Old kasus (CURRENCY harus salah
+	// satunya; kosong = tidak diperiksa); Sertifikat - CERTIFICATE_NO peserta Old kasus (`KunciSertifikat`).
+	Tipe       string
+	MataUang   []string
+	Sertifikat map[string]bool
 }
 
 // PesanCSV - satu penolakan berbaris dan berkolom (AC 37). `Baris` 1 = baris
@@ -152,27 +158,42 @@ func UangCSVEDM(teks string) (string, error) {
 	return desimalCSV(strings.Replace(s, ",", ".", 1))
 }
 
-// urai mengurai satu nilai menurut jenisnya; kosong = "" (NULL) kecuali uang.
+// urai mengurai satu nilai menurut jenisnya; kosong = "" (NULL) kecuali uang. Galatnya berkalimat layar
+// (`edm_csvpesan.go`, 10-10-2026) yang menyebut nama kolom.
 func urai(c KolomCSV, teks string) (string, error) {
 	s := strings.TrimSpace(teks)
 	switch c.Jenis {
 	case CSVUang:
-		return UangCSVEDM(s)
+		v, err := UangCSVEDM(s)
+		switch {
+		case errors.Is(err, ErrUangRibuan):
+			return "", fmt.Errorf(PesanCSVRibuan, c.Properti)
+		case errors.Is(err, ErrUangTerlaluPresisi):
+			return "", fmt.Errorf(PesanCSVDesimal, c.Properti)
+		case err != nil:
+			return "", fmt.Errorf(PesanCSVBukanAngka, c.Properti)
+		}
+		return v, nil
 	case CSVDesimal:
 		if s == "" {
 			return "", nil
 		}
-		if strings.Contains(s, ",") {
-			return "", fmt.Errorf("%w: %q (FACTOR is not comma-normalised in Pega)", ErrUangTakTerurai, teks)
+		// FACTOR tidak dinormalkan koma di Pega: koma ditolak.
+		v, err := desimalCSV(s)
+		switch {
+		case strings.Contains(s, ","), errors.Is(err, ErrUangTakTerurai):
+			return "", fmt.Errorf(PesanCSVFactor, c.Properti)
+		case err != nil:
+			return "", fmt.Errorf(PesanCSVDesimal, c.Properti)
 		}
-		return desimalCSV(s)
+		return v, nil
 	case CSVBulat:
 		if s == "" {
 			return "", nil
 		}
 		n, err := strconv.Atoi(s)
 		if err != nil || n < -batasNumber5 || n > batasNumber5 {
-			return "", fmt.Errorf("models: %q is not a whole number up to 5 digits", teks)
+			return "", fmt.Errorf(PesanCSVBulat, c.Properti)
 		}
 		return strconv.Itoa(n), nil
 	case CSVTanggal, CSVTeksTanggal:
@@ -181,7 +202,7 @@ func urai(c KolomCSV, teks string) (string, error) {
 		}
 		t, err := time.Parse(bentukTanggalCSV, s)
 		if err != nil {
-			return "", fmt.Errorf("models: %q is not a DD/MM/YYYY date", teks)
+			return "", fmt.Errorf(PesanCSVTanggal, c.Properti)
 		}
 		if c.Jenis == CSVTeksTanggal {
 			return t.Format(bentukTanggalCSV), nil
@@ -189,7 +210,7 @@ func urai(c KolomCSV, teks string) (string, error) {
 		return t.Format(time.DateOnly), nil
 	}
 	if len(s) > batasTeksCSV {
-		return "", fmt.Errorf("models: text longer than %d bytes", batasTeksCSV)
+		return "", fmt.Errorf(PesanCSVTeksPanjang, c.Properti)
 	}
 	return s, nil
 }
@@ -201,6 +222,17 @@ func RapikanBarisCSV(nomor int, baris map[string]string, acuan AcuanCSV) (map[st
 	nilai := map[string]string{}
 	var pesan []PesanCSV
 	for _, c := range PemetaanCSV {
+		// PLAN / POLICY_HOLDER dari polis, seperti PremiumList Life `TerapkanDataPolisKePeserta` (keputusan work owner
+		// 10-10-2026, menyimpang dari Pega 4.1 b2466/b2495): nilai CSV DIABAIKAN - tidak divalidasi, selalu ditimpa
+		// nilai polis (`AcuanCSV.Plan` / `PolicyHolder`, lihat `NilaiPolisCSV`).
+		switch c.Properti {
+		case "PLAN":
+			nilai[c.Kolom] = strings.TrimSpace(acuan.Plan)
+			continue
+		case "POLICY_HOLDER":
+			nilai[c.Kolom] = strings.TrimSpace(acuan.PolicyHolder)
+			continue
+		}
 		v, err := urai(c, baris[c.Properti])
 		if err != nil {
 			pesan = append(pesan, PesanCSV{Baris: nomor, Kolom: c.Properti, Pesan: err.Error()})
@@ -210,13 +242,8 @@ func RapikanBarisCSV(nomor int, baris map[string]string, acuan AcuanCSV) (map[st
 			nilai[c.Kolom] = v
 		}
 	}
-	// 4.1 b2466/b2495: `PLAN` dan `POLICY_HOLDER` sama dengan peserta pertama.
-	if strings.TrimSpace(baris["PLAN"]) != strings.TrimSpace(acuan.Plan) {
-		pesan = append(pesan, PesanCSV{Baris: nomor, Kolom: "PLAN", Pesan: PesanCSVPlan})
-	}
-	if strings.TrimSpace(baris["POLICY_HOLDER"]) != strings.TrimSpace(acuan.PolicyHolder) {
-		pesan = append(pesan, PesanCSV{Baris: nomor, Kolom: "POLICY_HOLDER", Pesan: PesanCSVPlan})
-	}
+	// Wajib isi, mata uang, sertifikat yang sudah ada (keputusan work owner 10-10-2026).
+	pesan = append(pesan, periksaWajibBaris(nomor, baris, acuan)...)
 	return nilai, pesan
 }
 
@@ -224,12 +251,12 @@ func RapikanBarisCSV(nomor int, baris map[string]string, acuan AcuanCSV) (map[st
 var ErrJudulCSV = errors.New("models: invalid CSV header")
 
 // JudulCSV menormalkan judul (huruf besar, tanpa BOM) dan menolak judul
-// ganda serta berkas tanpa `PLAN`/`POLICY_HOLDER` (acuan 4.1 tak dapat
-// diperiksa). Judul yang bukan properti 4.1 DIABAIKAN dan dikembalikan agar
+// ganda serta berkas tanpa kolom wajib Type ini (`kolomJudulKurang`, keputusan work owner 10-10-2026; dulu hanya
+// `PLAN`/`POLICY_HOLDER` - acuan 4.1) - SELURUH kolom yang kurang disebut sekaligus. Judul yang bukan properti 4.1 DIABAIKAN dan dikembalikan agar
 // tampil di tinjauan - unduhan `Generate Data Detail` korpus sendiri memuat
 // `STATUS` dan `OVRR_COMM` (`GenerateDataDtlLife_act` b276) yang tidak
 // dipetakan 4.1; menolaknya membuat berkas Pega tak dapat diunggah ulang.
-func JudulCSV(judul []string) ([]string, []string, error) {
+func JudulCSV(judul []string, tipe string) ([]string, []string, error) {
 	dikenal := map[string]bool{}
 	for _, c := range PemetaanCSV {
 		dikenal[c.Properti] = true
@@ -241,7 +268,11 @@ func JudulCSV(judul []string) ([]string, []string, error) {
 	for i, j := range judul {
 		n := strings.ToUpper(strings.TrimSpace(strings.TrimPrefix(j, bom)))
 		if lihat[n] {
-			return nil, nil, fmt.Errorf("%w: duplicate column %q", ErrJudulCSV, n)
+			// Kalimat layar (10-10-2026); aturannya tetap: judul ganda (termasuk dua judul kosong) menolak berkas.
+			if n == "" {
+				return nil, nil, galatCSV(ErrJudulCSV, PesanCSVJudulKosong, i+1)
+			}
+			return nil, nil, galatCSV(ErrJudulCSV, PesanCSVJudulGanda, n)
 		}
 		lihat[n] = true
 		if !dikenal[n] {
@@ -249,10 +280,8 @@ func JudulCSV(judul []string) ([]string, []string, error) {
 		}
 		hasil[i] = n
 	}
-	for _, wajib := range []string{"PLAN", "POLICY_HOLDER"} {
-		if !lihat[wajib] {
-			return nil, nil, fmt.Errorf("%w: column %s is required", ErrJudulCSV, wajib)
-		}
+	if kurang := kolomJudulKurang(lihat, tipe); len(kurang) > 0 {
+		return nil, nil, galatCSV(ErrJudulCSV, PesanCSVJudulKurang, strings.Join(kurang, ", "))
 	}
 	return hasil, asing, nil
 }

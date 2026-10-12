@@ -94,53 +94,35 @@ func TestHapusFisikTidakDipanggilDiLuarTest(t *testing.T) {
 	}
 }
 
-// Baris datar warisan ditulis 18 dari 55 kolom - dan angkanya dikunci di sini.
-//
-// `Simpan` menulis sebagian kolom saja; 37 sisanya tinggal NULL dan didaftar
-// namanya di komentar fungsi itu. Komentar dapat basi tanpa ada yang tahu, jadi
-// pembagiannya dikunci test. Kalau kelak sebuah kolom mulai ditulis - misalnya
-// tiket 02 atau 03 membawa atribut polisnya - test ini gagal, dan komentar itu
-// ikut diperbarui alih-alih menyesatkan diam-diam.
+// Baris datar warisan yang ditulis Save to RNM - pembagiannya dikunci di sini (keputusan work owner 11-10-2026: nilai
+// polis, peserta, dan baris ikut ditulis). Dari 55 kolom yang ditulis rule warisan: 47 ditulis INSERT (ID, CASEID, 43
+// KolomCerminSaveRNM, STS_REJECT, ACCEPTATION_DATE), 3 diisi SQL dari sumber (NAME_OF_INSURED, DOB, CEDINGCO -
+// IsiTertanggungCermin), 5 tidak terpetakan (STATUS, DISEASE, ICD_CODE, NOTES, KETERANGAN).
 func TestCacahKolomWarisanYangDitulisSimpan(t *testing.T) {
-	isi, ada := berkasGoSelainTest(t)["../../../../modul/claimlife/backend/repository/pohonklaim.go"]
-	if !ada {
-		t.Fatal("pohonklaim.go tidak terbaca; pembacanya yang rusak")
-	}
-	awal := strings.Index(isi, "INSERT INTO %s\n\t\t\t(ID, CASEID")
-	if awal < 0 {
-		t.Fatal("pernyataan INSERT baris datar warisan tidak ketemu")
-	}
-	akhir := strings.Index(isi[awal:], ")\n\t\t\tVALUES")
-	if akhir < 0 {
-		t.Fatal("akhir daftar kolom tidak ketemu")
-	}
-	daftar := isi[awal : awal+akhir]
-	daftar = daftar[strings.Index(daftar, "(")+1:]
-
+	q := strings.Join(strings.Fields(sqlSisipCermin("S.L")), " ")
+	daftar := q[strings.Index(q, "(")+1 : strings.Index(q, ")")]
 	ditulis := map[string]bool{}
 	for _, n := range strings.Split(daftar, ",") {
 		if n = strings.TrimSpace(n); n != "" {
 			ditulis[n] = true
 		}
 	}
-	const mau = 18
-	if len(ditulis) != mau {
-		t.Errorf("Simpan menulis %d kolom warisan, komentar fungsinya menyebut %d",
-			len(ditulis), mau)
+	if len(ditulis) != 47 {
+		t.Errorf("Save to RNM menulis %d kolom warisan, mau 47", len(ditulis))
 	}
-	seluruh := NamaKolomBarisLama()
-	var kosong int
-	for _, n := range seluruh {
+	var tidak []string
+	for _, n := range NamaKolomBarisLama() {
 		if !ditulis[n] {
-			kosong++
+			tidak = append(tidak, n)
 		}
 		delete(ditulis, n)
 	}
 	if len(ditulis) != 0 {
-		t.Errorf("Simpan menulis kolom yang tidak ada di daftar 55: %v", ditulis)
+		t.Errorf("menulis kolom di luar daftar 55: %v", ditulis)
 	}
-	if kosong != len(seluruh)-mau {
-		t.Errorf("kolom yang tinggal NULL = %d, mau %d", kosong, len(seluruh)-mau)
+	mauTidak := "NAME_OF_INSURED DOB STATUS DISEASE ICD_CODE NOTES CEDINGCO KETERANGAN"
+	if got := strings.Join(tidak, " "); got != mauTidak {
+		t.Errorf("kolom yang tidak ditulis INSERT = %q, mau %q", got, mauTidak)
 	}
 }
 
@@ -248,7 +230,9 @@ func TestSetiapPemanggilBukaMemeriksaBolehDilewati(t *testing.T) {
 	// TUJUH BELAS sejak NB Treaty In (03-10-2026):
 	// nbtreatyin/repository/polis_db_test.go - pulang-pergi halaman lewat
 	// katalog, generasi tertutup, dan nomor polis unik lawan Oracle.
-	const mau = 17
+	// ENAM BELAS lagi sejak merge 942a16d1 (11-10-2026): treatyin/repository/invarian_db_test.go versi remote tidak
+	// lagi memanggil skemauji.Buka() (berkasnya milik modul Treaty In; tidak diubah dari sini).
+	const mau = 16
 	if diperiksa != mau {
 		t.Errorf("pemanggil skemauji.Buka() ditemukan %d, mau %d; "+
 			"bila memang bertambah, perbarui angkanya di sini", diperiksa, mau)
@@ -321,6 +305,12 @@ func TestNamaTabelDokumenLamaHanyaUntukWarisan(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		// Lingkup 11-10-2026: berkas Claim Life selalu; berkas lain hanya bila kodenya menyebut tabel Claim Life.
+		// `DOCUMENT_CLAIM` juga nama tabel dokumen klaim Prop / FacIn (mis. inti/backend/kontrak/lampiranklaim.go) -
+		// di sana ia bukan nama lama tabel dokumen Claim Life.
+		if !dalamLingkupClaimLife(nama, buangKomentarSumber(nama, string(isi))) {
+			continue
+		}
 		for i, baris := range strings.Split(string(isi), "\n") {
 			if !strings.Contains(baris, lama) {
 				continue
@@ -365,9 +355,9 @@ func TestNamaTabelDokumenLamaHanyaUntukWarisan(t *testing.T) {
 // `_ = PeriksaNilaiWarisan(b)` - memanggil lalu membuang galatnya - akan
 // meluluskannya. Yang dijaga "dipanggil atau tidak", bukan "dipakai benar".
 func TestSetiapJalurTulisWarisanDipagari(t *testing.T) {
-	// Dua penanda penulis: bind medan satu per satu (Simpan), dan bind lewat
-	// daftar nilai (IsiBarisLama).
-	penanda := []string{"BarisLamaDari(p)", "NilaiBarisLama(b)"}
+	// Dua penanda penulis: bind medan satu per satu (TulisCerminSaveRNM - Save to RNM sejak RALAT 10-10-2026; dulu
+	// Simpan), dan bind lewat daftar nilai (IsiBarisLama).
+	penanda := []string{"sqlSisipCermin(datarT)", "NilaiBarisLama(b)"}
 	ditemukan := 0
 	for nama, isi := range berkasGoSelainTest(t) {
 		for _, tanda := range penanda {

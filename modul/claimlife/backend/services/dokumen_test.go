@@ -15,7 +15,8 @@ import (
 )
 
 func pesertaDipilih(dok ...models.Dokumen) models.Peserta {
-	return models.Peserta{IsCheck: "true", Dokumen: dok}
+	// 10-10-2026: gerbang membaca IsAccept (b1181, migrasi 026), bukan IsCheck.
+	return models.Peserta{IsCheck: "true", IsAccept: "true", Dokumen: dok}
 }
 
 // TestPesertaTanpaDokumenDitolakDenganNomorUrut mengunci langkah 3.1: pesannya
@@ -54,7 +55,7 @@ func TestTipeTreatyMelewatiGerbangDokumen(t *testing.T) {
 // TestPesertaTidakDipilihDilewati - gerbangnya hanya mengenai peserta yang
 // benar-benar diklaim.
 func TestPesertaTidakDipilihDilewati(t *testing.T) {
-	peserta := []models.Peserta{{IsCheck: "", Dokumen: nil}}
+	peserta := []models.Peserta{{IsCheck: "true", IsAccept: "", Dokumen: nil}}
 	if err := services.PeriksaDokumenAda("QR", peserta); err != nil {
 		t.Errorf("peserta yang tidak dipilih ikut dituntut: %v", err)
 	}
@@ -64,7 +65,7 @@ func TestPesertaTidakDipilihDilewati(t *testing.T) {
 // sebagai satu galat yang menyebut apa yang ditunggu, bukan sebagai daftar
 // kosong yang diam-diam meloloskan semua.
 func TestSumberKategoriBawaanGagalTerang(t *testing.T) {
-	_, err := services.KategoriWajibBelumDiketahui{}.KategoriWajib(context.Background())
+	_, err := services.KategoriWajibBelumDiketahui{}.KategoriWajib(context.Background(), "K-1")
 	if !errors.Is(err, services.ErrKategoriWajibBelumDiketahui) {
 		t.Fatalf("galat = %v, mau ErrKategoriWajibBelumDiketahui", err)
 	}

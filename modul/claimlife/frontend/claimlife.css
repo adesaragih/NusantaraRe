@@ -138,33 +138,55 @@
 }
 
 .claimlife .polis__judul {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   margin: 0 0 14px;
   font-size: 17px;
 }
 
+/* Chip versi polis / mata uang (pola edm-kepala__chip; tampilan 10-10-2026). */
+.claimlife .polis__chip,
+.claimlife .register__chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Grid label-nilai (tampilan 10-10-2026): label kecil abu-abu di ATAS nilai, kolom selebar sama, nilai membungkus. */
 .claimlife .polis__daftar {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 0 24px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px 24px;
   margin: 0;
 }
 
 .claimlife .polis__medan {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 0;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 0 0 8px;
   border-bottom: 1px solid var(--border);
-  font-size: 14px;
 }
 
 .claimlife .polis__medan dt {
   color: var(--muted);
+  font-size: 12px;
 }
 
 .claimlife .polis__medan dd {
   margin: 0;
+  font-size: 14px;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 /* Medan yang belum bersumber terlihat BERBEDA — supaya tidak ada yang
@@ -173,6 +195,98 @@
   color: var(--muted);
   font-weight: 400;
   font-style: italic;
+}
+
+/* ============================================ REGISTER (tampilan 10-10-2026) */
+.claimlife .register {
+  display: grid;
+  gap: 16px;
+}
+
+.claimlife .register__kartu {
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.claimlife .register__kartu h3 {
+  margin: 0 0 12px;
+  font-size: 17px;
+}
+
+.claimlife .register__cari {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.claimlife .register__cari label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.claimlife .register__cari input {
+  width: 100%;
+  min-width: 0;
+}
+
+.claimlife .register__gulir {
+  overflow-x: auto;
+}
+
+.claimlife .register__baris {
+  cursor: pointer;
+}
+
+.claimlife .register__baris:hover td {
+  background: var(--br-baris-hover);
+}
+
+.claimlife .register__baris--pilih td {
+  background: var(--br-aksen-lembut);
+}
+
+.claimlife .register__kelompok + .register__kelompok {
+  margin-top: 16px;
+}
+
+.claimlife .register__kelompok h4 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.claimlife .register__jumlah {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.claimlife .register__aksi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.claimlife .register__ringkas {
+  margin: 0 auto 0 0;
+  font-weight: 600;
+}
+
+.claimlife .register__ringan {
+  margin: 0;
+  color: var(--muted);
 }
 
 /* ====================================================== OUTSTANDING CLAIM */
@@ -255,7 +369,1513 @@
   border-radius: 0;
 }
 
+/* ======================================== INBOX (tampilan 10-10-2026) */
+.claimlife .inbox__aksi-kepala {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.claimlife .inbox__gulir {
+  overflow-x: auto;
+}
+
+.claimlife .inbox__baris {
+  cursor: pointer;
+}
+
+.claimlife .inbox__baris td {
+  text-decoration: none;
+}
+
+.claimlife .inbox__terdaftar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* ======================== OUTSTANDING mengikuti Pega (10-10-2026, InputOSClaimLife) */
+.claimlife .os {
+  display: grid;
+  gap: 16px;
+}
+
+.claimlife .os__nomor {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.claimlife .os__kartu {
+  display: grid;
+  gap: 12px;
+}
+
+.claimlife .os__medan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 16px;
+}
+
+.claimlife .os__medan {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.claimlife .os__medan > span,
+.claimlife .os__medan > legend {
+  color: var(--muted);
+  font-size: 12px;
+  padding: 0;
+}
+
+.claimlife .os__medan--lebar textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+.claimlife .os__radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 12px;
+  min-height: 32px;
+}
+
+.claimlife .os__catatan {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.claimlife .os__buka {
+  border: 0;
+  background: none;
+  padding: 4px 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.claimlife .os__baris--buka td {
+  font-weight: 600;
+}
+
+.claimlife .os__rincian > td {
+  background: var(--surface);
+  padding: 12px 16px;
+}
+
+.claimlife .os__simpan {
+  margin: 0;
+}
+
+.claimlife .os__aksi .tahap,
+.claimlife .os__aksi .tahap p,
+.claimlife .os__aksi .tutup {
+  display: contents;
+}
+
+.claimlife .tutup__tombol {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.claimlife .rincian {
+  display: grid;
+  gap: 12px;
+}
+
+.claimlife .rincian__baris {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  align-items: end;
+}
+
+.claimlife .rincian__medan {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+}
+
+.claimlife .rincian__medan > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ============ OUTSTANDING bentuk form Pega (11-10-2026, screenshot CLMLF-9293) */
+.claimlife .os__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.claimlife .os__nomor {
+  display: grid;
+  gap: 2px;
+}
+
+.claimlife .os__form {
+  display: grid;
+  gap: 8px 32px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.claimlife .os__form--dua {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.claimlife .os__form--tiga {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.claimlife .os__lebar {
+  grid-column: 1 / -1;
+}
+
+.claimlife .os__kolom {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  margin: 0;
+  min-width: 0;
+}
+
+.claimlife .os__baris-form {
+  display: grid;
+  grid-template-columns: minmax(120px, 42%) 1fr;
+  gap: 8px;
+  align-items: start;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.claimlife .os__baris-form > dt,
+.claimlife .os__baris-form > .os__label,
+.claimlife .os__baris-form > legend {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0;
+}
+
+.claimlife .os__baris-form > dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.claimlife .os__baris-form--tumpuk {
+  grid-template-columns: 1fr;
+}
+
+.claimlife .os__baris-form textarea,
+.claimlife .os__baris-form input {
+  width: 100%;
+  min-width: 0;
+}
+
+.claimlife .os__radio-tegak {
+  display: grid;
+  gap: 2px;
+}
+
+.claimlife .os__wajib {
+  color: var(--danger-text);
+  margin-left: 2px;
+}
+
+.claimlife .os__saring {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  max-width: 360px;
+}
+
+.claimlife .os__tautan {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.claimlife .os__tautan:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+
+.claimlife .os__baris--pilih > td {
+  background: var(--primary-soft);
+}
+
+.claimlife .os__simpan--kanan {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.claimlife .rincian__kotak {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.claimlife .rincian__edit,
+.claimlife .rincian__adjustment {
+  display: grid;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .claimlife .os__baris-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============ Isian adjustment (11-10-2026) */
+.claimlife .os__aksi-baris {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.claimlife .rincian__adjustment .os__form {
+  padding: 12px 16px;
+}
+
+/* ===== Kerapian tata letak (keputusan work owner 11-10-2026: "jangan ada kolom yang miring2 atau terpotong") =====
+   ⛔ inti menetapkan .inbox__tabel td { white-space: nowrap } — rincian yang dibuka DI DALAM sel grid ikut tidak
+   membungkus dan melebar melewati wadah. Sel rincian dikembalikan ke pembungkusan normal. */
+.claimlife .os__rincian > td {
+  white-space: normal;
+  padding: 12px;
+}
+
+.claimlife .os__form,
+.claimlife .os__kolom,
+.claimlife .rincian {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.claimlife .os__form > *,
+.claimlife .os__kolom > * {
+  min-width: 0;
+}
+
+.claimlife .os__form--dua {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+}
+
+.claimlife .os__form--tiga {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+}
+
+/* Label tetap selebar 24ch dan tidak dipecah; nilai mengambil sisa dan membungkus teks panjang (Product Name). */
+.claimlife .os__baris-form {
+  grid-template-columns: 24ch minmax(0, 1fr);
+  align-items: center;
+}
+
+.claimlife .os__baris-form > dt,
+.claimlife .os__baris-form > .os__label {
+  white-space: nowrap;
+}
+
+.claimlife .os__baris-form > dd,
+.claimlife .os__baris-form > span:not(.os__label) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.claimlife .os__baris-form--tumpuk {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Nilai kode / nomor tidak dipecah ("RNML-" / "QRL2…"). */
+.claimlife .os__nilai-kode {
+  white-space: nowrap;
+}
+
+/* Isian berlebar tetap yang muat, bukan 100%. */
+.claimlife .os__baris-form input {
+  width: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.claimlife .os__baris-form input[type="date"] {
+  width: 17ch;
+}
+
+.claimlife .os__isian-angka {
+  width: 20ch;
+  text-align: right;
+}
+
+.claimlife .os__isian-teks {
+  width: 100%;
+  max-width: 36ch;
+}
+
+.claimlife .os__baris-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Radio dan labelnya satu baris, sejajar kiri, bertumpuk tegak. */
+.claimlife .os__radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 0;
+  white-space: nowrap;
+}
+
+.claimlife .os__radio-tegak {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+}
+
+.claimlife .os__baris-form[role="radiogroup"] {
+  align-items: start;
+}
+
+/* Angka rata kanan, tidak dipecah. */
+.claimlife .os__angka {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.claimlife .os__lapisan-awal > td {
+  border-top: 1px solid var(--border);
+}
+
+.claimlife .os__spreading {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.claimlife .os__catatan.os__lebar {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+@media (max-width: 720px) {
+  .claimlife .os__baris-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ===== Konsistensi isian dan Register Claim (11-10-2026, "rapikan tampilannya dan stylenya dibuat konsisten") =====
+   Semua isian layar Outstanding memakai kelas inti .field__input (tinggi 42px, border token, radius, padding); di sini
+   hanya LEBAR dan perataan yang diatur. Spesifisitas sengaja .claimlife .os__baris-form input.<kelas> supaya menimpa
+   aturan lebar lama di atas. */
+.claimlife .os__baris-form input.field__input {
+  width: 100%;
+}
+
+.claimlife .os__baris-form input.os__isian-tanggal {
+  width: 18ch;
+  max-width: 100%;
+}
+
+.claimlife .os__baris-form input.os__isian-angka {
+  width: 100%;
+  text-align: right;
+}
+
+.claimlife .os__baris-form input.os__isian-teks,
+.claimlife .os__saring input.os__isian-teks {
+  width: 100%;
+  max-width: 36ch;
+}
+
+.claimlife textarea.field__input {
+  height: auto;
+  min-height: 84px;
+  padding: 8px 12px;
+  resize: vertical;
+}
+
+/* Tiga kolom isian adjustment: label 22ch + kolom nilai SELEBAR TETAP 20ch, sehingga angka (rata kanan), teks (rata kiri),
+   dan isian Claim RNM berbaris rapi di bawah satu sama lain. */
+.claimlife .os__form--angka .os__baris-form {
+  grid-template-columns: minmax(0, 22ch) minmax(0, 20ch);
+}
+
+.claimlife .os__isian-bungkus {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.claimlife .os__galat-isian {
+  color: var(--danger-text);
+  font-size: 12px;
+  white-space: normal;
+}
+
+/* Nilai kode / nomor (PL Number, STNC) TIDAK nowrap lagi: nowrap tanpa ruang membuatnya meluber ke kolom sebelah
+   (screenshot 11-10-2026). Dibungkus di mana saja bila kolomnya sempit. */
+.claimlife .os__nilai-kode {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.claimlife .os__radio-tegak {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  margin: 0;
+}
+
+.claimlife .os__subjudul {
+  margin: 12px 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.claimlife .os__total > th,
+.claimlife .os__total > td {
+  font-weight: 700;
+  border-top: 2px solid var(--border);
+}
+
+/* ===== PitaGalat (11-10-2026, "rapi seperti premium list"): satu tempat galat di atas isi, dapat ditutup. */
+.claimlife .cl-tempat-galat {
+  display: grid;
+  gap: 8px;
+}
+
+.claimlife .cl-tempat-galat:empty {
+  display: none;
+}
+
+.claimlife .cl-pita {
+  position: relative;
+}
+
+.claimlife .cl-pita > .alert {
+  margin-bottom: 0;
+  padding-right: 40px;
+}
+
+.claimlife .cl-pita ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.claimlife .cl-pita__tutup {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.claimlife .cl-pita__tutup:hover,
+.claimlife .cl-pita__tutup:focus-visible {
+  background: var(--surface);
+}
+
+/* Petunjuk Save to RNM nonaktif: teks bantuan kecil DI ATAS deretan tombol. */
+.claimlife .os__bantuan {
+  margin: 0 0 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* ===== Rincian peserta (11-10-2026): tiga kelompok sama lebar, label selebar sama, 3 -> 2 -> 1 kolom. */
+.claimlife .rincian__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 24px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.claimlife .rincian__kelompok {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.claimlife .rincian__judul {
+  margin: 0 0 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 600;
+  /* 12-10-2026: Title Case dari labelnya sendiri (keputusan work owner) - tanpa text-transform: uppercase. */
+  color: var(--muted);
+}
+
+.claimlife .rincian__grid .os__baris-form {
+  grid-template-columns: 24ch minmax(0, 1fr);
+}
+
+.claimlife .rincian__grid .os__baris-form input.os__isian-tanggal {
+  width: 100%;
+  max-width: none;
+}
+
+/* Nomor panjang (Certificate No / Policy No) MEMBUNGKUS di dalam kolom nilai - tanpa gulir (11-10-2026, "ada slide bar
+   buat jelek"). Kolom tetap sama lebar: memperlebar kolom Insured merusak kesimetrisan, dan pada 1024 px (2 kolom) pun
+   nilai muat atau membungkus hanya bila perlu. */
+.claimlife .rincian__nilai-kode {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Location of Death lalu Admin Notes, bertumpuk di kolom Insured. */
+.claimlife .rincian__catatan {
+  display: grid;
+  gap: 6px;
+}
+
+.claimlife .rincian__catatan-isian {
+  display: grid;
+  gap: 6px;
+}
+
+.claimlife .rincian__catatan-teks {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1280px) {
+  .claimlife .rincian__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .claimlife .rincian__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .claimlife .rincian__grid .os__baris-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Baris adjustment yang Claim RNM-nya kosong saat Save to RNM. */
+.claimlife .os__baris--kurang td {
+  color: var(--danger-text);
+}
+
+/* ===== Register Claim lebih ramah (11-10-2026): radio MENDATAR berjarak seragam, bulat, label sejajar baris pertama. */
+.claimlife .os__radio-datar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  margin: 0;
+}
+
+.claimlife .os__baris-form[role="radiogroup"] {
+  align-items: center;
+}
+
+.claimlife .os__radio input[type="radio"] {
+  appearance: auto;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  box-shadow: none;
+  accent-color: var(--primary);
+}
+
+.claimlife .os__catatan-katastrofe {
+  align-items: start;
+}
+
+.claimlife .os__catatan-katastrofe textarea.field__input {
+  width: 100%;
+}
+
+/* Kaki tab Claim Details: Save to RNM + Send to Medical Check sesudah grid (Save progres di kanan grid). */
+.claimlife .os__kaki-tab {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* Spreading terlipat: tombol "View Spreading ▸" / "Hide Spreading ▾". */
+.claimlife .os__lipat {
+  justify-self: start;
+}
+
+/* ===== Policy Details (11-10-2026, "rapikan kolom pl number"): kolom lebih lebar dan label lebih ringkas supaya nilai kode
+   PL Number ("RNML-QRL2.10.26.00043", 21 karakter) muat SATU baris di 1280 (3 kolom) dan 1024 (2 kolom) - tanpa gulir. */
+.claimlife .os__form--polis {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+}
+
+.claimlife .os__form--polis .os__baris-form {
+  grid-template-columns: 18ch minmax(0, 1fr);
+}
+
+.claimlife .os__nilai-pl {
+  white-space: nowrap;
+}
+
+/* Panel dokumen: kategori + berkas + tombol sebaris, melipat di layar sempit. */
+.claimlife .dokumen__aksi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+
+.claimlife .dokumen__aksi select.field__input {
+  width: auto;
+  min-width: 24ch;
+}
+
+/* ======================================== MEDICAL ADVISOR (11-10-2026) */
+.claimlife .diagnosa-grid {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.claimlife .diagnosa-grid__kepala {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.claimlife .diagnosa-grid__tabel {
+  width: 100%;
+}
+
+/* GROUP DIAGNOSE: dropdown cukup lebar untuk teks panjang (s.d. 99 karakter); nilai utuh juga di title. */
+.claimlife .diagnosa-grid__kelompok {
+  min-width: 32ch;
+}
+
+.claimlife .diagnosa-grid__tabel select {
+  width: 100%;
+  min-width: 32ch;
+  max-width: 60ch;
+  text-overflow: ellipsis;
+}
+
+.claimlife .diagnosa-grid__kosong,
+.claimlife .diagnosa-grid__catatan {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.claimlife .rincian__rekomendasi {
+  display: grid;
+  gap: 6px;
+}
+
 /* Tabel komite di bawah inbox (perintah work owner 09-10-2026: menu Komite Claim Life dihapus). */
 .claimlife .claimlife__komite {
   margin-top: 24px;
+}
+
+/* ======================================== INBOX - kulit Claim Fac In (work owner 12-10-2026: "samakan stylenya dengan
+   menu claim facin, tanpa mengubah struktur atau flow proses"). Acuan BACA SAJA: modul/claimfacin/frontend/claimfacin.css
+   (blok "kulit Kelola User", tab, tabel, "ukuran huruf") + pages/ClaimFacIn.tsx. Nilai DISALIN ke token `--cl-*` milik
+   modul ini - tanpa impor, tanpa kelas inti baru. Lingkup: `.claimlife__akar` (section inbox) saja; layar kasus tidak
+   berubah. Tab Claim Life tetap tombol `inbox__tab-butir` + lencana (tanpa penanda geser TabGeser - itu komponen). */
+.claimlife .claimlife__akar {
+  --cl-latar-tepi: #cfd7e5;
+  --cl-latar-atas: #f9fafd;
+  --cl-latar-bawah: #e4e9f3;
+  --cl-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --cl-lembut: #e9edf3;
+  --cl-lembut-tepi: #dde3ec;
+  --cl-teks: #101828;
+  --cl-teks-redup: #4f586b;
+  --cl-aksen: var(--primary-tanda);
+  --cl-aksen-teks: #2339a3;
+  --cl-aksen-lembut: #e3e8f6;
+  --cl-aksen-garis: #b9c5ee;
+  --cl-kepala-tabel: #dde4f2;
+  --cl-kepala-teks: #22326b;
+  --cl-kepala-garis: #c3cde2;
+  --cl-isi: #ffffff;
+  --cl-baris-hover: #e6ecfa;
+  --cl-garis: #e1e6ef;
+  --cl-tepi: #c8d1e1;
+  --cl-jalur-tab: #dfe5ef;
+  --cl-tombol: #d63a42;
+  --cl-tombol-ujung: #bf2f37;
+  --cl-tombol-hover: #c2333b;
+  --cl-tombol-hover-ujung: #a9282f;
+  --cl-terang: rgba(255, 255, 255, 0.92);
+  --cl-gelap: rgba(163, 177, 198, 0.55);
+  --cl-kilau: rgba(255, 255, 255, 0.7);
+  --cl-tekan: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+  --cl-timbul: 8px 8px 18px var(--cl-gelap), -8px -8px 18px var(--cl-terang);
+  --cl-timbul-kecil: 4px 4px 9px var(--cl-gelap), -4px -4px 9px var(--cl-terang);
+  --cl-cekung-kecil: inset 2px 2px 4px var(--cl-gelap), inset -2px -2px 4px var(--cl-terang);
+  --cl-cincin: 0 0 0 3px rgba(43, 68, 176, 0.18);
+  --cl-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--cl-terang);
+  --text-3: var(--cl-teks-redup);
+  color: var(--cl-teks);
+  font-size: 13px;
+  padding: 24px;
+  overflow-x: auto;
+  border: 1px solid var(--cl-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--cl-latar-atas) 0%, var(--cl-latar-bawah) 100%);
+  box-shadow: var(--cl-bayang-akar);
+}
+
+/* Tema gelap: :where() menjaga pemilih berawalan .claimlife (penjaga gaya) dengan kekhususan yang sama; blok ini sesudah
+   blok terang, jadi menang. */
+.claimlife .claimlife__akar:where(:root[data-theme="dark"] *) {
+  --cl-latar-tepi: #323b50;
+  --cl-latar-atas: #222a3b;
+  --cl-latar-bawah: #161b27;
+  --cl-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --cl-lembut: #181d2a;
+  --cl-lembut-tepi: #242b3a;
+  --cl-teks: #eef0f6;
+  --cl-teks-redup: #aab2c4;
+  --cl-aksen-teks: #aebcff;
+  --cl-aksen-lembut: #222b45;
+  --cl-aksen-garis: #3a4b8f;
+  --cl-kepala-tabel: #273152;
+  --cl-kepala-teks: #dbe2ff;
+  --cl-kepala-garis: #3a4670;
+  --cl-isi: #1f2638;
+  --cl-baris-hover: #2b3554;
+  --cl-garis: #2c3447;
+  --cl-tepi: #3a4459;
+  --cl-jalur-tab: #151a26;
+  --cl-terang: rgba(255, 255, 255, 0.045);
+  --cl-gelap: rgba(0, 0, 0, 0.55);
+  --cl-kilau: rgba(255, 255, 255, 0.04);
+  --cl-cincin: 0 0 0 3px rgba(142, 162, 245, 0.25);
+  --cl-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--cl-terang);
+}
+
+/* Judul: Poppins 600, 22px. */
+.claimlife .claimlife__akar .inbox__judul {
+  color: var(--cl-teks);
+  font-family: "Poppins", var(--font);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.claimlife .claimlife__akar .muted {
+  color: var(--cl-teks-redup);
+}
+
+.claimlife .claimlife__akar :focus-visible {
+  outline: 2px solid var(--cl-aksen);
+  outline-offset: 2px;
+}
+
+/* Tombol kapsul 32px; utama merah bergradasi, ghost putih timbul (Register / Export xlsx, Previous / Next, tutup pita). */
+.claimlife .claimlife__akar .btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+.claimlife .claimlife__akar .btn--sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.claimlife .claimlife__akar .btn--primary {
+  background: linear-gradient(180deg, var(--cl-tombol), var(--cl-tombol-ujung));
+  border-color: var(--cl-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--cl-bayang-tombol);
+}
+
+.claimlife .claimlife__akar .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--cl-tombol-hover), var(--cl-tombol-hover-ujung));
+  border-color: var(--cl-tombol-hover-ujung);
+}
+
+.claimlife .claimlife__akar .btn--primary:active:not(:disabled) {
+  box-shadow: var(--cl-tekan);
+}
+
+.claimlife .claimlife__akar .btn--ghost {
+  background: var(--cl-isi);
+  border: 1px solid var(--cl-tepi);
+  color: var(--cl-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--cl-timbul-kecil);
+}
+
+.claimlife .claimlife__akar .btn--ghost:hover:not(:disabled) {
+  background: var(--cl-aksen-lembut);
+  border-color: var(--cl-aksen-garis);
+  color: var(--cl-aksen-teks);
+}
+
+.claimlife .claimlife__akar .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--cl-cekung-kecil);
+}
+
+.claimlife .claimlife__akar .btn:disabled {
+  box-shadow: none;
+}
+
+.claimlife .claimlife__akar .alert {
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+/* Tab: kontrol bersegmen - jalur cekung, tab aktif kapsul putih timbul (padanan penanda TabGeser, tanpa geser). */
+.claimlife .claimlife__akar .inbox__tab {
+  width: fit-content;
+  max-width: 100%;
+  gap: 2px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--cl-jalur-tab);
+  box-shadow: var(--cl-cekung-kecil);
+}
+
+.claimlife .claimlife__akar .inbox__tab-butir {
+  justify-content: center;
+  min-width: 88px;
+  height: 32px;
+  margin-bottom: 0;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cl-teks-redup);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    color 220ms ease,
+    background 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.claimlife .claimlife__akar .inbox__tab-butir:hover {
+  background: var(--cl-kilau);
+  color: var(--cl-teks);
+}
+
+.claimlife .claimlife__akar .inbox__tab-butir--aktif,
+.claimlife .claimlife__akar .inbox__tab-butir--aktif:hover {
+  background: var(--cl-isi);
+  color: var(--cl-aksen-teks);
+  box-shadow: var(--cl-timbul-kecil);
+}
+
+.claimlife .claimlife__akar .inbox__tab-butir:focus-visible {
+  outline: none;
+  box-shadow: var(--cl-cincin);
+}
+
+/* Lencana: kapsul aksen lembut; pada tab aktif aksen penuh. */
+.claimlife .claimlife__akar .inbox__lencana {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--cl-aksen-lembut);
+  color: var(--cl-aksen-teks);
+  font-size: 11.5px;
+}
+
+.claimlife .claimlife__akar .inbox__tab-butir--aktif .inbox__lencana {
+  background: var(--cl-aksen);
+  color: var(--on-primary);
+}
+
+/* Tabel: kartu putih timbul, kepala navy lembut, baris genap berselang, hover aksen; sel 7px 10px 12.5px. */
+.claimlife .claimlife__tabel {
+  background: var(--cl-isi);
+  border: 1px solid var(--cl-tepi);
+  border-radius: 18px;
+  box-shadow: var(--cl-timbul);
+}
+
+.claimlife .claimlife__tabel thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.claimlife .claimlife__tabel thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.claimlife .claimlife__tabel tbody tr:last-child > td:first-child {
+  border-bottom-left-radius: 17px;
+}
+
+.claimlife .claimlife__tabel tbody tr:last-child > td:last-child {
+  border-bottom-right-radius: 17px;
+}
+
+.claimlife .claimlife__tabel th,
+.claimlife .claimlife__tabel td {
+  padding: 7px 10px;
+  font-size: 12.5px;
+}
+
+.claimlife .claimlife__tabel thead th {
+  background: var(--cl-kepala-tabel);
+  color: var(--cl-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--cl-kepala-garis);
+}
+
+.claimlife .claimlife__tabel td {
+  color: var(--cl-teks);
+  background: var(--cl-isi);
+  border-bottom-color: var(--cl-garis);
+}
+
+.claimlife .claimlife__tabel tbody tr:nth-child(even),
+.claimlife .claimlife__tabel tbody tr:hover {
+  background: transparent;
+}
+
+.claimlife .claimlife__tabel tbody tr:nth-child(even) > td {
+  background: var(--cl-lembut);
+}
+
+.claimlife .claimlife__tabel tbody tr:hover > td {
+  background: var(--cl-baris-hover);
+}
+
+/* Gulir tabel: ruang bayangan kartu tidak terpotong. */
+.claimlife .claimlife__akar .inbox__gulir {
+  padding: 4px 12px 16px 4px;
+}
+
+/* Paginasi inti (.pager) dan Komite: ikut ukuran huruf kulit. */
+.claimlife .claimlife__akar .pager {
+  font-size: 13px;
+}
+
+.claimlife .claimlife__akar .claimlife__komite .inbox__judul {
+  font-size: 17px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .claimlife .claimlife__akar .inbox__tab-butir {
+    transition: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .claimlife .claimlife__akar {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .claimlife .claimlife__tabel {
+    box-shadow: var(--cl-timbul-kecil);
+  }
+}
+
+/* ======================================== LAYAR KASUS - kulit Claim Fac In (work owner 12-10-2026: "style dalam Claim Life
+   bisa menyesuaikan dengan style dari claim facin… contoh style dari tab dan baris kolom-kolomnya"). Acuan BACA SAJA:
+   modul/claimfacin/frontend/claimfacin.css (kulit, tab bersegmen + tab di dalam isi tab, tabel kartu, baris rinci, panel).
+   Section kasus memakai `claimlife__akar` (token --cl-*, kotak, tombol, pita, judul - blok inbox di atas) + `claimlife__kasus`
+   (aturan di bawah). MURNI gaya: struktur, kolom, dan alur tidak berubah. Tanpa transform/filter (Modal tanpa portal). */
+
+.claimlife .claimlife__kasus .os__judul {
+  color: var(--cl-teks);
+  font-family: "Poppins", var(--font);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.claimlife .claimlife__kasus .os__nomor,
+.claimlife .claimlife__kasus .os__label {
+  color: var(--cl-teks-redup);
+}
+
+/* Tab Register Claim / Policy Details / Claim Details: kontrol bersegmen - jalur cekung, tab aktif kapsul putih timbul. */
+.claimlife .claimlife__kasus .tabs {
+  width: fit-content;
+  max-width: 100%;
+  gap: 2px;
+  padding: 4px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--cl-jalur-tab);
+  box-shadow: var(--cl-cekung-kecil);
+}
+
+.claimlife .claimlife__kasus .tabs > .tabs__item {
+  justify-content: center;
+  min-width: 88px;
+  height: 32px;
+  margin-bottom: 0;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--cl-teks-redup);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    color 220ms ease,
+    background 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.claimlife .claimlife__kasus .tabs > .tabs__item:hover {
+  background: var(--cl-kilau);
+  color: var(--cl-teks);
+}
+
+.claimlife .claimlife__kasus .tabs > .tabs__item--aktif,
+.claimlife .claimlife__kasus .tabs > .tabs__item--aktif:hover {
+  background: var(--cl-isi);
+  color: var(--cl-aksen-teks);
+  box-shadow: var(--cl-timbul-kecil);
+}
+
+.claimlife .claimlife__kasus .tabs > .tabs__item:focus-visible {
+  outline: none;
+  box-shadow: var(--cl-cincin);
+}
+
+/* Sub-tab di dalam rincian peserta (Adjustment / Document): jalur tenang bergaris rambut, kapsul aksen lembut. */
+.claimlife .claimlife__kasus .rincian .tabs,
+.claimlife .claimlife__kasus .os__rincian .tabs {
+  padding: 3px;
+  border: 1px solid var(--cl-lembut-tepi);
+  border-radius: 12px;
+  background: var(--cl-lembut);
+  box-shadow: none;
+}
+
+.claimlife .claimlife__kasus .os__rincian .tabs > .tabs__item {
+  min-width: 0;
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 9px;
+  font-size: 12.5px;
+}
+
+.claimlife .claimlife__kasus .os__rincian .tabs > .tabs__item--aktif,
+.claimlife .claimlife__kasus .os__rincian .tabs > .tabs__item--aktif:hover {
+  background: var(--cl-aksen-lembut);
+  box-shadow: inset 0 0 0 1px var(--cl-aksen-garis);
+}
+
+/* Kartu bagian: putih timbul bersudut besar (panel Claim Fac In). */
+.claimlife .claimlife__kasus .register__kartu,
+.claimlife .claimlife__kasus .polis {
+  background: var(--cl-isi);
+  border: 1px solid var(--cl-tepi);
+  border-radius: 18px;
+  box-shadow: var(--cl-timbul);
+}
+
+.claimlife .claimlife__kasus .register__kartu h3 {
+  color: var(--cl-teks);
+  font-family: "Poppins", var(--font);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Kotak di dalam rincian (Location of Death, Admin Notes, MEDICAL ADVISOR): bergaris lembut, tanpa bayangan kedua. */
+.claimlife .claimlife__kasus .rincian__kotak {
+  border-color: var(--cl-lembut-tepi);
+  border-radius: 12px;
+  background: var(--cl-isi);
+}
+
+/* Isian: putih bertepi jelas, timbul ke dalam; fokus navy bercincin lembut (lebar isian tetap - aturan os__* di atas). */
+.claimlife .claimlife__kasus .field__input {
+  background: var(--cl-isi);
+  border: 1px solid var(--cl-tepi);
+  border-radius: 10px;
+  box-shadow: var(--cl-cekung-kecil);
+  color: var(--cl-teks);
+}
+
+.claimlife .claimlife__kasus .field__input:hover:not(:disabled) {
+  border-color: var(--cl-aksen-garis);
+}
+
+.claimlife .claimlife__kasus .field__input:focus {
+  border-color: var(--cl-aksen);
+  box-shadow: var(--cl-cekung-kecil), var(--cl-cincin);
+  outline: none;
+}
+
+.claimlife .claimlife__kasus .field__input:disabled {
+  background: var(--cl-lembut);
+  border-color: var(--cl-lembut-tepi);
+  color: var(--cl-teks-redup);
+  box-shadow: none;
+}
+
+/* Tabel (Participant Details, adjustment, spreading, dokumen, diagnosa, peserta polis): kartu putih, kepala biru muda,
+   baris bergaris tipis, berselang, hover aksen; sel 7px 10px 12.5px. */
+.claimlife .claimlife__kasus :is(.inbox__tabel, .dokumen__tabel, .diagnosa-grid__tabel, .diagnosa__tabel) {
+  background: var(--cl-isi);
+  border: 1px solid var(--cl-tepi);
+  border-radius: 18px;
+  box-shadow: var(--cl-timbul);
+}
+
+.claimlife .claimlife__kasus :is(.inbox__tabel, .dokumen__tabel, .diagnosa-grid__tabel, .diagnosa__tabel) th,
+.claimlife .claimlife__kasus :is(.inbox__tabel, .dokumen__tabel, .diagnosa-grid__tabel, .diagnosa__tabel) td {
+  padding: 7px 10px;
+  font-size: 12.5px;
+}
+
+.claimlife .claimlife__kasus :is(.inbox__tabel, .dokumen__tabel, .diagnosa-grid__tabel, .diagnosa__tabel) thead th {
+  background: var(--cl-kepala-tabel);
+  color: var(--cl-kepala-teks);
+  font-weight: 700;
+  border-bottom: 1px solid var(--cl-kepala-garis);
+}
+
+.claimlife .claimlife__kasus :is(.inbox__tabel, .dokumen__tabel, .diagnosa-grid__tabel, .diagnosa__tabel) thead tr:first-child > th:first-child {
+  border-top-left-radius: 17px;
+}
+
+.claimlife .claimlife__kasus :is(.inbox__tabel, .dokumen__tabel, .diagnosa-grid__tabel, .diagnosa__tabel) thead tr:first-child > th:last-child {
+  border-top-right-radius: 17px;
+}
+
+.claimlife .claimlife__kasus :is(.inbox__tabel, .dokumen__tabel, .diagnosa-grid__tabel, .diagnosa__tabel) td {
+  color: var(--cl-teks);
+  background: var(--cl-isi);
+  border-bottom-color: var(--cl-garis);
+}
+
+.claimlife .claimlife__kasus :is(.inbox__tabel, .dokumen__tabel, .diagnosa-grid__tabel, .diagnosa__tabel) tbody tr:nth-child(even),
+.claimlife .claimlife__kasus :is(.inbox__tabel, .dokumen__tabel, .diagnosa-grid__tabel, .diagnosa__tabel) tbody tr:hover {
+  background: transparent;
+}
+
+.claimlife .claimlife__kasus :is(.inbox__tabel, .dokumen__tabel, .diagnosa-grid__tabel, .diagnosa__tabel) tbody tr:nth-child(even) > td {
+  background: var(--cl-lembut);
+}
+
+.claimlife .claimlife__kasus :is(.inbox__tabel, .dokumen__tabel, .diagnosa-grid__tabel, .diagnosa__tabel) tbody tr:hover > td {
+  background: var(--cl-baris-hover);
+}
+
+/* Baris rinci (isi peserta terbuka / isian adjustment): alas putih tetap, tanpa warna selang / hover; tabel di dalamnya tanpa
+   bayangan kedua (dua lapis bayangan terbaca sebagai kotak mengapung di atas kotak). */
+.claimlife .claimlife__kasus tbody tr.os__rincian > td,
+.claimlife .claimlife__kasus tbody tr.os__rincian:hover > td {
+  background: var(--cl-isi);
+}
+
+.claimlife .claimlife__kasus .os__rincian :is(.inbox__tabel, .dokumen__tabel, .diagnosa-grid__tabel) {
+  box-shadow: none;
+}
+
+/* Baris peserta terpilih: aksen lembut. */
+.claimlife .claimlife__kasus tbody tr.os__baris--pilih > td {
+  background: var(--cl-aksen-lembut);
+}
+
+/* Tombol buka baris (nomor peserta) bertanda ▸ / ▾ - tombolnya sudah ada; hanya tandanya (tanpa kolom baru). */
+.claimlife .claimlife__kasus .os__buka::before {
+  content: "▸";
+  display: inline-block;
+  width: 1.2em;
+  color: var(--cl-aksen-teks);
+}
+
+.claimlife .claimlife__kasus .os__buka[aria-expanded="true"]::before {
+  content: "▾";
+}
+
+.claimlife .claimlife__kasus .os__tautan {
+  color: var(--cl-aksen-teks);
+}
+
+.claimlife .claimlife__kasus input[type="checkbox"] {
+  accent-color: var(--cl-aksen);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .claimlife .claimlife__kasus .tabs > .tabs__item {
+    transition: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .claimlife .claimlife__kasus :is(.inbox__tabel, .dokumen__tabel, .diagnosa-grid__tabel, .diagnosa__tabel),
+  .claimlife .claimlife__kasus .register__kartu,
+  .claimlife .claimlife__kasus .polis {
+    box-shadow: var(--cl-timbul-kecil);
+  }
+}
+
+/* Kotak cari inbox (12-10-2026) - pola toolbar Claim Fac In (.claimfacin__cari flex 0 1 420px). */
+.claimlife .claimlife__toolbar {
+  margin-bottom: 12px;
+}
+
+.claimlife .claimlife__cari {
+  flex: 0 1 420px;
+  min-width: 0;
+}
+
+.claimlife .claimlife__akar .claimlife__cari {
+  height: 32px;
+  padding: 0 10px;
+  background: var(--cl-isi);
+  border: 1px solid var(--cl-tepi);
+  border-radius: 10px;
+  box-shadow: var(--cl-cekung-kecil);
+  color: var(--cl-teks);
+  font-size: 13px;
+}
+
+.claimlife .claimlife__akar .claimlife__cari:focus {
+  border-color: var(--cl-aksen);
+  box-shadow: var(--cl-cekung-kecil), var(--cl-cincin);
+  outline: none;
+}
+
+/* Close Claim (12-10-2026): merah, paling kanan baris tombol tahap Claim Analis; kapsul seperti tombol kulit lain. */
+.claimlife .claimlife__akar .btn--danger {
+  border-radius: 999px;
+  box-shadow: 4px 4px 10px rgba(180, 35, 24, 0.3), -4px -4px 10px var(--cl-terang);
+}
+
+.claimlife .claimlife__akar .btn--danger:disabled {
+  box-shadow: none;
+}
+
+.claimlife .os__tutup {
+  margin-left: auto;
+}
+
+/* ======================================== Pop-up Send Claim to Committee (12-10-2026, "rapikan tampilan send to committee
+   ini"). Modal inti tidak menerima kelas sendiri: lebarnya disetel lewat isi berkelas `.komite-popup` (:has). Jarak antar
+   bagian 16px; tabel kartu penuh lebar tanpa terpotong (bayangan kartu tidak dipakai di dalam badan modal yang overflow). */
+.claimlife .modal:has(.komite-popup) {
+  width: min(720px, 92vw);
+}
+
+.claimlife .komite-popup {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  /* Ruang di bawah kartu tabel: tepinya tidak menempel batas gulir badan modal. */
+  padding-bottom: 4px;
+}
+
+/* Date | PIC | Adjustment: tiga kolom kecil berdampingan, label kecil di atas nilai. */
+.claimlife .komite-popup__info {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.claimlife .komite-popup__info > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.claimlife .komite-popup__info dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.claimlife .komite-popup__info dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Remarks: label + textarea penuh lebar (≈4 baris), penghitung kecil kanan bawah, petunjuk wajib kiri bawah. */
+.claimlife .komite-popup__remarks {
+  display: grid;
+  gap: 6px;
+}
+
+.claimlife .komite-popup__remarks textarea {
+  width: 100%;
+  min-height: 6.5em;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.claimlife .komite-popup__kaki-isian {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.claimlife .komite-popup__hitung {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.claimlife .komite-popup__galat {
+  color: var(--danger);
+}
+
+.claimlife .komite-popup__komite {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.claimlife .komite-popup__judul {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Tabel kartu penuh lebar: tepi dan sudut utuh di dalam badan modal (tanpa bayangan luar yang terpotong overflow). */
+.claimlife .komite-popup .komite-popup__tabel {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  box-shadow: none;
+}
+
+/* Kartu tabel komite: pembungkus SENDIRI yang memegang tepi, sudut, dan latar; tabel di dalamnya polos (tanpa tepi / sudut /
+   bayangan) sehingga tidak ada yang tergambar di luar kotak kartu dan terpotong area gulir badan modal (12-10-2026). */
+.claimlife .komite-popup__kartu {
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid var(--cl-tepi, var(--border));
+  border-radius: 12px;
+  background: var(--cl-isi, var(--surface));
+}
+
+.claimlife .komite-popup__kartu .komite-popup__tabel,
+.claimlife .komite-popup__kartu .komite-popup__tabel th,
+.claimlife .komite-popup__kartu .komite-popup__tabel td {
+  border-radius: 0;
+}
+
+.claimlife .komite-popup__kartu .komite-popup__tabel {
+  border: 0;
+}
+
+.claimlife .komite-popup__kartu .komite-popup__tabel tbody tr:last-child > td {
+  border-bottom: 0;
+}
+
+/* Status "Waiting": chip kecil. */
+.claimlife .komite-popup__chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--cl-aksen-lembut, var(--primary-soft));
+  color: var(--cl-aksen-teks, var(--primary-text));
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Kaki modal: teks bantuan kecil di sebelah tombol kirim yang nonaktif karena Remarks. */
+.claimlife .komite-popup__bantu {
+  align-self: center;
+  margin-right: auto;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .claimlife .komite-popup__info {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Tabel Committee Inbox (12-10-2026): angka rata kanan, Level rata tengah, Row Status sebagai chip ringan. */
+.claimlife .claimlife__angka {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.claimlife .claimlife__tengah {
+  text-align: center;
+}
+
+.claimlife .claimlife__chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--cl-aksen-lembut, var(--primary-soft));
+  color: var(--cl-aksen-teks, var(--primary-text));
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.claimlife .claimlife__komite .inbox__intervensi {
+  margin-top: 16px;
 }

@@ -32,11 +32,12 @@
 // Penanda "menunggu" tetap membedakan baris yang efek outbox-nya belum
 // selesai (`tStorageId` kosong).
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { DOKUMEN } from '../labels'
 import { simpanBlob } from '../../../../inti/frontend/lib/simpanBlob'
-import { ambilIsiDokumen, hapusDokumen, unggahDokumen, type Dokumen } from '../api'
+import { ambilIsiDokumenKlaim, ambilKategoriDokumen, hapusDokumen, unggahDokumen, type Dokumen } from '../api'
+import { Modal } from '../../../../inti/frontend/components/ui/dasar'
 import { pesanGalat } from '../../../../inti/frontend/klien'
 
 /** Satu baris daftar, sesudah diputuskan apa yang tampil. */
@@ -66,8 +67,52 @@ export interface BarisDokumen {
   terunggah: boolean
 }
 
-/** Kalimat penanda pranala yang belum tersambung. */
-export const PRANALA_MENUNGGU = 'URL menunggu penyambungan penyimpanan'
+/**
+ * Kalimat baris yang efek penyimpanannya belum selesai (T_STORAGE_ID kosong). ⚠️ 11-10-2026: Claim Life BELUM punya pekerja
+ * latar outbox, jadi baris ini tidak berpindah sendiri ke "View Office Online" sampai pekerjanya dinyalakan (lihat PARITAS).
+ */
+export const PRANALA_MENUNGGU = 'Processing — waiting for storage'
+
+/** Tanggal dokumen dd/mm/yyyy HH:mm (11-10-2026, bukan ISO mentah); kosong / tak terbaca apa adanya. */
+export function tanggalDokumen(teks: string): string {
+  if (teks === '') return '—'
+  const d = new Date(teks)
+  if (Number.isNaN(d.getTime())) return teks
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+/** Kalimat modal konfirmasi Delete dokumen (keputusan work owner 11-10-2026: "buat document bisa dihapus"). */
+export const KONFIRMASI_HAPUS_DOKUMEN = {
+  judul: 'Delete this document?',
+  peringatan: 'This cannot be undone.',
+  batal: 'Cancel',
+  ya: 'Yes, Delete',
+  proses: 'Deleting…',
+  lihat: 'View',
+} as const
+
+/** Lebar T_CLAIMLF_DOCUMENT.KATEGORI_2 (byte) — sama dengan backend services.LebarKategoriDokumen. */
+export const LEBAR_KATEGORI_BYTE = 64
+
+/** Nama Document Claim yang tidak muat di kolom kategori (ditolak server 422; tidak dipotong). */
+export function kategoriTerlaluPanjang(k: string): boolean {
+  return new TextEncoder().encode(k.trim()).length > LEBAR_KATEGORI_BYTE
+}
+
+/** Label panel (11-10-2026: ke Inggris). */
+export const LABEL_DOKUMEN = {
+  judul: 'Claim Documents',
+  kosong: 'No claim documents for this insured yet.',
+  namaFile: 'File name',
+  kategori: 'Category',
+  tanggal: 'Date',
+  berkas: 'File',
+  pilihKategori: 'Select category…',
+  pilihBerkas: 'Choose file',
+  kategoriKosong: 'No claim document types are set for this product in Master Product Name Life.',
+  terlaluPanjang: 'Name too long to store (the category column must be widened first)',
+} as const
 
 /**
  * Menyusun baris daftar dari jawaban backend.
@@ -102,8 +147,30 @@ export function PanelDokumenPeserta({
 }) {
   const baris = barisDokumen(dokumen)
   const [kategori, setKategori] = useState('')
+  const [berkas, setBerkas] = useState<File | null>(null)
+  // Dokumen yang sedang dikonfirmasi untuk dihapus (modal).
+  const [hapus, setHapus] = useState<BarisDokumen | null>(null)
   const [sibuk, setSibuk] = useState(false)
   const [galat, setGalat] = useState<string | null>(null)
+  // Dropdown "Category" (11-10-2026): daftar dari server — sumber yang SAMA dengan pemeriksa unggahan, jadi pilihan
+  // pasti diterima. null = sedang dimuat.
+  const [daftarKategori, setDaftarKategori] = useState<string[] | null>(null)
+  useEffect(() => {
+    let batal = false
+    ambilKategoriDokumen(klaimID)
+      .then((d) => {
+        if (!batal) setDaftarKategori(d)
+      })
+      .catch((e: unknown) => {
+        if (!batal) {
+          setDaftarKategori([])
+          setGalat(pesanGalat(e) ?? 'Document categories could not be loaded.')
+        }
+      })
+    return () => {
+      batal = true
+    }
+  }, [klaimID])
 
   async function jalankan(kerja: () => Promise<void>): Promise<void> {
     if (sibuk) return
@@ -113,7 +180,7 @@ export function PanelDokumenPeserta({
       await kerja()
       await onBerubah()
     } catch (e) {
-      setGalat(pesanGalat(e) ?? 'Perubahan dokumen gagal.')
+      setGalat(pesanGalat(e) ?? 'The document change failed.')
     } finally {
       setSibuk(false)
     }
@@ -128,26 +195,28 @@ export function PanelDokumenPeserta({
   async function unduh(b: BarisDokumen): Promise<void> {
     setGalat(null)
     try {
-      simpanBlob(await ambilIsiDokumen(b.id), b.namaFile)
+      // Berbatas klaim; dokumen yang belum selesai disimpan dilayani dari salinan lokal server.
+      simpanBlob(await ambilIsiDokumenKlaim(klaimID, b.id), b.namaFile)
     } catch (e) {
-      setGalat(pesanGalat(e) ?? 'Gagal mengunduh dokumen.')
+      setGalat(pesanGalat(e) ?? 'The document could not be downloaded.')
     }
   }
 
   return (
     <section className="dokumen">
-      <h4 className="dokumen__judul">Dokumen pendukung</h4>
+      <h4 className="dokumen__judul">{LABEL_DOKUMEN.judul}</h4>
 
       {baris.length === 0 ? (
-        <p className="dokumen__kosong">Belum ada dokumen pada peserta ini.</p>
+        <p className="dokumen__kosong">{LABEL_DOKUMEN.kosong}</p>
       ) : (
-        <table className="dokumen__tabel">
+        <div className="inbox__gulir">{/* gulir horizontal, bukan terpotong (11-10-2026) */}
+<table className="dokumen__tabel">
           <thead>
             <tr>
-              <th scope="col">Nama berkas</th>
-              <th scope="col">Kategori</th>
-              <th scope="col">Tanggal</th>
-              <th scope="col">Berkas</th>
+              <th scope="col">{LABEL_DOKUMEN.namaFile}</th>
+              <th scope="col">{LABEL_DOKUMEN.kategori}</th>
+              <th scope="col">{LABEL_DOKUMEN.tanggal}</th>
+              <th scope="col">{LABEL_DOKUMEN.berkas}</th>
             </tr>
           </thead>
           <tbody>
@@ -155,76 +224,142 @@ export function PanelDokumenPeserta({
               <tr key={b.id}>
                 <td>{b.namaFile}</td>
                 <td>{b.kategori}</td>
-                <td>{b.tanggal === '' ? '—' : b.tanggal}</td>
+                <td>{tanggalDokumen(b.tanggal)}</td>
                 <td>
                   {/* ✅ Penanda "URL menunggu penyambungan" DICABUT
                       27-09-2026 (butir be): unduhannya kini sungguhan, lewat
                       rute kita sendiri. Yang TETAP dibedakan adalah baris
                       yang efek outbox-nya belum selesai — `tStorageId`
                       kosong berarti SEDANG diproses, bukan hilang. */}
-                  {b.terunggah ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void unduh(b)
-                        }}
-                      >
-                        {DOKUMEN.lihatOfficeOnline}
-                      </button>{' '}
-                      <button
-                        type="button"
-                        disabled={sibuk}
-                        onClick={() => {
-                          void jalankan(() => hapusDokumen(klaimID, b.id))
-                        }}
-                      >
-                        {DOKUMEN.hapus}
-                      </button>
-                    </>
-                  ) : (
-                    <span title={PRANALA_MENUNGGU}>{PRANALA_MENUNGGU}</span>
+                  {/* View + Delete untuk SETIAP baris, termasuk yang masih diproses (11-10-2026). */}
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    onClick={() => {
+                      void unduh(b)
+                    }}
+                  >
+                    {KONFIRMASI_HAPUS_DOKUMEN.lihat}
+                  </button>{' '}
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    disabled={sibuk}
+                    onClick={() => {
+                      setHapus(b)
+                    }}
+                  >
+                    {DOKUMEN.hapus}
+                  </button>
+                  {!b.terunggah && (
+                    <small className="dokumen__status" title={PRANALA_MENUNGGU}>
+                      {' '}
+                      {PRANALA_MENUNGGU}
+                    </small>
                   )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+</div>
       )}
 
-      {galat !== null && <p role="alert">{galat}</p>}
+      {galat !== null && (
+        <p role="alert" className="alert alert--error">
+          {galat}
+        </p>
+      )}
 
-      {/* `Add attachment` b1245 — kategori WAJIB: unggahan menolak kategori
-          di luar daftar butir ar1. (Gerbang kelengkapan per kategori di Save
-          ke Outstanding ter-remark di XML dan dibuang — butir bl.) */}
-      <p className="dokumen__aksi">
+      {/* `Add attachment` b1245 (11-10-2026): Category = DROPDOWN dari server (dulu teks bebas → hampir selalu 422
+          "kategori tidak dikenal", dan kotak berkas NONAKTIF sampai teks diisi — itulah "tidak bisa upload"). Pilih kategori
+          dan berkas, lalu tombol "Add attachment" mengunggah. */}
+      <div className="dokumen__aksi">
         <label>
-          Kategori{' '}
-          <input
-            type="text"
+          {LABEL_DOKUMEN.kategori}{' '}
+          <select
+            className="field__input"
             value={kategori}
+            disabled={sibuk || daftarKategori === null || daftarKategori.length === 0}
             onChange={(e) => setKategori(e.target.value)}
-          />
+          >
+            <option value="">{LABEL_DOKUMEN.pilihKategori}</option>
+            {/* Document Claim produk, urutan master. Nama > 64 byte belum dapat disimpan (kolom KATEGORI_2) — dinyatakan. */}
+            {(daftarKategori ?? []).map((k) =>
+              kategoriTerlaluPanjang(k) ? (
+                <option key={k} value={k} disabled title={LABEL_DOKUMEN.terlaluPanjang}>
+                  {k} — {LABEL_DOKUMEN.terlaluPanjang}
+                </option>
+              ) : (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ),
+            )}
+          </select>
         </label>{' '}
         <label>
-          {DOKUMEN.tambahLampiran}{' '}
+          {LABEL_DOKUMEN.pilihBerkas}{' '}
           <input
             type="file"
-            disabled={sibuk || kategori.trim() === ''}
+            disabled={sibuk}
             onChange={(e) => {
-              const f = e.target.files?.[0]
-              // Kotak berkas DIKOSONGKAN lagi: tanpa itu, memilih berkas
-              // yang SAMA dua kali tidak memicu `change` sama sekali, dan
-              // unggahan kedua tampak diabaikan tanpa sebab.
-              e.target.value = ''
-              if (f === undefined) return
-              void jalankan(async () => {
-                await unggahDokumen(klaimID, pesertaID, f, kategori.trim())
-              })
+              setBerkas(e.target.files?.[0] ?? null)
             }}
           />
-        </label>
-      </p>
+        </label>{' '}
+        <button
+          type="button"
+          className="btn btn--primary btn--sm"
+          disabled={sibuk || kategori === '' || berkas === null}
+          onClick={() => {
+            const f = berkas
+            if (f === null) return
+            void jalankan(async () => {
+              await unggahDokumen(klaimID, pesertaID, f, kategori)
+              setBerkas(null)
+            })
+          }}
+        >
+          {sibuk ? 'Uploading…' : DOKUMEN.tambahLampiran}
+        </button>
+        {daftarKategori !== null && daftarKategori.length === 0 && (
+          <span className="os__galat-isian">{LABEL_DOKUMEN.kategoriKosong}</span>
+        )}
+      </div>
+      {hapus !== null && (
+        <Modal
+          judul={KONFIRMASI_HAPUS_DOKUMEN.judul}
+          onTutup={() => {
+            if (!sibuk) setHapus(null)
+          }}
+          tanpaTutup={sibuk}
+          labelBatal={KONFIRMASI_HAPUS_DOKUMEN.batal}
+          aksi={
+            <button
+              type="button"
+              className="btn btn--danger"
+              disabled={sibuk}
+              onClick={() => {
+                const target = hapus
+                void jalankan(async () => {
+                  await hapusDokumen(klaimID, target.id)
+                  setHapus(null)
+                })
+              }}
+            >
+              {sibuk ? KONFIRMASI_HAPUS_DOKUMEN.proses : KONFIRMASI_HAPUS_DOKUMEN.ya}
+            </button>
+          }
+        >
+          <p>
+            <strong>{hapus.namaFile}</strong>
+          </p>
+          <p role="note" className="alert alert--warn">
+            {KONFIRMASI_HAPUS_DOKUMEN.peringatan}
+          </p>
+        </Modal>
+      )}
     </section>
   )
 }

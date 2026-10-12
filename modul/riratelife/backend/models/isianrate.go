@@ -26,7 +26,7 @@ type IsianRate struct {
 }
 
 // PeriksaIsianRate merapikan isian Rate Detail; galat = kalimat untuk pengguna. CONTRACT dan RATE wajib, GENDER
-// dan AGE boleh kosong (XML). GENDER bila diisi U/M/F (pilihan radio tidak ada di XML - isi `RATE_LIFE` DEV); AGE dan
+// dan AGE boleh kosong (XML). GENDER bila diisi U/M/F (pilihan radio tidak ada di XML - isi `M_RATE_LIFE` DEV); AGE dan
 // CONTRACT bulat 0..UmurMaks; RATE disimpan berkoma desimal (`ChangeDotToPoint_DT` b2171, b2609).
 func PeriksaIsianRate(isi IsianRate) (IsianRate, error) {
 	var out IsianRate

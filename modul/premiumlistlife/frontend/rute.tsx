@@ -32,6 +32,8 @@ export function RutePremiumList({ halaman, ketukMenu }: PropsRute<HalamanPremium
   // Form Premium List Detail punya perubahan yang belum disimpan (Save Data) -
   // Confirm dikunci selama itu (keputusan work owner 03-10-2026).
   const [dataBelumTersimpan, setDataBelumTersimpan] = useState(false)
+  // Naik setiap Save Data / Calculate CSV - kesiapan Confirm dibaca ulang (06-10-2026).
+  const [versiKesiapan, setVersiKesiapan] = useState(0)
 
   // Memilih menu PremiumList Life (lagi) membawa kembali ke kotak masuk -
   // permintaan work owner 01-10-2026. Rute ini TETAP terpasang (keadaan polis
@@ -65,7 +67,13 @@ export function RutePremiumList({ halaman, ketukMenu }: PropsRute<HalamanPremium
       {halaman === 'premiumlist' &&
         polis.id !== '' &&
         polis.tahap === TAHAP_POLIS.detail && (
-          <PremiumListDetail polisID={polis.id} onBelumTersimpan={setDataBelumTersimpan} />
+          <PremiumListDetail
+            polisID={polis.id}
+            onBelumTersimpan={setDataBelumTersimpan}
+            onBerubah={() => {
+              setVersiKesiapan((v) => v + 1)
+            }}
+          />
         )}
       {/* Tiket 05a bagian 2 — `ShowLifePremiumSummary`, tahap Input Premium Summary. */}
       {halaman === 'premiumlist' &&
@@ -77,6 +85,7 @@ export function RutePremiumList({ halaman, ketukMenu }: PropsRute<HalamanPremium
           polisID={polis.id}
           tahap={polis.tahap}
           confirmTerkunci={polis.tahap === TAHAP_POLIS.detail && dataBelumTersimpan}
+          versiKesiapan={versiKesiapan}
           onSelesai={() => {
             setPolis({ id: '', tahap: '' })
           }}

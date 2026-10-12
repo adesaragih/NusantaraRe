@@ -51,6 +51,10 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc(
 		"POST /api/klaim-life/{id}/peserta/{pesertaId}/adjustment/{adjId}/komite",
 		serahkanKomite(svc, stubPelaku))
+	// Pratinjau pop-up Send Claim to Committee (12-10-2026, opsi A): gerbang Serahkan sampai sebelum menulis.
+	mux.HandleFunc(
+		"GET /api/klaim-life/{id}/peserta/{pesertaId}/adjustment/{adjId}/komite",
+		pratinjauKomite(svc, stubPelaku))
 	// Perpindahan tahap - butir aw. Dua tombol layar Outstanding
 	// memanggilnya: `Send Back to Register` (InputOSClaimLife.xml
 	// 21404) dan `Send to Medical Check` (21839). Tujuannya KATA,
@@ -60,6 +64,17 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	// `Save to RNM` - tombol layar Outstanding (`InputOSClaimLife.xml`
 	// b21102 -> `SaveOutStandingLife_Act`). POST, sebab ia MENULIS.
 	mux.HandleFunc("POST /api/klaim-life/{id}/outstanding", simpanRNM(svc, stubPelaku))
+	// Tombol `Save` layar Outstanding (`InputOSClaimLife.xml` b19413, 10-10-2026): Accept peserta dan medan tab
+	// Register Claim. PUT, sebab ia menimpa isian.
+	mux.HandleFunc("PUT /api/klaim-life/{id}/outstanding/isian", simpanIsianOutstanding(svc, stubPelaku))
+	// Tombol `Save` layar Medical Check (`MedicalCheckClaimLife`, 11-10-2026): RECOMMENDATION per peserta.
+	mux.HandleFunc("PUT /api/klaim-life/{id}/medis", simpanMedis(svc, stubPelaku))
+	// Tombol `Save` layar Claim Analis (12-10-2026): CLAIM ANALYST (NOTES) per peserta.
+	mux.HandleFunc("PUT /api/klaim-life/{id}/analis", simpanAnalis(svc, stubPelaku))
+	// View Detail peserta polis - tab Policy Details layar Outstanding (DetailPolisLife b631, 11-10-2026). Baca saja.
+	mux.HandleFunc("GET /api/klaim-life/{id}/peserta-polis", pesertaPolis(svc))
+	// Spreading peserta diambil dari PremiumList Life (keputusan work owner 11-10-2026). Baca saja.
+	mux.HandleFunc("GET /api/klaim-life/{id}/peserta/{pesertaId}/spreading-polis", spreadingPolis(svc))
 	// Gerbang Close Claim: memeriksa, belum menyelesaikan penugasan.
 	mux.HandleFunc("GET /api/klaim-life/{id}/boleh-tutup", bolehTutup(svc))
 	// Penutupan kasus - butir bb. POST, sebab ia MENGUBAH: STATUS_WORK
@@ -81,6 +96,8 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	// BERSARANG di bawah pesertanya: `SetDisease.xml` b389 menutup dengan
 	// `Obj-Save pyWorkPage`, jadi diagnosa tidak punya hidup di luar peserta
 	// yang memuatnya.
+	// Daftar GROUP DIAGNOSE (keputusan work owner 12-10-2026) - satu sumber models.KelompokDiagnosa.
+	mux.HandleFunc("GET /api/klaim-life/kelompok-diagnosa", kelompokDiagnosa())
 	mux.HandleFunc("POST /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa",
 		tambahDiagnosa(svc, stubPelaku))
 	mux.HandleFunc("PUT /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa/{diagId}",
@@ -96,6 +113,11 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("POST /api/klaim-life/{id}/peserta/{pesertaId}/dokumen",
 		unggahDokumen(svc, stubPelaku))
 	mux.HandleFunc("GET /api/dokumen/{dokId}/isi", isiDokumen(svc, stubPelaku))
+	// 11-10-2026: "View" berbatas klaim - dokumen milik klaim lain ditolak 404 (SatuDokumen berbatas CLAIM_ID).
+	mux.HandleFunc("GET /api/klaim-life/{id}/dokumen/{dokId}/isi", isiDokumenKlaim(svc, stubPelaku))
+	// 11-10-2026: daftar kategori dropdown "Category" = Document Claim produk polis klaim (sumber yang SAMA dengan
+	// pemeriksa unggahan).
+	mux.HandleFunc("GET /api/klaim-life/{id}/dokumen/kategori", kategoriDokumen(svc, stubPelaku))
 	mux.HandleFunc("DELETE /api/klaim-life/{id}/dokumen/{dokId}",
 		hapusDokumen(svc, stubPelaku))
 }

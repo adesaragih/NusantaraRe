@@ -124,3 +124,13 @@ export function barisAngka(
 ): readonly (readonly string[])[] {
   return baris.map((b) => b.map((v, i) => selAngka(jenis[i] ?? 'teks', v)))
 }
+
+/**
+ * Saring ketikan ke angka saja: digit, titik, dan koma. Huruf dan simbol lain
+ * dibuang saat diketik atau ditempel (permintaan pemakai 10 Oktober 2026,
+ * tab Limits). Titik/koma dipertahankan karena pemisah ribuan dan desimal
+ * Indonesia diterima services (`kabelDariKetikan`).
+ */
+export function hanyaAngka(teks: string): string {
+  return teks.replace(/[^0-9.,]/g, '')
+}

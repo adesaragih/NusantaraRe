@@ -115,6 +115,20 @@ var kolomRevisi = [][2]string{
 	{"INSTALLMENTNO", "InstallmentNo"},
 	{"REVISIONSTATE", "RevisionState"},
 	{"VIEWSTATE", "ViewState"},
+
+	// ⭐ Kedua total skalar tab EGNPI (`Total Amount in IDR`, `Total
+	// Proportion %`) — 10 Oktober 2026. Save SUDAH menulis keduanya (kolomnya
+	// ada di peta pendaratan, dan `KunciPenampungRevisi` menyemainya ke
+	// layar), tetapi tanpa baris ini pembaca tidak pernah mengambilnya:
+	// `Total Amount in IDR` selalu kosong sesudah Save (laporan pemakai).
+	{"TOTALEGNPIAMOUNT", "TotalEgnpiAmount"},
+	{"TOTALEGNPIPROPORTION", "TotalEgnpiProportion"},
+
+	// ⭐ `Total ROL` tab Limits Non-Prop — 11 Oktober 2026. Save menulisnya
+	// (`TotalLimitsROL` di peta pendaratan), tetapi tanpa baris ini pembaca
+	// tidak pernah mengambilnya: nilai hasil `Update Total` hilang sesudah
+	// Save (laporan pemakai; `services` membaca `rev.Medan["TotalLimitsROL"]`).
+	{"TOTALLIMITSROL", "TotalLimitsROL"},
 }
 
 // Kelima ejaan tab teks panjang — `CLOB` di DDL, teks di sini.

@@ -146,12 +146,14 @@ func TestUpdateSummarySpreadingBernamaDanBrokerage(t *testing.T) {
 	if nilaiDi(t, h.Share.Total["TotalSpreadedRnmProp"], "IDR") != "960000000" {
 		t.Errorf("Total OR %+v", h.Share.Total["TotalSpreadedRnmProp"])
 	}
-	// Net OR baris ORS: `TreatyInSetBrokerage` hanya mengenal `QS (OR)`, dan
-	// persennya TERBAWA dari baris sebelumnya — 40% × (12 jt − 1,2 jt).
-	if nilaiDi(t, o.RNMSpreadedListNetXOL, "IDR") != "4320000" {
+	// ⭐ 10 Oktober 2026 — Net OR baris ORS = 100% × (12 jt − 1,2 jt). Ekspor
+	// `TreatyInSetBrokerage` hanya mengenal `QS (OR)` dan membawa 40% dari
+	// baris sebelumnya, tetapi Pega di gambar pemakai memperlihatkan ORS
+	// sebagai 100% OR (Total OR Net = seluruh Net, R/I 0): `ORS` = 100%.
+	if nilaiDi(t, o.RNMSpreadedListNetXOL, "IDR") != "10800000" {
 		t.Errorf("Net OR baris ORS %+v", o.RNMSpreadedListNetXOL)
 	}
-	if nilaiDi(t, h.Share.Total["TotalSpreadedNetPremi"], "IDR") != "11520000" {
+	if nilaiDi(t, h.Share.Total["TotalSpreadedNetPremi"], "IDR") != "18000000" {
 		t.Errorf("Total OR Net %+v", h.Share.Total["TotalSpreadedNetPremi"])
 	}
 }
@@ -310,7 +312,7 @@ func TestSiapkanShareNPMenurunkanNilaiDariLayer(t *testing.T) {
 			"DeductionList":    []map[string]any{{"Comment": "Brokerage fee", "Currency": "IDR", "Deduction": "2000000", "DeductionPct": "10"}}},
 	}}
 	s := services.ShareDariPendaratan(sp, map[string]string{})
-	services.SiapkanShareNP(&s, layerShare()[:1], "1001270")
+	services.SiapkanShareNP(&s, layerShare()[:1], "1001270", nil, "")
 	b := s.Share[0]
 	if nilaiDi(t, b.RnmLimitList, "IDR") != "400000000" || b.TreatyGroupList[0].TreatyGroup != "PROPERTY" {
 		t.Errorf("turunan layer %+v", b)
@@ -396,5 +398,32 @@ func TestTerapkanAkarShareMenurutUrutanSumber(t *testing.T) {
 	services.TerapkanAkarShare(&s, map[string]string{}, models.ShareDetailWarisan{})
 	if s.RNMShare != "" || s.BrokeragePercent != "" {
 		t.Errorf("tebakan: %+v", s)
+	}
+}
+
+// ⭐ 10 Oktober 2026 — spreading MANUAL ber-`ORS` (Pega: Total OR Limit = Total
+// RNM Limit, R/I 0; Net OR = seluruh Net, Net R/I 0). Dulu Total OR/R/I Limit
+// kosong dan Net terbalik (OR 0, R/I penuh).
+func TestSpreadingManualORSMenjadiSeratusPersenOR(t *testing.T) {
+	s := shareAwal("40")
+	s.Share = []models.BarisShareNP{{}}
+	h := services.HitungShareNP(services.MasukanShareNP{Aksi: services.AksiShareSummary, Share: s, Layers: layerShare()[:1]}, sumberQS)
+	// Baris tanpa Spreading Type → spreading manual: satu baris ORS 40 = RNM 40.
+	s2 := h.Share
+	s2.Share[0].SpreadingListXOL = []models.BarisSpreadingNP{{ReinsTypeID: "10007", Pct: "40"}}
+	h2 := services.HitungShareNP(services.MasukanShareNP{Aksi: services.AksiShareSpreadingPct, Share: s2, Indeks: 0}, sumberQS)
+	h3 := services.HitungShareNP(services.MasukanShareNP{Aksi: services.AksiShareTotal, Share: h2.Share}, sumberQS)
+	b := h3.Share.Share[0]
+	if b.SpreadingListXOL[0].ReinsTypeName != "ORS" {
+		t.Skipf("induk 10007 bukan ORS di sumber uji: %+v", b.SpreadingListXOL[0])
+	}
+	if nilaiDi(t, b.RNMSpreadedListXOL, "IDR") != nilaiDi(t, b.RnmLimitList, "IDR") || nilaiDi(t, b.RNMSpreadedListRIXOL, "IDR") != "0" {
+		t.Errorf("OR/RI Limit %+v / %+v (RNM %+v)", b.RNMSpreadedListXOL, b.RNMSpreadedListRIXOL, b.RnmLimitList)
+	}
+	if nilaiDi(t, h2.Share.Total["TotalSpreadedRnmProp"], "IDR") != nilaiDi(t, b.RnmLimitList, "IDR") {
+		t.Errorf("Total OR Limit %+v, RNM %+v", h2.Share.Total["TotalSpreadedRnmProp"], b.RnmLimitList)
+	}
+	if nilaiDi(t, b.RNMSpreadedListNetRIXOL, "IDR") != "0" || nilaiDi(t, b.RNMSpreadedListNetXOL, "IDR") != nilaiDi(t, b.NetPremiumList, "IDR") {
+		t.Errorf("Net OR %+v, Net R/I %+v, Net %+v", b.RNMSpreadedListNetXOL, b.RNMSpreadedListNetRIXOL, b.NetPremiumList)
 	}
 }

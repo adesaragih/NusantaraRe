@@ -68,6 +68,38 @@ type BarisSpreadingNP struct {
 	GrossPremiumMinList []NilaiMataUang `json:"GrossPremiumMinList"`
 	DeductionTotalList  []NilaiMataUang `json:"DeductionTotalList"`
 	NetPremiumList      []NilaiMataUang `json:"NetPremiumList"`
+
+	// ⭐ Rincian spreading MANUAL — `SetSpreadingXOL` [5.3.8]–[5.9] (11 Oktober
+	// 2026, permintaan pemakai: Reins Type selain ORS harus memperlihatkan
+	// rinciannya seperti Pega). `Currency` / `Value` = RNM Limit baris ini
+	// (mata uang terakhir), `BreakDownSprdListXOL` = anak susunan induk
+	// (`QS (R/I)` 60 / `QS (OR)` 40 …), dan bagian OR / R/I TINGKAT SPREADING.
+	// Semuanya turunan: dihitung ulang tiap kontrak dibuka, tidak didaratkan.
+	Currency             string                    `json:"Currency"`
+	Value                string                    `json:"Value"`
+	BreakDownSprdListXOL []BarisPecahanSpreadingNP `json:"BreakDownSprdListXOL"`
+
+	RNMSpreadedListXOL           []NilaiMataUang `json:"RNMSpreadedListXOL"`
+	RNMSpreadedListRIXOL         []NilaiMataUang `json:"RNMSpreadedListRIXOL"`
+	RNMSpreadedListGrossXOL      []NilaiMataUang `json:"RNMSpreadedListGrossXOL"`
+	RNMSpreadedListGrossRIXOL    []NilaiMataUang `json:"RNMSpreadedListGrossRIXOL"`
+	RNMSpreadedListGrossMinXOL   []NilaiMataUang `json:"RNMSpreadedListGrossMinXOL"`
+	RNMSpreadedListGrossRIMinXOL []NilaiMataUang `json:"RNMSpreadedListGrossRIMinXOL"`
+	RNMSpreadedListDeductXOL     []NilaiMataUang `json:"RNMSpreadedListDeductXOL"`
+	RNMSpreadedListDeductRIXOL   []NilaiMataUang `json:"RNMSpreadedListDeductRIXOL"`
+	RNMSpreadedListNetXOL        []NilaiMataUang `json:"RNMSpreadedListNetXOL"`
+	RNMSpreadedListNetRIXOL      []NilaiMataUang `json:"RNMSpreadedListNetRIXOL"`
+}
+
+// BarisPecahanSpreadingNP - satu baris `SpreadingListXOL(n).BreakDownSprdListXOL`
+// (`SetSpreadingXOL` [5.3.8.1.2]): anak susunan induk spreading manual, per
+// mata uang RNM Limit. `Amount` = RNM Limit × (Pct ÷ % RNM Share) × SharePct ÷ 100.
+type BarisPecahanSpreadingNP struct {
+	ReinsTypeName string `json:"ReinsTypeName"`
+	ReinsTypeID   string `json:"ReinsTypeID"`
+	Currency      string `json:"Currency"`
+	Amount        string `json:"Amount"`
+	SharePct      string `json:"SharePct"`
 }
 
 // BarisShareNP - satu baris `TreatyIn.Share` (dan `FacultativeShareList`,

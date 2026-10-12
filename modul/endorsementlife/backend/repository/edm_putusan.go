@@ -196,12 +196,32 @@ var KolomRekapWarisan = []string{
 	"IDPEGA",
 }
 
+// KolomRekapWarisanSelisih - kolom `M_LIFE_PREMIUM_SUMMARY` di LUAR prosedur (ditambahkan work owner pada
+// tabel warisan, 09-10-2026; ⚠️ tipe/lebar BELUM tercatat di repo - diperlakukan seperti kolom uang lain,
+// NUMBER ← NUMBER). Hanya baris yang ditulis Confirm ENDORSEMENT mengisinya: selisih sesudah − sebelum
+// endorsement per mata uang = baris "Difference" Summary Comparison (`sqlSelisihRekap`).
+var KolomRekapWarisanSelisih = []string{"PREMIUM_SELISIH", "BALANCE_SELISIH"}
+
 // RekapWarisanTulis - kepala baris rekap warisan; nilai uang dari rekap kasus.
 type RekapWarisanTulis struct {
 	KasusID    string
 	NomorPolis string
 	Nomor      string
 	COB        string
+	// Tipe - `.Type` kasus: rumus PREMIUM/BALANCE selisih (`rumusPremiBalance`).
+	Tipe string
+}
+
+// sqlSelisihRekap - selisih satu kolom (PREMIUM/BALANCE) satu mata uang rekap `r`: ekspresi rekap yang SAMA
+// dengan Summary Comparison (`rumusPremiBalance` + `kelompokStatus`, `edm_perbandingan.go`) atas peserta kelas
+// Delete/Batal (D) dan New (N). Difference = After − Before = (O+N) − (O−D) = D + N (`models.SusunPerbandingan`);
+// ekspresinya linear (SUM), jadi SUM atas D∪N = D + N. Mata uang tanpa D/N = 0. `DECODE` menyamakan NULL.
+func sqlSelisihRekap(peserta, ekspresi, penampung string) string {
+	if ekspresi == "0" {
+		return "0"
+	}
+	return fmt.Sprintf(`NVL((SELECT %s FROM %s d WHERE d.PREMIUM_LIST_ID = %s AND DECODE(d.CURRENCY, r.CURRENCY, 1, 0) = 1 AND %s IN ('%s', '%s')), 0)`,
+		ekspresi, peserta, penampung, kelompokStatus(), models.KelompokHapus, models.KelompokBaru)
 }
 
 // sqlHapusRekapWarisan - hapus-sebelum-sisip `PL_NUMBER` + `IDPEGA` (pola
@@ -217,8 +237,9 @@ func sqlHapusRekapWarisan(warisan string) string {
 // menurut NLS sesi (`,` di sesi Indonesia) - `INSERT … SELECT` NUMBER ke
 // NUMBER kebal NLS dan eksak. ⚠️ `[belum terverifikasi]` tipe kolom uang
 // warisan: dianggap `NUMBER` seperti tiruan `uji/skemauji` dan katalog peserta.
-// Penampung :1 COB, :2 PL_NUMBER, :3 PL_NUMBER_EDM, :4 IDPEGA, :5 kasus.
-func sqlSisipRekapWarisan(warisan, urutan, rekap string) string {
+// Penampung :1 COB, :2 PL_NUMBER, :3 PL_NUMBER_EDM, :4 IDPEGA, :5/:6 kasus (selisih PREMIUM/BALANCE),
+// :7 kasus.
+func sqlSisipRekapWarisan(warisan, urutan, rekap, peserta, tipe string) string {
 	nilai := []string{"TO_CHAR(" + urutan + ".NEXTVAL)"}
 	for _, k := range KolomRekapWarisan {
 		switch k {
@@ -236,17 +257,20 @@ func sqlSisipRekapWarisan(warisan, urutan, rekap string) string {
 			nilai = append(nilai, "NVL(r."+k+", 0)")
 		}
 	}
-	return fmt.Sprintf(`INSERT INTO %s (ID, %s) SELECT %s FROM %s r WHERE r.PREMIUM_LIST_ID = :5`,
-		warisan, strings.Join(KolomRekapWarisan, ", "), strings.Join(nilai, ", "), rekap)
+	premi, balance := rumusPremiBalance(tipe)
+	nilai = append(nilai, sqlSelisihRekap(peserta, premi, ":5"), sqlSelisihRekap(peserta, balance, ":6"))
+	kolom := append(append([]string{}, KolomRekapWarisan...), KolomRekapWarisanSelisih...)
+	return fmt.Sprintf(`INSERT INTO %s (ID, %s) SELECT %s FROM %s r WHERE r.PREMIUM_LIST_ID = :7`,
+		warisan, strings.Join(kolom, ", "), strings.Join(nilai, ", "), rekap)
 }
 
 // TulisRekapWarisan menyalin rekap kasus ke `M_LIFE_PREMIUM_SUMMARY`; mengembalikan cacah baris.
 func (g *Gudang) TulisRekapWarisan(ctx context.Context, tx *db.Tx, r RekapWarisanTulis) (int, error) {
-	n, err := g.nama(tabelRekapWarisan, urutanRekapWarisan, tabelRekap)
+	n, err := g.nama(tabelRekapWarisan, urutanRekapWarisan, tabelRekap, tabelPeserta)
 	if err != nil {
 		return 0, err
 	}
-	hapus, sisip := sqlHapusRekapWarisan(n[0]), sqlSisipRekapWarisan(n[0], n[1], n[2])
+	hapus, sisip := sqlHapusRekapWarisan(n[0]), sqlSisipRekapWarisan(n[0], n[1], n[2], n[3], r.Tipe)
 	for _, q := range []string{hapus, sisip} {
 		if err := db.PeriksaSQL(q); err != nil {
 			return 0, err
@@ -255,7 +279,7 @@ func (g *Gudang) TulisRekapWarisan(ctx context.Context, tx *db.Tx, r RekapWarisa
 	if _, err := tx.ExecContext(ctx, hapus, r.NomorPolis, r.KasusID); err != nil {
 		return 0, fmt.Errorf("repository: menghapus rekap warisan %q: %w", r.KasusID, err)
 	}
-	h, err := tx.ExecContext(ctx, sisip, db.KosongJadiNil(r.COB), r.NomorPolis, r.Nomor, r.KasusID, r.KasusID)
+	h, err := tx.ExecContext(ctx, sisip, db.KosongJadiNil(r.COB), r.NomorPolis, r.Nomor, r.KasusID, r.KasusID, r.KasusID, r.KasusID)
 	if err != nil {
 		return 0, fmt.Errorf("repository: menulis rekap warisan %q: %w", r.KasusID, err)
 	}
@@ -299,6 +323,29 @@ var nilaiProduksiWarisan = map[string]string{
 	"TGL_INPUT": "SYSDATE",
 }
 
+// KolomProduksiTambahanEDM - kolom `LIFEINPRODUCTION` di LUAR daftar korpus EDM (27 kolom
+// `KolomProduksiWarisan`, dikunci uji korpus) yang ditulis jalur Confirm endorsement:
+//
+//	DESCRIPTION ← Comment keputusan (keputusan work owner 09-10-2026); kolom milik daftar new business
+//	              (36 kolom, PremiumList: DESCRIPTION ← Comment Input Offer). Penampung :4 - di-trim dan
+//	              dibatasi `models.BatasKomentar` (255) di `Putuskan`; kosong → NULL.
+//	WPC, PRODUCTNAMEID, PRODUCTNAME ← kepala kasus (keputusan work owner 09-10-2026) - kolom daftar new business
+//	              yang sudah DISALIN ke kepala kasus saat Create Addendum (`models.KolomKepalaSalin`: `WPC` b2247
+//	              tanggal, `PRODUCT_NAME_ID` b2226, `PRODUCT_NAME` b2205). WPC tanpa jam seperti PremiumList
+//	              (`To_date(..,'DD/MM/YYYY')`). Kepala kosong (polis warisan tanpa properti itu) → NULL.
+//	ANNUITYINTEREST, PREMIUMREFUNDFACTOR ← kepala kasus (keputusan work owner 09-10-2026,
+//	              `models.KolomKepalaTambahan`); kasus yang lahir SEBELUM kedua kolom disalin (kepala NULL)
+//	              memakai CADANGAN dari kepala versi yang di-endorse (`ProduksiWarisanTulis.Cadangan*`,
+//	              penampung :5-:8 koefisien + skala, kebal NLS) - tanpa mengubah baris kasus.
+var KolomProduksiTambahanEDM = []string{"DESCRIPTION", "WPC", "PRODUCTNAMEID", "PRODUCTNAME", "ANNUITYINTEREST", "PREMIUMREFUNDFACTOR"}
+
+// nilaiProduksiTambahanEDM - ekspresi `KolomProduksiTambahanEDM`; satu-satunya penampung :4 (DESCRIPTION).
+var nilaiProduksiTambahanEDM = map[string]string{
+	"DESCRIPTION": ":4", "WPC": "TRUNC(p.WPC)", "PRODUCTNAMEID": "p.PRODUCT_NAME_ID", "PRODUCTNAME": "p.PRODUCT_NAME",
+	"ANNUITYINTEREST":     "NVL(p.ANNUITY_INTEREST, TO_NUMBER(:5) / POWER(10, :6))",
+	"PREMIUMREFUNDFACTOR": "NVL(p.PREMIUM_REFUND_FACTOR, TO_NUMBER(:7) / POWER(10, :8))",
+}
+
 // kasusJenisCeding - cabang `WHEN` dari models.NamaJenisCeding, urut kode.
 func kasusJenisCeding() string {
 	var b strings.Builder
@@ -313,17 +360,28 @@ type ProduksiWarisanTulis struct {
 	KasusID    string
 	NomorPolis string
 	Nomor      string
+	// Komentar - Comment keputusan → DESCRIPTION (09-10-2026); kosong → NULL.
+	Komentar string
+	// CadanganAnnuity / CadanganRefund - nilai versi yang di-endorse (teks desimal bertitik) dipakai bila kepala
+	// kasus NULL (kasus lama, 09-10-2026); kosong = tanpa cadangan.
+	CadanganAnnuity string
+	CadanganRefund  string
 }
 
-// sqlSisipProduksiWarisan - satu baris dari kepala kasus. Penampung :1 IDPEGA, :2 NOPOLIS, :3 NOENDORS, :4 kasus
-// (urut kemunculan - godror mengikat menurut urutan).
+// sqlSisipProduksiWarisan - satu baris dari kepala kasus. Penampung :1 IDPEGA, :2 NOPOLIS, :3 NOENDORS,
+// :4 DESCRIPTION, :5/:6 dan :7/:8 cadangan ANNUITYINTEREST / PREMIUMREFUNDFACTOR (`KolomProduksiTambahanEDM`),
+// :9 kasus (urut kemunculan - godror mengikat menurut urutan).
 func sqlSisipProduksiWarisan(tujuan, polis string) string {
-	nilai := make([]string, len(KolomProduksiWarisan))
-	for i, k := range KolomProduksiWarisan {
-		nilai[i] = nilaiProduksiWarisan[k]
+	kolom := append(append([]string{}, KolomProduksiWarisan...), KolomProduksiTambahanEDM...)
+	nilai := make([]string, 0, len(kolom))
+	for _, k := range KolomProduksiWarisan {
+		nilai = append(nilai, nilaiProduksiWarisan[k])
 	}
-	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s p WHERE p.ID = :4`,
-		tujuan, strings.Join(KolomProduksiWarisan, ", "), strings.Join(nilai, ", "), polis)
+	for _, k := range KolomProduksiTambahanEDM {
+		nilai = append(nilai, nilaiProduksiTambahanEDM[k])
+	}
+	return fmt.Sprintf(`INSERT INTO %s (%s) SELECT %s FROM %s p WHERE p.ID = :9`,
+		tujuan, strings.Join(kolom, ", "), strings.Join(nilai, ", "), polis)
 }
 
 // TulisProduksiWarisan menulis baris `LIFEINPRODUCTION` kasus yang diresmikan; mengembalikan cacah baris (1).
@@ -339,7 +397,10 @@ func (g *Gudang) TulisProduksiWarisan(ctx context.Context, tx *db.Tx, r Produksi
 	if err := db.PeriksaSQL(q); err != nil {
 		return 0, err
 	}
-	h, err := tx.ExecContext(ctx, q, r.KasusID, r.NomorPolis, r.Nomor, r.KasusID)
+	koefA, skalaA := pecahDesimal(strings.TrimSpace(r.CadanganAnnuity))
+	koefR, skalaR := pecahDesimal(strings.TrimSpace(r.CadanganRefund))
+	h, err := tx.ExecContext(ctx, q, r.KasusID, r.NomorPolis, r.Nomor, db.KosongJadiNil(strings.TrimSpace(r.Komentar)),
+		koefA, skalaA, koefR, skalaR, r.KasusID)
 	if err != nil {
 		return 0, fmt.Errorf("repository: menulis produksi warisan %q: %w", r.KasusID, err)
 	}

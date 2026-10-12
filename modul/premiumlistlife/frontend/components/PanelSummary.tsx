@@ -13,8 +13,8 @@ import { useEffect, useState } from 'react'
 
 import { Gagal, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { pemisahRibuan } from '../angka'
-import { ambilRekapPolis, type HasilRekapPolis } from '../api'
-import { PANEL_SUMMARY } from '../labels'
+import { ambilRekapPolis, ambilRekapRetroPolis, type HasilRekapPolis, type RekapRetroPolis } from '../api'
+import { PANEL_SPREADING, PANEL_SUMMARY } from '../labels'
 import { kolomGridRekap, selRekap } from '../pages/PremiumListSummary'
 
 /**
@@ -33,6 +33,24 @@ export function kolomPanelSummary(tipe: string) {
 export default function PanelSummary({ polisID }: { polisID: string }) {
   const [hasil, setHasil] = useState<HasilRekapPolis | null>(null)
   const [galat, setGalat] = useState<unknown>(null)
+  // Rekap retro per reinsurer per mata uang (keputusan work owner 06-10-2026).
+  const [retro, setRetro] = useState<RekapRetroPolis[]>([])
+  const [galatRetro, setGalatRetro] = useState<unknown>(null)
+
+  useEffect(() => {
+    let hidup = true
+    ambilRekapRetroPolis(polisID).then(
+      (r) => {
+        if (hidup) setRetro(r)
+      },
+      (e: unknown) => {
+        if (hidup) setGalatRetro(e)
+      },
+    )
+    return () => {
+      hidup = false
+    }
+  }, [polisID])
 
   useEffect(() => {
     let hidup = true
@@ -76,6 +94,36 @@ export default function PanelSummary({ polisID }: { polisID: string }) {
                   {kolom.map((k) => (
                     <td key={k.kolom}>{pemisahRibuan(selRekap(r, k.kolom, ''))}</td>
                   ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {/*
+        Retro per reinsurer per mata uang - total PREMIUM_SPREADED_GROSS / NET dari
+        spreading tersimpan. Nama reinsurer dari data, TANPA daftar nama tetap Pega.
+      */}
+      {galatRetro !== null && <Gagal galat={galatRetro} />}
+      {retro.length > 0 && (
+        <div className="pl-spreading">
+          <h4 className="pl-offer__subjudul">{PANEL_SPREADING.judulRekap}</h4>
+          <table className="inbox__tabel">
+            <thead>
+              <tr>
+                <th>{PANEL_SPREADING.kolomRekap.reinsurer}</th>
+                <th>{PANEL_SPREADING.kolomRekap.currency}</th>
+                <th className="pl-spreading__angka">{PANEL_SPREADING.kolomRekap.gross}</th>
+                <th className="pl-spreading__angka">{PANEL_SPREADING.kolomRekap.net}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {retro.map((r) => (
+                <tr key={`${r.currency}-${r.reinsurer}`}>
+                  <td>{r.reinsurer}</td>
+                  <td>{r.currency}</td>
+                  <td className="pl-spreading__angka">{pemisahRibuan(r.gross)}</td>
+                  <td className="pl-spreading__angka">{pemisahRibuan(r.net)}</td>
                 </tr>
               ))}
             </tbody>

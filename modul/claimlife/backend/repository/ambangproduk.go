@@ -97,7 +97,20 @@ type ProdukLife struct{ db *db.DB }
 // NewProdukLife menyusunnya.
 func NewProdukLife(db *db.DB) *ProdukLife { return &ProdukLife{db: db} }
 
-// sqlAmbangProduk merakit pembacaan kedua ambang.
+// TabelProdukNameLife - tabel DATAR Master Product Name Life (modul masterproductnamelife, migrasi 140) - sumber ambang
+// SEJAK 11-10-2026: aplikasi Master menulis tabel ini, bukan JSON di balik view (view DEV "tidak dipakai dan tidak dibangun
+// ulang", masterproductnamelife mpnl_tabel.go). `MAXEXPIREDCLAIM` = "Max Notification Claim Expired", `MAXDATARECEIVE` =
+// "Max Production Data Receive", keduanya NUMBER(5) hari. BACA SAJA, dua kolom yang sama, berkunci `ID` (= ProductNameID
+// polis). Salinan bentuk baca, tanpa impor modul itu.
+const TabelProdukNameLife = "M_PRODUCTNAME_LIFE"
+
+// sqlAmbangProdukDatar - kedua ambang dari tabel datar Master (sumber utama).
+func sqlAmbangProdukDatar(tabel string) string {
+	return fmt.Sprintf(`SELECT t.%s, t.%s FROM %s t WHERE t.ID = :1`,
+		KolomAmbangProduk[0], KolomAmbangProduk[1], tabel)
+}
+
+// sqlAmbangProduk merakit pembacaan kedua ambang dari view warisan (cadangan: produk yang belum ada di tabel datar).
 //
 // ⚠️ Keduanya dibaca sebagai TEKS, tidak diubah menjadi bilangan di sini:
 // `models.PenandaBatasHari` yang menguraikannya, dan konversi tipe dilakukan
@@ -115,6 +128,27 @@ func (r *ProdukLife) Ambang(ctx context.Context, produkID string) (AmbangProduk,
 	if strings.TrimSpace(produkID) == "" {
 		return AmbangProduk{}, fmt.Errorf("%w: id produk kosong",
 			ErrAmbangProdukTakDitemukan)
+	}
+	// 11-10-2026: tabel DATAR Master Product Name Life lebih dulu (yang ditulis aplikasi Master hari ini); view warisan
+	// hanya bila produknya tidak ada di tabel datar (belum dipindah alat pindahflat).
+	datar, err := r.db.Qualify(TabelProdukNameLife)
+	if err != nil {
+		return AmbangProduk{}, err
+	}
+	qd := sqlAmbangProdukDatar(datar)
+	if err := db.PeriksaSQL(qd); err != nil {
+		return AmbangProduk{}, err
+	}
+	var dKlaim, dTerima sql.NullString
+	err = r.db.QueryRowContext(ctx, qd, produkID).Scan(&dKlaim, &dTerima)
+	if err == nil {
+		return AmbangProduk{
+			MaxExpiredClaim: strings.TrimSpace(dKlaim.String),
+			MaxDataReceive:  strings.TrimSpace(dTerima.String),
+		}, nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return AmbangProduk{}, fmt.Errorf("repository: membaca ambang produk (tabel datar): %w", err)
 	}
 	produk, err := r.db.Qualify(NamaViewProdukLife)
 	if err != nil {

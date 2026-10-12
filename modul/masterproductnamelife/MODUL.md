@@ -33,6 +33,8 @@ dipensiunkan 1 Oktober 2026.
 | `backend/` | `models/` `repository/` `services/` `handlers/` `tiruan/` `migrations/` `modul.go` — paket Go `nusantarare/modul/masterproductnamelife/backend/...` |
 | `frontend/` | `pages/` `components/` `labels.ts` `api.ts` `bentuk.ts` `masterproductnamelife.css` `menu.ts` `rute.tsx` dan berkas `*.test.ts` |
 
+> **10-10-2026 (keputusan work owner: "view rate_life sudah tidak digunakan, sekarang gunakan tabel M_RATE_LIFE")**: view `RATE_LIFE` dibuang di DEV (ORA-00942). `View Rate` membaca tabel flat `M_RATE_LIFE` (kolom sama, baca-saja; `repository.MasterRate`; katalog uji `testdata/katalog-dev.json` ikut). Rujukan: `modul/riratelife/MODUL.md` RALAT R7.
+
 ## Migrasi
 
 Rentang `140-179` (tabel R2, urut hulu ke hilir: migrasi modul hilir yang merujuk tabel modul hulu
@@ -108,7 +110,7 @@ npx vitest run modul/masterproductnamelife
 
 | Butir | Keadaan | Bukti |
 | --- | --- | --- |
-| K1 OQ-MPNL-03 R/I Rate dan View Rate | view `RATE_LIFE_SUMMARY` (`Choose R/I Rate`) dan `RATE_LIFE` (`View Rate`) dibaca **saja**, kolom RD saja; baris `PLAN LIST` baru dapat diberi R/I Rate (pilihan baru wajib ada di view, nama dari master). DEV baca-saja: `GET /master/ri-rate` 200 (346 baris), `GET /rate` 200 (59 baris, 0,35 detik), nol tulisan | `repository/mpnl_master.go`, uji `TestMPNLRateDibacaKolomRDSaja`, `TestMPNLSetiapSQLMasterAdalahSelect`, `TestPlanRIRateBaruDariViewRingkasan` *(RALAT 07-10-2026: ringkasan rate kini tabel `M_RATE_LIFE_SUMMARY` berkolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID - keputusan work owner 07-10-2026, `modul/riratelife/MODUL.md` RALAT R6; modul ini membacanya `SELECT ID, USEDBY`, tetap baca-saja)* |
+| K1 OQ-MPNL-03 R/I Rate dan View Rate | view `RATE_LIFE_SUMMARY` (`Choose R/I Rate`) dan `RATE_LIFE` (`View Rate`) dibaca **saja**, kolom RD saja; baris `PLAN LIST` baru dapat diberi R/I Rate (pilihan baru wajib ada di view, nama dari master). DEV baca-saja: `GET /master/ri-rate` 200 (346 baris), `GET /rate` 200 (59 baris, 0,35 detik), nol tulisan | `repository/mpnl_master.go`, uji `TestMPNLRateDibacaKolomRDSaja`, `TestMPNLSetiapSQLMasterAdalahSelect`, `TestPlanRIRateBaruDariViewRingkasan` *(RALAT 07-10-2026: ringkasan rate kini tabel `M_RATE_LIFE_SUMMARY` berkolom ID, USEDBY, TYPE, MODIFIEDDATE, OPERATORID - keputusan work owner 07-10-2026, `modul/riratelife/MODUL.md` RALAT R6; modul ini membacanya `SELECT ID, USEDBY`, tetap baca-saja)* *(RALAT 10-10-2026: `View Rate` membaca tabel flat `M_RATE_LIFE`; view `RATE_LIFE` dibuang - keputusan work owner)* |
 | §2 delapan OQ | OQ-MPNL-01 (JSON seperti Pega; tiket 01 tetap ditangguhkan), 05, 06, 07, 10, 11, 13, 14 **ditutup** dengan bawaan yang dibangun; konfirmasi menyusul OQ-MPNL-05 (pemilik ekspor Pega). OQ terbuka: nol | `docs/OQ-MASTER-PRODUCT-NAME-LIFE.md` bab keputusan 01-10-2026; tiket 01, 06 |
 
 ## RALAT 07-10-2026 — rincian rate R/I Rate Life menjadi tabel flat `M_RATE_LIFE`

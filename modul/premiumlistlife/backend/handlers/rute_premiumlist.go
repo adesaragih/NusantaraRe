@@ -4,6 +4,9 @@ package handlers
 //
 //	POST /api/polis-life/{id}/keputusan   body {"keputusan":"Confirm|Reject|Decline"}
 //	GET  /api/polis-life/{id}/summary     rekap per mata uang (tiket 05a)
+//	GET  /api/polis-life/{id}/peserta/{detailId}/spreading  spreading retro satu peserta (07-10-2026)
+//	GET  /api/polis-life/{id}/kesiapan-confirm  alasan Confirm belum dapat dijalankan (06-10-2026)
+//	GET  /api/polis-life/{id}/spreading/rekap  total retro per reinsurer per mata uang (06-10-2026)
 //	POST /api/polis-life/{id}/summary     nomor + rekap + warisan (tiket 05a)
 //
 // Padanan ketiga konektor keputusan `InputPolicyHolder.xml`.
@@ -151,7 +154,7 @@ func putuskanPenawaran(svc *services.Service, stubPelaku bool) http.HandlerFunc 
 	}
 }
 
-// ringkasPolis melayani GET /api/polis-life/ringkas?nomorPolis=...
+// ringkasPolis melayani GET /api/polis-life/ringkas?nomorPolis=... dan ?idpega=... (10-10-2026).
 //
 // ⛔ BERKUNCI NOMOR POLIS, bukan id kasus. Claim Life mengenal polis lewat
 // NOMORNYA - itu yang diketik pemakai di `Choose Policy No` - dan ia tidak
@@ -168,8 +171,18 @@ func ringkasPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
 			return
 		}
-		hasil, err := svc.RingkasPolis().Ambil(r.Context(),
-			inti.PelakuDari(r, stubPelaku), r.URL.Query().Get("nomorPolis"))
+		// ?idpega= (Claim Life, keputusan work owner 10-10-2026): header dari IDPEGA peserta; selain itu ?nomorPolis=
+		// seperti semula.
+		var (
+			hasil services.PolicyDataLife
+			err   error
+		)
+		if idPega := r.URL.Query().Get("idpega"); idPega != "" {
+			hasil, err = svc.RingkasPolis().AmbilDariIdPega(r.Context(), inti.PelakuDari(r, stubPelaku), idPega)
+		} else {
+			hasil, err = svc.RingkasPolis().Ambil(r.Context(),
+				inti.PelakuDari(r, stubPelaku), r.URL.Query().Get("nomorPolis"))
+		}
 		if jawabGalatPolis(w, err) {
 			return
 		}
@@ -212,6 +225,53 @@ func pesertaPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			return
 		}
 		galat.TulisJSON(w, hal)
+	}
+}
+
+// kesiapanConfirmPolis melayani GET /api/polis-life/{id}/kesiapan-confirm (06-10-2026).
+func kesiapanConfirmPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !svc.PunyaDatabase() {
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		hasil, err := svc.Penawaran().KesiapanConfirm(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("id"))
+		if jawabGalatPolis(w, err) {
+			return
+		}
+		galat.TulisJSON(w, hasil)
+	}
+}
+
+// spreadingPesertaPolis melayani GET /api/polis-life/{id}/peserta/{detailId}/spreading -
+// popup spreading satu baris peserta (keputusan work owner 07-10-2026).
+func spreadingPesertaPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !svc.PunyaDatabase() {
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		p, err := svc.DetailPolis().SpreadingPeserta(r.Context(), inti.PelakuDari(r, stubPelaku),
+			r.PathValue("id"), r.PathValue("detailId"))
+		if jawabGalatPolis(w, err) {
+			return
+		}
+		galat.TulisJSON(w, p)
+	}
+}
+
+// rekapRetroPolis melayani GET /api/polis-life/{id}/spreading/rekap (06-10-2026).
+func rekapRetroPolis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !svc.PunyaDatabase() {
+			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			return
+		}
+		rekap, err := svc.DetailPolis().RekapRetro(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("id"))
+		if jawabGalatPolis(w, err) {
+			return
+		}
+		galat.TulisJSON(w, map[string]any{"rekap": rekap})
 	}
 }
 
@@ -324,10 +384,17 @@ func jawabGalatPolis(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, services.ErrPolisNomorTakDitemukan):
 		// 404: nomor polisnya memang tidak ada di PremiumList Life.
 		galat.Tulis(w, http.StatusNotFound, err.Error())
+	case errors.Is(err, services.ErrPesertaTakDitemukan):
+		// 404: baris peserta itu bukan milik polis ini (07-10-2026).
+		galat.Tulis(w, http.StatusNotFound, "peserta tidak ditemukan di polis ini")
 	case errors.Is(err, services.ErrPolisTakDitemukan):
 		// 404: polisnya memang tidak ada. 500 akan membuat orang mencari
 		// kerusakan di server padahal id-nya yang salah.
 		galat.Tulis(w, http.StatusNotFound, "polis tidak ditemukan")
+	case errors.Is(err, services.ErrBelumSiapConfirm):
+		// 409: masih ada yang kurang sebelum Confirm - alasannya disebut (06-10-2026).
+		galat.Tulis(w, http.StatusConflict, sesudahSebab(err, services.ErrBelumSiapConfirm))
+		return true
 	case errors.Is(err, services.ErrPolisTanpaPeserta):
 		// 409: permintaannya sah, keadaan polisnya yang belum siap - dan
 		// pesannya menyebut apa yang harus dikerjakan lebih dahulu.
@@ -450,6 +517,9 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	// (nomor, rekap, salinan peserta warisan). Dua rute supaya melihat rekap
 	// tidak pernah menerbitkan nomor.
 	mux.HandleFunc("GET /api/polis-life/{id}/summary", rekapPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/{id}/peserta/{detailId}/spreading", spreadingPesertaPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/{id}/kesiapan-confirm", kesiapanConfirmPolis(svc, stubPelaku))
+	mux.HandleFunc("GET /api/polis-life/{id}/spreading/rekap", rekapRetroPolis(svc, stubPelaku))
 	mux.HandleFunc("POST /api/polis-life/{id}/summary",
 		submitRekapPolis(svc, stubPelaku))
 }

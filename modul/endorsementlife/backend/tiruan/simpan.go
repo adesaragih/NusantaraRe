@@ -133,36 +133,12 @@ func (g *Gudang) HitungRekap(_ context.Context, _ *db.Tx, kasusID, tipe string) 
 		}
 	}
 	var hasil []map[string]string
-	premi, balance, tanda := rumus(tipe)
 	for uang, baris := range perUang {
-		r := map[string]string{"CURRENCY": uang}
-		for _, k := range models.KolomRekapKasus[1:] {
-			var kolom []string
-			var tk []int
-			switch k {
-			case "PREMIUM":
-				kolom, tk = premi, []int{1}
-			case "BALANCE":
-				kolom, tk = balance, tanda
-			default:
-				sumber := k
-				if s, ada := pasanganRekap[k]; ada {
-					sumber = s
-				}
-				kolom, tk = []string{sumber}, []int{1}
-			}
-			total := apd.New(0, 0)
-			for _, n := range baris {
-				v, err := jumlah(n, kolom, tk)
-				if err != nil {
-					return 0, err
-				}
-				if _, err := utils.DecimalContext().Add(total, total, v); err != nil {
-					return 0, err
-				}
-			}
-			r[k] = tm9(total)
+		r, err := rekapKelompok(baris, tipe)
+		if err != nil {
+			return 0, err
 		}
+		r["CURRENCY"] = uang
 		hasil = append(hasil, r)
 	}
 	sort.Slice(hasil, func(i, j int) bool { return hasil[i]["CURRENCY"] < hasil[j]["CURRENCY"] })
@@ -182,4 +158,79 @@ func (g *Gudang) RekapKasus(_ context.Context, _ *db.Tx, kasusID string) ([]map[
 		return nil, g.Galat
 	}
 	return g.RekapData[kasusID], nil
+}
+
+// rekapKelompok - kolom rekap (`KolomRekapKasus[1:]`) sekelompok baris peserta;
+// dipakai `HitungRekap` dan `PerbandinganKasus` (meniru ekspresi SQL yang sama).
+func rekapKelompok(baris []map[string]string, tipe string) (map[string]string, error) {
+	premi, balance, tanda := rumus(tipe)
+	r := map[string]string{}
+	for _, k := range models.KolomRekapKasus[1:] {
+		var kolom []string
+		var tk []int
+		switch k {
+		case "PREMIUM":
+			kolom, tk = premi, []int{1}
+		case "BALANCE":
+			kolom, tk = balance, tanda
+		default:
+			sumber := k
+			if s, ada := pasanganRekap[k]; ada {
+				sumber = s
+			}
+			kolom, tk = []string{sumber}, []int{1}
+		}
+		total := apd.New(0, 0)
+		for _, n := range baris {
+			v, err := jumlah(n, kolom, tk)
+			if err != nil {
+				return nil, err
+			}
+			if _, err := utils.DecimalContext().Add(total, total, v); err != nil {
+				return nil, err
+			}
+		}
+		r[k] = tm9(total)
+	}
+	return r, nil
+}
+
+// PerbandinganKasus meniru `repository.sqlPerbandingan`: per (CURRENCY, kelas
+// EDM_STATUS) - Delete/Batal → D, New → N, selain itu → O.
+func (g *Gudang) PerbandinganKasus(_ context.Context, _ *db.Tx, kasusID, tipe string) ([]models.KelompokRekap, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Galat != nil {
+		return nil, g.Galat
+	}
+	type kunci struct{ uang, kel string }
+	per := map[kunci][]map[string]string{}
+	var urut []kunci
+	for _, d := range g.Peserta {
+		if d.PolisID != kasusID {
+			continue
+		}
+		kel := models.KelompokLama
+		switch d.EdmStatus {
+		case models.StatusDelete, models.StatusBatal:
+			kel = models.KelompokHapus
+		case models.StatusNew:
+			kel = models.KelompokBaru
+		}
+		k := kunci{d.Nilai["CURRENCY"], kel}
+		if _, ada := per[k]; !ada {
+			urut = append(urut, k)
+		}
+		per[k] = append(per[k], d.Nilai)
+	}
+	sort.Slice(urut, func(i, j int) bool { return urut[i].uang < urut[j].uang })
+	var hasil []models.KelompokRekap
+	for _, k := range urut {
+		r, err := rekapKelompok(per[k], tipe)
+		if err != nil {
+			return nil, err
+		}
+		hasil = append(hasil, models.KelompokRekap{Currency: k.uang, Kelompok: k.kel, Cacah: len(per[k]), Nilai: r})
+	}
+	return hasil, nil
 }

@@ -57,6 +57,13 @@ type BarisAdjustment struct {
 	NamaBank      string
 	IDBank        string
 	NomorRekening string
+	// PayableTo (`PAYABLE_TO` b5929, baca saja) dan CabangBank (`BRANCH_OF_BANK` b6870) - migrasi 011, dibaca sejak 11-10-2026.
+	PayableTo  string
+	CabangBank string
+	// TanggalOutstanding - OutStanding Date grid adjustment (`.ADJUSTMENT_DATE`), diturunkan dari T_CLAIMLF_JEJAK
+	// (transisi '' -> '0' Save to RNM) saat baca; tidak disimpan (11-10-2026).
+	TanggalOutstanding string
+
 	// Spreading adalah pecahan baris ini per treaty-year (tiket 14).
 	// Induknya baris adjustment, bukan peserta dan bukan header klaim.
 	Spreading []Spreading
@@ -67,12 +74,110 @@ func (b BarisAdjustment) Status() kontrak.StatusBaris {
 	return kontrak.StatusBarisDariKode(b.KodeStatus)
 }
 
+// SpreadingLayar - spreading PESERTA untuk layar rincian (11-10-2026). SUMBER sejak keputusan work owner 11-10-2026 "datanya
+// ambil saja dari premium list, tidak perlu perhitungan lagi": spreading PremiumList Life peserta itu
+// (repository.SpreadingPolisPeserta) - bukan tabel spreading klaim. Bentuk: per LAPISAN (treaty-year / jenis treaty, Retroceded Share) lalu per
+// REINSURER (% Share, Amount, Rate, Commision %, Ovr Comm %, Gross, Net), ditambah REKAP per reinsurer yang dijumlahkan
+// DI SINI dengan Money.Add (layar tidak berhitung uang, ADR-U-0003).
+type SpreadingLayar struct {
+	Lapisan []lapisanSpreadingJSON `json:"lapisan"`
+	Rekap   []rekapSpreadingJSON   `json:"rekap"`
+	// Total - baris TOTAL di bawah Spreading Summary: jumlah Gross / Net per mata uang (11-10-2026), Money.Add.
+	Total []totalSpreadingJSON `json:"total"`
+}
+
+type lapisanSpreadingJSON struct {
+	TreatyTypeName  string                   `json:"treatyTypeName"`
+	TreatyYearLife  string                   `json:"treatyYearLife"`
+	RetrocededShare uang.Money               `json:"retrocededShare"`
+	Reinsurer       []reinsurerSpreadingJSON `json:"reinsurer"`
+}
+
+type reinsurerSpreadingJSON struct {
+	Nama     string     `json:"nama"`
+	PctShare uang.Ratio `json:"pctShare"`
+	Amount   uang.Money `json:"amount"`
+	Rate     uang.Ratio `json:"rate"`
+	Komisi   uang.Ratio `json:"komisi"`
+	OvrComm  uang.Ratio `json:"ovrComm"`
+	Gross    uang.Money `json:"gross"`
+	Net      uang.Money `json:"net"`
+}
+
+// totalSpreadingJSON - satu baris TOTAL per mata uang.
+type totalSpreadingJSON struct {
+	Currency string     `json:"currency"`
+	Gross    uang.Money `json:"gross"`
+	Net      uang.Money `json:"net"`
+}
+
+type rekapSpreadingJSON struct {
+	Reinsurer string     `json:"reinsurer"`
+	Currency  string     `json:"currency"`
+	Gross     uang.Money `json:"gross"`
+	Net       uang.Money `json:"net"`
+}
+
+// SusunSpreading menyusun SpreadingLayar dari lapisan spreading (urut lapisan lalu reinsurer).
+func SusunSpreading(s []Spreading) SpreadingLayar {
+	out := SpreadingLayar{Lapisan: []lapisanSpreadingJSON{}, Rekap: []rekapSpreadingJSON{}, Total: []totalSpreadingJSON{}}
+	indeks := map[string]int{}
+	for _, l := range s {
+		lap := lapisanSpreadingJSON{TreatyTypeName: l.TreatyTypeName, TreatyYearLife: l.TreatyYearLife,
+			RetrocededShare: l.RetrocadedShare, Reinsurer: []reinsurerSpreadingJSON{}}
+		for _, r := range l.Retro {
+			lap.Reinsurer = append(lap.Reinsurer, reinsurerSpreadingJSON{Nama: r.ReinsurerName, PctShare: r.PercentShare,
+				Amount: r.Amount, Rate: r.Rate, Komisi: r.Commision, OvrComm: r.OvrComm,
+				Gross: r.PremiumSpreadedGross, Net: r.PremiumSpreadedNet})
+			kunci := r.ReinsurerName + "\x00" + r.PremiumSpreadedGross.Currency
+			i, ada := indeks[kunci]
+			if !ada {
+				indeks[kunci] = len(out.Rekap)
+				out.Rekap = append(out.Rekap, rekapSpreadingJSON{Reinsurer: r.ReinsurerName,
+					Currency: r.PremiumSpreadedGross.Currency, Gross: r.PremiumSpreadedGross, Net: r.PremiumSpreadedNet})
+				continue
+			}
+			// Mata uang berbeda di satu kunci tidak mungkin (kunci memuat mata uang); galat lain = rekap tetap angka lama.
+			if g, err := out.Rekap[i].Gross.Add(r.PremiumSpreadedGross); err == nil {
+				out.Rekap[i].Gross = g
+			}
+			if n, err := out.Rekap[i].Net.Add(r.PremiumSpreadedNet); err == nil {
+				out.Rekap[i].Net = n
+			}
+		}
+		out.Lapisan = append(out.Lapisan, lap)
+	}
+	// TOTAL per mata uang dari rekap (urut kemunculan mata uang).
+	total := map[string]int{}
+	for _, r := range out.Rekap {
+		i, ada := total[r.Currency]
+		if !ada {
+			total[r.Currency] = len(out.Total)
+			out.Total = append(out.Total, totalSpreadingJSON{Currency: r.Currency, Gross: r.Gross, Net: r.Net})
+			continue
+		}
+		if g, err := out.Total[i].Gross.Add(r.Gross); err == nil {
+			out.Total[i].Gross = g
+		}
+		if n, err := out.Total[i].Net.Add(r.Net); err == nil {
+			out.Total[i].Net = n
+		}
+	}
+	return out
+}
+
 // MarshalJSON menulis baris untuk kontrak API.
 //
 // Nama field warisan `STS_REJECT` tidak pernah muncul di kontrak; yang keluar
 // adalah kata statusnya, ditemani kode mentah supaya nilai yang tidak dikenal
 // tetap dapat dilaporkan tanpa ditebak.
 func (b BarisAdjustment) MarshalJSON() ([]byte, error) {
+	// ⭐ 11-10-2026 - rincian adjustment layar Outstanding (AdjustmentDetail_Section): Percent Claim DITURUNKAN dari
+	// Claim RNM / Share RNM (keputusan work owner), Claim Paid = Claim RNM. Galat hitung = persen kosong, bukan gagal baca.
+	persen, err := HitungPersenKlaim(b.JumlahKlaim, b.ShareNusantaraRe)
+	if err != nil {
+		persen = ""
+	}
 	return json.Marshal(struct {
 		ID               string     `json:"id"`
 		Status           string     `json:"status"`
@@ -82,15 +187,43 @@ func (b BarisAdjustment) MarshalJSON() ([]byte, error) {
 		NomorAkseptasi   string     `json:"nomorAkseptasi"`
 		TanggalAkseptasi string     `json:"tanggalAkseptasi"`
 		KomiteID         string     `json:"komiteId"`
+		// Medan dialog AdjustmentDetail (b2686 dst) dan dua turunannya.
+		ShareNusantaraRe   uang.Money `json:"shareNusantaraRe"`
+		CedingRetention    uang.Money `json:"cedingRetention"`
+		SumInsured         uang.Money `json:"sumInsured"`
+		SumReasured        uang.Money `json:"sumReasured"`
+		ShareRetro         uang.Money `json:"shareRetro"`
+		RetrocededShare    uang.Money `json:"retrocededShare"`
+		PersenKlaim        string     `json:"persenKlaim"`
+		TanggalOutstanding string     `json:"tanggalOutstanding"`
+		// Data bank (11-10-2026). Spreading TIDAK lagi di baris: diambil dari PremiumList per peserta (rute spreading-polis).
+		PayableTo     string     `json:"payableTo"`
+		NamaBank      string     `json:"namaBank"`
+		CabangBank    string     `json:"cabangBank"`
+		NomorRekening string     `json:"nomorRekening"`
+		KlaimDibayar  uang.Money `json:"klaimDibayar"`
 	}{
-		ID:               b.ID,
-		Status:           b.Status().String(),
-		KodeStatus:       b.KodeStatus,
-		StatusDiketahui:  b.Status().Diketahui(),
-		JumlahKlaim:      b.JumlahKlaim,
-		NomorAkseptasi:   b.NomorAkseptasi,
-		TanggalAkseptasi: utils.FormatTanggal(b.TanggalAkseptasi),
-		KomiteID:         b.KomiteID,
+		ID:                 b.ID,
+		Status:             b.Status().String(),
+		KodeStatus:         b.KodeStatus,
+		StatusDiketahui:    b.Status().Diketahui(),
+		JumlahKlaim:        b.JumlahKlaim,
+		NomorAkseptasi:     b.NomorAkseptasi,
+		TanggalAkseptasi:   utils.FormatTanggal(b.TanggalAkseptasi),
+		KomiteID:           b.KomiteID,
+		ShareNusantaraRe:   b.ShareNusantaraRe,
+		CedingRetention:    b.CedingRetention,
+		SumInsured:         b.SumInsured,
+		SumReasured:        b.SumReasured,
+		ShareRetro:         b.ShareRetro,
+		RetrocededShare:    b.RetrocededShare,
+		PersenKlaim:        persen,
+		TanggalOutstanding: b.TanggalOutstanding,
+		PayableTo:          b.PayableTo,
+		NamaBank:           b.NamaBank,
+		CabangBank:         b.CabangBank,
+		NomorRekening:      b.NomorRekening,
+		KlaimDibayar:       b.JumlahKlaim,
 	})
 }
 
@@ -116,10 +249,40 @@ type Peserta struct {
 	// disimpan di SOURCE_ID. Ia jejak: dari baris polis mana peserta klaim ini
 	// disalin.
 	SumberID string
+	// IdPega - M_LIFE_PREMIUM_DETAIL.IDPEGA baris sumber (pengenal kasus versi polis, NBLF-/EDML-): kunci header data
+	// polis klaim sejak 10-10-2026 (keputusan work owner). Disimpan di T_CLAIMLF_PREMIUMLIST_DETAIL.IDPEGA (migrasi
+	// 025): pendaftaran menulisnya bersama peserta; baris yang masih NULL diturunkan lewat SOURCE_ID (cadangan).
+	IdPega string
 	// IsCheck menandai peserta yang DIPILIH untuk diklaim (AC 8 tiket 03).
 	//
 	// ⛔ Nilainya SELALU PenandaDipilih, tidak pernah "1" atau "Y".
 	IsCheck string
+	// IsAccept - checkbox Accept grid Participant Details layar Outstanding (`.IsAccept` InputOSClaimLife b17582,
+	// migrasi 026, keputusan work owner 10-10-2026). `"true"` / `"false"` / kosong. ⛔ BUKAN IsCheck: IsCheck = dipilih
+	// saat Register; IsAccept = diterima di Outstanding, dibaca gerbang dokumen Save to RNM langkah 3.
+	IsAccept string
+	// NamaTertanggung dan TanggalLahir (`YYYY-MM-DD`) - kolom NAME OF INSURED / DATE OF BIRTH grid Participant Details
+	// (b17203, b17380). ⛔ TIDAK DISIMPAN di tabel klaim (kolomSalin sengaja tanpa nama): dibaca saat baca dari baris
+	// sumber M_LIFE_PREMIUM_DETAIL (SOURCE_ID), seperti CalonPeserta di layar Register. Kosong bila baris sumbernya
+	// tidak ada.
+	NamaTertanggung string
+	TanggalLahir    string
+	// Rincian peserta layar Outstanding (screenshot Pega 11-10-2026, ClaimLifeDetailGCNM):
+	//   JenisKelamin / Plan  - SEX b2111 / PLAN b1753, dibaca saat baca dari baris sumber (tidak disalin saat Register).
+	//   TanggalTerima        - RECEIVED DATE b10187 (`RECEIVED_DATE`, migrasi 003; Register belum mengisinya).
+	//   CatatanAdmin         - ADMIN NOTES b2588 (`ADMIN_NOTES`, migrasi 027).
+	//   CatatanAnalis        - CLAIM ANALYST b15194 (`NOTES`, migrasi 003).
+	//   Rekomendasi          - RECOMMENDATION b7323 (`RECOMMENDATION`, migrasi 003), diisi Medical Advisor (11-10-2026).
+	//   MaksKlaimKadaluarsa  - MAX EXPIRED CLAIM b11921 = `MAXEXPIREDCLAIM` produk (ValidasiClaimReceived_Act b540), saat baca.
+	JenisKelamin        string
+	Plan                string
+	TanggalTerima       string
+	CatatanAdmin        string
+	CatatanAnalis       string
+	Rekomendasi         string
+	MaksKlaimKadaluarsa string
+	// TanggalMaksData - MAX DATA RECEIVED b13381 (`MAX_DATA_RECEIVED`, migrasi 028), diisi pemakai sebelum Save to RNM.
+	TanggalMaksData string
 	// KodeStatus adalah CERMIN `STS_REJECT` baris adjustment yang terakhir
 	// diputus, bukan keputusan tersendiri (tiket 04).
 	//
@@ -305,10 +468,35 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 		NomorPolis      string `json:"nomorPolis"`
 		NomorSertifikat string `json:"nomorSertifikat"`
 		MataUang        string `json:"mataUang"`
+		// ⭐ IdPega menyeberang sejak 10-10-2026: panel Data Polis Outstanding membaca header dari IDPEGA peserta.
+		IdPega string `json:"idPega"`
 		// ⭐ IsCheck menyeberang sejak audit A0: layar memerlukannya untuk
 		// memutuskan apakah kontrol "Save Adjustment" tampil - prasyarat XML
 		// `SaveAdjustment_Act` menuntut peserta DIPILIH.
 		IsCheck string `json:"isCheck"`
+		// ⭐ 10-10-2026 - grid Participant Details layar Outstanding: Accept, nama, tanggal lahir.
+		IsAccept        string `json:"isAccept"`
+		NamaTertanggung string `json:"namaTertanggung"`
+		TanggalLahir    string `json:"tanggalLahir"`
+		// ⭐ 11-10-2026 - rincian peserta layar Outstanding (ClaimLifeDetailGCNM, screenshot Pega).
+		JenisKelamin   string `json:"jenisKelamin"`
+		Plan           string `json:"plan"`
+		Umur           string `json:"umur"`
+		TanggalMulai   string `json:"tanggalMulai"`
+		TanggalEfektif string `json:"tanggalEfektif"`
+		TanggalExpired string `json:"tanggalExpired"`
+		ValuasiMulai   string `json:"valuasiMulai"`
+		ValuasiSelesai string `json:"valuasiSelesai"`
+		// Jendela RETRO (TR/TP) - validasi DOL langsung di layar memakai jendela yang sama dengan ValidasiDOL (11-10-2026).
+		ValuasiRetroMulai   string `json:"valuasiRetroMulai"`
+		ValuasiRetroSelesai string `json:"valuasiRetroSelesai"`
+		TanggalTerima       string `json:"tanggalTerima"`
+		STNC                string `json:"stnc"`
+		MaksKlaimKadaluarsa string `json:"maksKlaimKadaluarsa"`
+		CatatanAdmin        string `json:"catatanAdmin"`
+		CatatanAnalis       string `json:"catatanAnalis"`
+		Rekomendasi         string `json:"rekomendasi"`
+		TanggalMaksData     string `json:"tanggalMaksData"`
 		// ⭐ TanggalKejadian menyeberang sejak kelompok Detail & Tutup:
 		// tombol `Edit Date` (`ClaimLifeDetailGCNM.xml` b14115) harus
 		// menampilkan tanggal yang SEDANG berlaku. Tanpa itu kotaknya selalu
@@ -363,7 +551,28 @@ func (p Peserta) MarshalJSON() ([]byte, error) {
 		NomorPolis:               p.NomorPolis,
 		NomorSertifikat:          p.NomorSertifikat,
 		MataUang:                 p.MataUang,
+		IdPega:                   p.IdPega,
 		IsCheck:                  p.IsCheck,
+		IsAccept:                 p.IsAccept,
+		NamaTertanggung:          p.NamaTertanggung,
+		TanggalLahir:             p.TanggalLahir,
+		JenisKelamin:             p.JenisKelamin,
+		Plan:                     p.Plan,
+		Umur:                     p.Umur,
+		TanggalMulai:             p.TanggalMulai,
+		TanggalEfektif:           p.TanggalEfektif,
+		TanggalExpired:           p.TanggalExpired,
+		ValuasiMulai:             p.ValuasiGrossMulai,
+		ValuasiSelesai:           p.ValuasiGrossSelesai,
+		ValuasiRetroMulai:        p.ValuasiRetroMulai,
+		ValuasiRetroSelesai:      p.ValuasiRetroSelesai,
+		TanggalTerima:            p.TanggalTerima,
+		STNC:                     p.STNC,
+		MaksKlaimKadaluarsa:      p.MaksKlaimKadaluarsa,
+		CatatanAdmin:             p.CatatanAdmin,
+		CatatanAnalis:            p.CatatanAnalis,
+		Rekomendasi:              p.Rekomendasi,
+		TanggalMaksData:          p.TanggalMaksData,
 		TanggalKejadian:          p.TanggalKejadian,
 		TanggalTerimaKlaim:       p.TanggalTerimaKlaim,
 		TanggalDokumenLengkap:    p.TanggalDokumenLengkap,
@@ -458,6 +667,14 @@ type Klaim struct {
 	// tidak diketahui, dan layar karena itu tidak menawarkan Close Claim.
 	Tahap string
 
+	// Empat medan tab Register Claim layar Outstanding (`InputOSClaimLife`, 10-10-2026), kolom T_GENERAL_CLAIM 002:
+	// StsKatastrofe `.ClaimData.StsKatastrofe` b3504 (Catastrophe / Non-Catastrophe), IsKPR `.ClaimData.IsKPR` b3810,
+	// STNCClaim `.ClaimData.STNCClaim` b4757 (baca saja), KatastrofeNote `.ClaimData.KatastrofeNote` b4934.
+	StsKatastrofe  string
+	IsKPR          string
+	STNCClaim      string
+	KatastrofeNote string
+
 	// StatusWork adalah `T_WORK_CLAIM.STATUS_WORK` - butir bb. Kosong berarti
 	// kasusnya BELUM ditutup (ADR-U-0027); satu-satunya nilai lain yang
 	// pernah ditulis adalah models.StatusWorkSelesai.
@@ -511,6 +728,13 @@ func (k Klaim) MarshalJSON() ([]byte, error) {
 		// nyata. Kosong = tahap tidak diketahui = tombolnya tidak ditawarkan.
 		Tahap      string `json:"tahap"`
 		StatusWork string `json:"statusWork"`
+		// ⭐ 10-10-2026 - layar Outstanding: Type (tombol Send to Medical Check hanya QP/QR, b22123) dan tab Register
+		// Claim.
+		Type           string `json:"type"`
+		StsKatastrofe  string `json:"stsKatastrofe"`
+		IsKPR          string `json:"isKpr"`
+		STNCClaim      string `json:"stncClaim"`
+		KatastrofeNote string `json:"katastrofeNote"`
 	}{
 		StatusTurunan: k.StatusTurunan().String(),
 		ID:            k.ID,
@@ -521,10 +745,15 @@ func (k Klaim) MarshalJSON() ([]byte, error) {
 		// Money punya MarshalJSON sendiri: jumlahnya TEKS, tidak pernah angka
 		// JSON (ADR-U-0003). Tanpa baris ini nilai yang sudah dibaca dari
 		// Oracle dibuang diam-diam saat serialisasi - separuh butir w2 mati.
-		ClaimRetro: k.ClaimRetro,
-		Peserta:    peserta,
-		CacahBaris: k.CacahBaris(),
-		Tahap:      k.Tahap,
-		StatusWork: k.StatusWork,
+		ClaimRetro:     k.ClaimRetro,
+		Peserta:        peserta,
+		CacahBaris:     k.CacahBaris(),
+		Tahap:          k.Tahap,
+		StatusWork:     k.StatusWork,
+		Type:           k.Type,
+		StsKatastrofe:  k.StsKatastrofe,
+		IsKPR:          k.IsKPR,
+		STNCClaim:      k.STNCClaim,
+		KatastrofeNote: k.KatastrofeNote,
 	})
 }

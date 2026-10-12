@@ -127,3 +127,32 @@ func TestTanggalRingkasBerpolaDinyatakan(t *testing.T) {
 		t.Errorf("DATE_RECEIVED tidak dibungkus TO_CHAR berpola:\n%s", q)
 	}
 }
+
+// TestRingkasDariIdPegaBarisUtama - Claim Life 10-10-2026 ("ambil ke tabel T_PREMIUM_LIST berdasarkan idpega peserta
+// nya saja"): header = baris UTAMA kasus (ID = ID_PEGA = IDPEGA peserta), daftar pilih SAMA dengan Ringkas, tanpa
+// NO_POLIS di saringan; Ringkas(NO_POLIS) lama tidak berubah.
+func TestRingkasDariIdPegaBarisUtama(t *testing.T) {
+	q := strings.Join(strings.Fields(sqlPolisRingkasIdPega("S.T_PREMIUM_LIST", "S.T_WORK_POLIS")), " ")
+	lama := strings.Join(strings.Fields(sqlPolisRingkas("S.T_PREMIUM_LIST")), " ")
+	// Daftar pilih sama kecuali kolom status: status EFEKTIF (STATUS_WORK kasus NB, selain itu STATUSS) - 10-10-2026.
+	statusEfektif := "NVL((SELECT w.STATUS_WORK FROM S.T_WORK_POLIS w WHERE w.ID = p.ID), p.STATUSS)"
+	if !strings.Contains(q, statusEfektif+", p.STATUS_UPDATE") || !strings.Contains(lama, "p.STATUSS, p.STATUS_UPDATE") {
+		t.Errorf("kolom status:\n%s\n%s", q, lama)
+	}
+	pilih := func(s string) string { return s[:strings.Index(s, " FROM S.T_PREMIUM_LIST p")] }
+	if strings.Replace(pilih(q), statusEfektif, "p.STATUSS", 1) != pilih(lama) {
+		t.Errorf("daftar pilih berbeda:\n%s\n%s", pilih(q), pilih(lama))
+	}
+	if !strings.Contains(q, "FROM S.T_PREMIUM_LIST p WHERE p.ID = :1 AND p.ID_PEGA = p.ID ORDER BY NVL(p.PROD_KE, 0) DESC FETCH FIRST 1 ROWS ONLY") {
+		t.Errorf("saringan IDPEGA:\n%s", q)
+	}
+	if strings.Contains(q[strings.Index(q, " FROM S.T_PREMIUM_LIST p WHERE "):], "NO_POLIS") {
+		t.Errorf("saringan IDPEGA memakai NO_POLIS:\n%s", q)
+	}
+	if !strings.Contains(lama, "WHERE p.NO_POLIS = :1 ORDER BY NVL(p.PROD_KE, 0) DESC FETCH FIRST 1 ROWS ONLY") {
+		t.Errorf("Ringkas(NO_POLIS) lama berubah:\n%s", lama)
+	}
+	if err := db.PeriksaSQL(q); err != nil {
+		t.Error(err)
+	}
+}

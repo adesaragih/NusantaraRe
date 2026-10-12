@@ -11,6 +11,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -25,8 +26,6 @@ func permintaanUji() PermintaanDaftar {
 	return PermintaanDaftar{
 		NomorPremiList: "UJI-PL-1",
 		NomorPolis:     "UJI-POL-0001",
-		Type:           "QP",
-		KodeBisnis:     "L1",
 		MataUang:       "IDR",
 		Sertifikat:     []string{"006"},
 	}
@@ -37,9 +36,27 @@ func TestPermintaanDaftarMenolakYangTidakLengkap(t *testing.T) {
 	kasus := map[string]func(*PermintaanDaftar){
 		"tanpa nomor premium list": func(p *PermintaanDaftar) { p.NomorPremiList = "" },
 		"nomor premium list spasi": func(p *PermintaanDaftar) { p.NomorPremiList = "   " },
-		"tanpa Type":               func(p *PermintaanDaftar) { p.Type = "" },
-		"tanpa kode bisnis":        func(p *PermintaanDaftar) { p.KodeBisnis = "" },
 		"nol peserta":              func(p *PermintaanDaftar) { p.Sertifikat = nil },
+		"sertifikat dobel":         func(p *PermintaanDaftar) { p.Sertifikat = []string{"006", " 006 "} },
+		"sertifikat kosong":        func(p *PermintaanDaftar) { p.Sertifikat = []string{" "} },
+		"dobel antarkelompok": func(p *PermintaanDaftar) {
+			p.Kelompok = []KelompokDaftar{{NomorPremiList: "UJI-PL-1", Sertifikat: []string{"006"}},
+				{NomorPremiList: "UJI-PL-1", Sertifikat: []string{"006"}}}
+		},
+		"kelompok tanpa PL": func(p *PermintaanDaftar) {
+			p.Kelompok = []KelompokDaftar{{NomorPremiList: "UJI-PL-1", Sertifikat: []string{"006"}}, {Sertifikat: []string{"007"}}}
+		},
+		"lebih dari 50 kelompok": func(p *PermintaanDaftar) {
+			for i := 0; i <= MaksKelompokDaftar; i++ {
+				p.Kelompok = append(p.Kelompok, KelompokDaftar{NomorPremiList: "UJI-PL-" + strconv.Itoa(i), Sertifikat: []string{"001"}})
+			}
+		},
+		"lebih dari 500 peserta": func(p *PermintaanDaftar) {
+			p.Sertifikat = nil
+			for i := 0; i <= MaksPesertaDaftar; i++ {
+				p.Sertifikat = append(p.Sertifikat, strconv.Itoa(i))
+			}
+		},
 	}
 	for nama, ubah := range kasus {
 		t.Run(nama, func(t *testing.T) {
@@ -81,21 +98,28 @@ func TestPenomorBelumDiputuskanGagalTerang(t *testing.T) {
 	}
 }
 
-// Validasi terjadi SEBELUM nomor diambil.
-//
-// Nomor yang sudah terbentuk tidak dapat dikembalikan ke urutannya. Mengambil
-// nomor lebih dulu berarti membuang satu nomor setiap kali borang salah isi,
-// dan lubang nomor itu terlihat oleh orang di luar sistem.
-func TestNomorTidakDiambilBilaPermintaanDitolak(t *testing.T) {
-	dipanggil := 0
-	p := &Pendaftaran{penomor: penomorPencatat{n: &dipanggil}}
-	minta := permintaanUji()
-	minta.Type = ""
-	if _, err := p.Daftar(context.Background(), pelakuUji(), minta); err == nil {
-		t.Fatal("permintaan tidak sah diterima")
+// RALAT 10-10-2026 (keputusan work owner "claim no tidak generate saat register claim, tapi nanti setelah save to
+// rnm"): Register TIDAK memanggil penomor sama sekali - CLAIM_NO kosong sampai Save to RNM.
+func TestRegisterTidakMemanggilPenomor(t *testing.T) {
+	isi, err := os.ReadFile("pendaftaran.go")
+	if err != nil {
+		t.Fatal(err)
 	}
-	if dipanggil != 0 {
-		t.Errorf("penomor dipanggil %d kali padahal permintaan ditolak", dipanggil)
+	tubuh := ""
+	for _, fn := range strings.Split(string(isi), "\nfunc ") {
+		if strings.HasPrefix(fn, "(p *Pendaftaran) Daftar(") {
+			tubuh = fn
+			break
+		}
+	}
+	if tubuh == "" {
+		t.Fatal("fungsi Daftar tidak ditemukan; pembacanya yang rusak")
+	}
+	if strings.Contains(tubuh, "NomorBerikut(") || strings.Contains(tubuh, "NomorKlaim:") {
+		t.Error("Daftar masih menomori / mengisi NomorKlaim")
+	}
+	if strings.Contains(string(isi), "penomor Penomor") {
+		t.Error("Pendaftaran masih memegang penomor")
 	}
 }
 
@@ -116,7 +140,7 @@ func pelakuUji() inti.Pelaku {
 
 // Pendaftaran tanpa Oracle gagal terang, bukan diam.
 func TestDaftarTanpaOracleGagal(t *testing.T) {
-	p := &Pendaftaran{svc: New(nil), penomor: PenomorBelumDiputuskan{}}
+	p := &Pendaftaran{svc: New(nil)}
 	_, err := p.Daftar(context.Background(), pelakuUji(), permintaanUji())
 	if !errors.Is(err, db.ErrTanpaOracle) {
 		t.Errorf("galatnya bukan ErrTanpaOracle: %v", err)
@@ -129,16 +153,12 @@ func TestDaftarTanpaOracleGagal(t *testing.T) {
 // yaitu keadaan produksi - tetap menulis klaim dengan CREATE_OP_NAME kosong.
 // Jejaknya hilang, dan tidak ada yang tahu siapa mendaftarkannya.
 func TestDaftarTanpaPelakuDitolak(t *testing.T) {
-	dipanggil := 0
-	p := &Pendaftaran{svc: New(nil), penomor: penomorPencatat{n: &dipanggil}}
+	p := &Pendaftaran{svc: New(nil)}
 	for _, pelaku := range []inti.Pelaku{{}, {AkunID: "   "}} {
 		_, err := p.Daftar(context.Background(), pelaku, permintaanUji())
 		if !errors.Is(err, inti.ErrTanpaIdentitas) {
 			t.Errorf("pelaku %+v diterima; galatnya %v", pelaku, err)
 		}
-	}
-	if dipanggil != 0 {
-		t.Errorf("penomor dipanggil %d kali untuk pelaku anonim", dipanggil)
 	}
 }
 
@@ -220,52 +240,52 @@ func TestBentukNomorKlaim(t *testing.T) {
 	}
 }
 
-// AC tiket 02: nomor di-commit SEBELUM pendaftaran, bukan bersamanya.
+// AC tiket 02 (RALAT 10-10-2026): nomor di-commit SEGERA, di transaksi SENDIRI - kini di Save to RNM, satu-satunya
+// tempat nomor klaim lahir; Register tanpa penomoran dan satu transaksi.
 //
-// ⛔ Penjaga batas transaksi. Ronde sebelumnya menomori di dalam transaksi
-// pendaftaran, sehingga kuncian `SELECT … FOR UPDATE` atas baris penghitung
-// dipegang sampai seluruh pendaftaran selesai - termasuk selama pembacaan
-// peserta dan penulisan pohon klaimnya. Satu pendaftar yang lambat menahan
-// SEMUA pendaftar lain di seluruh instalasi.
+// ⛔ Penjaga batas transaksi. Menomori di dalam transaksi penulisan menahan kuncian `SELECT … FOR UPDATE` atas baris
+// penghitung selama seluruh penulisan - satu pengguna lambat menahan semua pengguna lain.
 //
-// ⚠️ Penjaga STATIK, dan alasannya dinyatakan: membuktikannya lewat perilaku
-// menuntut Oracle sungguhan dengan dua sambungan serentak. Yang dapat dijaga
-// tanpa Oracle adalah bentuknya - dua transaksi, dan penomoran di yang
-// pertama. Bila itu runtuh, kunciannya kembali menahan semua orang.
+// ⚠️ Penjaga STATIK (membuktikannya lewat perilaku menuntut Oracle dengan dua sambungan serentak).
 func TestPenomoranDiTransaksiSendiri(t *testing.T) {
-	isi, err := os.ReadFile("pendaftaran.go")
-	if err != nil {
-		t.Fatal(err)
-	}
-	tubuh := ""
-	for _, fn := range strings.Split(string(isi), "\nfunc ") {
-		if strings.HasPrefix(fn, "(p *Pendaftaran) Daftar(") {
-			tubuh = fn
-			break
+	badan := func(berkas, kepala string) (string, string) {
+		isi, err := os.ReadFile(berkas)
+		if err != nil {
+			t.Fatal(err)
 		}
+		for _, fn := range strings.Split(string(isi), "\nfunc ") {
+			if strings.HasPrefix(fn, kepala) {
+				return fn, string(isi)
+			}
+		}
+		t.Fatalf("%s tidak ditemukan di %s; pembacanya yang rusak", kepala, berkas)
+		return "", ""
 	}
-	if tubuh == "" {
-		t.Fatal("fungsi Daftar tidak ditemukan; pembacanya yang rusak")
+	// Register: SATU transaksi lewat pintu() (bawaan p.svc.DalamTransaksi), nol penomoran.
+	daftar, isiDaftar := badan("pendaftaran.go", "(p *Pendaftaran) Daftar(")
+	if !strings.Contains(isiDaftar, "transaksi: p.svc.DalamTransaksi,") {
+		t.Fatal("pintu transaksi bawaan Daftar bukan p.svc.DalamTransaksi")
 	}
-	const mauTransaksi = 2
-	if n := strings.Count(tubuh, "p.svc.DalamTransaksi("); n != mauTransaksi {
-		t.Fatalf("Daftar membuka %d transaksi, mau %d - satu untuk nomornya, "+
-			"satu untuk pohon klaimnya", n, mauTransaksi)
+	if n := strings.Count(daftar, "pintu.transaksi("); n != 1 {
+		t.Errorf("Daftar membuka %d transaksi, mau 1", n)
 	}
-	// ⚠️ Letak KEDUA dihitung dari awal teks yang sama, bukan dari potongan.
-	// Ronde pertama penjaga ini membandingkan indeks ke dalam POTONGAN
-	// dengan indeks ke dalam teks utuh - dan menuduh kode yang benar.
-	const buka = "p.svc.DalamTransaksi("
-	letakNomor := strings.Index(tubuh, "NomorBerikut(")
-	letakPertama := strings.Index(tubuh, buka)
-	letakKedua := letakPertama + 1 +
-		strings.Index(tubuh[letakPertama+1:], buka)
-	if letakNomor < 0 {
-		t.Fatal("Daftar tidak lagi memanggil NomorBerikut")
+	// Save to RNM: penomoran di transaksi PERTAMA (bersama IsiNomorKlaimKosong), transaksi utama tanpa penomoran.
+	simpan, _ := badan("simpanrnm.go", "(x *SimpanRNM) Simpan(")
+	const buka = "x.svc.DalamTransaksi("
+	pertama := strings.Index(simpan, buka)
+	kedua := pertama + 1 + strings.Index(simpan[pertama+1:], buka)
+	nomor := strings.Index(simpan, "NomorBerikut(")
+	if pertama < 0 || kedua <= pertama || nomor < 0 {
+		t.Fatalf("bentuk Save to RNM tak terbaca: pertama %d kedua %d nomor %d", pertama, kedua, nomor)
 	}
-	if letakNomor > letakKedua {
-		t.Error("NomorBerikut dipanggil di transaksi KEDUA; kuncian penghitung " +
-			"akan menahan pendaftar lain selama seluruh pendaftaran")
+	if !(pertama < nomor && nomor < kedua) {
+		t.Error("NomorBerikut tidak berada di transaksi penomoran tersendiri sebelum transaksi utama Save to RNM")
+	}
+	if strings.Contains(simpan[kedua:], "NomorBerikut(") {
+		t.Error("transaksi utama Save to RNM masih menomori")
+	}
+	if !strings.Contains(simpan[pertama:kedua], "IsiNomorKlaimKosong(") {
+		t.Error("CLAIM_NO tidak ditulis di transaksi penomoran yang sama")
 	}
 }
 

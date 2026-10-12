@@ -39,21 +39,34 @@ func penampungUnik(t *testing.T, nama, q string) int {
 
 func nullString(s string) sql.NullString { return sql.NullString{String: s, Valid: s != ""} }
 
-func TestSQLInboxMenyaringKasusTerbukaTerbaruDahulu(t *testing.T) {
+func TestSQLInboxSemuaKasusTerbaruDahulu(t *testing.T) {
 	q := sqlInbox(uPolis)
 	if n := penampungUnik(t, "sqlInbox", q); n != 3 {
 		t.Fatalf("sqlInbox: %d penampung, mau 3 (pola, offset, ukuran)", n)
 	}
-	for _, wajib := range []string{"FROM " + uPolis + " p", "p.ID LIKE :1", "p.STATUSS IS NULL",
+	// Kasus tertutup ikut terdaftar (09-10-2026): tanpa saringan STATUSS.
+	if strings.Contains(q, "STATUSS IS NULL") || strings.Contains(sqlCacahInbox(uPolis), "STATUSS") {
+		t.Errorf("kotak masuk masih menyaring STATUSS: %s", q)
+	}
+	for _, wajib := range []string{"FROM " + uPolis + " p", "WHERE p.ID LIKE :1\n",
 		"ORDER BY p.TGL_INPUT DESC, p.ID", "OFFSET :2 ROWS FETCH NEXT :3 ROWS ONLY"} {
 		if !strings.Contains(q, wajib) {
 			t.Errorf("sqlInbox tanpa %q", wajib)
 		}
 	}
-	if !strings.Contains(sqlCacahInbox(uPolis), "p.ID LIKE :1 AND p.STATUSS IS NULL") {
+	// 07-10-2026: Endorsement No dari NO_ENDORS (Policy No tetap OLD_POLICY_NO); empat kolom dihapus.
+	if !strings.Contains(q, "SELECT p.ID, p.NO_ENDORS, p.OLD_POLICY_NO, p.TYPE, p.EDM_TYPE, p.CEDING_CO_NAME,") {
+		t.Errorf("sqlInbox bukan urutan kolom kotak masuk 07-10-2026: %s", q)
+	}
+	for _, buang := range []string{"SOB_NAME", "POLICY_HOLDER_NAME", "MARKETING_NAME", "EDM_TYPE_BATAL"} {
+		if strings.Contains(q, buang) {
+			t.Errorf("sqlInbox masih membaca %s", buang)
+		}
+	}
+	if !strings.HasSuffix(sqlCacahInbox(uPolis), "WHERE p.ID LIKE :1") {
 		t.Error("cacah kotak masuk tidak memakai saringan yang sama")
 	}
-	if polaPengenalKasus != "EDMLF-%" {
+	if polaPengenalKasus != "EDML-%" {
 		t.Errorf("pola pengenal %q", polaPengenalKasus)
 	}
 }
@@ -66,6 +79,25 @@ func TestSQLKasusMembacaKepalaSalinanDanMengunci(t *testing.T) {
 	}
 	if !strings.Contains(biasa, "WHERE p.ID = :1 AND p.ID LIKE :2") {
 		t.Error("sqlKasus tidak membatasi ke kasus EDM")
+	}
+	// Sub-jenis EDM Type (483) sebelum kolom kepala salinan; cacah kolom tetap sepakat dengan pemindai.
+	if !strings.Contains(biasa, "p.CREATE_OP_NAME, p.EDM_TYPE_PERUBAHAN_DATA, p.EDM_TYPE_BATAL, ") {
+		t.Error("sqlKasus tidak membaca sub-jenis EDM Type")
+	}
+	// Koma di dalam kurung (NVL, TO_CHAR) bukan pemisah kolom.
+	n, dalam := 1, 0
+	for _, c := range kolomKasus {
+		switch {
+		case c == '(':
+			dalam++
+		case c == ')':
+			dalam--
+		case c == ',' && dalam == 0:
+			n++
+		}
+	}
+	if n != jumlahKolomKasus {
+		t.Errorf("kolomKasus %d kolom, jumlahKolomKasus %d", n, jumlahKolomKasus)
 	}
 	for _, k := range models.KolomKepalaSalin {
 		if !strings.Contains(biasa, "p."+k.Kolom) {
@@ -102,7 +134,9 @@ func TestPRODKESatuUrutan(t *testing.T) {
 		} {
 			penampungUnik(t, nama, q)
 			urut := q[strings.Index(q, "ORDER BY"):]
-			if !strings.HasPrefix(urut, "ORDER BY NVL(p.PROD_KE, 1) DESC") && !strings.HasPrefix(urut, "ORDER BY NVL(j.PRODKE, 1) DESC") {
+			// PRODKE 0-based (08-10-2026); warisan diurut sebagai BILANGAN (VARCHAR2: "9" > "10" bila teks).
+			if !strings.HasPrefix(urut, "ORDER BY NVL(p.PROD_KE, 0) DESC") &&
+				!strings.HasPrefix(urut, "ORDER BY NVL(TO_NUMBER(TRIM(j.PRODKE) DEFAULT NULL ON CONVERSION ERROR), 0) DESC") {
 				t.Errorf("%s: urutan %q bukan PRODKE DESC", nama, urut)
 			}
 			if !strings.Contains(q, "FETCH FIRST 1 ROWS ONLY") {
@@ -126,26 +160,68 @@ func TestPRODKESatuUrutan(t *testing.T) {
 	}
 }
 
-// K3 keputusan work owner 01-10-2026 (OQ-EDM-008): kolom ke-4 setiap jalur versi = bahan NOMOR menurut
-// Pega, terpisah dari urutan VERSI (`NVL(…, 1)`): warisan `PRODKE` mentah kosong = 0 (`Local.Prodke` int
-// b278), NB sistem baru 0, endorsement sistem baru nomornya (akhiran = `CARI4`, `InsertJsonPolisEDM` b101).
-func TestVersiMembawaUrutanPega(t *testing.T) {
-	// Daftar SELECT dirapikan; kolom terakhirnya harus PERSIS bahan nomor (koma di dalam NVL membuat
-	// pemisahan per koma tidak dapat dipakai).
+// TestVersiPRODKEMulaiNol - keputusan work owner 08-10-2026 (migrasi 485): SATU hitungan PRODKE, kosong = 0;
+// penghitung terpisah urutan Pega (K3) dihapus - tiap jalur hanya ID, PRODKE, EDM Type.
+func TestVersiPRODKEMulaiNol(t *testing.T) {
 	pilihan := func(q string) string {
 		return strings.Join(strings.Fields(q[len("SELECT "):strings.Index(q, " FROM ")]), " ")
 	}
 	for nama, k := range map[string][2]string{
-		"sqlVersiEDM":     {sqlVersiEDM(uPolis, false), "p.PL_NUMBER_EDM"},
-		"sqlVersiNB":      {sqlVersiNB(uPolis, uPeserta, false), "'0'"},
-		"sqlVersiWarisan": {sqlVersiWarisan(uJSON, false), "TO_CHAR(NVL(j.PRODKE, 0))"},
+		"sqlVersiEDM":     {sqlVersiEDM(uPolis, false), "p.ID, NVL(p.PROD_KE, 0), p.EDM_TYPE"},
+		"sqlVersiNB":      {sqlVersiNB(uPolis, uPeserta, false), "p.ID, NVL(p.PROD_KE, 0), p.EDM_TYPE"},
+		"sqlVersiWarisan": {sqlVersiWarisan(uJSON, false), "j.IDPEGA, " + prodKeWarisan + ", JSON_VALUE(j.DATA_JSON, '$.EdmType' NULL ON ERROR)"},
 	} {
-		if got := pilihan(k[0]); !strings.HasSuffix(got, ", "+k[1]) {
-			t.Errorf("%s: daftar SELECT %q tidak berakhir dengan kolom urutan Pega %q", nama, got, k[1])
+		if got := pilihan(k[0]); got != k[1] {
+			t.Errorf("%s: SELECT %q, mau %q", nama, got, k[1])
 		}
-		if !strings.Contains(k[0], ", 1)") {
-			t.Errorf("%s: versi tidak lagi NVL(…, 1) (E1 tetap)", nama)
+		if strings.Contains(k[0], ", 1)") || strings.Contains(k[0], "PL_NUMBER_EDM") {
+			t.Errorf("%s: masih memakai skema lama (NVL …, 1 / nomor sebagai urutan)", nama)
 		}
+	}
+	if !strings.Contains(sqlKasus(uPolis, false), "NVL(p.PROD_KE, 0)") {
+		t.Error("kepala kasus membaca PROD_KE kosong bukan sebagai 0")
+	}
+}
+
+// TestVersiWarisanTanpaBarisSistemBaru - JSON_POLIS kini juga memuat baris PremiumList (`NBLF-`, PRODKE '0') dan
+// endorsement modul ini (`EDML-`); keduanya dibaca jalur aplikasi, jadi jalur warisan mengecualikannya.
+func TestVersiWarisanTanpaBarisSistemBaru(t *testing.T) {
+	for _, sebelum := range []bool{false, true} {
+		w := sqlVersiWarisan(uJSON, sebelum)
+		if !strings.Contains(w, "j.NOPOLIS = :1 AND j.IDPEGA NOT LIKE :2 AND j.IDPEGA NOT LIKE :3") {
+			t.Errorf("warisan tidak mengecualikan IDPEGA sistem baru: %s", w)
+		}
+		if sebelum && !strings.Contains(w, prodKeWarisan+" < :4") {
+			t.Errorf("batas sebelum warisan: %s", w)
+		}
+	}
+	if polaIDPegaAplikasi[0] != "NBLF-%" || polaIDPegaAplikasi[1] != "EDML-%" {
+		t.Errorf("pola IDPEGA aplikasi = %q", polaIDPegaAplikasi)
+	}
+}
+
+// TestSQLJSONPolisEndorsement - Confirm menulis JSON_POLIS (08-10-2026): kolom bernama, DATA_JSON tidak diisi.
+func TestSQLJSONPolisEndorsement(t *testing.T) {
+	if q := sqlHapusJSONPolisEDM(uJSON); q != "DELETE FROM "+uJSON+" WHERE IDPEGA = :1" {
+		t.Errorf("hapus = %q", q)
+	}
+	q := sqlSisipJSONPolisEDM(uJSON, uPolis)
+	penampungUnik(t, "sqlSisipJSONPolisEDM", q)
+	for _, k := range []string{
+		"INSERT INTO " + uJSON + " (IDPEGA, NOPOLIS, PRODKE, NOENDORS, TGL_PROD, USERNAME, TGL_INPUT)",
+		"SELECT :1, :2, :3, :4, :5, p.CREATE_OP_NAME, SYSDATE FROM " + uPolis + " p", "WHERE p.ID = :6",
+	} {
+		if !strings.Contains(q, k) {
+			t.Errorf("sisip tanpa %q: %s", k, q)
+		}
+	}
+	for _, larangan := range []string{"DATA_JSON", "KONVERSI", "OLDNOPOLIS", "ERR_NOTE", "COMMIT", "SELECT *"} {
+		if strings.Contains(q, larangan) {
+			t.Errorf("sisip memuat %q", larangan)
+		}
+	}
+	if q := sqlHariClosing("S.TANGGAL_CLOSING"); q != "SELECT TANGGAL FROM S.TANGGAL_CLOSING WHERE ROWNUM = 1" {
+		t.Errorf("hari closing = %q", q)
 	}
 }
 

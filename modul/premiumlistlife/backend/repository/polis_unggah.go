@@ -148,6 +148,16 @@ var kolomBulatPeserta = []struct{ Kolom, DariCSV string }{
 // BentukTanggalOracle adalah pola `TO_DATE` untuk tanggal CSV.
 //
 // ⛔ DINYATAKAN, tidak diserahkan `NLS_DATE_FORMAT` sesi.
+// kolomUangSalinanPeserta - kolom uang tabel yang diisi dari kunci CSV LAIN.
+//
+// SHARE_NUSANTARA_RE_GROSS (kolom yang dibaca grid peserta) diisi nilai
+// SHARE_NUSANTARA_RE baris - yang sudah memuat SHARE_NUSANTARA_RE_GROSS CSV
+// bila terisi (`models.TerapkanAliasShare`), atau hasil hitung Type QR
+// (permintaan work owner 05-10-2026: kolom Share tampil di grid).
+var kolomUangSalinanPeserta = []struct{ Kolom, DariCSV string }{
+	{"SHARE_NUSANTARA_RE_GROSS", models.KolomShareNusantaraRe},
+}
+
 const BentukTanggalOracle = "DD/MM/YYYY"
 
 // sqlHapusPesertaPolis merakit pembersihan baris peserta satu polis.
@@ -209,6 +219,9 @@ func ekspresiSisipPeserta() (kolom, penanda string, cacah int) {
 	for _, c := range models.KolomUangTersimpan() {
 		tambah(c, ":%d")
 	}
+	for _, c := range kolomUangSalinanPeserta {
+		tambah(c.Kolom, ":%d")
+	}
 	return strings.Join(k, ", "), strings.Join(p, ", "), cacah
 }
 
@@ -252,40 +265,48 @@ func nilaiSisipPeserta(id, polisID string, b models.BarisUnggah) []any {
 	for _, c := range models.KolomUangTersimpan() {
 		arg = append(arg, ambil(c))
 	}
+	for _, c := range kolomUangSalinanPeserta {
+		arg = append(arg, ambil(c.DariCSV))
+	}
 	return arg
 }
 
 // SisipPeserta menyisipkan seluruh baris unggahan.
 //
 // Mengembalikan cacah baris tersimpan.
+//
+// Mengembalikan juga ID peserta per nomor baris CSV - DETAIL_ID spreading retro
+// (keputusan work owner 06-10-2026).
 func (r *PesertaUnggah) SisipPeserta(ctx context.Context, tx *db.Tx, polisID string,
-	baris []models.BarisUnggah) (int, error) {
+	baris []models.BarisUnggah) (int, map[int]string, error) {
 
 	detail, err := r.db.Qualify("T_PREMIUM_LIST_DETAIL")
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 	q := sqlSisipPeserta(detail)
 	if err := db.PeriksaSQL(q); err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 	// ⚠️ Satu pernyataan disiapkan SEKALI lalu dipakai berulang. Merakit
 	// pernyataan baru per baris membuat Oracle menyusun rencana baru untuk
 	// tiap baris, dan berkas seribu peserta menjadi seribu parse.
 	stmt, err := tx.PrepareContext(ctx, q)
 	if err != nil {
-		return 0, fmt.Errorf("repository: menyiapkan penyisipan peserta: %w", err)
+		return 0, nil, fmt.Errorf("repository: menyiapkan penyisipan peserta: %w", err)
 	}
 	defer stmt.Close()
 
+	idPeserta := make(map[int]string, len(baris))
 	for _, b := range baris {
 		id := PengenalPesertaUnggah(polisID, b.Nomor)
+		idPeserta[b.Nomor] = id
 		if _, err := stmt.ExecContext(ctx, nilaiSisipPeserta(id, polisID, b)...); err != nil {
 			// ⛔ Nomor barisnya IKUT di galat. "ORA-12899" tanpa nomor baris
 			// menyuruh orang mencari sendiri baris mana dari seribu.
-			return 0, fmt.Errorf("repository: menyisipkan peserta baris %d: %w",
+			return 0, nil, fmt.Errorf("repository: menyisipkan peserta baris %d: %w",
 				b.Nomor, err)
 		}
 	}
-	return len(baris), nil
+	return len(baris), idPeserta, nil
 }

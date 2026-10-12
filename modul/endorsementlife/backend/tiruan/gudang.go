@@ -30,12 +30,15 @@ type Polis struct {
 	EdmType     string
 	EdmNote     string
 	EdmDate     string
-	PLNumberEDM string
-	NoEndors    string
-	Status      string // `STATUSS`
-	TglInput    string
-	Pembuat     string
-	Kepala      map[string]string
+	// Sub-jenis EDM Type (migrasi 483).
+	EdmTypePerubahanData string
+	EdmTypeBatal         string
+	PLNumberEDM          string
+	NoEndors             string
+	Status               string // `STATUSS`
+	TglInput             string
+	Pembuat              string
+	Kepala               map[string]string
 }
 
 // Peserta adalah satu baris `T_PREMIUM_LIST_DETAIL` tiruan.
@@ -52,7 +55,7 @@ type Peserta struct {
 type PolisWarisan struct {
 	IDPega   string
 	NoPolis  string
-	ProdKe   int // 0 = NULL
+	ProdKe   int // PRODKE bilangan; 0 = '0' atau NULL (keduanya dibaca 0)
 	EdmType  string
 	TglInput string
 	Kepala   map[string]string // properti `DATA_JSON` → nilai
@@ -105,11 +108,16 @@ type Gudang struct {
 	RiwayatKasus map[string][]models.BarisRiwayat
 	// Panggilan - urutan metode tulis keputusan (uji AC 42).
 	Panggilan []string
+	// JSONPolisTertulis - baris `JSON_POLIS` yang ditulis Confirm, kunci IDPEGA (08-10-2026).
+	JSONPolisTertulis map[string]map[string]string
+	// HariTutupBuku - `TANGGAL_CLOSING`; 0 = kosong (HariClosing menolak).
+	HariTutupBuku int
 }
 
 // Baru menyusun gudang kosong.
 func Baru() *Gudang {
-	return &Gudang{Polis: map[string]*Polis{}, Rekap: map[string]int{}, Dibayar: map[string]bool{}}
+	return &Gudang{Polis: map[string]*Polis{}, Rekap: map[string]int{}, Dibayar: map[string]bool{},
+		JSONPolisTertulis: map[string]map[string]string{}, HariTutupBuku: 25}
 }
 
 // Transaksi menjalankan fn tanpa transaksi sungguhan (uji services).
@@ -124,7 +132,7 @@ func (g *Gudang) Inbox(_ context.Context, halaman, ukuran int) ([]models.BarisIn
 	}
 	var semua []*Polis
 	for _, p := range g.Polis {
-		if models.KasusEDM(p.ID) && p.Status == "" {
+		if models.KasusEDM(p.ID) { // terbuka dan tertutup (09-10-2026)
 			semua = append(semua, p)
 		}
 	}
@@ -146,9 +154,8 @@ func (g *Gudang) Inbox(_ context.Context, halaman, ukuran int) ([]models.BarisIn
 	var hasil []models.BarisInbox
 	for _, p := range semua[awal:akhir] {
 		hasil = append(hasil, models.BarisInbox{
-			CaseID: p.ID, EndorsementNo: p.OldPolicyNo, PolicyNo: p.OldPolicyNo, Tipe: p.Kepala["TYPE"],
-			EdmType: p.EdmType, Sob: p.Kepala["SOB_NAME"], Ceding: p.Kepala["CEDING_CO_NAME"],
-			PolicyHolder: p.Kepala["POLICY_HOLDER_NAME"], MarketingName: p.Kepala["MARKETING_NAME"],
+			CaseID: p.ID, EndorsementNo: p.NoEndors, PolicyNo: p.OldPolicyNo, Tipe: p.Kepala["TYPE"],
+			EdmType: p.EdmType, Ceding: p.Kepala["CEDING_CO_NAME"],
 			CreateDate: p.TglInput, CreateOperator: p.Pembuat, Status: p.Status,
 		})
 	}
@@ -167,7 +174,7 @@ func (g *Gudang) AmbilKasus(_ context.Context, _ *db.Tx, id string, _ bool) (mod
 		return models.Kasus{}, repository.ErrTidakAda
 	}
 	kepala := map[string]string{}
-	for _, k := range models.KolomKepalaSalin {
+	for _, k := range models.KolomKepalaKasus() {
 		kepala[k.Kolom] = p.Kepala[k.Kolom]
 	}
 	prod := p.ProdKe
@@ -177,6 +184,7 @@ func (g *Gudang) AmbilKasus(_ context.Context, _ *db.Tx, id string, _ bool) (mod
 	return models.Kasus{
 		ID: p.ID, NomorPolis: p.OldPolicyNo, PLNumber: p.OldPolicyNo, PLNumberEDM: p.PLNumberEDM,
 		ProdKe: prod, EdmType: p.EdmType, EdmNote: p.EdmNote, EdmDate: p.EdmDate, Status: p.Status,
+		EdmTypePerubahanData: p.EdmTypePerubahanData, EdmTypeBatal: p.EdmTypeBatal,
 		TglInput: p.TglInput, Pembuat: p.Pembuat, Kepala: kepala,
 	}, nil
 }
@@ -258,7 +266,8 @@ func (g *Gudang) AdaRekap(_ context.Context, _ *db.Tx, kasusID string) (bool, er
 	return g.Rekap[kasusID] > 0, nil
 }
 
-// VersiBerjalan meniru ketiga jalur `repository.Gudang.VersiBerjalan`.
+// VersiBerjalan meniru ketiga jalur `repository.Gudang.VersiBerjalan` - PRODKE 0-based (08-10-2026):
+// new business 0, kosong 0; warisan mengecualikan IDPEGA sistem baru (`NBLF-`, `EDML-`).
 func (g *Gudang) VersiBerjalan(_ context.Context, _ *db.Tx, nomorPolis string, sebelum int) (models.Versi, bool, error) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -268,58 +277,30 @@ func (g *Gudang) VersiBerjalan(_ context.Context, _ *db.Tx, nomorPolis string, s
 	lolos := func(prod int) bool { return sebelum <= 0 || prod < sebelum }
 	var terbaik models.Versi
 	for _, p := range g.Polis {
-		prod := p.ProdKe
-		if prod == 0 {
-			prod = 1
-		}
-		if !lolos(prod) {
+		if !lolos(p.ProdKe) {
 			continue
 		}
 		resmi := p.NoPolis == nomorPolis && p.Status == models.StatusKasusSelesai
 		nb := p.EdmType == "" && g.punyaPLNumber(p.ID, nomorPolis)
 		if resmi || nb {
-			// Urutan Pega (K3): NB = 0; endorsement resmi = akhiran nomornya, seperti repository.
-			up := 0
-			if resmi {
-				up = models.UrutanPegaTakDiketahui
-				if n, err := models.UrutanDariNomor(p.PLNumberEDM); err == nil {
-					up = n
-				}
-			}
-			terbaik = lebihBaruTiruan(terbaik, models.Versi{Jenis: models.SumberAplikasi, ID: p.ID, ProdKe: prod,
-				EdmType: p.EdmType, UrutanPega: up})
+			terbaik = lebihBaruTiruan(terbaik, models.Versi{Jenis: models.SumberAplikasi, ID: p.ID, ProdKe: p.ProdKe,
+				EdmType: p.EdmType})
 		}
 	}
-	// Warisan: `ORDER BY NVL(PRODKE, 1) DESC, TGL_INPUT DESC` (sqlVersiWarisan) - pemutus seri TGL_INPUT, bukan ID.
+	// Warisan: `ORDER BY PRODKE(bilangan) DESC, TGL_INPUT DESC` (sqlVersiWarisan) - pemutus seri TGL_INPUT.
 	var warisan *PolisWarisan
 	for _, w := range g.PolisWarisan {
-		prod := w.ProdKe
-		if prod == 0 {
-			prod = 1
-		}
-		if w.NoPolis != nomorPolis || !lolos(prod) {
+		if w.NoPolis != nomorPolis || !lolos(w.ProdKe) ||
+			strings.HasPrefix(w.IDPega, "NBLF-") || strings.HasPrefix(w.IDPega, models.AwalanKasus) {
 			continue
 		}
-		if warisan == nil {
-			warisan = w
-			continue
-		}
-		pw := warisan.ProdKe
-		if pw == 0 {
-			pw = 1
-		}
-		if prod > pw || (prod == pw && w.TglInput > warisan.TglInput) {
+		if warisan == nil || w.ProdKe > warisan.ProdKe || (w.ProdKe == warisan.ProdKe && w.TglInput > warisan.TglInput) {
 			warisan = w
 		}
 	}
 	if warisan != nil {
-		prod := warisan.ProdKe
-		if prod == 0 {
-			prod = 1
-		}
-		// Urutan Pega (K3): `PRODKE` mentah, kosong (0 di tiruan) = 0.
-		terbaik = models.LebihBaru(terbaik, models.Versi{Jenis: models.SumberWarisan, ID: warisan.IDPega, ProdKe: prod,
-			EdmType: warisan.EdmType, UrutanPega: warisan.ProdKe})
+		terbaik = models.LebihBaru(terbaik, models.Versi{Jenis: models.SumberWarisan, ID: warisan.IDPega,
+			ProdKe: warisan.ProdKe, EdmType: warisan.EdmType})
 	}
 	return terbaik, terbaik.ID != "", nil
 }
@@ -407,7 +388,7 @@ func (g *Gudang) KepalaSumber(_ context.Context, _ *db.Tx, v models.Versi, nomor
 		if !ada {
 			return nil, nil, repository.ErrTidakAda
 		}
-		for _, k := range models.KolomKepalaSalin {
+		for _, k := range models.KolomKepalaKasus() {
 			kepala[k.Kolom] = p.Kepala[k.Kolom]
 		}
 		return kepala, nil, nil
@@ -415,7 +396,7 @@ func (g *Gudang) KepalaSumber(_ context.Context, _ *db.Tx, v models.Versi, nomor
 		for _, w := range g.PolisWarisan {
 			if w.IDPega == v.ID && w.NoPolis == nomorPolis {
 				var rusak []string
-				for _, k := range models.KolomKepalaSalin {
+				for _, k := range models.KolomKepalaKasus() {
 					s := w.Kepala[k.Properti]
 					if k.Tanggal {
 						iso, ok := repository.TanggalPega(s)
@@ -423,6 +404,13 @@ func (g *Gudang) KepalaSumber(_ context.Context, _ *db.Tx, v models.Versi, nomor
 							rusak = append(rusak, k.Kolom)
 						}
 						s = iso
+					}
+					if k.Angka {
+						a, ok := repository.AngkaPega(s)
+						if !ok {
+							rusak = append(rusak, k.Kolom)
+						}
+						s = a
 					}
 					kepala[k.Kolom] = s
 				}
@@ -452,6 +440,7 @@ func (g *Gudang) SisipKasus(_ context.Context, _ *db.Tx, k repository.KasusTulis
 	}
 	g.Polis[k.ID] = &Polis{
 		ID: k.ID, OldPolicyNo: k.NomorPolis, EdmType: k.EdmType, EdmDate: k.EdmDate, EdmNote: k.EdmNote,
+		EdmTypePerubahanData: k.EdmTypePerubahanData, EdmTypeBatal: k.EdmTypeBatal,
 		ProdKe: k.ProdKe, Pembuat: k.Pembuat, TglInput: "2026-10-01 12:00:00", Kepala: kepala,
 	}
 	return nil

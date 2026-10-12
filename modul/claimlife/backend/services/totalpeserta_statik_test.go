@@ -39,19 +39,41 @@ func TestMigrasiTidakMenyimpanTotalPeserta(t *testing.T) {
 	if len(masuk) == 0 {
 		t.Fatal("nol berkas migrasi - penjaga ini tidak menjaga apa pun")
 	}
+	diperiksa := 0
 	for _, jalur := range masuk {
 		nama := filepath.Base(jalur)
 		isi, err := os.ReadFile(jalur)
 		if err != nil {
 			t.Fatalf("membaca %s: %v", nama, err)
 		}
-		for _, cocok := range polaKolomTotal.FindAllString(string(isi), -1) {
+		for _, cocok := range kolomTotalTerlarang(jalur, string(isi)) {
 			t.Errorf("%s memuat kolom %q. Keenam total peserta DIHITUNG saat "+
 				"dibaca (models.HitungTotalPeserta, bukti di SavePesertaClaim.xml "+
 				"b4221-b4743); menyimpannya membuat angka uang yang dapat basi "+
-				"terhadap baris adjustment-nya sendiri.", nama, cocok)
+				"terhadap baris adjustment-nya sendiri.", relAkar(jalur), cocok)
+		}
+		if milikClaimLife(jalur) {
+			diperiksa++
 		}
 	}
+	if diperiksa < 10 {
+		t.Fatalf("hanya %d migrasi Claim Life terbaca; pembacanya yang rusak", diperiksa)
+	}
+}
+
+// kolomTotalTerlarang - kolom TOTAL_* yang dilarang di migrasi itu (lingkup 10-10-2026, pindai_bantu_test.go).
+//
+// ⛔ Keenam total peserta adalah turunan KLAIM. Migrasi Claim Life diperiksa utuh; migrasi modul lain hanya
+// PERNYATAAN yang SASARANNYA tabel Claim Life (mis. `ALTER TABLE T_CLAIMLF_... ADD TOTAL_...`). Kolom TOTAL_* di tabel
+// modul lain (nbfacin 188/193/199; claimfacin 562, claimnonprop 609, claimprop 527/528 yang hanya menautkan
+// `REFERENCES T_GENERAL_CLAIM`) adalah keputusan modul itu, bukan turunan peserta klaim (sqlLingkupClaimLife,
+// 11-10-2026).
+func kolomTotalTerlarang(jalur, isi string) []string {
+	var hasil []string
+	for _, bagian := range sqlLingkupClaimLife(jalur, isi) {
+		hasil = append(hasil, polaKolomTotal.FindAllString(bagian, -1)...)
+	}
+	return hasil
 }
 
 // polaTulisTotal mencari penulisan medan Total pada peserta.
@@ -94,5 +116,27 @@ func TestRepositoryTidakMenulisTotalPeserta(t *testing.T) {
 	}
 	if ketemu == 0 {
 		t.Fatal("nol berkas Go ditelusuri - penjaga ini tidak menjaga apa pun")
+	}
+}
+
+// TestLingkupKolomTotalMigrasi membuktikan lingkup kolomTotalTerlarang (10-10-2026) tanpa menanam berkas migrasi
+// sungguhan: migrasi Claim Life tetap merah untuk TOTAL_* di mana pun; migrasi modul lain merah HANYA pada pernyataan
+// yang menyebut tabel Claim Life; komentar tidak dihitung.
+func TestLingkupKolomTotalMigrasi(t *testing.T) {
+	cl := "../../../../modul/claimlife/backend/migrations/024_uji.sql"
+	lain := "../../../../modul/nbfacin/backend/migrations/188_uji.sql"
+	for _, k := range []struct {
+		jalur, isi string
+		mau        int
+	}{
+		{cl, "ALTER TABLE {skema}.T_TABEL_APA_PUN ADD TOTAL_SI NUMBER", 1},
+		{cl, "ALTER TABLE {skema}.T_CLAIMLF_ADJUSTMENT ADD (TOTAL_SI NUMBER, TOTAL_PREMI NUMBER)", 2},
+		{lain, "ALTER TABLE {skema}.T_NB_FACIN ADD TOTAL_SI NUMBER", 0},
+		{lain, "ALTER TABLE {skema}.T_NB_FACIN ADD TOTAL_SI NUMBER;\nALTER TABLE {skema}.T_GENERAL_CLAIM ADD TOTAL_CLAIM NUMBER", 1},
+		{lain, "-- ALTER TABLE T_GENERAL_CLAIM ADD TOTAL_X NUMBER\nALTER TABLE {skema}.T_NB_FACIN ADD TOTAL_SI NUMBER", 0},
+	} {
+		if got := kolomTotalTerlarang(k.jalur, k.isi); len(got) != k.mau {
+			t.Errorf("%s %q: %v, mau %d", k.jalur, k.isi, got, k.mau)
+		}
 	}
 }

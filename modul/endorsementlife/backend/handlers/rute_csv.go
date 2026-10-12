@@ -74,6 +74,16 @@ func jawabCSV(w http.ResponseWriter, isi any, err error) {
 }
 
 func daftarkanCSV(pasang func(string, rute)) {
+	// Download Template (keputusan work owner 10-10-2026): CSV UTF-8, gerbang sama dengan unggahan.
+	pasang("GET "+Prefix+"/kasus/{id}/templat-csv", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		b, err := l.TemplatCSV(r.Context(), p, r.PathValue("id"))
+		if jawabGalat(w, err) {
+			return
+		}
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", b.Nama))
+		_, _ = w.Write(b.Isi)
+	})
 	pasang("POST "+Prefix+"/kasus/{id}/unggah", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
 		berkas, ok := bagianBerkas(w, r, p)
 		if !ok {

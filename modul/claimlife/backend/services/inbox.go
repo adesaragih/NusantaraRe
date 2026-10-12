@@ -26,6 +26,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"unicode/utf8"
 
 	inti "nusantarare/inti/backend"
 	"nusantarare/inti/backend/db"
@@ -63,6 +65,9 @@ type HalamanInbox struct {
 	Ukuran int
 }
 
+// ErrCariInboxTidakSah - kata kunci kotak cari di luar 2..100 karakter (12-10-2026).
+var ErrCariInboxTidakSah = errors.New("services: kata kunci cari inbox tidak sah")
+
 // Inbox melayani pembacaan antrian kerja.
 type Inbox struct{ svc *Service }
 
@@ -90,7 +95,7 @@ func BatasUkuran(n int) int {
 // terbaca sebagai "tidak ada pekerjaan" - dan itu kalimat yang berbeda
 // artinya dari "saya tidak tahu siapa Anda".
 func (in *Inbox) Ambil(ctx context.Context, pelaku inti.Pelaku, tahap models.Tahap,
-	offset, ukuran int) (HalamanInbox, error) {
+	offset, ukuran int, cari string) (HalamanInbox, error) {
 
 	var kosong HalamanInbox
 	if err := inti.WajibIdentitas(pelaku); err != nil {
@@ -108,6 +113,11 @@ func (in *Inbox) Ambil(ctx context.Context, pelaku inti.Pelaku, tahap models.Tah
 	if err := inti.WajibPeran(pelaku, peran); err != nil {
 		return kosong, err
 	}
+	// Kotak cari (12-10-2026): 2..100 karakter sesudah dipangkas; kosong = tanpa saringan.
+	if n := utf8.RuneCountInString(strings.TrimSpace(cari)); n > 0 && (n < repository.MinCariInbox || n > repository.MaksCariInbox) {
+		return kosong, fmt.Errorf("%w: kata kunci %d karakter (boleh %d..%d)", ErrCariInboxTidakSah, n,
+			repository.MinCariInbox, repository.MaksCariInbox)
+	}
 	if !in.svc.PunyaDatabase() {
 		return kosong, db.ErrTanpaOracle
 	}
@@ -121,6 +131,7 @@ func (in *Inbox) Ambil(ctx context.Context, pelaku inti.Pelaku, tahap models.Tah
 		PeranTahap: peran,
 		Offset:     offset,
 		Ukuran:     ukuran,
+		Cari:       repository.PolaCariInbox(cari),
 	}
 	// ⛔ Worklist disaring ke kasus MILIK pelaku; workbasket tidak.
 	// `[terverifikasi]` `Register_Flow.xml` 1508 `Current operator`, 1351

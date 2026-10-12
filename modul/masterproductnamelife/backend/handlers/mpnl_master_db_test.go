@@ -63,7 +63,7 @@ func TestDBMasterPlanCariCoverNameAtauBusiness(t *testing.T) {
 }
 
 // K1 keputusan work owner 01-10-2026 (OQ-MPNL-03): `Choose R/I Rate` membaca tabel `M_RATE_LIFE_SUMMARY`
-// (`Contains` USEDBY, urut `ID ASC`), `View Rate` membaca view `RATE_LIFE` satu RIRATEID (urut `ID DESC,
+// (`Contains` USEDBY, urut `ID ASC`), `View Rate` membaca tabel `M_RATE_LIFE` satu RIRATEID (urut `ID DESC,
 // RATE ASC`, RATE teks apa adanya); nol tulisan.
 func TestDBRIRateDanViewRateDibacaSaja(t *testing.T) {
 	u := pasangDB(t)

@@ -169,17 +169,21 @@ func dokNP(sh map[string]any) map[string]any {
 	}
 }
 
-// ⚠️ MEMAKU EKSPOR APA ADANYA: cabang Treaty In NonProp "spreading type 1"
-// tidak punya langkah yang mengisi `SaveData.LIMITCURRENCY`, jadi Gross
-// Premium selalu Exit Iteration — nol baris. Bila WO memutuskan lain, uji
-// inilah yang berubah.
-func TestDetailNonPropTreatyInTypeSatuNolBaris(t *testing.T) {
+// ⭐ 10 Oktober 2026 (permintaan pemakai: Force Edit non-prop harus menyimpan
+// ke `TREATYINDETAIL`): ekspor [5.4.2] tidak punya langkah `RNM Limit`, jadi
+// aslinya NOL baris — kini langkah itu dijalankan per baris `RnmLimitList`.
+func TestDetailNonPropTreatyInTypeSatuMenghasilkanBaris(t *testing.T) {
 	baris, err := services.SusunDetailTreatyIn(dokNP(shareNP("2026 UJI QS")), "UJI-3")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(baris) != 0 {
-		t.Fatalf("baris %d, mau 0 (ekspor [5.4.2] tanpa RNM Limit)", len(baris))
+	if len(baris) == 0 {
+		t.Fatal("cabang spreading type 1 masih nol baris — LIMITCURRENCY tidak terisi")
+	}
+	for i, b := range baris {
+		if b.Teks["LIMITCURRENCY"] == "" || b.Teks["MDPCURRENCY"] != b.Teks["LIMITCURRENCY"] {
+			t.Errorf("baris %d: LIMITCURRENCY %q, MDPCURRENCY %q", i, b.Teks["LIMITCURRENCY"], b.Teks["MDPCURRENCY"])
+		}
 	}
 }
 
@@ -251,5 +255,53 @@ func TestDetailAngkaTakTerbacaDitolak(t *testing.T) {
 	_, err := services.SusunDetailTreatyIn(doc, "UJI-6")
 	if !errors.Is(err, services.ErrTombolDitolak) {
 		t.Fatalf("galat %v, mau ErrTombolDitolak", err)
+	}
+}
+
+// ⭐ 10 Oktober 2026 — spreading MANUAL (kontrak 1002311): `RnmLimitList`
+// tingkat spreading kosong, tetapi baris detail tetap harus terbentuk dari
+// `RnmLimitList` layer.
+func TestDetailNonPropSpreadingManualTanpaRnmLimitSebarMenghasilkanBaris(t *testing.T) {
+	sh := shareNP("")
+	sh["SpreadingListXOL"] = larik(map[string]any{
+		"ReinsTypeID": "10270", "ReinsTypeName": "UJI MANUAL", "Pct": "19", "Value": "",
+		"RnmLimitList":     larik(),
+		"GrossPremiumList": larik(uangDetail("IDR", "42")),
+		"NetPremiumList":   larik(uangDetail("IDR", "35")),
+	})
+	baris, err := services.SusunDetailTreatyIn(dokNP(sh), "UJI-5")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(baris) == 0 {
+		t.Fatal("spreading manual tanpa RnmLimitList sebaran masih nol baris")
+	}
+	if b := baris[0]; b.Teks["LIMITCURRENCY"] == "" || b.Teks["SPREADINGTYPE"] != "UJI MANUAL" {
+		t.Errorf("baris %v", b.Teks)
+	}
+}
+
+// ⭐ 11 Oktober 2026 — `SPREAD_RNM_SHARE_VALUE` spreading manual = RNM Limit
+// layer × Pct ÷ % RNM Share (rumus baris Pega lama 1002304: 7.837.500.000 × 14
+// ÷ 19 = 5.775.000.000). Dulu kosong karena `SpreadingListXOL.Value` tak terisi.
+func TestDetailNonPropNilaiSebarRNMDihitung(t *testing.T) {
+	sh := shareNP("")
+	sh["RnmLimitList"] = larik(uangDetail("IDR", "7837500000"))
+	sh["SpreadingListXOL"] = larik(map[string]any{
+		"ReinsTypeID": "10270", "ReinsTypeName": "UJI MANUAL", "Pct": "14",
+		"GrossPremiumList": larik(uangDetail("IDR", "42")),
+		"NetPremiumList":   larik(uangDetail("IDR", "35")),
+	})
+	doc := dokNP(sh)
+	doc["RNMShare"] = "19"
+	baris, err := services.SusunDetailTreatyIn(doc, "UJI-6")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(baris) == 0 {
+		t.Fatal("nol baris")
+	}
+	if got := angkaDi(t, baris[0], "SPREAD_RNM_SHARE_VALUE"); got != "5775000000" {
+		t.Errorf("SPREAD_RNM_SHARE_VALUE %q, mau 5775000000", got)
 	}
 }

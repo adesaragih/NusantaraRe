@@ -123,6 +123,7 @@ func TestPagariDiagnosaMemeriksaKetigaGerbang(t *testing.T) {
 		"WajibIdentitas(pelaku)",
 		"PastikanKasusTerbuka(ctx, klaimID)",
 		"models.TahapBergridPeserta(tahap)",
+		"tahap != models.TahapMedicalCheck",
 		"WajibPeran(pelaku, peranTahap)",
 		"models.DiagnosaTerkunci(k.peserta.KodeStatus)",
 	} {
@@ -148,6 +149,22 @@ func TestPagariDiagnosaMemeriksaKetigaGerbang(t *testing.T) {
 		}
 		if !strings.Contains(badan, "d.pagari(ctx, pelaku, klaimID, pesertaID)") {
 			t.Errorf("%s tidak melewati pagari", rute)
+		}
+	}
+}
+
+// 12-10-2026 - Ubah memeriksa GROUP DIAGNOSE terhadap daftar WO, dengan nilai tersimpan baris itu (warisan).
+func TestUbahDiagnosaMemeriksaKelompok(t *testing.T) {
+	isi, err := os.ReadFile("diagnosa.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ubah := string(isi)[strings.Index(string(isi), "func (d *DiagnosaPeserta) Ubah("):]
+	ubah = ubah[:strings.Index(ubah, "func (d *DiagnosaPeserta) Hapus(")]
+	for _, mau := range []string{"lama, err := d.milikPeserta(", "models.KelompokDiagnosaSah(grup, strings.TrimSpace(lama.GroupDiagnose))",
+		"ErrKelompokDiagnosaTidakDikenal"} {
+		if !strings.Contains(ubah, mau) {
+			t.Errorf("Ubah tidak lagi memuat %s", mau)
 		}
 	}
 }

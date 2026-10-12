@@ -142,11 +142,13 @@ describe('§6 RNM Share adalah SUB-TAB, dan nol tab dihapus', () => {
   })
 
   // ⛔ RALAT 8 Oktober 2026 — keputusan pemilik proses: *"di non prop tab RNM
-  // SHARE itu tidak ada"*. Larangan §6 ("nol tab dihapus") digantikan:
-  // `RNM Share` kini HANYA sub-tab di dalam `Share`, sesuai ekspor.
-  it('⛔ RNM Share BUKAN tab utama Non-Prop — hanya sub-tab Share', () => {
+  // SHARE itu tidak ada"*. `RNM Share` kini HANYA sub-tab di dalam `Share`.
+  // ⭐ 10 Oktober 2026 — `Retro` mengisi posisinya di strip (Pega: tab Retro
+  // ada), jadi jumlah tabnya tetap 11.
+  it('⛔ RNM Share BUKAN tab utama Non-Prop; Retro ada di strip', () => {
     expect(TAB_NON_PROPORSIONAL as readonly string[]).not.toContain('RNM Share')
-    expect(TAB_NON_PROPORSIONAL).toHaveLength(10)
+    expect(TAB_NON_PROPORSIONAL).toContain('Retro')
+    expect(TAB_NON_PROPORSIONAL).toHaveLength(11)
     expect(TAB_PROPORSIONAL).toHaveLength(10)
     expect([...SUB_TAB_SHARE]).toEqual(['RNM Share'])
   })

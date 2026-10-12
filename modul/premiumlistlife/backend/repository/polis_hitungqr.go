@@ -29,12 +29,15 @@ import (
 
 // KepalaUnggah - kolom kepala polis yang dipakai Validate / Calculate CSV:
 // hitung Type QR dan batas produk (keputusan work owner 05-10-2026).
+//
+// PolicyHolderName ikut sejak 05-10-2026: POLICY_HOLDER peserta diisi darinya.
 type KepalaUnggah struct {
-	Type, ProductNameID, BusinessName, ProRateType, RISlipRNM string
+	Type, ProductNameID, BusinessName, ProRateType, RISlipRNM, PolicyHolderName string
 }
 
 func sqlKepalaUnggah(polis string) string {
-	return fmt.Sprintf(`SELECT TYPE, PRODUCT_NAME_ID, BUSINESS_NAME, PRO_RATE_TYPE, RI_SLIP_RNM FROM %s WHERE ID = :1`, polis)
+	return fmt.Sprintf(`SELECT TYPE, PRODUCT_NAME_ID, BUSINESS_NAME, PRO_RATE_TYPE, RI_SLIP_RNM, POLICY_HOLDER_NAME
+	   FROM %s WHERE ID = :1`, polis)
 }
 
 func sqlBatasProdukMPNL(tabel string) string {
@@ -96,7 +99,8 @@ func sqlRiskHitungQR(tabel string) string {
 }
 
 // KepalaUnggah membaca Type, Product Name ID, Class of Business, Premium
-// Payment Method, dan R/I SLIP RNM polis - SEKALI per Validate / Calculate CSV.
+// Payment Method, R/I SLIP RNM, dan nama Policy Holder polis - SEKALI per
+// Validate / Calculate CSV.
 func (r *Rujukan) KepalaUnggah(ctx context.Context, polisID string) (KepalaUnggah, error) {
 	polis, err := r.db.Qualify("T_PREMIUM_LIST")
 	if err != nil {
@@ -106,8 +110,8 @@ func (r *Rujukan) KepalaUnggah(ctx context.Context, polisID string) (KepalaUngga
 	if err := db.PeriksaSQL(q); err != nil {
 		return KepalaUnggah{}, err
 	}
-	var n [5]sql.NullString
-	err = r.db.QueryRowContext(ctx, q, polisID).Scan(&n[0], &n[1], &n[2], &n[3], &n[4])
+	var n [6]sql.NullString
+	err = r.db.QueryRowContext(ctx, q, polisID).Scan(&n[0], &n[1], &n[2], &n[3], &n[4], &n[5])
 	if errors.Is(err, sql.ErrNoRows) {
 		return KepalaUnggah{}, fmt.Errorf("%w: %s", ErrHeaderPolisTidakAda, polisID)
 	}
@@ -115,7 +119,8 @@ func (r *Rujukan) KepalaUnggah(ctx context.Context, polisID string) (KepalaUngga
 		return KepalaUnggah{}, fmt.Errorf("repository: membaca kepala polis: %w", err)
 	}
 	t := func(i int) string { return strings.TrimSpace(n[i].String) }
-	return KepalaUnggah{Type: t(0), ProductNameID: t(1), BusinessName: t(2), ProRateType: t(3), RISlipRNM: t(4)}, nil
+	return KepalaUnggah{Type: t(0), ProductNameID: t(1), BusinessName: t(2), ProRateType: t(3), RISlipRNM: t(4),
+		PolicyHolderName: t(5)}, nil
 }
 
 // BahanHitungQR membaca parameter produk dan seluruh plan-nya. Master rate

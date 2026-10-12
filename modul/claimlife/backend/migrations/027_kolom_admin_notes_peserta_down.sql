@@ -1,0 +1,5 @@
+-- Jalur mundur 027.
+ALTER TABLE {skema}.T_CLAIMLF_PREMIUMLIST_DETAIL DROP (
+  ADMIN_NOTES
+)
+/

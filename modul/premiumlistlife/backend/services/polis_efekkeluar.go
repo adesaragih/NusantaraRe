@@ -51,9 +51,10 @@ const ModulPremiumListLife = "PREMIUMLISTLIFE"
 // `convertJsonNusareToProduction`, dan `ConnectREST/ConvertJsonNusareToProduction.xml`
 // hanya mengirim TIGA pengenal (`.pzInsKey`, `.OfferFacIn.PolicyData.PolicyNo`,
 // `.pxCreateDateTime`) - bukan isi polis. Layanan hilir tampaknya membaca
-// `JSON_POLIS` sendiri, dan tabel itu TIDAK LAGI ditulis (pl1). Sebelum stub
-// ini diganti panggilan nyata, pemilik layanan harus menyatakan dari mana ia
-// membaca polis sesudah JSON dibuang.
+// `JSON_POLIS` sendiri. Sejak 06-10-2026 (keputusan work owner) tabel itu ditulis
+// saat Confirm TANPA `DATA_JSON` (IDPEGA, NOPOLIS, TGL_PROD, USERNAME). Sebelum stub
+// ini diganti panggilan nyata, pemilik layanan harus mengonfirmasi bahwa
+// `DATA_JSON` kosong cukup - atau dari mana ia membaca isi polis.
 var KunciArasapasPremiumList = layanan.KunciLayanan{
 	Kategori1: "Production",
 	Kategori2: "convertJsonNusareToProduction",

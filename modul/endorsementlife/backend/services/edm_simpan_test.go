@@ -11,11 +11,11 @@ import (
 	"nusantarare/modul/endorsementlife/backend/tiruan"
 )
 
-// gudangKasusSimpan - kasus `EDMLF-1` bertipe `QR`: tiga peserta `Old` (dua
+// gudangKasusSimpan - kasus `EDML-1` bertipe `QR`: tiga peserta `Old` (dua
 // IDR, satu USD) dan satu baris `New` hasil CSV.
 func gudangKasusSimpan(edmType string) *tiruan.Gudang {
 	g := tiruan.Baru()
-	g.Polis["EDMLF-1"] = &tiruan.Polis{ID: "EDMLF-1", OldPolicyNo: "UJI-PL-1", EdmType: edmType, ProdKe: 2,
+	g.Polis["EDML-1"] = &tiruan.Polis{ID: "EDML-1", OldPolicyNo: "UJI-PL-1", EdmType: edmType, ProdKe: 1,
 		Kepala: map[string]string{"TYPE": models.TypeQR}}
 	for _, p := range []struct{ id, uang, gp, ded, status string }{
 		{"UJI-D1", "IDR", "100.25", "10", models.StatusOld},
@@ -23,7 +23,7 @@ func gudangKasusSimpan(edmType string) *tiruan.Gudang {
 		{"UJI-D3", "USD", "7.5", "0.5", models.StatusOld},
 		{"UJI-D4", "IDR", "50", "5", models.StatusNew},
 	} {
-		g.Peserta = append(g.Peserta, &tiruan.Peserta{ID: p.id, PolisID: "EDMLF-1", PLNumber: "UJI-PL-1", EdmStatus: p.status,
+		g.Peserta = append(g.Peserta, &tiruan.Peserta{ID: p.id, PolisID: "EDML-1", PLNumber: "UJI-PL-1", EdmStatus: p.status,
 			Nilai: map[string]string{"CURRENCY": p.uang, "GROSS_PREMIUM": p.gp, "DEDUCTION": p.ded, "COMM": "1"}})
 	}
 	return g
@@ -50,7 +50,7 @@ func rekapUang(r []map[string]string, uang string) map[string]string {
 func TestSimpanPerubahanDataMenandaiYangDicentang(t *testing.T) {
 	g := gudangKasusSimpan(models.EdmTypePerubahanData)
 	l, j := layananJejak(g)
-	h, err := l.Simpan(context.Background(), pelakuUji, "EDMLF-1", models.PilihanHapus{Pilih: []string{"UJI-D1", "UJI-D4"}})
+	h, err := l.Simpan(context.Background(), pelakuUji, "EDML-1", models.PilihanHapus{Pilih: []string{"UJI-D1", "UJI-D4"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,12 +80,12 @@ func TestSimpanPerubahanDataMenandaiYangDicentang(t *testing.T) {
 	if usd := rekapUang(h.Rekap, "USD"); usd["PREMIUM"] != "7.5" || usd["BALANCE"] != "7" {
 		t.Errorf("rekap USD %v", usd)
 	}
-	k, err := l.BacaKasus(context.Background(), pelakuUji, "EDMLF-1")
+	k, err := l.BacaKasus(context.Background(), pelakuUji, "EDML-1")
 	if err != nil || !k.SudahSimpan || len(k.Rekap) != 2 {
 		t.Fatalf("sesudah simpan: %+v %v", k, err)
 	}
 	// ⛔ Simpan kedua ditolak: pembalikan kedua mustahil (R06).
-	if _, err := l.Simpan(context.Background(), pelakuUji, "EDMLF-1", models.PilihanHapus{Pilih: []string{"UJI-D2"}}); !errors.Is(err, services.ErrSudahDisimpan) {
+	if _, err := l.Simpan(context.Background(), pelakuUji, "EDML-1", models.PilihanHapus{Pilih: []string{"UJI-D2"}}); !errors.Is(err, services.ErrSudahDisimpan) {
 		t.Fatalf("simpan kedua: %v", err)
 	}
 	if d1.Nilai["GROSS_PREMIUM"] != "-100.25" || d2.EdmStatus != models.StatusOld {
@@ -96,7 +96,7 @@ func TestSimpanPerubahanDataMenandaiYangDicentang(t *testing.T) {
 func TestSimpanDeleteAllDenganPengecualian(t *testing.T) {
 	g := gudangKasusSimpan(models.EdmTypePerubahanData)
 	l, _ := layananJejak(g)
-	h, err := l.Simpan(context.Background(), pelakuUji, "EDMLF-1", models.PilihanHapus{Semua: true, Kecuali: []string{"UJI-D2"}})
+	h, err := l.Simpan(context.Background(), pelakuUji, "EDML-1", models.PilihanHapus{Semua: true, Kecuali: []string{"UJI-D2"}})
 	if err != nil || h.Ditandai != 2 {
 		t.Fatalf("%+v %v", h, err)
 	}
@@ -105,10 +105,12 @@ func TestSimpanDeleteAllDenganPengecualian(t *testing.T) {
 	}
 }
 
+// TestSimpanTanpaCentangTetapMenghitungRekap - tanpa centang tetapi ada peserta
+// `New` (UJI-D4): ada perubahan, boleh (proteksi 08-10-2026).
 func TestSimpanTanpaCentangTetapMenghitungRekap(t *testing.T) {
 	g := gudangKasusSimpan(models.EdmTypePerubahanData)
 	l, _ := layananJejak(g)
-	h, err := l.Simpan(context.Background(), pelakuUji, "EDMLF-1", models.PilihanHapus{})
+	h, err := l.Simpan(context.Background(), pelakuUji, "EDML-1", models.PilihanHapus{})
 	if err != nil || h.Ditandai != 0 || len(h.Rekap) != 2 {
 		t.Fatalf("%+v %v", h, err)
 	}
@@ -121,7 +123,7 @@ func TestSimpanBatalMembalikSeluruhPesertaOld(t *testing.T) {
 	g := gudangKasusSimpan(models.EdmTypeBatal)
 	l, _ := layananJejak(g)
 	// Pilihan layar diabaikan: grid Batal tanpa kotak centang.
-	h, err := l.Simpan(context.Background(), pelakuUji, "EDMLF-1", models.PilihanHapus{Pilih: []string{"UJI-D1"}})
+	h, err := l.Simpan(context.Background(), pelakuUji, "EDML-1", models.PilihanHapus{Pilih: []string{"UJI-D1"}})
 	if err != nil || h.Ditandai != 3 || h.Status != models.StatusBatal {
 		t.Fatalf("%+v %v", h, err)
 	}
@@ -138,7 +140,7 @@ func TestSimpanBatalMembalikSeluruhPesertaOld(t *testing.T) {
 func TestSimpanDitolak(t *testing.T) {
 	ctx := context.Background()
 	tertutup := gudangKasusSimpan(models.EdmTypePerubahanData)
-	tertutup.Polis["EDMLF-1"].Status = models.StatusKasusSelesai
+	tertutup.Polis["EDML-1"].Status = models.StatusKasusSelesai
 	kosong := gudangKasusSimpan(models.EdmTypePerubahanData)
 	kosong.Peserta = nil
 	rusak := gudangKasusSimpan(models.EdmTypePerubahanData)
@@ -149,10 +151,10 @@ func TestSimpanDitolak(t *testing.T) {
 		id    string
 		galat error
 	}{
-		{"tertutup", tertutup, "EDMLF-1", services.ErrKasusTertutup},
-		{"tanpa peserta", kosong, "EDMLF-1", services.ErrTanpaPeserta},
+		{"tertutup", tertutup, "EDML-1", services.ErrKasusTertutup},
+		{"tanpa peserta", kosong, "EDML-1", services.ErrTanpaPeserta},
 		{"bukan kasus EDM", gudangKasusSimpan("1"), "NBLF-1", services.ErrKasusTidakAda},
-		{"tidak ada", gudangKasusSimpan("1"), "EDMLF-9", services.ErrKasusTidakAda},
+		{"tidak ada", gudangKasusSimpan("1"), "EDML-9", services.ErrKasusTidakAda},
 	} {
 		l, _ := layananJejak(k.g)
 		if _, err := l.Simpan(ctx, pelakuUji, k.id, models.PilihanHapus{Semua: true}); !errors.Is(err, k.galat) {
@@ -160,10 +162,10 @@ func TestSimpanDitolak(t *testing.T) {
 		}
 	}
 	l, _ := layananJejak(rusak)
-	if _, err := l.Simpan(ctx, pelakuUji, "EDMLF-1", models.PilihanHapus{Semua: true}); err == nil {
+	if _, err := l.Simpan(ctx, pelakuUji, "EDML-1", models.PilihanHapus{Semua: true}); err == nil {
 		t.Error("nilai uang rusak diterima")
 	}
-	if _, err := l.Simpan(ctx, inti.Pelaku{}, "EDMLF-1", models.PilihanHapus{}); err == nil {
+	if _, err := l.Simpan(ctx, inti.Pelaku{}, "EDML-1", models.PilihanHapus{}); err == nil {
 		t.Error("tanpa identitas diterima")
 	}
 }
@@ -173,11 +175,69 @@ func TestSimpanDitolak(t *testing.T) {
 func TestSimpanPengecualianKosongDibuang(t *testing.T) {
 	g := gudangKasusSimpan(models.EdmTypePerubahanData)
 	l, _ := layananJejak(g)
-	h, err := l.Simpan(context.Background(), pelakuUji, "EDMLF-1", models.PilihanHapus{Semua: true, Kecuali: []string{"", " ", "UJI-D2", "UJI-D2"}})
+	h, err := l.Simpan(context.Background(), pelakuUji, "EDML-1", models.PilihanHapus{Semua: true, Kecuali: []string{"", " ", "UJI-D2", "UJI-D2"}})
 	if err != nil || h.Ditandai != 2 {
 		t.Fatalf("%+v %v", h, err)
 	}
 	if got := (models.PilihanHapus{Pilih: []string{" UJI-A ", "", "UJI-A"}}).Rapikan(); len(got.Pilih) != 1 || got.Pilih[0] != "UJI-A" {
 		t.Errorf("Rapikan %+v", got)
+	}
+}
+
+// tanpaNew - kasus uji tanpa peserta `New` (hanya tiga `Old`).
+func tanpaNew(edmType string) *tiruan.Gudang {
+	g := gudangKasusSimpan(edmType)
+	g.Peserta = g.Peserta[:3]
+	return g
+}
+
+// TestSimpanTanpaPerubahanDitolak - proteksi Process Endorsement (keputusan
+// work owner 08-10-2026): Perubahan Data tanpa centang dan tanpa `New` ditolak
+// sebelum tulisan apa pun; satu dari keduanya cukup; Batal tidak pernah ditolak.
+func TestSimpanTanpaPerubahanDitolak(t *testing.T) {
+	ctx := context.Background()
+	for _, k := range []struct {
+		nama    string
+		pilihan models.PilihanHapus
+	}{
+		{"tanpa pilihan", models.PilihanHapus{}},
+		{"DELETE ALL semua dikecualikan", models.PilihanHapus{Semua: true, Kecuali: []string{"UJI-D1", "UJI-D2", "UJI-D3"}}},
+		{"centang bukan Old", models.PilihanHapus{Pilih: []string{"UJI-TAKADA"}}},
+	} {
+		g := tanpaNew(models.EdmTypePerubahanData)
+		l, j := layananJejak(g)
+		_, err := l.Simpan(ctx, pelakuUji, "EDML-1", k.pilihan)
+		if !errors.Is(err, services.ErrTanpaPerubahan) {
+			t.Fatalf("%s: %v", k.nama, err)
+		}
+		if services.Pesan(err) != models.PesanTanpaPerubahan {
+			t.Errorf("%s: pesan %q", k.nama, services.Pesan(err))
+		}
+		// Nol tulisan: tidak ada peserta berubah, tanpa rekap, tanpa jejak.
+		for _, d := range g.Peserta {
+			if d.EdmStatus != models.StatusOld || d.Nilai["GROSS_PREMIUM"] == "" || d.Nilai["GROSS_PREMIUM"][0] == '-' {
+				t.Errorf("%s: %s berubah %+v", k.nama, d.ID, d)
+			}
+		}
+		if g.Rekap["EDML-1"] != 0 || len(j.catatan) != 0 {
+			t.Errorf("%s: rekap %d jejak %d", k.nama, g.Rekap["EDML-1"], len(j.catatan))
+		}
+	}
+
+	// Centang >= 1 tanpa New: lolos.
+	g := tanpaNew(models.EdmTypePerubahanData)
+	l, _ := layananJejak(g)
+	if h, err := l.Simpan(ctx, pelakuUji, "EDML-1", models.PilihanHapus{Pilih: []string{"UJI-D2"}}); err != nil || h.Ditandai != 1 {
+		t.Errorf("centang satu: %+v %v", h, err)
+	}
+	// New >= 1 tanpa centang: lolos (gudangKasusSimpan memuat UJI-D4 New).
+	l, _ = layananJejak(gudangKasusSimpan(models.EdmTypePerubahanData))
+	if h, err := l.Simpan(ctx, pelakuUji, "EDML-1", models.PilihanHapus{}); err != nil || h.Ditandai != 0 {
+		t.Errorf("New tanpa centang: %+v %v", h, err)
+	}
+	// Batal tanpa apa pun: lolos.
+	l, _ = layananJejak(tanpaNew(models.EdmTypeBatal))
+	if h, err := l.Simpan(ctx, pelakuUji, "EDML-1", models.PilihanHapus{}); err != nil || h.Ditandai != 3 {
+		t.Errorf("Batal: %+v %v", h, err)
 	}
 }

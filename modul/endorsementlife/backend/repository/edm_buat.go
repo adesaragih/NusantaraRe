@@ -22,7 +22,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/cockroachdb/apd/v3"
+
 	"nusantarare/inti/backend/db"
+	"nusantarare/inti/backend/utils"
 	"nusantarare/modul/endorsementlife/backend/models"
 )
 
@@ -30,7 +33,7 @@ import (
 // kasus terbuka kedua atas polis yang sama (pembuatan bersamaan).
 var ErrKasusTerbukaGanda = errors.New("repository: polis sudah punya kasus endorsement terbuka")
 
-// PengenalKasusBaru menerbitkan `EDMLF-<n>` dari `SEQ_WORK_EDM_LIFE`.
+// PengenalKasusBaru menerbitkan `EDML-<n>` dari `SEQ_WORK_EDM_LIFE`.
 func (g *Gudang) PengenalKasusBaru(ctx context.Context, tx *db.Tx) (string, error) {
 	urut, err := g.db.NomorBerikut(ctx, tx, urutanKasus)
 	if err != nil {
@@ -68,19 +71,15 @@ func (g *Gudang) AdaKasusTerbuka(ctx context.Context, tx *db.Tx, nomorPolis stri
 // polaJalurJSON - jalur `JSON_VALUE` yang sah dirakit (konstanta korpus).
 var polaJalurJSON = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_.]*$`)
 
-// sqlKepalaAplikasi membaca 24 kolom kepala versi sistem baru.
+// sqlKepalaAplikasi membaca kolom kepala versi sistem baru (`models.KolomKepalaKasus`).
 func sqlKepalaAplikasi(polis string) string {
 	var b strings.Builder
 	b.WriteString("SELECT ")
-	for i, k := range models.KolomKepalaSalin {
+	for i, k := range models.KolomKepalaKasus() {
 		if i > 0 {
 			b.WriteString(", ")
 		}
-		if k.Tanggal {
-			b.WriteString("TO_CHAR(p." + k.Kolom + ", 'YYYY-MM-DD')")
-		} else {
-			b.WriteString("p." + k.Kolom)
-		}
+		b.WriteString(bacaKepala(k))
 	}
 	fmt.Fprintf(&b, " FROM %s p WHERE p.ID = :1", polis)
 	return b.String()
@@ -92,7 +91,7 @@ func sqlKepalaAplikasi(polis string) string {
 func sqlKepalaWarisan(jsonPolis string) (string, error) {
 	var b strings.Builder
 	b.WriteString("SELECT ")
-	for i, k := range models.KolomKepalaSalin {
+	for i, k := range models.KolomKepalaKasus() {
 		if !polaJalurJSON.MatchString(k.Properti) {
 			return "", fmt.Errorf("repository: jalur JSON %q tidak sah", k.Properti)
 		}
@@ -125,6 +124,33 @@ func TanggalPega(v string) (string, bool) {
 	return "", false
 }
 
+// AngkaPega mengubah nilai angka `DATA_JSON` (pxNumber) menjadi teks desimal bertitik ringkas; bukan
+// angka = kosong dan `ok` false (pemanggil mencatatnya, tidak menebak).
+func AngkaPega(v string) (string, bool) {
+	t := strings.TrimSpace(v)
+	if t == "" {
+		return "", true
+	}
+	d, err := utils.ParseDecimal(t)
+	if err != nil {
+		return "", false
+	}
+	var r apd.Decimal
+	r.Reduce(d)
+	return utils.FormatDecimal(&r), true
+}
+
+// bacaKepala - ekspresi baca satu kolom kepala: tanggal `YYYY-MM-DD`, angka `TM9` bertitik, teks apa adanya.
+func bacaKepala(k models.KolomKepala) string {
+	switch {
+	case k.Tanggal:
+		return "TO_CHAR(p." + k.Kolom + ", 'YYYY-MM-DD')"
+	case k.Angka:
+		return "TO_CHAR(p." + k.Kolom + ", 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')"
+	}
+	return "p." + k.Kolom
+}
+
 // KepalaSumber membaca kepala versi lama, berkunci nama kolom. Tanggal warisan
 // yang tidak terbaca dikembalikan di `rusak` (nama kolom), nilainya kosong.
 func (g *Gudang) KepalaSumber(ctx context.Context, tx *db.Tx, v models.Versi, nomorPolis string) (map[string]string, []string, error) {
@@ -152,7 +178,8 @@ func (g *Gudang) KepalaSumber(ctx context.Context, tx *db.Tx, v models.Versi, no
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, nil, err
 	}
-	mentah := make([]sql.NullString, len(models.KolomKepalaSalin))
+	kolomKepala := models.KolomKepalaKasus()
+	mentah := make([]sql.NullString, len(kolomKepala))
 	ptr := make([]any, len(mentah))
 	for i := range mentah {
 		ptr[i] = &mentah[i]
@@ -166,7 +193,7 @@ func (g *Gudang) KepalaSumber(ctx context.Context, tx *db.Tx, v models.Versi, no
 	}
 	kepala := make(map[string]string, len(mentah))
 	var rusak []string
-	for i, k := range models.KolomKepalaSalin {
+	for i, k := range kolomKepala {
 		s := strings.TrimSpace(mentah[i].String)
 		if k.Tanggal && v.Jenis == models.SumberWarisan {
 			iso, ok := TanggalPega(s)
@@ -174,6 +201,13 @@ func (g *Gudang) KepalaSumber(ctx context.Context, tx *db.Tx, v models.Versi, no
 				rusak = append(rusak, k.Kolom)
 			}
 			s = iso
+		}
+		if k.Angka && v.Jenis == models.SumberWarisan {
+			a, ok := AngkaPega(s)
+			if !ok {
+				rusak = append(rusak, k.Kolom)
+			}
+			s = a
 		}
 		kepala[k.Kolom] = s
 	}
@@ -189,6 +223,9 @@ type KasusTulis struct {
 	EdmType    string
 	EdmDate    string
 	EdmNote    string
+	// Sub-jenis EDM Type (migrasi 483, keputusan work owner 07-10-2026).
+	EdmTypePerubahanData string
+	EdmTypeBatal         string
 	// ProdKe - versi yang AKAN dicapai kasus (versi berjalan + 1); ditetapkan
 	// ulang saat diresmikan.
 	ProdKe  int
@@ -200,14 +237,22 @@ type KasusTulis struct {
 // pembaca versi berjalan (Claim Life `polis_ringkas.go`, `sqlVersiEDM`)
 // mencari lewat kolom itu, dan kasus terbuka atau ditolak bukan versi polis.
 func sqlSisipKasus(polis string) string {
-	kolom := []string{"ID", "ID_PEGA", "TGL_INPUT", "CREATE_OP_NAME", "OLD_POLICY_NO", "EDM_TYPE", "EDM_DATE", "EDM_NOTE", "PROD_KE"}
-	nilai := []string{":1", ":2", "SYSDATE", ":3", ":4", ":5", "TO_DATE(:6, 'YYYY-MM-DD')", ":7", ":8"}
-	for i, k := range models.KolomKepalaSalin {
+	kolom := []string{"ID", "ID_PEGA", "TGL_INPUT", "CREATE_OP_NAME", "OLD_POLICY_NO", "EDM_TYPE", "EDM_DATE", "EDM_NOTE", "PROD_KE",
+		"EDM_TYPE_PERUBAHAN_DATA", "EDM_TYPE_BATAL"}
+	nilai := []string{":1", ":2", "SYSDATE", ":3", ":4", ":5", "TO_DATE(:6, 'YYYY-MM-DD')", ":7", ":8", ":9", ":10"}
+	n := 11
+	for _, k := range models.KolomKepalaKasus() {
 		kolom = append(kolom, k.Kolom)
-		p := fmt.Sprintf(":%d", 9+i)
-		if k.Tanggal {
+		p := fmt.Sprintf(":%d", n)
+		switch {
+		case k.Tanggal:
 			p = "TO_DATE(" + p + ", 'YYYY-MM-DD')"
+		case k.Angka:
+			// Kebal NLS: koefisien bulat + skala (`pecahDesimal`), dua penampung.
+			p = fmt.Sprintf("(TO_NUMBER(%s) / POWER(10, :%d))", p, n+1)
+			n++
 		}
+		n++
 		nilai = append(nilai, p)
 	}
 	return fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s)`, polis, strings.Join(kolom, ", "), strings.Join(nilai, ", "))
@@ -223,8 +268,14 @@ func (g *Gudang) SisipKasus(ctx context.Context, tx *db.Tx, k KasusTulis) error 
 	if err := db.PeriksaSQL(q); err != nil {
 		return err
 	}
-	args := []any{k.ID, k.ID, k.Pembuat, k.NomorPolis, k.EdmType, db.KosongJadiNil(k.EdmDate), db.KosongJadiNil(k.EdmNote), k.ProdKe}
-	for _, kol := range models.KolomKepalaSalin {
+	args := []any{k.ID, k.ID, k.Pembuat, k.NomorPolis, k.EdmType, db.KosongJadiNil(k.EdmDate), db.KosongJadiNil(k.EdmNote), k.ProdKe,
+		db.KosongJadiNil(k.EdmTypePerubahanData), db.KosongJadiNil(k.EdmTypeBatal)}
+	for _, kol := range models.KolomKepalaKasus() {
+		if kol.Angka {
+			koef, skala := pecahDesimal(k.Kepala[kol.Kolom])
+			args = append(args, koef, skala)
+			continue
+		}
 		args = append(args, db.KosongJadiNil(k.Kepala[kol.Kolom]))
 	}
 	hasil, err := tx.ExecContext(ctx, q, args...)

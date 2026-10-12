@@ -93,3 +93,30 @@ giliran ini; statusnya tetap seperti baris paritasnya (bila ada) — **belum** a
 - `KomitePostAdjustment` 4.11/4.12 juga menyetel `IsCheck = "true"` (b3282/b3560); aplikasi tidak
   menulisnya — nilainya sudah `"true"` sejak pendaftaran (`models.PenandaDipilih`), jadi tanpa akibat.
 
+## 12-10-2026 — Layar kasus komite mengikuti `ShowTransfer` ("perbaiki tampilannya" + "perbaiki tampilannya lagi")
+
+- Urutan kotak VERBATIM `Section/ShowTransfer.xml` di bawah judul "Form of Internal Claim Requisition": Policy Detail
+  (b2117), Claim Detail (b5253, tiga kolom), Medical Advisor and Claim Analyst (b10372: grid Diagnose "No items",
+  Recommendation, Claim Analyst), Adjustment Detail (b13053: Currency; Share Nusantara Re / Ceding Retention / Claim RNM /
+  Claim Retro; Sum Reinsured / Sum Insured / Share Retro / Retroceded Share; Payable To / Name of Bank / Branch of Bank /
+  Account No; grid Treaty Type | Retroceded Share b21214/b21397), Document Claim (b22594: Refresh, File Name → View,
+  Attachment Type, Date), Submission Date / Remarks (b27637/b27836), List of Committee (b29209), keputusan.
+  Kepala (Back, chip giliran), pita galat, riwayat eskalasi dan kolom Before Final Reject DIPERTAHANKAN (kosakata kami).
+- Keputusan: "Are you sure to accept this document?" (b32572, dropdown `.AcceptStatus` wajib) + `Note` (`.Comment`
+  b32893) WAJIB - `pyRequired true` / `pyRequiredNew always` b32936-b32940. Layar: Submit nonaktif sampai keputusan DAN
+  Note terisi; server: `services.ErrNoteKomiteWajib` (400 "Note is required."), diperiksa sebelum basis data.
+  Koreksi: catatan sebelumnya menyebut `.KomiteComment` b31001 `pyRequired false` - itu kolom grid List of Committee.
+  Sesudah Submit: modal konfirmasi (kosakata kami) - Cancel / Yes.
+- Data klaim induk BACA SAJA lewat rute Claim Life / PremiumList Life yang sudah ada, dipinjam di `cmd/api/rakit.go`
+  (`ruteDipinjam`, peminjam `komiteclaimlife`): `GET /api/klaim-life/{id}`, `.../peserta/{pesertaId}/spreading-polis`,
+  `.../dokumen/{dokId}/isi`, `GET /api/polis-life/ringkas?idpega=`. Modul ini TANPA menu, jadi pinjaman itu tidak memberi
+  akses baru: layar komite hanya terbuka bagi pemegang menu Claim Life, yang memang sudah dilayani rute-rute itu. Yang
+  ditampilkan hanya peserta + baris adjustment yang diserahkan (baris = adjustment kasus komite). Nol tulisan, nol inti.
+- Syarat tampil: Claim Retro / Share Retro / Retroceded Share hanya polis `Type` TP / TR (b15429/b16998/b17166; polis tak
+  terbaca = tampil). `IsTreatyIn==0` (×12) tidak dibawa (Claim Life tanpa Treaty In). Selisih yang DIKETAHUI:
+  - `Swift Code` (b18794, tampil bila terisi) tidak ada di kontrak JSON Claim Life → tidak tampil;
+  - `Claim Retro` = `AdjustmentDetail.CLAIM_RETRO` di Pega; kontrak Claim Life hanya membawa `claimRetro` tingkat header
+    klaim (`T_CLAIM_LIFE.CLAIM_RETRO`) - itulah yang tampil;
+  - Add attachment (b23511) tidak dibawa: layar komite baca saja.
+- Teks layar Inggris; kata status server (Setuju/Tolak/Menunggu/…) diterjemahkan di layar saja (server dan jejak tetap).
+  Pesan galat handler Inggris, kalimat tetap per galat.

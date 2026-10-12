@@ -9,8 +9,13 @@ package models
 // ⚠️ Kelas activity grid akseptasi (OQ-CNP-33, PARITAS): sel AdjustmentDetailNP memanggil `AddListClaimNP_Act`,
 // `SetCurrency_Act`, `CountClaimTNP_Act`, `AddLossAlocation_Act`, `CountLossAllocation_act` dengan kelas
 // ASM-FW-GCNMFW-Data-Adjustment, padahal activity itu hanya ada di kelas Work-ClaimTreatyNonProp - di Pega rule tidak
-// ditemukan. Di sini: tombol Add nonaktif (OQ), sel postValue saja. Satu-satunya sel berkelas Work (`Rate of Exchange` ->
-// CountClaimTNP_Act) menjalankan hitungan tingkat KLAIM (activity menulis jalur absolut pyWorkPage), persis XML.
+// ditemukan.
+//
+// ⭐ 12-10-2026 (keputusan pemakai "lanjut semua"): grid Claim Acceptation dan Loss Allocation DIHIDUPKAN dengan rumus
+// versi kelas Work atas baris akseptasi itu sendiri (`akseptasi_hitung.go`) - Add, Currency, Rate of Exchange, angka
+// klaim, dan Share (%) Loss Allocation. Rate of Exchange tidak lagi menjalankan CountClaimTNP tingkat KLAIM (XML:
+// jalur absolut pyWorkPage) - ia kini menghitung baris akseptasinya. Setiap perubahan Loss Allocation (dan Claim
+// Acceptation) menyusun ulang XOL Allocation akseptasi (`HitungXOLAkseptasi`).
 
 // adjK membentuk kondisi atas baris akseptasi ke-n.
 func adjK(n int, f func(b Baris) bool) Kondisi {
@@ -29,34 +34,36 @@ func adjSama(n int, p, v string) Kondisi { return adjK(n, func(b Baris) bool { r
 func LayarDetailAkseptasi(n int) []Unsur {
 	j := func(p string) string { return JalurAdj(n, p) }
 	komite := adjSama(n, "IsKomite", "1")
-	tombolOQKelas := func(id string) *Unsur { return ptr(ikon(tombolOQ(id, "Add", OQKelasAkseptasi), IkonTambah)) }
-	pv := func(p, judul string) Unsur { return catatanK(kNA(kol(p, judul, KAngka), bTerkunci), OQKelasAkseptasi) }
-	klaim := Unsur{Jenis: JenisGrid, Jalur: j(AnakClaimAccept), Bernomor: true, Tambah: tombolOQKelas("AddListClaimNPAkseptasi"),
+	tambah := func(id string) *Unsur { return ptr(ikon(naJika(tombol(id, "Add", id), komite), IkonTambah)) }
+	hitung := func(p, judul, a string) Unsur { return kAksi(kNA(kol(p, judul, KAngka), bTerkunci), a) }
+	klaim := Unsur{Jenis: JenisGrid, Jalur: j(AnakClaimAccept), Bernomor: true, Tambah: tambah("TambahKlaimAkseptasi"),
 		Kolom: []Unsur{
-			catatanK(kSumber(kNA(kROJ(kol("CurrencyID", "Currency", KPilih), bNote), bTerkunci), SumberMataUang), OQKelasAkseptasi),
-			kAksi(kNA(kol("AltValue", "Rate of Exchange", KAngka), bTerkunci), "CountClaimTNP"),
-			kROJ(pv("Value", "Claim Amount"), bNote),
-			kROJ(pv("TPL", "TPL"), bNote),
-			pv("AdjusterFee", "Adjuster Fee"),
-			pv("Salvage", "Salvage"),
-			pv("CNPOthersFee", "Fee"),
+			kAksi(kSumber(kNA(kROJ(kol("CurrencyID", "Currency", KPilih), bNote), bTerkunci), SumberMataUang),
+				"SetCurrencyAkseptasi"),
+			hitung("AltValue", "Rate of Exchange", "HitungKlaimAkseptasi"),
+			kROJ(hitung("Value", "Claim Amount", "HitungKlaimAkseptasi"), bNote),
+			kROJ(hitung("TPL", "TPL", "HitungKlaimAkseptasi"), bNote),
+			hitung("AdjusterFee", "Adjuster Fee", "HitungKlaimAkseptasi"),
+			hitung("Salvage", "Salvage", "HitungKlaimAkseptasi"),
+			hitung("CNPOthersFee", "Fee", "HitungKlaimAkseptasi"),
 			kRO(kol("PctProrateClaim", "Proportion (%)", KAngka)),
 			kRO(kol("USD", "Claim Amount in IDR", KAngka)),
 			kRO(kol("ClaimAmountCedant", "Claim Amount Cedant", KAngka)),
 			ikonK(kTombol("HapusKlaimAkseptasi", "Delete", "HapusKlaimAkseptasi", bTerkunci), IkonHapus),
 		},
-		Kaki: []Unsur{label("Total Claim Amount"), ro(medan(CD+"TotalListClaimAmount", "", KAngka)),
-			ro(medan(CD+"TotalListClaimAmountIDR", "", KAngka))}}
-	loss := Unsur{Jenis: JenisGrid, Jalur: j(AnakLossAlloc), Bernomor: true, Tambah: tombolOQKelas("AddLossAlocationAkseptasi"),
+		// Kaki: Σ Claim Amount in IDR · Σ Claim Amount Cedant (IDR) akseptasi ini (`TotalKlaimAkseptasi`).
+		Kaki: []Unsur{label("Total Claim Amount"), ro(medan(j(PropTotalKlaimIDR), "", KAngka)),
+			ro(medan(j(PropTotalCedantIDR), "", KAngka))}}
+	loss := Unsur{Jenis: JenisGrid, Jalur: j(AnakLossAlloc), Bernomor: true, Tambah: tambah("TambahLossAkseptasi"),
 		Kolom: []Unsur{
 			kSumber(kRO(kol("CurrencyID", "Currency", KPilih)), SumberMataUang),
 			kSumber(kNA(kol("TreatyName", "Treaty Name", KPilih), bTerkunci), SumberLossAlloc),
-			pv("ClaimPercentage", "Share (%)"),
-			pv("ClaimAmountAdjust", "Claim Amount"),
-			pv("AdjusterFee", "Adjuster Fee"),
-			pv("Salvage", "Salvage"),
-			pv("CNPOthersFee", "Fee"),
-			catatanK(kNA(kol("CNPFlagXOL", "To XOL", KCentang), bTerkunci), OQKelasAkseptasi),
+			hitung("ClaimPercentage", "Share (%)", "HitungLossAkseptasi"),
+			hitung("ClaimAmountAdjust", "Claim Amount", "HitungLossJumlahAkseptasi"),
+			hitung("AdjusterFee", "Adjuster Fee", "HitungXOLAkseptasi"),
+			hitung("Salvage", "Salvage", "HitungXOLAkseptasi"),
+			hitung("CNPOthersFee", "Fee", "HitungXOLAkseptasi"),
+			kAksi(kNA(kol("CNPFlagXOL", "To XOL", KCentang), bTerkunci), "HitungXOLAkseptasi"),
 			ikonK(kTombol("HapusLossAkseptasi", "Delete", "HapusLossAkseptasi", bTerkunci), IkonHapus),
 		}}
 	xol := func(jalur string, ubah bool) Unsur {

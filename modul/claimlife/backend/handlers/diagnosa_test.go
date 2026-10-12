@@ -116,6 +116,7 @@ func TestGalatDiagnosaDipetakanKeKodeYangBenar(t *testing.T) {
 		{"peserta terkunci", services.ErrDiagnosaTerkunci, http.StatusConflict},
 		{"kasus tertutup", kontrak.ErrKasusSudahTertutup, http.StatusConflict},
 		{"tahap salah", services.ErrTahapTidakBergridPeserta, http.StatusConflict},
+		{"bukan Medical Check", services.ErrDiagnosaBukanMedicalCheck, http.StatusConflict},
 		{"nilai kepanjangan", services.ErrNilaiDiagnosaKepanjangan,
 			http.StatusUnprocessableEntity},
 		{"permintaan tidak sah", galat.ErrPermintaanTidakSah, http.StatusBadRequest},
@@ -132,5 +133,32 @@ func TestGalatDiagnosaDipetakanKeKodeYangBenar(t *testing.T) {
 	// nil berarti "belum dijawab" - pemanggil meneruskan ke jalur berhasil.
 	if jawabGalatDiagnosa(httptest.NewRecorder(), nil) {
 		t.Error("galat nil dijawab; jalur berhasil tidak akan tercapai")
+	}
+}
+
+// 12-10-2026 - daftar GROUP DIAGNOSE disajikan dari satu sumber; nilai di luar daftar 422.
+func TestKelompokDiagnosaDisajikan(t *testing.T) {
+	isi, err := os.ReadFile("handlers.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(isi), `"GET /api/klaim-life/kelompok-diagnosa", kelompokDiagnosa()`) {
+		t.Error("rute daftar GROUP DIAGNOSE tidak terdaftar")
+	}
+	w := httptest.NewRecorder()
+	kelompokDiagnosa()(w, httptest.NewRequest(http.MethodGet, "/api/klaim-life/kelompok-diagnosa", nil))
+	var badan struct {
+		Daftar []string `json:"daftar"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &badan); err != nil || w.Code != http.StatusOK {
+		t.Fatalf("kode %d, galat %v", w.Code, err)
+	}
+	if len(badan.Daftar) != 26 || badan.Daftar[0] != "Certain infectious and parasitic diseases" ||
+		badan.Daftar[25] != "Multi organ disease" {
+		t.Errorf("daftar %v", badan.Daftar)
+	}
+	w = httptest.NewRecorder()
+	if !jawabGalatDiagnosa(w, services.ErrKelompokDiagnosaTidakDikenal) || w.Code != http.StatusUnprocessableEntity {
+		t.Errorf("Group Diagnose asing: kode %d, mau 422", w.Code)
 	}
 }

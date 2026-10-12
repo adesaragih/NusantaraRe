@@ -1,15 +1,16 @@
 // Form produk - `InboxProductName` mode form (`OutputParam.DATASHOW = 1`), urutan wadah XML:
 //   b2573 sisi umum + `LIEN CLAUSE` + `DOCUMENT CLAIM` + sisi inward   (PARITAS §3.1, §3.2, §5)
-//   b30995 `PLAN LIST`, `FINANCIAL UNDERWRITING`, `UNDERWRITING LIMIT`, checkbox `On Retention`
+//   b30995 `PLAN LIST`, `FINANCIAL UNDERWRITING`, `UNDERWRITING LIMIT` (checkbox `On Retention` tidak dirender
+//          sejak keputusan work owner 05-10-2026 - nilai `isOrs` tersimpan dibiarkan dan ikut terkirim saat Save)
 //   b57867 tombol bawah `Close` `Save` `Edit` `Copy` `Generate`            (PARITAS §3.3)
 //   b61044 grid komentar (baca-saja)                                       (PARITAS §5)
 //   b64133 lampiran                                                        (PARITAS §6)
 //
 // Mode lihat (`ProductName.IsView == 'true'`, sesudah `View` b74798 → `SetProductName` 8 b2147): medan ber-`ro`
 // baca-saja, dropdown master (pengganti tombol `Choose*`, wadah `IsView!='true'`) dan `Save` tidak dapat dipakai,
-// `Edit` tampil. Checkbox `On Retention` dan tombol `Add`/`Delete` grid tidak ber-`ro` di XML - tetapi keputusan work
+// `Edit` tampil. Tombol `Add`/`Delete` grid tidak ber-`ro` di XML - tetapi keputusan work
 // owner 03-10-2026 ("jika view tidak tambah/edit/delete, saat klik edit baru bisa"): di mode lihat SEMUA aksi ubah
-// tersembunyi (Add/Delete/Copy row grid, Copy, Add attachment/Retry/Delete lampiran) dan On Retention mati; yang tetap:
+// tersembunyi (Add/Delete/Copy row grid, Copy, Add attachment/Retry/Delete lampiran); yang tetap:
 // Close, Edit, Generate, View Rate, dan aksi baca lampiran.
 // ⛔ Audit 02-10-2026: enam medan pemilih master SELALU baca-saja di XML (`pyReadOnly` true, `pyEditOptions`
 // Read-only, `pyReadOnlyCondition` KOSONG - beda dengan `Product Name` b3585 yang bersyarat `IsView`): Ceding
@@ -18,7 +19,8 @@
 // b33658 grid `PLAN LIST`: diisi pilihan `Plan Name` (dropdown, 03-10-2026), tidak diketik.
 // Keputusan work owner 02-10-2026 ("perubahan pada tampilan untuk semua Choose ubah jadi dropdown saja"): ketujuh
 // tombol `Choose*` + popup FlowAction-nya diganti `DropdownMaster` (termasuk `Choose R/I Rate` baris `PLAN LIST`).
-// Grid `OUTWARD` (wadah `1==2`) tidak dirender; isinya ditulis server (`hitungOutward`).
+// Grid `OUTWARD` (wadah `1==2`) tidak dirender; isinya ditulis server. Sejak checkbox `On Retention` tidak dirender
+// (05-10-2026) layar tidak pernah menyalakan penanda `hitungOutward` - Outward List tersimpan tidak dihitung ulang.
 
 import { useState, type ReactNode } from 'react'
 
@@ -48,6 +50,8 @@ import {
   salinProduk,
   tampilPremiumFactor,
   tampilViewRate,
+  saringPlanBisnis,
+  urutKomentarTampil,
   waktuPega,
 } from '../bentuk'
 import {
@@ -422,7 +426,11 @@ export default function FormProduk({
                     nilai={b.plan}
                     lihat={lihat}
                     lebar
-                    cari={cariJenisPlan}
+                    // Bussines yang sudah dipakai baris lain tidak ditawarkan (05-10-2026).
+                    cari={async (kata) => {
+                      const h = await cariJenisPlan(kata)
+                      return { ...h, tampil: saringPlanBisnis(h.tampil, p.planList, i) }
+                    }}
                     kunci={(t) => t.id}
                     kolom={{
                       judul: [SARAN_PLAN_MPNL.kolomId, SARAN_PLAN_MPNL.kolomCoverName, SARAN_PLAN_MPNL.kolomBusiness, SARAN_PLAN_MPNL.kolomBenefit],
@@ -566,19 +574,8 @@ export default function FormProduk({
         }}
       />
 
-      {/* Checkbox `On Retention` b47312 - onChange `GetReinsTypeOR_Life` b47488 (dihitung server saat simpan). */}
-      <label className="mpnl-centang">
-        <input
-          type="checkbox"
-          checked={u.isOrs}
-          disabled={lihat}
-          onChange={(e) => {
-            const v = e.target.checked
-            setP((x) => ({ ...x, umum: { ...x.umum, isOrs: v }, hitungOutward: true }))
-          }}
-        />
-        {UMUM_MPNL.onRetention}
-      </label>
+      {/* Checkbox `On Retention` b47312 TIDAK dirender - sudah tidak terpakai (keputusan work owner 05-10-2026).
+          `umum.isOrs` yang dimuat tetap ikut terkirim saat Save, tidak di-reset. */}
       </section>
 
       {/* ---- wadah b57867: tombol bawah ---- */}
@@ -638,7 +635,8 @@ export default function FormProduk({
             </tr>
           </thead>
           <tbody>
-            {p.commentList.map((k, i) => (
+            {/* Terbaru di atas - hanya urutan TAMPIL; commentList di state tidak diurut ulang (05-10-2026). */}
+            {urutKomentarTampil(p.commentList).map(({ k, i }) => (
               <tr key={i} className="inbox__baris">
                 <td>{waktuPega(k.date)}</td>
                 <td>{k.operatorName}</td>

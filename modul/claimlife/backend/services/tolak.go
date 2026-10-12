@@ -38,6 +38,10 @@ import (
 // pun diukur per baris, bukan per klaim.
 const PeranRejectOutstanding = inti.PeranAdmin
 
+// ErrTolakBukanOutstanding - Reject Outstanding hanya di tahap Outstanding Claim (keputusan work owner 12-10-2026:
+// "tombol reject outstanding hanya ada di admin saja"; b15399 pyPosition=='ReasLifeAdmin', pemegang tahap Outstanding).
+var ErrTolakBukanOutstanding = errors.New("services: Reject Outstanding hanya tersedia pada tahap Outstanding Claim")
+
 var (
 	// ErrKlaimBelumBernomor - padanan `CLAIM_NO != ''` pada gerbang XML.
 	ErrKlaimBelumBernomor = errors.New("services: klaim belum bernomor")
@@ -120,6 +124,14 @@ func (st *Status) Tolak(ctx context.Context, pelaku inti.Pelaku,
 	}
 	if err := PeriksaKlaimBernomor(*hdr); err != nil {
 		return err
+	}
+	// 12-10-2026: tahap Outstanding Claim saja (409); peran Admin sudah ditegakkan di atas (403).
+	tahap, err := tahapKasus(ctx, baca, klaimID)
+	if err != nil {
+		return err
+	}
+	if tahap != models.TahapOutstanding {
+		return fmt.Errorf("%w: tahap %s", ErrTolakBukanOutstanding, tahap)
 	}
 
 	pesertaID, err := st.pemilikBaris(ctx, baca, klaimID, adjID)

@@ -51,7 +51,8 @@ describe('Add = putaran berikutnya', () => {
 })
 
 describe('layar Detail memasang Add (Delete tidak dirender)', () => {
-  const BERKAS = readFileSync(join(__dirname, 'pages', 'KlaimLife.tsx'), 'utf8')
+  // 10-10-2026: rincian per peserta dipindah ke components/RincianPeserta.tsx (dipakai Detail DAN Outstanding).
+  const BERKAS = readFileSync(join(__dirname, 'components', 'RincianPeserta.tsx'), 'utf8')
   // Sumber TANPA komentar — prosa yang menerangkan tidak boleh dituduh kode.
   // Blok komentar JSX berbaris banyak dibuang UTUH lebih dulu: baris
   // lanjutannya tidak berawalan penanda apa pun.
@@ -66,9 +67,9 @@ describe('layar Detail memasang Add (Delete tidak dirender)', () => {
   it('SATU tombol Add untuk putaran — label VERBATIM, bukan "Putaran berikutnya"', () => {
     expect(SUMBER).toContain('bolehAddAdjustment(klaim, p)')
     expect(SUMBER).toContain('{DETAIL.tambahAdjustment}')
-    expect(SUMBER).toContain('void putaranBaru(p.id)')
+    expect(SUMBER).toContain('void putaranBaru()')
     expect(SUMBER).not.toContain('Putaran berikutnya')
-    expect(SUMBER.match(/void putaranBaru\(p\.id\)/g)).toHaveLength(1)
+    expect(SUMBER.match(/void putaranBaru\(\)/g)).toHaveLength(1)
   })
 
   it('Delete baris adjustment TIDAK dirender — OQ-N7 ditutup (GILIRAN-15)', () => {

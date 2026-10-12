@@ -617,3 +617,990 @@ terakhir** tiap sertifikat, dan menyembunyikannya bila baris itu `Delete`/`Batal
 `ID` terbesar secara angka. Baris `11` dan `12` tabel aksi serta baris `GetPesertaClaim_sql1` sensus di atas ditandai.
 Rincian, SQL lama/baru, dan sepuluh kasus ujinya: tiket 02, bab *"Keputusan bertanggal — 1 Oktober 2026 (OQ-N14)"*.
 
+## 10-10-2026 — Register banyak premium list: satu case per PL number + mata uang (penyimpangan sadar)
+
+Keputusan work owner 10-10-2026: *"saat user ceklis 2 orang dari PL A, lalu 4 orang dari PL B, claim membuat 2 case
+(CLMLF) berdasarkan PL number"*. **Menyimpang dari Pega**: `InputRegisterClaimLife` mendaftarkan SATU polis per register
+(`SaveOutStandingLife_Act` / `SavePesertaClaim` atas satu `PolicyDataLife`). Kini:
+
+- Layar `RegisterKlaim.tsx`: pilihan peserta **bertahan antar pencarian** (kunci PL + polis + sertifikat), blok *Selected insured*
+  dikelompokkan per PL + mata uang dengan kalimat *"{n} claim case(s) will be created"*; penolakan pilihan campuran polis /
+  mata uang dibuang; hasil = daftar case (nomor, PL, mata uang, jumlah peserta).
+- `POST /api/klaim-life` menerima `kelompok[]` (bentuk lama satu kelompok tetap diterima). Server **membentuk ulang** case dari
+  baris sumber (`AmbilUntukKlaim`): kunci = `PL_NUMBER` + `CURRENCY` sumber; kelompok dan mata uang klien diabaikan.
+- Cross-check polis: `NO_POLIS` header diturunkan dari `POLICY_NO` baris sumber; seluruh peserta satu case wajib sepolis;
+  `nomorPolis` klien yang berbeda = **422**. Satu PL + mata uang berisi dua polis = 422 (satu case = satu polis).
+- **Semua atau tidak sama sekali**: validasi seluruh kelompok sebelum nomor diambil; N nomor dalam satu transaksi pendek
+  (AC tiket 02: kuncian penghitung tidak ditahan); semua case dalam SATU transaksi penulisan. ⚠️ Penghitung tidak ikut
+  rollback: bila transaksi penulisan gagal, N nomor terbakar (urutan berlubang) - dinyatakan di `Pendaftaran.Daftar`.
+- Type dan kode bisnis sama untuk semua case (sampai layar Register dirombak). Batas 50 case / 500 peserta per daftar.
+- Ganda di dalam permintaan (sertifikat sama pada PL sama) ditolak 400. Pendaftaran tetap tanpa jejak dan tanpa pemeriksa
+  klaim ganda warisan (`gandawarisan.go` berjalan di `Save to RNM` langkah 11) - tidak berubah.
+- Uji: `services/pendaftaran_banyak_test.go`, `handlers/register_banyak_test.go`, `frontend/pilihanPeserta.test.tsx`.
+
+## 10-10-2026 — Register menolak peserta yang masih aktif di klaim lain (aturan in-app, penyimpangan sadar)
+
+Keputusan work owner 10-10-2026: *"peserta berada di case lain, dan di case itu peserta masih outstanding atau sudah di
+accept. tapi jika peserta di case lain di reject. peserta itu bisa di input lagi di case yang sama atau di case lain"*.
+**Menyimpang dari Pega**: Pega memeriksa klaim ganda hanya di `Save to RNM` langkah 11 atas tabel datar warisan
+(`gandawarisan.go`, TIDAK berubah - baris aplikasi berstatus NULL sengaja dilewati di sana). Kini Register juga memeriksa:
+
+- `repository.PesertaAktifDiKlaimLain` (`pesertainapp.go`) atas `T_CLAIMLF_PREMIUMLIST_DETAIL` + `T_CLAIMLF_ADJUSTMENT`, kunci
+  `PL_NUMBER` + `CERTIFICATE_NO` (TRIM) - bukan `SOURCE_ID`, yang berganti per versi polis (OQ-N14). Satu kueri per PL.
+- Peserta AKTIF bila status baris pesertanya bukan Ditolak ATAU ia punya baris adjustment bukan Ditolak (tombol `Add`
+  membuka putaran baru tanpa mengubah baris peserta). Rejected di semua tingkat dan baris tercabut (`STS_HAPUS`) boleh
+  didaftarkan lagi. Status header tidak menentukan. Kode dari `kontrak` (diikat, tidak literal).
+- Diperiksa SEBELUM nomor diambil; seluruh bentrok dilaporkan sekaligus, **409**:
+  `Certificate No "X" (PL Y) is already in claim CLMLF-… (Outstanding|Accepted)`. Multi-PL dengan satu bentrok = semua batal.
+- ⚠️ Kinerja: tabel peserta klaim hanya ber-index `CLAIM_ID`; index `(PL_NUMBER, CERTIFICATE_NO)` butuh migrasi (belum).
+- Uji: `repository/pesertainapp_test.go`, `services/pendaftaran_banyak_test.go`, `-tags db` `TestDaftarPesertaAktifDiKlaimLain`.
+
+## 10-10-2026 — Data polis otomatis dengan kunci PL; Type dan kode bisnis dari polis (penyimpangan sadar)
+
+Keputusan work owner 10-10-2026: *"buat data polis ini otomatis terisi saat menceklis peserta, ambil dari data polis
+peserta itu; kolom type dan kode bisnis hilangkan saja"*.
+
+- **Kunci polis = PL NUMBER peserta** (`services/kuncipolis.go` `RingkasPolisKlaim`): `T_PREMIUM_LIST.NO_POLIS` berisi PL
+  number, sedangkan `POLICY_NO` peserta adalah nomor polis CEDING (`docs/spec.md` b359). Fallback `POLICY_NO` untuk polis
+  warisan. Dipakai panel Data Polis Register dan Outstanding, ambang MAXEXPIREDCLAIM (detail), `AmbangKlaim`, Save to RNM,
+  pengisian `CEDINGCO` cermin warisan, dan Register.
+- Arti kolom tidak berubah: `T_GENERAL_CLAIM.POLICY_NO` dan `T_CLAIMLF_PREMIUMLIST_DETAIL.POLICY_NO` tetap POLICY_NO ceding.
+- Register: isian **Type** dan **Kode bisnis** dihapus. Per case Type = `PolisRingkas.Type`, kode bisnis = `BusinessCode`
+  (sama dengan Save to RNM); polis tak ditemukan / tanpa Type / tanpa kode bisnis = 422 menyebut PL, nol nomor.
+  **Menyimpang dari Pega**: di `InputRegisterClaimLife` `.PolicyDataLife.Type` adalah dropdown (b9104).
+- Aturan "satu case satu POLICY_NO" dan cross-check nomor polis klien dibuang - case = PL + mata uang saja.
+- Panel: kotak catatan teknis (`.PolicyDataLife.*`, daftar medan tanpa kolom) dihapus; polis tak ditemukan =
+  "Policy data not found for PL X.".
+
+- Uji: `services/pendaftaran_banyak_test.go`, `repository/gandawarisan_test.go`, `frontend/pilihanPeserta.test.tsx`.
+
+## 10-10-2026 (sore) — Data polis klaim dari IDPEGA peserta (MENGGANTIKAN kunci PL bab sebelumnya)
+
+Keputusan work owner 10-10-2026: *"ambil ke tabel T_PREMIUM_LIST berdasarkan idpega peserta nya saja"*.
+
+- Header polis = baris UTAMA `T_PREMIUM_LIST` ber-`ID = ID_PEGA = IDPEGA` peserta (`M_LIFE_PREMIUM_DETAIL.IDPEGA` = pengenal
+  kasus versi polis `NBLF-`/`EDML-`). Kunci PL / POLICY_NO / NO_POLIS dan fallback-nya DIBUANG dari Claim Life.
+- PremiumList: `RingkasDariIdPega` (+ `GET /api/polis-life/ringkas?idpega=`); `Ringkas(NO_POLIS)` lama tidak berubah.
+  `kontrak.PembacaPolis` (inti) tidak diubah - Claim Life menegaskan antarmuka sempit `PembacaPolisIdPega`.
+- Claim Life membaca IDPEGA bersama peserta (`kolomSalin`, `Cari`); `T_CLAIMLF_PREMIUMLIST_DETAIL` TANPA kolom IDPEGA,
+  jadi detail / Save to RNM / ambang / CEDINGCO cermin menurunkannya dari baris sumber lewat `SOURCE_ID`.
+- Register per case: Type dan kode bisnis dari header IDPEGA (versi terbaru bila peserta case ber-IDPEGA beda);
+  header tak ditemukan / peserta tanpa IDPEGA = 422, nol nomor. Panel: "Policy data not found for this insured (<IDPEGA>)."
+
+## 10-10-2026 (malam) — IDPEGA disimpan (migrasi 025) dan polis wajib Resolved-Completed
+
+Keputusan work owner 10-10-2026: (1) *"iya tambahkan"* - kolom `T_CLAIMLF_PREMIUMLIST_DETAIL.IDPEGA` (migrasi 025, VARCHAR2(50)
+= lebar sumber) + isi ulang baris lama lewat `SOURCE_ID`; Register menulisnya, tahap lanjut membacanya (cadangan lewat
+`SOURCE_ID` hanya bila NULL). (2) *"tidak, polis harus sudah resolve completed"* - Register menolak (422, semua case,
+nol nomor) header IDPEGA yang status efektifnya bukan `Resolved-Completed`: `T_WORK_POLIS.STATUS_WORK` kasus NB, selain
+itu `T_PREMIUM_LIST.STATUSS` (ditulis EDM Confirm). Find Insured tetap menampilkan peserta; panel Data Polis memperingatkan
+"Policy not Resolved-Completed (status: X)". **Menyimpang dari Pega**: Pega tidak menyaring status polis di Register.
+
+## 10-10-2026 — Tampilan Register dan panel Data Polis dirapikan (tampilan saja)
+
+Keputusan work owner 10-10-2026: *"rapihkan tampilan, agar lebih enak di lihat; tanggal menggunakan dd/mm/yyyy; system
+reinsurance, premium method tidak perlu di tampilkan; bagian Selected insured dirapikan, menggunakan tabel dan user friendly"*.
+
+- Panel Data Polis (Register DAN Outstanding): System Reinsurance (b9301) dan Premium Method (b9694) disembunyikan - datanya tetap;
+  tanggal dd/mm/yyyy (`tanggalTampil`, di atas `formatDate` inti); grid label-di-atas-nilai; baris teknis "Polis … versi …"
+  diganti chip versi ("New business" / "Endorsement /NN"); peringatan sebagai `alert alert--warn`. **Menyimpang dari Pega**:
+  himpunan medan section tidak lagi utuh di layar (penjaga cacah medan diperbarui dengan alasan).
+- Register: judul "Register Claim Life"; kartu pencarian (Premium List No, Certificate No, Name of Insured, Search); tabel hasil
+  berbaris-klik dengan sorot; Selected insured = tabel per PL + mata uang (No, Certificate No, Name of Insured, Policy No, Remove),
+  ringkasan + Clear selection + Register Claim sejajar kanan; label layar seragam bahasa Inggris (`REGISTER_BANYAK`, bukan korpus).
+  Logika dan backend tidak berubah.
+
+## 10-10-2026 — Register: kolom Date of Birth menggantikan Policy No; konfirmasi sebelum Register Claim
+
+Keputusan work owner 10-10-2026: *"policy no ini ganti saja dengan dob (dd/mm/yyyy); dan saat register claim di klik, ada
+konfirmasi dahulu"*.
+
+- `GET /api/peserta-life` membawa `tanggalLahir` (`TO_CHAR(DOB, 'YYYY-MM-DD')` dari baris versi terpilih M_LIFE_PREMIUM_DETAIL,
+  kebal NLS); tabel hasil dan Selected insured menampilkan Date of Birth dd/mm/yyyy ("—" bila kosong). Nomor polis ceding
+  tetap di respons, tidak ditampilkan. Catatan: aturan "nama/DOB tidak keluar dari basis data" (gandawarisan) berlaku
+  untuk pencocokan klaim ganda; layar Find Insured sudah menampilkan nama, dan DOB kini ditampilkan atas keputusan ini.
+- Klik Register Claim membuka modal konfirmasi (Modal inti): jumlah case + tabel PL/Currency/Insured, "Continue?",
+  Cancel / Register Claim; saat proses tombol nonaktif "Registering…" dan modal tak dapat ditutup; galat tampil di layar.
+
+## 10-10-2026 — Inbox Claim Life dirapikan; tab Input Register disembunyikan selama kosong
+
+Keputusan work owner 10-10-2026: *"rapikan tampilan inbox claim life ini, dan tab input register hilangkan saja, karena sudah
+ada tombol register"*.
+
+- Tab Input Register TIDAK tampil selama antriannya kosong; ia muncul lagi otomatis bila ada kasus di sana, sebab
+  `Send Back to Register` (b21404, PanelPindahTahap) masih menaruh kasus di tahap itu. Tahap, rute, dan model tidak diubah.
+  Tab bawaan = Outstanding Claim. **Menyimpang dari Pega**: Pega selalu menampilkan keempat antrian.
+- Label tab Inggris saja (subjudul Indonesia dibuang); badge jumlah kasus di setiap tab (halaman 1 tiap antrian).
+- Register = btn--primary, Export xlsx = btn--ghost (tetap nonaktif saat nol baris - sengaja, butir bg).
+- Waktu buat dd/mm/yyyy HH:mm; kosong "No cases in this queue."; paginasi komponen `Halaman` inti (seperti inbox lain).
+
+## 10-10-2026 — Perbaikan sesudah uji DEV Register (CLMLF-, nomor di Save to RNM, detail, status inbox)
+
+- Case ID baru `CLMLF-xxxxxx` (keputusan work owner; dulu `CLM-`); pengenal lama tetap terbaca (tidak ada pengurai awalan).
+- Nomor klaim lahir di Save to RNM, bukan Register (RALAT tiket 02); inbox menampilkan "—" sampai bernomor.
+- Detail klaim: handler kini mencatat galat aslinya ke log (dulu tidak) dan menjawab "Failed to load the claim."; galat
+  membaca polis/ambang produk untuk penanda MAX CLAIM RECEIVED menjadi alasan, tidak lagi menggagalkan layar Detail.
+- Work Status kotak masuk berbahasa Inggris dari STS_REJECT header: NULL/0 Outstanding, 1 Accepted, 2 Rejected, selain itu Unknown.
+- Modul Claim Life memakai BahasaUI "en" seperti Endorsement Life (paginasi dan teks komponen bersama berbahasa Inggris).
+
+## 10-10-2026 — Sesudah Register berhasil langsung ke Inbox Claim Life
+
+Keputusan work owner 10-10-2026: *"saat klik tombol register claim ini, langsung keluar dari menu atau langsung ke inbox
+claim life yang paling depan"*.
+
+- Berhasil: modal tertutup, pilihan dikosongkan, rute pindah ke Inbox Claim Life tab tampil pertama (Outstanding Claim).
+  Inbox dipasang ulang, jadi jumlah badge dan isi tab dimuat ulang.
+- Inbox menampilkan alert hijau "{n} claim case(s) registered: CLMLF-…" yang bisa ditutup (Close). Case ID dikirim lewat
+  state modul di rute.tsx (bukan localStorage); hilang saat ditutup, saat membuka Register lagi, atau saat muat ulang halaman.
+- Gagal: tetap di Register, modal tertutup, alert galat, pilihan peserta utuh.
+- Tabel hasil (HasilKasus) di layar Register dihapus. **Menyimpang dari Pega**: Pega tetap di layar flow sesudah Register.
+
+## 10-10-2026 — OS_AKSEPTASI_KLAIM_LIFE ditulis saat Save to RNM, bukan saat Register
+
+- Register tidak lagi menulis baris datar OS_AKSEPTASI_KLAIM_LIFE. Save to RNM menulisnya (UPDATE bila ada, INSERT bila
+  belum) di transaksi utamanya, sesudah nomor klaim lahir. **Sama dengan Pega** (`InsertJsonKlaimLife_sql` di
+  `SaveOutStandingLife_Act` 22.1.3.1). Penyimpangan lama (cermin ditulis saat Register) dihapus.
+- Klaim ganda: baris datar klaim yang belum Save to RNM memang belum ada. Dulu barisnya ada dengan STS_REJECT NULL dan
+  dilewati pemeriksa, jadi hasilnya tidak berubah.
+- Hapus klaim / cabut peserta sebelum Save to RNM: nol baris datar bukan galat.
+
+## 10-10-2026 — Detail klaim "bermata uang beragam: IDR dan 10026"
+
+- Perbaikan pembanding total peserta (`HitungTotalPeserta`): KODE mata uang (CURRENCY / mata uang peserta, mis. IDR)
+  dibandingkan dengan kode, dan PENGENAL (CURRENCY_ID, mis. 10026 = IDR) dengan pengenal. Dulu kode peserta dibandingkan
+  dengan CURRENCY_ID sehingga setiap case hasil Register gagal dibaca. Mata uang yang benar-benar berbeda tetap ditolak.
+- Penulisnya sudah benar: Register menulis CURRENCY = kode dan CURRENCY_ID = NULL, lalu pengenal diisi saat baca
+  (`GetCurrencyID` / lengkapiPengenalMataUang). Data DEV tidak perlu dibetulkan.
+
+## 10-10-2026 — Layar Outstanding Claim dirombak mengikuti Pega
+
+Permintaan work owner 10-10-2026: *"kenapa tidak ada detail peserta nya seperti yang di pega?"* (screenshot CLMLF-9293).
+Korpus: `kelvin/InboxClaimLife (Done)/Section/InputOSClaimLife.xml` (bNNN = nomor baris berkas itu);
+`FlowAction/OSClaimLife.xml` → section itu.
+
+| Bagian Pega | Bukti | Aplikasi |
+| --- | --- | --- |
+| Judul "Claim Life (<Case ID>)", Claim No baca saja | b939/b958 `.ClaimData.PremiumListSummary.CLAIM_NO` | kepala halaman; "—" sampai Save to RNM |
+| Tab Register Claim / Policy Details / Claim Details | b1956, b5909, b14576 `pyTitle` | `StripTab` inti, urutan sama |
+| PL Number (baca saja) | b3054 | dari peserta pertama |
+| Catastrophe (radio, nonaktif bila CLAIM_NO terisi) | b3475, b3504, b3515; bawaan "Non-Catastrophe" b3728 | `T_GENERAL_CLAIM.STS_KATASTROFE`; server 409 bila diubah sesudah bernomor |
+| Is KPR (radio) | b3781, b3810 | `IS_KPR`; ⚠️ nilai pilihan **tidak ada di korpus** — Yes/No sementara, perlu konfirmasi |
+| STNC Treaty (baca saja) | b4726, b4757 | `STNC_CLAIM` |
+| Catastrophe Note (tampil bila Catastrophe, baca saja bila CLAIM_NO terisi) | b4905, b4934, b5059 | `KATASTROFE_NOTE`; server 409 bila diubah sesudah bernomor |
+| Policy Details | b5909–b12679 | `PanelDataPolis` (keputusan WO sebelumnya: tanpa System Reinsurance / Premium Method, tanggal dd/mm/yyyy) |
+| Grid DetailPolisLife (View Detail + grid peserta polis) | b13267 | **BELUM ditiru** — milik modul PremiumList; perlu rute baca-saja lintas modul |
+| Participant Details: PL NUMBER, NAME OF INSURED, DATE OF BIRTH | b15524, b15924, b16101, b16256, b16406 | nama dan DOB **dibaca saat baca** dari `M_LIFE_PREMIUM_DETAIL` (SOURCE_ID), tidak disalin ke tabel klaim |
+| Accept (`.IsAccept`) + SELECT ALL | b17582, b17597, b16609 → `SelectAllClaimLife_act` b247/b429 | **migrasi 026** `IS_ACCEPT` (disetujui work owner 10-10-2026); penjungkit `inti/frontend/lib/pilihSemua.ts` |
+| DELETE (tampil bila CLAIM_NO kosong) | b16839, b17865, b18082 → `DeletePesertaClaimLife` | cabut peserta (penanda STS_HAPUS). **Menyimpang**: aplikasi menambah konfirmasi "Remove this insured from the claim?" (Pega tanpa konfirmasi, b18021) |
+| Baris dibuka → rincian peserta | b18252 `ViewClaimDetailLifeGCNM` → `ClaimLifeDetailGCNM` | `RincianPeserta` — blok per peserta layar Detail **dipindah** ke komponen bersama |
+| Save | b19413 | `PUT /api/klaim-life/{id}/outstanding/isian` (Accept + medan Register Claim), satu transaksi |
+| Save to RNM (nonaktif sesudah tersimpan) | b21102, b21095 `pyWorkPage.Save = 1`, b21126 | padanan bendera: `sudahSaveRNM` (OQ-N1, tanpa kolom) |
+| Send Back to Register (tampil bila CLAIM_NO kosong) | b21404, b21433, b21699 | server 409 bila sudah bernomor |
+| Send to Medical Check (nonaktif bila CLAIM_NO kosong; tampil bila QP/QR) | b21839, b21832, b21863, b22123 | server 409 tanpa CLAIM_NO atau Type selain QP/QR — **menutup risiko Komite** (klaim tanpa Save to RNM tidak punya baris datar) |
+| Close Claim (selalu tampil) | b22808, b22837 | `PanelTutupKlaim` — logika layar Detail dipindah ke komponen bersama |
+
+- **Gerbang dokumen Save to RNM** langkah 3 kini membaca `IS_ACCEPT` (`SaveOutStandingLife_Act` b1181
+  `.IsAccept=="true"`). Dulu `IS_CHECK` dipakai sebagai padanan terdekat — ralat. Akibat: peserta yang belum di-Accept
+  tidak lagi dituntut dokumen saat Save to RNM (sama dengan Pega).
+- **Tombol "Detail klaim" dihapus** untuk kasus tahap Outstanding: seluruh isinya ada di tab Claim Details. Kasus tahap lain
+  yang terbuka di layar ini diarahkan ke layar Detail lewat catatan.
+- Nomor akseptasi tetap tidak dibuat Save to RNM (`SaveOutStandingLife_Act` hanya CLAIM_NO).
+
+## 11-10-2026 — Is KPR, View Detail peserta polis, dan temuan Save to RNM
+
+Keputusan work owner 11-10-2026.
+
+- **Is KPR**: pilihan **KPR / Non-KPR**, teks disimpan persis (pola Catastrophe / Non-Catastrophe). Server menolak nilai lain
+  (400), KECUALI nilai yang sama dengan yang sudah tersimpan: data warisan di luar dua pilihan itu ditampilkan apa adanya
+  ("Stored value: …", tanpa radio tercentang) dan Save yang tidak menyentuhnya tidak gagal. Data DEV belum dapat dibaca dari
+  sini (tanpa DSN); belum diketahui apakah ada nilai lain.
+- **View Detail peserta polis** (`Section/DetailPolisLife.xml`, InputOSClaimLife b13267): tombol View Detail b631 (hilang
+  sesudah ditekan, b792), grid `TempDetail.pxResults` b4537 dengan kolom No., POLICY NO, CERTIFICATE NO, NAME OF INSURED, SEX,
+  DATE OF BIRTH, AGE, PLAN, BEGIN DATE, EFFECTIVE DATE, EXPIRED DATE (b4700–b6082), 500 baris per halaman
+  (`LoadDataPeserta_Act` b572/b619, `getMaxPagination_sql`). Rute baca-saja claimlife
+  `GET /api/klaim-life/{id}/peserta-polis?halaman=N`; PremiumList tidak disentuh (rute premiumlistlife membaca tabelnya
+  sendiri, bukan `M_LIFE_PREMIUM_DETAIL` yang dibaca Pega). Paginasi NextPrev ⟪ ⟨ ⟩ ⟫ diganti komponen `Halaman` inti.
+  **Menyimpang**: (1) Pega menyaring `PL_NUMBER` saja (`GetPesertaClaim_sql`, semua versi polis termasuk Batal/Delete);
+  di sini `PL_NUMBER` (INDEX4) + `IDPEGA` = versi polis yang sama dengan header klaim, tanpa saringan status EDM seperti
+  Pega; (2) Pega memberi `ROWNUM` sebelum `ORDER BY` sehingga halamannya tidak terurut — di sini urutan Pega diterapkan
+  sungguh-sungguh (+ID pemutus seri); (3) Pega menambah 7 jam ke tanggal untuk tampilan (b1097 dst) — di sini DATE dibaca
+  sebagai tanggal kalender, hasil tampil sama.
+- **Temuan (belum diubah)**: wadah Participant Details berkondisi `pyContainerVisibleWhen pyWorkPage.Save = 1`
+  (InputOSClaimLife b15490), dan `pyWorkPage.Save` hanya ditulis `SaveOutStandingLife_Act` (`""` b8549 langkah 21, `1`
+  b11367 langkah 24). Di Pega grid peserta karena itu baru tampil SESUDAH Save to RNM; aplikasi menampilkannya selalu
+  (permintaan work owner 10-10-2026). Menunggu keputusan.
+- **Temuan (belum diubah)**: tombol Edit Date (ClaimLifeDetailGCNM b14115) tampil hanya bila Admin DAN CLAIM_NO terisi
+  (b14357), padahal keempat tanggal baca-saja bila CLAIM_NO terisi (b11339, b11577, b12857, b13997; EditDate b1000/b1313/
+  b1550/b1788). Aplikasi: tanggal dapat diubah sebelum Save to RNM, terkunci sesudahnya (OQ-M1).
+
+## 11-10-2026 — Layar Outstanding dirapikan mengikuti screenshot Pega; rincian peserta dan isian adjustment
+
+Keputusan work owner 11-10-2026: *"rapikan tampilannya dengan referensi dari pega (4 screenshot CLMLF-9293). Tombol send
+back to register, check readiness claim, dan close claim hilangkan saja. Saat pesertanya diklik bisa menampilkan detail
+pesertanya dan bisa isi adjustment-nya seperti di pega."*
+
+- **Tombol bawah**: hanya Save to RNM dan Send to Medical Check. Send Back to Register (b21404), Check readiness dan Close
+  Claim (b22808) **tidak ditampilkan** di layar Outstanding. **Menyimpang dari XML** (keduanya ada di InputOSClaimLife);
+  rute/aksi server TETAP (Close Claim masih di layar Detail dan tahap Claim Analis; Pindah Outstanding → Input Register
+  masih diterima server bila belum bernomor).
+- **Register Claim**: form dua kolom label-kiri; Catastrophe radio tegak; Is KPR bertanda wajib (*).
+- **Policy Details**: tiga kolom seperti screenshot; System Reinsurance (`.TypeCeding` b7102) dan Premium Method
+  (`.ProRateType` b7495) **ditampilkan di Outstanding** (screenshot 11-10-2026) — panel Register tetap tanpa keduanya
+  (keputusan 10-10-2026). Type tampil sebagai KODE: daftar nama (`pyListSource associated` b6905) tidak ada di korpus.
+- **Participant Details**: grid bernomor, baris terbuka tersorot, saringan nama, SELECT ALL berupa tautan, Save kecil di kanan
+  bawah. Klik baris membuka rincian DI BAWAH baris itu (b18252) dan menutup baris lain.
+- **Rincian peserta** (`ClaimLifeDetailGCNM.xml`, label VERBATIM): tiga kolom urut screenshot; ADMIN NOTES (b2588)
+  **migrasi 027** `ADMIN_NOTES` (disetujui work owner 11-10-2026), dibekukan bila peserta diputus (b2628); CLAIM ANALYST =
+  `NOTES` baca saja; MAX EXPIRED CLAIM = `MAXEXPIREDCLAIM` produk (ValidasiClaimReceived_Act b540) saat baca; SEX/PLAN
+  dibaca dari baris sumber. **Belum ditiru**: kotak LOCATION OF DEATH (ada di screenshot, TIDAK ada di korpus, tanpa kolom —
+  baca saja "—"); STNC DATA dan MAX DATA RECEIVED (`ValidasiSTNC_Act` b577/b627); OutStanding Date (`.ADJUSTMENT_DATE`, ditulis
+  SaveOutStandingLife_Act b10403, tanpa kolom). Diagnosa hanya di tahap Medical Check (b4908 `pyPosition` MedicalAdvisor).
+  Sub-tab Adjustment (b16543) | Document (b23293).
+- **Isian adjustment** (`AdjustmentDetail_Section`): keputusan work owner 11-10-2026 — SEBELUM Save to RNM (klaim belum
+  bernomor, baris belum berstatus) **Claim RNM** (`.CLAIM_GROSS` b3012 = kolom `CLAIM_AMOUNT`) dapat diisi; **Percent Claim**
+  dan **Claim Paid** TIDAK diisi pemakai — diturunkan saat baca (Percent = Claim RNM / Share RNM × 100, pecahan 5 desimal
+  seperti b702; Claim Paid = Claim RNM), tanpa kolom; Claim RNM > Share Nusantara Re ditolak 422 dengan kalimat b526. SESUDAH
+  Save to RNM seluruhnya baca saja. **Menyimpang dari XML** (`pyEditOptions Read-only` di semua medan; keputusan br/OQ-N8
+  29-09-2026 kini diubah untuk Claim RNM saja). Pengecualian kode bisnis L12/L13/L14/L18 (`CountClaimAmountLife_Act` b972)
+  **tidak** dipakai karena work owner menyatakan batasnya mutlak — perlu konfirmasi. Spreading ulang sesudah Claim RNM berubah
+  (`CountClaimAmountLife_Act` langkah 5 → `SpreadingClaimLife_Act`) **belum** dipanggil.
+
+## 11-10-2026 (lanjutan) — Tanggal peserta diisi pemakai, Claim Analyst, View Detail dicabut, adjustment sesuai Pega
+
+Keputusan work owner 11-10-2026 (lima screenshot).
+
+- **Lima tanggal peserta** (DATE OF LOSS*, CLAIM RECEIVED DATE*, DOCUMENT COMPLETE DATE, MAX DATA RECEIVED, CONFIRMATION
+  DATE*) menjadi isian langsung di kolom kanan rincian peserta, sebelum Save to RNM; sesudahnya baca saja. Disimpan tombol
+  **Save grid** (satu transaksi bersama Accept / Admin Notes / Catastrophe) — satu jalur, satu tombol. DOL tetap melewati
+  `ValidasiDOL` (ValidasiDOL_Act); gerbang OQ-M1 (`BolehUbahTanggalKlaim`) dan CLAIM_NO kosong di layanan dan di SQL.
+  MAX DATA RECEIVED: **migrasi 028** `MAX_DATA_RECEIVED DATE` (disetujui work owner 11-10-2026); di Pega dihitung
+  `ValidasiSTNC_Act` b577 — kini diisi pemakai (**menyimpang**). Tombol Edit Date tidak tampil di Outstanding (masih di layar
+  Detail). `ValidasiClaimReceived_Act` tetap bukan gerbang (OQ-M9; penanda saat baca).
+- **Save to RNM wajib**: Claim Received Date dan Confirmation Date kosong ditolak 422 ("Claim Received Date is required for
+  insured number N", "Confirmation Date is required for insured number N") — SEMUA peserta, seperti gerbang 11.x. DOL kosong
+  sudah ditolak langkah 11.10 dengan kalimat XML ("DOL cannot be blank or outside the valuation period No N").
+- **View Detail** dicabut dari tab Policy Details. Rute baca `GET …/peserta-polis` tetap (tanpa pemakai layar; dapat dibuang).
+- **CLAIM ANALYST** hanya tampil di tahap Claim Analis (Pega: `pyPosition` ReasLifeSPV b15474); disembunyikan bagi Admin.
+- **Grid adjustment**: Status sebagai teks ('' → "—", 0 → "OutStanding", 1/2 → "Accepted"/"Rejected"; daftar Pega tidak ada
+  di korpus); **OutStanding Date** diturunkan dari `T_CLAIMLF_JEJAK` — `MIN(WAKTU)` baris itu dengan `KE='0'` dan `DARI` NULL
+  (transisi '' → '0' yang direkam Save to RNM), tanpa migrasi; "—" sebelum Save to RNM.
+- **Isian adjustment** tiga kolom seperti screenshot, angka bergaya Indonesia lewat `formatNumber` inti (94.695,705). Data
+  bank: Payable To baca saja (XML); Name of Bank, Branch of Bank, Account No **isian teks** sebelum Save to RNM (kolom 004/011)
+  — master autocomplete `Int-BANKACCOUNT` belum diketahui (keputusan work owner: teks dulu). Grid Treaty Type | Claim RNM dari
+  spreading (`.TREATYTYPENAME`/`.RetrocadedShare`); grid komite tampil "No items" (data modul Komite belum disambungkan).
+  Reject Outstanding dan Send To Komite di kaki isian dengan kondisi XML (b15399). Rute isian baris:
+  `PUT …/adjustment/{adjId}/isian` (Claim RNM + bank).
+
+## 11-10-2026 (lanjutan 2) — Total peserta dibuang, bagian Spreading, satu tombol Save, kerapian tata letak
+
+- **Total peserta**: wadah enam total di ClaimLifeDetailGCNM berkondisi `pyContainerVisibleWhen 1=2` (b20403) — di Pega TIDAK
+  pernah tampil di tahap mana pun. Layar Outstanding membuangnya (prop `tanpaTotal`); layar Detail (KlaimLife, dipakai
+  kasus tahap lain) MASIH menampilkannya sampai diputuskan. Perhitungan backend (`HitungTotalPeserta`, gerbang mata uang) tetap.
+- **Spreading** menggantikan grid Treaty Type dan grid komite di isian adjustment: bentuk tab Spreading PremiumList Life
+  (disalin bentuknya) — per lapisan (Reins Type, Retroceded Share) lalu per reinsurer (% Share, Amount, Rate, Commision %,
+  Ovr Comm %, Gross, Net), dan rekap per reinsurer (Currency, Premium Spreaded Gross/Net) yang dijumlahkan BACKEND
+  (Money.Add). Sumber: T_CLAIMLF_ADJUSTMENT_SPREADING + T_CLAIMLF_ADJ_SPREADING_RETRO apa adanya. **Spreading ulang saat
+  Claim RNM berubah BELUM disambungkan**: `services.HitungSpreading` (SpreadingClaimLife_Act) ada dan teruji tetapi tanpa
+  pemanggil — belum ada pembaca TREATYYEAR_LIFE / RETROCESSIONLIFE, kapasitas IDR/USD treaty-year tidak punya kolom di DEV
+  (`ErrKapasitasBelumDiketahui`), dan pemetaan IDUSEDBY rate belum diputuskan. Kosong → "No spreading yet. It is calculated
+  when Claim RNM is saved." Grid komite dibuang dari isian.
+- **Satu tombol simpan**: tombol "Save to Outstanding" dicabut; Claim RNM + data bank ikut `PUT …/outstanding/isian`
+  (`IsianOutstanding.adjustment`, `services.PeriksaIsianBaris`) dalam satu transaksi bersama Accept, Admin Notes, lima
+  tanggal, Catastrophe/KPR. Rute `PUT …/adjustment/{adjId}/isian` dicabut. Aturan tetap: Claim RNM <= Share RNM (422), hanya
+  sebelum Save to RNM (409).
+- **Kerapian**: sel rincian di grid kembali membungkus (inti `.inbox__tabel td` nowrap), label 24ch nowrap, nilai kode
+  nowrap, teks panjang membungkus, isian tanggal/angka berlebar ch, radio satu baris sejajar (radiogroup menggantikan
+  fieldset/legend), angka rata kanan, tabel diagnosa/dokumen dalam pembungkus gulir. Dijaga `gaya.test.ts`.
+
+## 11-10-2026 (lanjutan 3) — Spreading diambil dari PremiumList Life; total peserta dibuang dari semua layar
+
+- **Spreading** (keputusan work owner: "datanya ambil saja dari premium list, tidak perlu perhitungan lagi"): bagian Spreading
+  rincian peserta membaca `T_PREMIUM_LIST_SPREADING` + `_RETRO` (milik PremiumList Life, baca saja; SQL disalin bentuknya dari
+  polis_spreading.go, paketnya tidak diimpor) lewat `GET …/peserta/{pesertaId}/spreading-polis`, dimuat saat rincian dibuka.
+  Kunci: IDPEGA peserta (= `PREMIUM_LIST_ID`, IDX_PLD_PL) + `TRIM(CERTIFICATE_NO)`, tanpa baris EDM `Delete`; lalu
+  `DETAIL_ID` (IDX_PLS_DETAIL) dan `SPREADING_ID` (IDX_PLSR_SPR) — seluruhnya berindeks. Bukan lewat ID: `M_LIFE_PREMIUM_DETAIL.ID`
+  (SOURCE_ID) adalah sequence sendiri. Versi EDM menyalin spreading (endorsementlife edm_buat.go, AC 59). Rekap per reinsurer
+  dijumlahkan backend (Money.Add) dari baris peserta itu (rekap tersimpan PremiumList per POLIS, bukan per peserta). Kosong →
+  "No spreading data for this insured in the policy." Tanpa hitung, tanpa tulis.
+- **Spreading klaim lama**: `services.HitungSpreading` dan `PohonKlaim.AmbilSpreading` kini tanpa pemanggil produksi;
+  `PohonKlaim.Simpan` (Register) masih punya jalur INSERT spreading/retro klaim, tetapi Register tidak pernah mengisi
+  `Baris[].Spreading` (BarisPendaftaran) — praktis nol baris ditulis. Dibiarkan, menunggu keputusan.
+- **Total peserta** dibuang dari SEMUA layar (keputusan work owner "buang saja dari semua halaman"); komponen
+  PanelTotalPeserta dan tesnya dihapus. Backend `HitungTotalPeserta` dan gerbang mata uang tetap (JSON `total` tetap terkirim).
+
+## 11-10-2026 (lanjutan 4) — Spreading Detail/Summary, konsistensi isian, validasi Claim RNM, Register Claim
+
+- **Spreading**: subjudul "Spreading Detail" (lapisan/reinsurer) dan "Spreading Summary" (rekap per reinsurer) + baris TOTAL
+  per mata uang (JSON `total`, dijumlahkan backend dengan Money.Add).
+- **Isian konsisten**: semua isian layar Outstanding (Claim RNM, bank, lima tanggal, Admin Notes, saringan nama, Catastrophe
+  Note) memakai kelas inti `field__input`; tiga kolom isian adjustment berkolom nilai selebar tetap (20ch) sehingga angka (rata
+  kanan), teks (rata kiri), dan isian berbaris rapi; isian bank sama lebar.
+- **Claim RNM**: hanya digit + satu pemisah desimal (titik/koma, `inputMode=decimal`), tanpa pemisah ribuan saat diketik;
+  pesan di bawah isian "Claim RNM must be a number." / "Claim RNM cannot be greater than Share Nusantara Re (<share berformat>).";
+  isian bertanda `field__input--error`; tombol Save grid nonaktif selama ada isian tidak sah. Perbandingan desimal TEKS berbasis
+  digit (`frontend/desimal.ts`, inti tidak punya pembanding desimal), tanpa float. Server tetap menolak 422.
+- **Register Claim**: tata letak yang SAMA dengan Policy Details (`os__form` + `dl.os__kolom` + baris `dt`/`dd`); nilai kode tidak
+  lagi nowrap (meluber ke kolom sebelah) melainkan membungkus; radio Catastrophe dan Is KPR bertumpuk dengan jarak seragam;
+  catatan "Saved with the Save button…" dihapus.
+
+## 11-10-2026 (lanjutan 5) — Bawaan Non-Catastrophe / Non-KPR, Catastrophe Note di kanan, Percent/Claim Paid langsung
+
+- **Bawaan**: Register menulis header klaim BARU dengan `STS_KATASTROFE = Non-Catastrophe` dan `IS_KPR = Non-KPR` (INSERT header
+  `PohonKlaim.Simpan` kini memuat kedua kolom). Klaim LAMA berkolom kosong: layar memilih bawaan itu dan mengirimkannya pada
+  Save grid berikutnya; nilai warisan asing tetap "Stored value". Tidak ada UPDATE massal; SQL opsional untuk work owner (TIDAK
+  dijalankan) di laporan 11-10-2026.
+- **Catastrophe Note** pindah ke kolom kanan, tepat di bawah STNC Treaty (tetap hanya bila Catastrophe; baca saja sesudah bernomor).
+- **Percent Claim / Claim Paid langsung** saat Claim RNM diketik: Claim Paid = Claim RNM; Percent = `persenKlaimTeks`
+  (frontend/desimal.ts, BigInt berskala) dengan aturan IDENTIK backend `models.HitungPersenKlaim`: pecahan dibulatkan
+  SETENGAH-KE-ATAS pada 5 desimal (b702; apd.BaseContext half-up, diperiksa dengan Go) lalu × 100. Kasus kesamaan sama di Go dan
+  TS (50/100, 1/3, 2/3, 665/5.850.038,75 = 0,011, 1/200000, 1/400000, 94.695,705/100.000). Isian tidak sah → "—".
+  Catatan: 665 / 5.850.038,75 menghasilkan 0,011% (bukan 0,01137%) karena pecahannya dibulatkan 5 desimal seperti Pega.
+- Kolom kiri isian adjustment memakai kolom nilai tetap 20ch yang sama dengan kolom tengah/kanan (angka rata kanan).
+
+## 11-10-2026 (lanjutan 6) — ORA-12899 STS_KATASTROFE: migrasi 029 memperlebar kolom
+
+- Bug DEV: pengisian bawaan "Non-Catastrophe" (15 byte, InputOSClaimLife b3728) ke `T_GENERAL_CLAIM.STS_KATASTROFE VARCHAR2(8)`
+  (migrasi 002, tanpa bukti lebar) menghasilkan ORA-12899; Register dan Save grid 11-10-2026 akan gagal sama.
+- **Migrasi 029** (disetujui work owner 11-10-2026): `STS_KATASTROFE` dan `IS_KPR` -> VARCHAR2(20); _down kembali ke 8 (gagal terang
+  ORA-01441 bila ada nilai > 8, tanpa memotong). **Wajib dijalankan sebelum kode Register / Save grid 11-10-2026.** Jatah migrasi
+  Claim Life 001-029 HABIS.
+- Pengaman Go: Catastrophe dan Is KPR > 20 byte ditolak 400 sebelum bind. Audit lebar kolom teks yang ditulis aplikasi: lihat
+  laporan 11-10-2026 (seluruh batas Go <= lebar DDL).
+
+## 11-10-2026 (lanjutan 7) — Save to RNM: semua kolom wajib, semua peserta, satu penolakan
+
+Keputusan work owner: "kolom claim rnm dibuat wajib. saat ingin save to rnm pastikan semua kolom wajib harus diisi untuk semua
+peserta. dan jika ada yang belum ada isi tidak bisa lanjut dan berikan pesan".
+
+- ⛔ **MENYIMPANG dari Pega**: SaveOutStandingLife_Act berhenti di pelanggaran PERTAMA (langkah 11.x per `local.idx`). Kini
+  `services.PeriksaSimpanRNM` mengumpulkan SELURUH kekurangan kolom wajib semua peserta dan menolak SEKALI (422,
+  `{galat, langkah:"wajib", kekurangan:[{nomorPeserta, pesertaId, sertifikat, nama, kolom, pesan}]}`). Kalimat per kolom tetap
+  kalimat XML bila ada (DOL 11.10, DOB 11.12, Begin 11.13, Expired 11.14, Policy 11.15, Certificate 11.16, dokumen langkah 3-4).
+- Urutan: (1) Type tidak dikenal — berhenti; (2) klaim ganda 11.2-11.6 — berhenti di peserta pertama (bukan "kolom kosong");
+  (3) kumpulkan: Is KPR (header, baru), lalu per peserta Document (peserta di-Accept, non-TP/TR), Date of Loss (kosong ATAU di
+  luar jendela, satu kalimat XML 11.10), DOB, Begin, Expired, Policy, Certificate, Claim Received Date, Confirmation Date,
+  Claim RNM (satu per peserta). Nomor klaim diambil SESUDAH seluruh gerbang lolos (uji sumber
+  `TestSimpanRNMGerbangSebelumPenomoran`).
+- **Claim RNM wajib > 0** (`services.KlaimRNMMinimal` = frontend `KLAIM_RNM_MINIMAL` = "0"), menggantikan 11.17.1 "Claim Gross No N
+  can't null" (Pega hanya menolak kosong). Kalimat: "Claim RNM is required for insured number N"; di layar "Claim RNM is required."
+  di bawah isian, label bertanda *. Save grid BOLEH menyimpan Claim RNM kosong (CLAIM_AMOUNT NULL); wajibnya hanya di Save to RNM.
+- Layar: pre-check kolom kosong yang sama SEBELUM memanggil server (tanpa permintaan bila ada kekurangan); satu kotak
+  "Please complete the required fields before Save to RNM:" dengan satu baris per peserta ("No 1 · NAMA: Date of Loss, Claim
+  RNM"; tingkat klaim = "Register Claim: Is KPR"); tanggal yang kurang merah, baris adjustment dengan Claim RNM kosong dibuka dan
+  ditandai; peserta bermasalah pertama dibuka di tab Claim Details. Jendela DOL, DOB sumber, klaim ganda tetap hanya di server.
+- Perubahan belum disimpan: Save to RNM NONAKTIF dengan "Save your changes first." (pilihan (a)); (b) "simpan lalu Save to RNM"
+  tidak dipakai karena penomoran bertransaksi tersendiri. Dibanding nilai MENTAH tersimpan: klaim lama dengan Catastrophe / Is KPR
+  kosong harus di-Save sekali dulu (bawaan Non-Catastrophe / Non-KPR belum tersimpan).
+- Bug alert ganda diperbaiki: `Gagal` sudah menampilkan pesan server; `<p>{pesanGalat(...)}</p>` salinannya dibuang (dua tempat).
+
+## 11-10-2026 (lanjutan 8) — DOL dalam periode valuation, alur Save to RNM, galat tunggal, rincian simetris
+
+- **DOL harus di dalam periode valuation** (keputusan work owner): validasi LANGSUNG di layar (`galatDOL`, RincianPeserta.tsx) dengan
+  jendela yang SAMA dengan `services.ValidasiDOL`: QR/QP jendela GROSS (BEGIN, EXPIRED]; TR/TP jendela RETRO dengan DOL digeser +1
+  hari (ValidasiDOL_Act b698). Type lain / valuasi kosong: tidak diperiksa di layar (server). Pesan di bawah isian: "Date of Loss
+  must be within the valuation period (dd/mm/yyyy – dd/mm/yyyy)."; isian merah; Save grid NONAKTIF selama tidak sah.
+  JSON peserta kini juga membawa `valuasiRetroMulai` / `valuasiRetroSelesai`.
+- Server: "Invalid DOL" (`local.errmsg` ValidasiDOL_Act) TETAP sebagai kode (`GalatDOL.Error()`, medan `kode` rute Edit Date);
+  yang ditampilkan `GalatDOL.Kalimat()` = "Insured number N: Date of Loss must be within the valuation period (…)." — Save grid,
+  rute Edit Date, dan Save to RNM (DOL TERISI di luar jendela). DOL KOSONG di Save to RNM tetap kalimat XML 11.10. Save grid
+  memvalidasi DOL urut peserta (bukan urutan peta).
+- ⚠️ Batas hari: Save to RNM (langkah 11.8, b4464) TIDAK menggeser DOL retro, Save grid (ValidasiDOL) menggeser +1 hari — untuk
+  TR/TP DOL = RETRO BEGIN lolos Save grid tetapi ditolak Save to RNM, DOL = RETRO EXPIRED sebaliknya. Perbedaan dari Pega,
+  dipertahankan; rentang yang ditampilkan = tanggal valuasi apa adanya (awal gross bersifat eksklusif).
+- **Alur Save to RNM**: selama ada perubahan belum disimpan Save to RNM nonaktif, pre-check TIDAK berjalan, kotak kekurangan
+  tidak muncul (hanya teks bantuan "Save your changes first." di atas deretan tombol). Isian berubah / Save grid / Delete
+  membersihkan kotak lama; Save grid gagal = hanya galat Save grid.
+- **Galat tunggal "seperti premium list"**: komponen `components/PitaGalat.tsx` — satu tempat di ATAS isi (di bawah kepala,
+  sebelum tab), kelas inti `alert alert--error` / `<Gagal>`, dapat ditutup, dibersihkan setiap aksi. Acuan (baca saja):
+  premiumlistlife `PremiumListDetail.tsx` / `InputOffer.tsx` (Gagal di atas panel, sebelum tabel/tombol) dan
+  `FormDataPolis.tsx` (daftar "Required: …"). Dipakai di Outstanding (galat muat, Save grid, Save to RNM, Delete, kekurangan),
+  Register, Inbox, Detail (KlaimLife). Kabar berhasil (Saved / Saved to RNM) ikut di tempat yang sama.
+- **Rincian peserta**: tiga kelompok berjudul sama lebar — Insured (Certificate, Policy, Plan, Age, Sex, DOB), Coverage (Begin,
+  Expired, Effective, Valuation Begin/Expired, Received Date, STNC Treaty), Claim Dates (DOL*, Claim Received*, Confirmation*,
+  Document Complete, Max Data Received, lalu baca saja Max Expired Claim, Max Claim Received, STNC Data); di bawahnya Location of
+  Death | Admin Notes sama tinggi. Label 24ch di semua kolom; Certificate/Policy No tidak dipecah (satu baris, menggulir); 3 → 2
+  (≤1280px) → 1 (≤760px) kolom. Menyimpang dari urutan Pega dengan sengaja ("hanya jadikan referensi").
+
+## 11-10-2026 (lanjutan 9) — Jendela DOL inklusif dan seragam
+
+Keputusan work owner: "tanggal awal valuation masih termasuk".
+
+- ⛔ **MENYIMPANG SADAR dari Pega**: jendela DOL kini `VALUATION BEGIN <= DOL <= VALUATION EXPIRED`, inklusif di kedua ujung, per
+  tanggal kalender, untuk QR/QP (gross) dan TR/TP (retro). SATU sumber backend `services.DOLDalamJendela`, dipakai Save grid / Edit
+  Date (`ValidasiDOL`) dan Save to RNM 11.7-11.8 (`dolDalamJendelaRNM`); frontend `galatDOL` cermin aturan yang sama.
+- Dibuang: pergeseran DOL retro +1 hari ValidasiDOL_Act b698 (beserta `pergeseranDOLRetro` / `PergeseranDOLRetro`) dan
+  perbandingan ketat `@CompareDates` (`bandingKetat`). Akibatnya ketidakkonsistenan lama hilang: Save grid dan Save to RNM memberi
+  hasil SAMA untuk tanggal yang sama (diuji di `TestSimpanRNMDOLJendelaTanpaGeserRetro`).
+- Pesan tetap menampilkan tanggal valuasi apa adanya — kini memang rentang yang berlaku. Catatan "batas hari" di lanjutan 8
+  tidak berlaku lagi.
+
+## 11-10-2026 (lanjutan 10) — Rincian tanpa gulir, Admin Notes di bawah Location of Death, aturan edit
+
+- Certificate No / Policy No: gulir horizontal dibuang ("ada slide bar buat jelek"); nilai MEMBUNGKUS di kolom nilai
+  (`overflow-wrap: anywhere`, hanya bila perlu). Kolom tetap sama lebar (memperlebar kolom Insured merusak kesimetrisan).
+  Penjaga gaya: tidak ada `overflow: auto|scroll` pada aturan `rincian`.
+- Susunan lama dikembalikan: LOCATION OF DEATH lalu ADMIN NOTES DI BAWAHNYA, bertumpuk di kolom kiri di bawah data Insured.
+- Aturan edit (keputusan work owner "hanya bisa diedit oleh admin dan jika masih di inbox admin"): Admin Notes dapat diisi
+  hanya bila pelaku ReasLifeAdmin DAN kasus terbuka di tahap Outstanding (`bolehUbahCatatanAdmin`; peran dikirim rute.tsx);
+  selain itu tampil sebagai teks baca saja (tanpa kotak isian). Peserta diputus (b2628 `.STS_REJECT=='1'||'2'`) tetap
+  terkunci. Server Save grid sudah menegakkan 409 (bukan tahap Outstanding) dan 403 (bukan pemegang tahap = ReasLifeAdmin)
+  sebelum menulis apa pun. Sesudah Save to RNM: XML ClaimLifeDetailGCNM b2588/b2628 TIDAK mengunci Admin Notes (hanya
+  `pyDisabledWhen .STS_REJECT`; kondisi `CLAIM_NO!=''` milik isian lain) → tetap dapat diisi selama masih di tahap Outstanding.
+- Location of Death: dicari ulang di korpus kelvin/InboxClaimLife (Done) ("Place of Death", LocationOfDeath, PlaceOfDeath,
+  Country, Province, City, HOSPITAL) — TIDAK ditemukan di file mana pun ("DEATH" hanya muncul sebagai ContentNote dan label "Double claim Death"). Tetap baca
+  saja "—"; usulan kolom menunggu keputusan work owner + rentang migrasi baru (jatah 001-029 habis).
+
+## 11-10-2026 (lanjutan 11) — Save = simpan progres, bank baca saja, spreading terlipat, tombol di tab Claim Details
+
+- ⛔ **Keputusan WO terbaru, MEMBALIK sebagian lanjutan 8**: tombol Save grid "hanya save progress saja, tidak ada menjalankan
+  fungsi apapun". DOL di luar periode valuation, Claim RNM > Share Nusantara Re, dan kolom wajib kosong TETAP tampil merah di
+  isian sebagai peringatan, tetapi Save tetap aktif dan menyimpan. Yang masih memblokir Save: format rusak (Claim RNM bukan
+  angka), teks melebihi lebar kolom, dan aturan kunci (sesudah Save to RNM, bukan Admin/pemegang tahap, bukan tahap
+  Outstanding, baris berstatus). Sesudah Save: pita "Progress saved." di tempat galat/kabar yang sama.
+- Server diselaraskan: `ValidasiDOL` dicabut dari Save grid (`SimpanOutstanding.Simpan`); `PeriksaClaimGrossTerhadapShare`
+  dicabut dari `PeriksaIsianBaris`. Save to RNM (`PeriksaSimpanRNM`) menolak keduanya dalam daftar kekurangan, dengan
+  kalimat layar: "Insured number N: Date of Loss must be within the valuation period (…)." dan "Insured number N: Claim RNM
+  cannot be greater than Share Nusantara Re (5.077.429,5)." (share kosong tidak dibandingkan, sama dengan layar). Rute Edit
+  Date (layar Detail) tetap memakai ValidasiDOL. Save grid tidak menomori, tidak spreading, tidak outbox/Arasapas (diuji).
+- Bank: "semua read only kecuali name of bank". Payable To, Branch of Bank, Account No baca saja; hanya Name of Bank isian.
+  Server: `IsianBarisAdjustment` hanya {jumlah, namaBank} — kunci cabangBank/nomorRekening dari klien diabaikan, dan
+  UPDATE T_CLAIMLF_ADJUSTMENT tidak lagi menyentuh BRANCH_OF_BANK / ACCOUNT_NO (nilai tersimpan tidak tertimpa).
+- Spreading isian adjustment TERLIPAT bawaan ("View Spreading ▸" / "Hide Spreading ▾"); dimuat sekali per peserta saat pertama
+  dibuka. Isi tetap Spreading Detail + Spreading Summary + TOTAL.
+- Save to RNM + Send to Medical Check (dan petunjuk perubahan belum disimpan) hanya di tab Claim Details, di kaki tab sesudah
+  grid; petunjuk menyebut bagian yang berubah, mis. "You have unsaved changes (Register Claim). Click Save first.".
+- Register Claim: radio Catastrophe / KPR MENDATAR (jarak seragam, bulat, label sejajar baris pertama); Catastrophe Note
+  berlabel dengan placeholder "Describe the catastrophe…", lebar penuh kolom.
+- Location of Death: ditunda (pilihan a) — tetap "—" baca saja.
+
+## 11-10-2026 (lanjutan 12) — Tombol committee, konfirmasi Save to RNM, isi OS_AKSEPTASI_KLAIM_LIFE
+
+- "Send Claim to Committee" DISEMBUNYIKAN di layar Outstanding (keputusan work owner "hilangkan saja"); rute/aksi backend
+  tetap. Masih tampil di layar Detail (KlaimLife → RincianPeserta) untuk tahap selain Outstanding bila baris berstatus
+  Outstanding dan belum diserahkan (bolehSerahkanDiLayar).
+- Save to RNM: klik → pre-check → (lolos) Modal konfirmasi "Save to RNM" ("Are you sure…?" + alert--warn "This action cannot
+  be undone…", ringkas jumlah peserta + PL, Cancel / "Yes, Save to RNM"); hanya tombol modal yang memanggil server, satu kali,
+  nonaktif "Saving…" dan tak dapat ditutup selama proses. Pre-check gagal = kotak kekurangan tanpa modal; galat server di
+  tempat galat biasa sesudah modal tertutup.
+- **OS_AKSEPTASI_KLAIM_LIFE saat Save to RNM** (keputusan work owner; tabel warisan, tanpa DDL). INSERT dan UPDATE memakai SATU
+  daftar kolom (`repository.KolomCerminSaveRNM`); nilai disusun `services.SusunCerminSaveRNM` (murni). UPDATE MENIMPA (bukan
+  NVL) — Save to RNM membekukan nilai; kecuali kolom keputusan STS_REJECT dan ACCEPTATION_DATE (hanya saat INSERT).
+  Teks melebihi lebar katalog = galat jelas (`PeriksaLebarWarisan`), tidak dipotong. Tanggal lewat TO_DATE berformat tetap;
+  tanggal tak terbaca = galat. Di transaksi UTAMA, sesudah transaksi penomoran.
+
+| Kolom | Sumber |
+|---|---|
+| ID / CASEID | ID baris adjustment / ID klaim (kunci) |
+| NO_CLAIM | nomor klaim (baru lahir) |
+| NO_ACCEPTATION | tanggal outstanding = saat Save to RNM (WIB), teks `DD/MM/YYYY` (kolom VARCHAR2(100)) |
+| STS_REJECT / ACCEPTATION_DATE | INSERT saja: kosong (status '0' oleh SetelCerminOutstanding) / tanggal akseptasi baris (kosong) |
+| POLICY_NO | header klaim; kosong → polis NO_POLIS |
+| POLICY_HOLDER | polis POLICY_HOLDER_NAME (T_PREMIUM_LIST via IDPEGA) |
+| CERTIFICATE_NO, PL_NUMBER | peserta |
+| NAME_OF_INSURED, DOB | SQL dari baris sumber M_LIFE_PREMIUM_DETAIL (IsiTertanggungCermin, OQ-N2) |
+| SEX, AGE | peserta (baris sumber) |
+| PLAN | polis BUSINESS_NAME (aturan PremiumList: PLAN = BUSINESS_NAME) |
+| BEGIN_DATE / EXPIRED_DATE | peserta |
+| LAPSE_DATE | DATE OF LOSS peserta |
+| EM_PERCENT | peserta |
+| CURRENCY, CLAIM_AMOUNT | baris adjustment (Claim RNM) |
+| SUM_INSURED, CEDING_RETENTION, SUM_REASURED, SHARE_NUSANTARA_RE, SHARE_RETRO, RETROCEDED_SHARE | baris adjustment; kosong → peserta |
+| CLAIM_RETRO | header klaim |
+| WPC, CEDINGCONAME, SOBNAME, BUSINESSNAME, PRODUCTNAMEID, PRODUCTNAME | polis |
+| BUSINESSID | polis BUSINESS_CODE (CARI31 PolicyDataLife.BusinessCode) |
+| SOB | polis T_PREMIUM_LIST.SOB (dibaca terpisah, `KlaimLife.SOBPolis`; PolisRingkas inti tak membawanya) |
+| CEDINGCO | SQL dari polis CEDING_CO (tetap seperti sebelumnya) |
+| RETROID, RETRONAME, SECURITYREINSURERID, SECURITYREINSURER | polis; ditukar bila Type TP/TR dan Security Reinsurer terisi (b9671) |
+| TYPECEDING | polis TYPE_CEDING 1/2/3/4 → QS / SURPLUS / QS + SURPLUS / XOL (CARI40) |
+| TYPE | Type header klaim |
+| CONFIRMATION_DATE, CLAIM_RECEIVED_DATE, COMPLETE_DATE | peserta |
+| CREATEOPNAME | pembuat klaim |
+| NAME_OF_BANK, IDBANK, ACCOUNTNO | baris adjustment |
+| STATUS, DISEASE, ICD_CODE, NOTES, KETERANGAN | TIDAK terpetakan (tidak ditulis) |
+| STS_KONVERSI, TGL_KONVERSI, LAYER_1..4, INDEXLIST | di luar 55 kolom rule warisan; tidak ditulis |
+
+- Menyimpang dari Pega: InsertJsonKlaimLife_sql tidak menulis NO_ACCEPTATION dan menulis ACCEPTATION_DATE = SYSDATE; di sini
+  NO_ACCEPTATION = tanggal outstanding (keputusan WO) dan ACCEPTATION_DATE dibiarkan milik akseptasi/Komite.
+
+## 11-10-2026 (lanjutan 13) — Kolom Medical, ACCEPTATION_DATE, Komite hanya Claim Analis, MAX CLAIM RECEIVED
+
+- STATUS, DISEASE, ICD_CODE, NOTES, KETERANGAN (OS_AKSEPTASI_KLAIM_LIFE): keputusan work owner "sumbernya nanti saat di
+  medical" — diisi pada tahap Medical Check (PEKERJAAN BERIKUTNYA, belum dikerjakan). Save to RNM: INSERT membiarkannya NULL,
+  UPDATE tidak menyentuhnya (tidak ada di KolomCerminSaveRNM), sehingga nilai yang diisi tahap lain tidak terhapus (diuji).
+- ACCEPTATION_DATE: keputusan work owner "iya gunakan tanggal outstanding masuk ke table" — Save to RNM menulisnya = tanggal
+  outstanding (waktu Save to RNM, WIB, DATE), INSERT dan UPDATE baris yang belum berkeputusan (STS_REJECT NULL/0). STS_REJECT
+  tetap '0' lewat SetelCerminOutstanding. Perilaku yang ada sesudahnya: Komite `RekamAkhirWarisan` (komiteclaimlife
+  komite_keputusan.go) MENIMPA STS_REJECT, NO_ACCEPTATION, ACCEPTATION_DATE baris itu saat keputusan akhir (1/2); Akseptasi /
+  status baris Claim Life (`sqlIkutkanStatusCermin`) hanya menulis STS_REJECT cermin (ACCEPTATION_DATE miliknya di
+  T_CLAIMLF_ADJUSTMENT).
+- "Send Claim to Committee" HANYA di tahap Claim Analis (keputusan work owner "iya itu hanya di claim analis saja"): layar
+  merendernya hanya bila tahap = Claim Analis; server `Penyerahan.Serahkan` menolak 409 (`ErrSerahkanBukanClaimAnalis`) di
+  tahap lain — gerbang BARU (sebelumnya hanya wewenang per Type, kasus terbuka, status baris, rekening).
+- MAX CLAIM RECEIVED: teks galat internal tidak lagi dirender — layar menampilkan "—" dengan tooltip "Not available: product
+  threshold not set". Akar: Claim Life membaca ambang dari view warisan PRODUCTINWARD_LIFE (JSON), padahal Master Product Name
+  Life sejak 02-10-2026 menulis tabel DATAR M_PRODUCTNAME_LIFE (view DEV tidak dibangun ulang). Kini `ProdukLife.Ambang` membaca
+  M_PRODUCTNAME_LIFE.MAXEXPIREDCLAIM ("Max Notification Claim Expired") / MAXDATARECEIVE berkunci ID = ProductNameID polis
+  lebih dulu; view hanya cadangan bila produknya belum ada di tabel datar. Rumus tetap XML ValidasiClaimReceived_Act
+  (b562/b583): MAX CLAIM RECEIVED = penanda — kosong bila selisih hari DOL→CLAIM RECEIVED DATE ≤ ambang, tanggal CLAIM RECEIVED
+  (dd/MM/yyyy) bila melewatinya; MAX EXPIRED CLAIM = nilai ambang produk. Ambang kosong di Master = "—" (bukan nol). Pesan usang
+  "menunggu modul PremiumList Life" diganti `models.ErrAmbangHariKosong`.
+
+## 11-10-2026 (lanjutan 14) — Inbox PL Number & Update Operator, Policy Details, Reject, dokumen
+
+- Inbox: "Policy No" diganti "PL Number" = PL peserta aktif klaim (subkueri skalar berindeks IX_PLD_CLAIM_ID, STS_HAPUS IS
+  NULL; tanpa peserta = "—"). Urutan kolom (tabel dan ekspor xlsx): Case ID · Claim No · PL Number · Create Operator Name ·
+  Update Operator Name · Create Date/Time · Work Status.
+- Update Operator Name: T_WORK_CLAIM / T_GENERAL_CLAIM TIDAK punya kolom operator-pengubah (hanya TGL_UPDATE). Tanpa migrasi
+  (jatah habis) ia DITURUNKAN dari T_CLAIMLF_JEJAK: AKUN_ID jejak terakhir klaim (KEEP DENSE_RANK LAST, indeks
+  IX_CLAIMLF_JEJAK_KLAIM), cadangan CREATE_OP_NAME (padanan pxUpdateOpName = pembuat). ⚠️ Jejak hanya mencatat perubahan
+  status baris (Save to RNM, Reject, akseptasi, Komite) — Save grid dan pindah tahap tidak tercatat. Kolom sungguhan
+  (mis. T_WORK_CLAIM.UPDATE_OP + diisi setiap aksi pengubah) menunggu keputusan work owner + rentang migrasi baru.
+- Policy Details: label "PL Number" (bukan PL_NUMBER); nilai kode satu baris (os__nilai-pl nowrap) dengan kolom panel
+  minmax(380px) dan label 18ch, sehingga "RNML-QRL2.10.26.00043" muat di 1280 (3 kolom) dan 1024 (2 kolom), tanpa gulir.
+- Reject Outstanding: modal konfirmasi — "Are you sure you want to reject this outstanding claim for <nama / sertifikat>?" +
+  alert--warn "This action cannot be undone. …"; isian Remarks Pega (RejectOSClaimLife_Sec, wajib) dipertahankan; Cancel +
+  "Yes, Reject" (danger), nonaktif "Rejecting…" dan tak dapat ditutup selama proses; penjaga klik ganda.
+- Dokumen — akar "tidak bisa upload":
+  1. Isian "Kategori" teks BEBAS, dan kotak berkas NONAKTIF sampai teks diisi (Choose File tampak mati).
+  2. Server menolak kategori di luar CATEGORY_ATTACH_CLAIMLIFE (422 "kategori tidak dikenal") — teks bebas hampir selalu ditolak.
+  3. Server menuntut env UNGGAHAN_DIR (folder berkas); kosong = 503 "UNGGAHAN_DIR belum disetel".
+  4. Claim Life TIDAK punya pekerja latar outbox (Modul.JalankanPekerja = TanpaPekerja): efek "storage-unggah" tidak pernah
+     dijalankan, T_STORAGE_ID tetap kosong, baris tampil "Processing — waiting for storage" tanpa View/Delete.
+  Diperbaiki di modul: Category = dropdown dari rute baru GET /api/klaim-life/dokumen/kategori (sumber yang sama dengan
+  pemeriksa unggahan), pilih berkas lalu tombol "Add attachment", galat tampil sebagai alert, label Inggris.
+  Butuh keputusan/konfigurasi (TIDAK dikerjakan): (a) set UNGGAHAN_DIR di server DEV; (b) menyalakan pekerja outbox Claim
+  Life — PekerjaEfek memungut SEMUA efek modul CLAIMLIFE, sedangkan PelaksanaBerkasLokal menolak jenis lain sebagai gagal
+  permanen; perlu saringan jenis di outbox (inti) atau pelaksana gabungan, plus interval di config (inti) — keputusan tim inti
+  / work owner; (c) pelaksana penyimpanan nyata (Google Storage) menuntut persetujuan + kredensial.
+
+## 11-10-2026 (lanjutan 15) — Dokumen dapat dihapus, View lokal, tanggal
+
+- Delete ("buat document bisa dihapus"): setiap baris dokumen — termasuk yang masih "Processing — waiting for storage" —
+  punya View + Delete; Delete lewat Modal "Delete this document?" + nama berkas + alert--warn "This cannot be undone.",
+  Cancel / "Yes, Delete" (nonaktif "Deleting…", tak dapat ditutup selama proses).
+- Server `Unggahan.Hapus`: satu transaksi — hapus baris T_CLAIMLF_DOCUMENT; bila T_STORAGE_ID kosong (efek unggah belum
+  jalan) efek "storage-unggah" dokumen itu yang masih ANTRE ditutup "selesai" dengan catatan `CatatanBatalUnggah` (outbox
+  inti tidak punya status "dibatalkan"; tidak masuk daftar perlu-intervensi), lalu berkas lokal di UNGGAHAN_DIR dibuang
+  SESUDAH commit (best-effort, gagal dicatat di log). Bila T_STORAGE_ID terisi: jalur lama DeleteDocument_Act /
+  DeleteGoogleStorage_Act — efek "storage-hapus" diantre (pelaksana menghapus kartu berkas + berkas lokal). Pengaman ganda:
+  pelaksana efek unggah melewati dokumen yang sudah tidak ada (efek yang sedang "jalan" saat dihapus).
+- Gerbang (XML): DeleteDocument_Act b513 Obj-Delete TANPA prasyarat (hanya panggilan penyimpanan b472 bersyarat
+  T_STORAGE_ID); DocumentLife / ClaimLifeDetailGCNM tidak punya syarat peran, tahap, atau kunci (tidak terkunci sesudah Save
+  to RNM maupun peserta diputus). Diterapkan minimal: identitas (401), kasus terbuka (409, butir bb), dokumen milik klaim
+  (404, SatuDokumen berbatas klaim). Dampak: dokumen terakhir peserta yang di-Accept dihapus → Save to RNM menolak lagi
+  (gerbang dokumen) — memang benar.
+- View: rute baru GET /api/klaim-life/{id}/dokumen/{dokId}/isi (berbatas klaim; dokumen klaim lain 404). Selama penyimpanan
+  belum berjalan, berkas dilayani dari salinan LOKAL di UNGGAHAN_DIR (jalur disusun server dari pengenal dokumen, tidak dari
+  klien; Content-Disposition attachment, nosniff; berkas hilang = 404). Rute lama /api/dokumen/{dokId}/isi tetap.
+- Kolom Date tampil dd/mm/yyyy HH:mm (tanggalDokumen), bukan ISO mentah.
+
+## 11-10-2026 (lanjutan 16) — Claim Documents: kategori dari produk, penyimpanan segera
+
+- Judul "Claim Documents"; kosong "No claim documents for this insured yet.".
+- Kategori = Document Claim Master Product Name Life (M_PRODUCTNAME_LIFE_DOCCLAIM: PRODUCTID, URUT, DOCUMENT VARCHAR2(500);
+  baca saja, SQL disalin, tanpa impor) untuk ProductNameID polis klaim (header polis via IDPEGA), urutan URUT. Rute
+  GET /api/klaim-life/{id}/dokumen/kategori; validasi unggah memakai sumber yang SAMA (422 di luar daftar). Nilai disimpan
+  = teks DOCUMENT (master tidak punya ID dokumen selain URUT posisional, yang berubah bila daftar diubah). Produk tanpa daftar:
+  dropdown kosong + "No claim document types are set for this product in Master Product Name Life.". CATEGORY_ATTACH_CLAIMLIFE
+  (butir ar1) tidak lagi dipakai jalur mana pun (gerbang dokumen Save to RNM hanya menghitung ada-nya dokumen). Dokumen lama
+  tetap tampil apa adanya.
+- ⛔ BERHENTI (butuh migrasi): T_CLAIMLF_DOCUMENT.KATEGORI_2 hanya VARCHAR2(64), DOCUMENT master VARCHAR2(500); nama seperti
+  "Copy identitas diri KTP/SIM/Paspor (…)" > 64 byte. Sementara nama yang terlalu panjang ditolak terang 422
+  (ErrKategoriDokumenTerlaluPanjang) dan opsinya dinonaktifkan di layar dengan keterangan — tidak dipotong. Pelebaran ke
+  VARCHAR2(500) menunggu persetujuan work owner + rentang migrasi baru.
+- Penyimpanan: master (masterproductnamelife mpnl_lampiran.go) merekam + mengantre outbox dalam satu transaksi lalu MENCOBA
+  MENGIRIM SEGERA di permintaan yang sama (kirimLampiran) — tanpa pekerja latar; target penyimpanan nyata Google Storage
+  (ServiceGoogle via M_LINK_SERVICE + token inti/layanan, garam STORAGE_TOKEN_SALT), objek dicatat di tabel BERSAMA
+  T_STORAGE_IMAGE; berkas antre lokal di UNGGAHAN_DIR/master-product-name-life/antre/<IMAGEID>.
+  Diterapkan di Claim Life: MEKANISME kirim segera — Unggah memanggil kirimSegera sesudah commit (pungut efek
+  "storage-unggah" dokumen itu, jalankan pelaksana Claim Life, tuntaskan / jadwal ulang / gagal permanen), sehingga dokumen
+  baru langsung berstatus tersimpan (View/Delete) tanpa menunggu pekerja. Pelaksananya tetap PelaksanaBerkasLokal (kartu
+  T_CLAIMLF_STORAGE, berkas di UNGGAHAN_DIR).
+  ⛔ BELUM (butuh keputusan): mengirim ke Google Storage nyata dan mencatat ke T_STORAGE_IMAGE seperti master — panggilan
+  layanan luar + tabel bersama lintas aplikasi; perlu persetujuan work owner (dan kredensial/garam di server). Efek
+  "storage-unggah" yang sudah antre di DEV sebelum perubahan ini TETAP antre (tidak dipungut siapa pun): dokumennya tetap
+  dapat di-View (salinan lokal) dan di-Delete (efeknya dibatalkan).
+
+## 11-10-2026 (lanjutan 17) — Rentang migrasi baru (berhenti) dan Google Storage dokumen klaim
+
+- A. RENTANG MIGRASI BARU — BERHENTI (butuh perubahan INTI). Penjaga inti (`inti/backend/penjaga/modulmd_test.go`
+  `polaRentang ^(\d{3})-(\d{3})$`, `jatahDari`) hanya menerima SATU rentang tiga digit per modul. Seluruh 001–899 sudah
+  terbagi (claimlife 001–029, komiteclaimlife 030–049 dengan hanya 030 terpakai, … bordereaux 890–899; masterprovince 880–883
+  bertabrakan lama dengan aggregate 880–889), 900–999 slot menu: TIDAK ADA blok bebas. Perluasan bersambung mustahil (030
+  dipakai komite). Opsi: (1) penjaga mendukung multi-rentang / empat digit — perubahan inti; (2) komiteclaimlife melepas
+  sebagian 031–049 lalu claimlife memakai rentang kedua — tetap butuh multi-rentang; (3) mengubah rentang modul lain — butuh
+  pemiliknya. Tidak ada migrasi yang dibuat (KATEGORI_2 500, UPDATE_OP/UPDATE_OP_NAME tetap tertunda).
+- B. GOOGLE STORAGE seperti Master Product Name Life (keputusan work owner): pola mpnl_storage.go disalin ke
+  `services/penyimpanangoogle.go` (tanpa impor): XML Claim Life memakai aktivitas yang SAMA (InsertDocument_Act → InsertGoogleStorage_Act,
+  Folder "Claim", Durasi 1800; Folder "Claim/Doc/YYYY/MM/", Namafile "yyyyMMdd-hhmmss-S - nama"; GetUrlGoogleStorage_Act;
+  DeleteGoogleStorage_Act). Alamat M_LINK_SERVICE ("Google"/upload|geturl|delete) lewat inti/layanan, token GCP_IMAGE dipakai
+  ulang dulu lalu dirakit dengan STORAGE_TOKEN_SALT (seperti master). Objek DITULIS ke T_STORAGE_IMAGE (IMAGEID, URLPUBLIC,
+  APPFOLDER, EXPDATE, FILENAME, APPNAME, STORAGE='standard'; TANGGAL_UPLOAD saat URL diperbarui), APPNAME dari T_FOLDER_IMAGE;
+  T_CLAIMLF_DOCUMENT.T_STORAGE_ID = IMAGEID.
+  Alur: unggah → rekam + antre efek (satu transaksi) → kirim segera (PelaksanaGoogle) → T_STORAGE_IMAGE + T_STORAGE_ID; gagal →
+  efek dijadwal ulang / gagal permanen, dokumen "Processing". View: objek T_STORAGE_IMAGE → URL bertanda tangan (dipakai selama
+  EXPDATE belum lewat, selain itu geturl + Update_T_Storage_SQL) diunduh backend (https, tanpa pengalihan); selain itu salinan
+  lokal. Delete: objek Google dihapus LEBIH DULU (gagal = rekam tetap), lalu satu transaksi baris dokumen + baris T_STORAGE_IMAGE
+  (atau kartu stub lama / pembatalan efek), lalu berkas lokal.
+  T_CLAIMLF_STORAGE: dipensiunkan untuk dokumen baru; dokumen lama berkartu stub tetap di-View dari salinan lokal dan di-Delete
+  (kartu dihapus). PelaksanaBerkasLokal tidak dipakai lagi oleh unggahan baru.
+  Konfigurasi DEV: STORAGE_TOKEN_SALT TIDAK ada di .env (UNGGAHAN_DIR ada) — token baru tidak dapat dirakit; bila GCP_IMAGE punya
+  token berlaku ia dipakai ulang. Tanpa alamat/APPNAME/token: gagal tertutup "Storage is not configured: …" (503 di View;
+  unggahan tetap tersimpan lokal, "Processing").
+- ⛔ RALAT lanjutan 17 (hari yang sama): transport HTTP Google DICABUT lagi dari modul — penjaga inti TestNolAlamatLayananDiKode
+  (lintasaplikasi_test.go) hanya mengizinkan klien HTTP keluar di berkas yang terdaftar di daftar izin MILIK INTI (mpnl_storage.go,
+  tco_pengirim_storage.go). Menambah `modul/claimlife/backend/services/penyimpanangoogle_transport.go` ke daftar itu = perubahan
+  inti → menunggu tim inti / work owner. Yang TETAP terpasang: repository T_STORAGE_IMAGE / T_FOLDER_IMAGE, antarmuka
+  PenyimpananDokumen, PelaksanaGoogle (rekam T_STORAGE_IMAGE + T_STORAGE_ID), View (objek → penyimpanan, selain itu lokal),
+  Delete (objek → T_STORAGE_IMAGE → baris). Tanpa transport: unggahan memakai PelaksanaBerkasLokal seperti sebelumnya (dokumen
+  langsung tersedia), dan objek T_STORAGE_IMAGE tidak lahir. Transport + ujinya (server HTTPS tiruan) tersimpan siap pasang.
+
+## 11-10-2026 (lanjutan 18) — Proteksi Send to Medical Check
+
+- Keputusan work owner: "hanya bisa send to medical jika sudah sukses save to rnm dan semua peserta yang dicentang accept minimal
+  punya 1 document. untuk peserta yang tidak dicentang accept tidak apa".
+- Server (`TahapLayanan.Pindah`, Outstanding → Medical Check), urutan: PeriksaPindahDariOutstanding (CLAIM_NO terisi b21832, Type
+  QP/QR b22123; 409) → BARU `SudahSaveRNM` (baris sudah Outstanding; 409 ErrPindahMenungguNomorKlaim) → BARU
+  `PeriksaDokumenAcceptMedis`: jumlah dokumen per peserta AKTIF ber-IS_ACCEPT 'true' lewat SATU kueri berkelompok
+  (`CacahDokumenPesertaAccept`, LEFT JOIN T_CLAIMLF_DOCUMENT, STS_HAPUS IS NULL); dokumen berstatus apa pun dihitung; peserta
+  tanpa Accept tidak diperiksa; SEMUA kekurangan → 422 `{galat, langkah:"dokumen-medis", kekurangan:[…]}` (pola kekurangan
+  Save to RNM: permintaan sah, data belum lengkap), pesan "Insured number N (NAMA): at least one claim document is required
+  because the insured is accepted.". Tanpa peserta Accept = lolos (WO tidak melarang).
+- PARITAS: XML SendtoMedical (FlowAction/Section/Activity) hanya menggerbangi CLAIM_NO dan Type; syarat dokumen peserta Accept di
+  XML ada di Save to RNM (SaveOutStandingLife_Act langkah 3-4), bukan di Send to Medical — aturan ini TAMBAHAN keputusan WO.
+- Layar: Send to Medical Check tetap nonaktif sebelum Save to RNM; perubahan belum disimpan (termasuk sesudah Save to RNM)
+  menonaktifkannya dengan petunjuk; klik → pra-periksa (Accept tersimpan + dokumen yang dimuat) → kotak PitaGalat berjudul
+  "Please upload at least one claim document for every accepted insured before Send to Medical Check:" + daftar per peserta,
+  peserta pertama dibuka di sub-tab Document; lolos → pindah (layar Outstanding tidak punya dialog konfirmasi Send to Medical;
+  tombolnya memindah langsung seperti sebelumnya). 422 server berdaftar tampil di kotak yang sama.
+
+## 11-10-2026 (lanjutan 19) — Konfirmasi Send to Medical Check
+
+- Keputusan work owner "iya perlu pop up konfirmasi": klik Send to Medical Check → pra-periksa dokumen (lanjutan 18); kurang =
+  kotak kekurangan tanpa modal; lolos = Modal inti "Send to Medical Check" ("Are you sure you want to send this claim to Medical
+  Check?" + alert--warn "After sending, the claim moves to the Medical Advisor queue and can no longer be edited from the
+  Outstanding screen.", ringkas Claim No / jumlah peserta / jumlah peserta Accept), Cancel / "Yes, Send to Medical Check"
+  (nonaktif "Sending…", tak dapat ditutup selama proses, penjaga klik ganda).
+- Satu pemanggil pindahTahap di layar Outstanding (tombol modal; PanelPindahTahap tidak lagi memindah untuk Medical Check).
+  Galat server (422 berdaftar → kotak kekurangan; lainnya → PitaGalat) sesudah modal ditutup.
+- Sesudah berhasil: layar kembali ke Inbox Claim Life (perilaku lama, onPindah) dan kini membawa pita sukses
+  "Claim CLMLF-… sent to Medical Check." (state rute `kabar`, pola pemberitahuan Register → Inbox; ditutup dengan tombol atau
+  saat membuka kasus).
+
+## 11-10-2026 (lanjutan 20) — Layar Medical Check, kotak MEDICAL ADVISOR, Recommendation
+
+- Navigasi (work owner: "dari Inbox, setiap tahap membuka layar yang BENAR"): Inbox membuka `OutstandingClaimLife` untuk SEMUA
+  tahap; pita kuning peringatan tahap dan tombol "Open claim detail" DIHAPUS (prop `onDetail` dicabut dari layar dan rute).
+  Tata letak sama (kepala + Claim No, tab Register Claim / Policy Details / Claim Details, grid peserta + rincian); isian Admin
+  hanya hidup di Outstanding (`bolehIsianOutstanding`), jadi di tahap lain data klaim baca saja. Tombol bawah per tahap
+  (`TombolBawahTahap`): Medical Check = Save · Send Back to Admin · Send to Claim Analyst (`FlowAction/MedicalCheckClaimLife`);
+  Claim Analis = Send Back to Admin · Send Back to Medical · Close Claim (PanelTutupKlaim). Kabar Inbox per tujuan
+  (`kabarPindah`, `kabarTutup`). `PanelPindahTahap.sesudahPindah` kini menerima tujuannya.
+- `pages/KlaimLife.tsx` (layar Detail): TIDAK lagi dibuka dari Inbox; masih terpasang sebagai halaman menu `detail`
+  (HALAMAN_CLAIMLIFE, pencarian per ID). Tidak dihapus — keputusan WO.
+- Kotak MEDICAL ADVISOR (RincianPeserta, tahap Medical Check dan Claim Analis): grid diagnosa Find Disease (tombol per baris,
+  pencarian kini di Modal inti) | DIAGNOSE | ICD CODE | GROUP DIAGNOSE (dropdown) | Delete, "+ Add" di kepala (dan kaki bila
+  ada baris); teks Indonesia diganti English ringkas. Dapat diubah HANYA tahap Medical Check + ReasLifeMedicalAdvisor + kasus
+  terbuka (`bolehUbahMedis`) + peserta belum diputus (STS_REJECT b4682); selain itu baca saja (3 kolom teks).
+  Server: `DiagnosaPeserta.pagari` kini menolak tahap selain Medical Check (409 `ErrDiagnosaBukanMedicalCheck`) sebelum gerbang
+  pemegang tahap (ReasLifeMedicalAdvisor, 403).
+- GROUP DIAGNOSE "tidak dapat dimuat" — akarnya: dropdown b5863 ber-`pyListSource associated` pada rule properti
+  `.GROUPDIAGNOSE` kelas `Data-DiagnoseLife`, TIDAK ada di ekspor korpus (OQ-L, butir bf); layar dulu menampilkan
+  `BelumTersedia`. Kini dropdown dengan daftar `PILIHAN_KELOMPOK_DIAGNOSA` (KOSONG, tidak dikarang) → nonaktif + "Group Diagnose
+  list is not configured yet."; nilai tersimpan tetap tampil. Perlu dari WO/DBA: tabel/daftar sumbernya, mis. cek
+  `SELECT owner, table_name FROM all_tables WHERE table_name LIKE '%DIAG%' OR table_name LIKE '%GROUP%DIS%'`.
+- RECOMMENDATION (b7316/b7323 `.RECOMMENDATION`, pyDisabledWhen STS_REJECT 1/2): kolom
+  `T_CLAIMLF_PREMIUMLIST_DETAIL.RECOMMENDATION VARCHAR2(1000)` SUDAH ada (migrasi 003) — tanpa migrasi baru. Dibaca lewat
+  `kolomPeserta` (JSON `rekomendasi`), textarea di bawah grid diagnosa, ditulis tombol Save Medical Check:
+  `PUT /api/klaim-life/{id}/medis` `{rekomendasi:{pesertaId:teks}}` → `SimpanMedis.Simpan` (identitas, kasus terbuka bb,
+  tahap Medical Check 409, pemegang tahap 403, peserta aktif, ≤ 1000 byte 422, UPDATE ber-syarat STS_HAPUS IS NULL dan
+  STS_REJECT bukan 1/2 → 409 bila diputus), satu transaksi. Perubahan belum disimpan menonaktifkan tombol perpindahan
+  ("Save your changes first.").
+- Usulan (BELUM diterapkan) pengisian OS_AKSEPTASI_KLAIM_LIFE dari Medical Check — di XML, DISEASE / ICD_CODE / NOTES /
+  KETERANGAN / STATUS ditulis dari properti datar peserta (`.DISEASE`, `.ICD_CODE`, `.NOTES`, `.KETERANGAN`, `.STATUS`) oleh
+  SaveAdjustment_Act / SaveOutStandingLife_Act / RejectOSClaimLife_Act; `SetDisease` hanya menulis baris DiagnoseList
+  (`.DISEASE`, `.ICDCODE`), jadi tidak ada aturan XML yang menyalin daftar diagnosa ke tabel datar. Usul: saat Send to Claim
+  Analyst (Medical → Claim Analis, transaksi `Pindah`), UPDATE baris OS_AKSEPTASI peserta klaim: DISEASE = nama diagnosa
+  digabung "; " urut URUTAN (dipotong aman ke 1000 byte, PeriksaLebarWarisan); ICD_CODE = ICD diagnosa PERTAMA yang terisi
+  (kolom VARCHAR2(10) tidak muat gabungan); STATUS, NOTES (catatan Claim Analyst) tidak disentuh; KETERANGAN = Recommendation
+  hanya bila WO menyetujui (tidak ada padanan XML). Menunggu keputusan WO.
+
+## 12-10-2026 — GROUP DIAGNOSE (daftar WO), satu tombol Add, subjudul DISEASE
+
+- Keputusan work owner 12-10-2026: daftar 26 GROUP DIAGNOSE diberikan VERBATIM dan berurutan ("jika tabelnya belum ada
+  buatkan"); "tombol add ada 2, buat 1 saja yang atas"; "di atas disease buat subjudul seperti recommendation dengan tulisan
+  Disease".
+- Pencarian tabel master: TIDAK ada di repo (grep GROUPDIAGNOSE / GROUP_DIAGNOSE / DIAGNOSE_GROUP / GROUP_DISEASE di seluruh
+  modul termasuk diseaselife, katalog/STRUKTUR) maupun di korpus (rule properti `.GROUPDIAGNOSE` kelas `Data-DiagnoseLife` tidak
+  diekspor - OQ-L, butir bf). Membuat tabel = migrasi; jatah Claim Life 001-029 HABIS - TIDAK dibuat berkas migrasi.
+- Sekarang: SATU sumber `models.KelompokDiagnosa` (backend, urutan WO) → `GET /api/klaim-life/kelompok-diagnosa`
+  `{daftar:[...]}` (baca saja, tanpa DB). Layar membacanya saat grid dapat diubah; tidak menyalin daftar.
+- Kolom simpan: `T_CLAIMLF_DIAGNOSE.GROUP_DIAGNOSE VARCHAR2(255)` (migrasi 018); teks terpanjang 99 byte ("Diseases of the
+  blood ... immune mechanism") - muat, tidak dipotong.
+- Validasi server (`DiagnosaPeserta.Ubah`): nilai kosong, salah satu daftar, ATAU sama dengan nilai yang sudah tersimpan di
+  baris itu (warisan, tidak diubah) → simpan; selain itu 422 `ErrKelompokDiagnosaTidakDikenal` ("Group Diagnose must be one of
+  the listed groups."). Nilai warisan di luar daftar tampil sebagai pilihannya sendiri (terpilih) di dropdown.
+- Layar: catatan "Group Diagnose list is not configured yet." dibuang; dropdown aktif sesuai gerbang yang ada (Medical Check +
+  Medical Advisor + peserta belum diputus); lebar 32-60ch, nilai utuh di `title`. Subjudul DISEASE (`os__label`, gaya
+  RECOMMENDATION) di kiri atas grid, SATU "+ Add" di kanannya; "+ Add" bawah dibuang.
+- Uji db `diagnosa_db_test.go` disesuaikan dengan gerbang 11-10-2026 (Medical Check + Medical Advisor; tahap fixture lewat
+  UPDATE TAHAP) dan nilai kelompok dari daftar. Belum dijalankan terhadap Oracle di sesi ini.
+- DDL USULAN (dipasang begitu rentang migrasi Claim Life baru tersedia; BELUM dibuat, tidak dijalankan tanpa nomor migrasi):
+
+```sql
+CREATE TABLE {skema}.M_GROUPDIAGNOSE_LIFE (
+  ID         NUMBER        NOT NULL,
+  URUT       NUMBER(3)     NOT NULL,
+  NAMA       VARCHAR2(150) NOT NULL,
+  STS_AKTIF  CHAR(1)       DEFAULT '1' NOT NULL,
+  CONSTRAINT PK_M_GROUPDIAGNOSE_LIFE PRIMARY KEY (ID),
+  CONSTRAINT UQ_M_GROUPDIAGNOSE_LIFE_URUT UNIQUE (URUT),
+  CONSTRAINT UQ_M_GROUPDIAGNOSE_LIFE_NAMA UNIQUE (NAMA),
+  CONSTRAINT CK_M_GROUPDIAGNOSE_LIFE_AKTIF CHECK (STS_AKTIF IN ('0', '1'))
+)
+/
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (1, 1, 'Certain infectious and parasitic diseases', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (2, 2, 'Neoplasms', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (3, 3, 'Diseases of the blood and blood-forming organs and certain disorders involving the immune mechanism', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (4, 4, 'Endocrine, nutritional and metabolic diseases', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (5, 5, 'Mental and behavioural disorders', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (6, 6, 'Diseases of the nervous system', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (7, 7, 'Diseases of the eye and adnexa', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (8, 8, 'Diseases of the ear and mastoid process', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (9, 9, 'Diseases of the circulatory system', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (10, 10, 'Diseases of the respiratory system', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (11, 11, 'Diseases of the digestive system', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (12, 12, 'Diseases of the skin and subcutaneous tissue', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (13, 13, 'Diseases of the musculoskeletal system and connective tissue', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (14, 14, 'Diseases of the genitourinary system', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (15, 15, 'Pregnancy, childbirth and the puerperium', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (16, 16, 'Certain conditions originating in the perinatal period', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (17, 17, 'Congenital malformations, deformations and chromosomal abnormalities', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (18, 18, 'Symptoms, signs and abnormal clinical and laboratory findings, not elsewhere classified', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (19, 19, 'Injury, poisoning and certain other consequences of external causes', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (20, 20, 'External causes of morbidity and mortality', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (21, 21, 'Factors influencing health status and contact with health services', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (22, 22, 'Codes for special purposes', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (23, 23, 'Unknown cause of death/ Sudden death', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (24, 24, 'Unknown cause of death/ Death on arrival', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (25, 25, 'Multi organ failure', '1');
+INSERT INTO {skema}.M_GROUPDIAGNOSE_LIFE (ID, URUT, NAMA, STS_AKTIF) VALUES (26, 26, 'Multi organ disease', '1');
+```
+
+  NAMA 150 byte: teks terpanjang 99 + ruang; tetap <= GROUP_DIAGNOSE 255 sehingga setiap nama muat di kolom simpan. Sesudah
+  tabel ada, `models.KelompokDiagnosa` diganti pembacaan tabel (STS_AKTIF = '1' ORDER BY URUT) tanpa mengubah rute maupun layar.
+
+## 12-10-2026 (lanjutan) — Medical Check: Save Adjustment, Reject Outstanding, konfirmasi perpindahan
+
+- Save Adjustment (work owner "hilangkan tombol save adjustment di medical"): TIDAK dirender di tahap Medical Check
+  (`tampilSimpanAdjustment` = prasyarat `SaveAdjustment_Act` + bukan Medical Check). PARITAS: di Pega sel tombolnya
+  `pyCondition 1=2` (ClaimLifeDetailGCNM b22808-b22810) — tersembunyi di SEMUA tahap; di aplikasi ini masih tampil di tahap
+  Outstanding dan Claim Analis bila prasyaratnya terpenuhi (keputusan WO hanya menyebut Medical). Server tetap: pemegang tahap
+  (`SimpanAdjustment`). `Add` putaran sudah hanya Claim Analis (`bolehAddAdjustment`; b18160 pyPosition ReasLifeSPV).
+- Reject Outstanding (work owner "hanya ada di admin saja"): layar — `bolehTolakOutstanding` (tahap Outstanding Claim +
+  ReasLifeAdmin + kasus terbuka) DAN kondisi baris lama (bernomor, baris Outstanding; b15399). Disembunyikan di Medical Check,
+  Claim Analis, dan tahap lain; layar Detail lama (KlaimLife.tsx) tidak lagi menampilkannya. Server `Status.Tolak`: 401
+  identitas, 403 bukan ReasLifeAdmin (sudah ada), 422 klaim belum bernomor (sudah ada), BARU 409 `ErrTolakBukanOutstanding`
+  bila tahap bukan Outstanding Claim ("Reject Outstanding is only available at the Outstanding Claim stage."), lalu kasus
+  terbuka (bb) dan kefinalan baris.
+- Konfirmasi perpindahan (work owner "pastikan ada pesan validasi terlebih dahulu"): setiap tombol perpindahan layar Medical
+  Check (Send Back to Admin, Send to Claim Analyst) dan Claim Analis (Send Back to Admin, Send Back to Medical) membuka Modal
+  inti `KonfirmasiPindah` (pola KonfirmasiKirimMedis): pertanyaan + alert--warn per tujuan, ringkas Claim No + jumlah peserta,
+  Cancel / "Yes, …", nonaktif "Sending…" + tanpaTutup selama proses, penjaga klik ganda; SATU pemanggil pindahTahap
+  (TombolBawahTahap); galat ke PitaGalat halaman; sukses → Inbox dengan pita "Claim … sent to Claim Analyst." / "Claim … sent
+  back to Admin." / "Claim … sent to Medical Check.". Perubahan Recommendation belum disimpan tetap menonaktifkan tombol
+  ("Save your changes first.").
+  - XML `SendtoAdmin_Section`: hanya "Send Back to Admin?" + Submit — TANPA isian alasan; modal pun tanpa isian.
+  - XML `FlowAction/MedicalCheck` tidak punya aktivitas validasi: tidak ada kewajiban diagnosa / Recommendation sebelum Send to
+    Claim Analyst — tidak ditambahkan aturan wajib (menunggu keputusan WO bila diinginkan).
+  - Close Claim (Claim Analis) TETAP memakai konfirmasi PanelTutupKlaim (kalimat Pega VERBATIM b499, alertdialog di tempat),
+    bukan Modal baru.
+- Uji db disesuaikan: fixture `pohonUjiStatus` / `pohonUjiG17` kini bertahap Outstanding (pemegang Admin); `hasilkomite`
+  memindah fixture ke Outstanding untuk penolakan lalu kembali ke Claim Analis (setelTahapUji). Belum dijalankan terhadap
+  Oracle di sesi ini.
+
+## 12-10-2026 (lanjutan 2) — MAX disembunyikan bila kosong, modal tanpa ringkasan, kulit layar kasus
+
+- Kode status literal claimprop / claimnonprop `acuan.go`: WO memilih pemilik modul yang memperbaiki;
+  `TestKodeStatusLiteralHanyaDiModels` tetap merah sampai itu. Tidak diubah dari Claim Life.
+- MAX (work owner "kolomnya di-hide jika datanya kosong"): di kelompok Claim Dates rincian peserta, MAX EXPIRED CLAIM dan MAX
+  CLAIM RECEIVED (baca saja, dihitung backend) TIDAK dirender bila kosong / tidak dihitung - keadaan "— ⓘ" dan tooltip
+  "Not available: product threshold not set" dibuang (berikut aturan CSS `.os__info`). MAX DATA RECEIVED tetap ISIAN selama
+  dapat diisi (Outstanding sebelum Save to RNM); dalam mode baca saja disembunyikan bila kosong (`tampilBila`). STNC DATA
+  tidak disebut WO - dibiarkan (kini selalu "—" karena ValidasiSTNC_Act belum ditiru; kandidat diperlakukan sama).
+- Modal perpindahan (work owner "cukup validasinya saja, tidak perlu tampilkan nomor claim atau apapun"): KonfirmasiPindah
+  (Send Back to Admin / Send to Claim Analyst / Send Back to Medical) hanya pertanyaan + peringatan + Cancel/Yes. Demi
+  konsistensi modal Send to Medical Check (Outstanding) juga tanpa ringkasan Claim No / Insured / Accepted insured. Modal Save
+  to RNM TETAP dengan ringkasannya (WO tidak menyebut; ia aksi tak terbalikkan yang menerbitkan nomor klaim).
+- Kulit layar kasus seperti Claim Fac In: section kasus `os claimlife__akar claimlife__kasus` (kelas saja). Token --cl-*,
+  kotak, tombol (primary merah gradasi, ghost kapsul putih timbul), pita, judul dari blok inbox; tambahan `.claimlife__kasus`:
+  tab Register Claim / Policy Details / Claim Details bersegmen (jalur cekung, kapsul putih aktif), sub-tab Adjustment /
+  Document di rincian (jalur tenang, kapsul aksen lembut), kartu `register__kartu` / `polis` putih timbul radius 18, kotak
+  rincian bergaris lembut, isian putih timbul-ke-dalam dengan cincin fokus, semua tabel (Participant Details, adjustment,
+  spreading, dokumen, diagnosa, peserta polis, hasil Find Disease) kartu putih berkepala biru muda dengan baris berselang /
+  hover aksen, baris rinci tetap putih tanpa bayangan kedua, baris peserta terpilih aksen lembut, tombol buka baris yang sudah
+  ada (`os__buka`) bertanda ▸ / ▾ lewat `::before` (tanpa kolom baru, tanpa transform). Struktur, kolom, teks, alur tidak
+  berubah; aturan lebar isian / PL Number / responsif lama tetap (tidak ditimpa).
+
+## 12-10-2026 (lanjutan 3) — Save Medical di kaki grid, Save Adjustment disembunyikan, MEDICAL ADVISOR semua tahap, cari inbox
+
+- Save Medical Check (work owner "tambahkan tombol save juga di medical seperti di admin, fungsinya hanya save data"): tombol
+  Save kecil di kaki kanan grid Participant Details (posisi/gaya sama dengan Save Outstanding), hanya bila `bolehUbahMedis`.
+  Menyimpan Recommendation yang berubah (PUT /medis); diagnosa sudah tersimpan per aksi, jadi tanpa perubahan pun memberi
+  "Progress saved." tanpa permintaan. Tombol Save di baris bawah (sebelah Send Back to Admin) DIBUANG; petunjuk "Save your
+  changes first." dan penonaktifan perpindahan tetap.
+- Save Adjustment (work owner "sembunyikan saja di semua tahap"): tidak dirender di tahap mana pun (XML sel tombol
+  `pyCondition 1=2`). Fungsi layar `aksep` dibuang; `api.simpanAdjustment` tidak lagi punya pemakai di layar. Rute server
+  `POST /api/klaim-life/{id}/peserta/{pesertaId}/akseptasi` (SimpanAdjustment) TETAP ada - tanpa pemakai frontend.
+- STNC DATA: tetap seperti sekarang (WO: "tidak usah disembunyikan").
+- MEDICAL ADVISOR (work owner "tetap bisa terlihat di semua tahap tapi hanya read only, kecuali di inbox medical"): kotak
+  DISEASE + RECOMMENDATION dirender di SEMUA tahap; dapat diubah hanya Medical Check + Medical Advisor + peserta belum diputus.
+  Baca saja: tanpa + Add / Find Disease / Delete, kelompok sebagai teks, Recommendation sebagai teks ("—" bila kosong); grid
+  kosong = "No diagnosis yet." (tanpa ajakan + Add).
+- Cari di inbox (work owner "tambahkan juga filter untuk mencari seperti claim facin"): acuan Claim Fac In (server-side
+  `UPPER(kolom) LIKE`, jeda 300 ms, toolbar di bawah tab). Claim Life: `GET /api/klaim-life?tahap=&halaman=&cari=`.
+  - Server: 2..100 karakter sesudah dipangkas (di luar itu 400 "Search text must be 2 to 100 characters."); pola LIKE tak
+    peka huruf dengan `\ % _` diloloskan + `ESCAPE '\'`; bind berpenanda (4 bind). Dicocokkan: Case ID (w.ID), CLAIM_NO
+    (header), PL Number peserta aktif (EXISTS T_CLAIMLF_PREMIUMLIST_DETAIL), nama tertanggung peserta aktif (EXISTS peserta
+    klaim → baris sumber M_LIFE_PREMIUM_DETAIL lewat kunci PL_NUMBER + CERTIFICATE_NO + ID = SOURCE_ID). Saringan yang sama
+    untuk baris dan cacah total.
+  - Indeks / privasi: nama tidak disimpan di tabel klaim; pencarian nama TIDAK memindai tabel sumber (66,8 juta baris) -
+    `NO_UNNEST` + `ROWNUM = 1` membuat Oracle menelusuri dari kasus antrian → peserta klaim (IX_PLD_CLAIM_ID) → satu baris
+    sumber per kunci (indeks kunci yang sama dengan sqlTertanggungPeserta). Biaya ∝ jumlah peserta klaim pada antrian itu,
+    bukan ukuran tabel sumber. Nama hanya di WHERE, tidak pernah dikeluarkan. SQL di `repository/inbox_cari.go` (penjaga
+    tabel peserta berindeks + berbatas). Rencana eksekusi Oracle belum diperiksa di DEV.
+  - Layar: kotak cari di toolbar sesudah strip tab, placeholder "Search case ID, claim no, PL number, insured name", jeda
+    300 ms, kata < 2 karakter tidak dikirim, halaman kembali ke 1 saat kata kunci berubah, tombol Clear, kosong = "No cases
+    match the search.". Berlaku untuk antrian (tab) aktif. Badge tab TETAP jumlah seluruh antrian (hitungan badge tanpa kata
+    kunci; hasil cari tampil di paginasi). Export xlsx mengekspor baris yang tampil (halaman aktif hasil saringan) - aturan
+    lama "ekspor hanya yang tampil". Saklar "Technical" Claim Fac In (workbasket ReasKlaimTeknik) tidak ditiru - tidak ada
+    padanannya di Claim Life.
+
+## 12-10-2026 (lanjutan 4) — Nama tab inbox, Register, Close Claim, catatan CLAIM ANALYST
+
+- Nama tab inbox (work owner "ubah nama tabnya menjadi Claim Admin, Medical Advisor, Claim Analyst"): LABEL tampilan
+  terpisah `LABEL_TAB_INBOX` (bukan nama korpus) - Outstanding Claim → Claim Admin, Medical Check → Medical Advisor, Claim
+  Analis → Claim Analyst; Input Register tetap. `Tab.judul` tetap nama tahap korpus (dikunci uji, dipakai Export dan tahap);
+  nilai TAHAP di basis data, kode tahap, dan logika tidak berubah.
+  - Kalimat yang diselaraskan dengan nama baru: pita Inbox "Claim … sent to Medical Advisor." / "Claim … sent back to Claim
+    Admin." ("sent to Claim Analyst." sudah); isi modal: Send to Medical Check ("send this claim to Medical Advisor?", "…
+    no longer be edited from the Claim Admin screen."), Send Back to Admin ("back to Claim Admin?", "returns to the Claim
+    Admin queue."), Send to Claim Analyst ("…Claim Analyst queue… from the Medical Advisor screen."), Send Back to Medical
+    ("back to Medical Advisor?"). Label TOMBOL (Send to Medical Check, Send Back to Admin, Send Back to Medical, Send to Claim
+    Analyst) dan judul modal = label tombol VERBATIM korpus - tidak diubah.
+- Register (work owner "tombol Register hanya ada di tab Claim Admin"): dirender hanya bila tab aktif = Claim Admin
+  (Outstanding); Export xlsx di semua tab.
+- Close Claim di layar Claim Analyst: "Check readiness: Close Claim" DIBUANG dari layar kasus. Ia memanggil
+  `GET /api/klaim-life/{id}/boleh-tutup` (ProtectCloseClaim_act: setiap peserta harus sudah diputus/diaksep) dan menampilkan
+  penghalangnya tanpa menutup. Gerbang yang sama TETAP dijalankan server saat `POST …/tutup` (409 berdaftar `penghalang`);
+  layar mengubahnya menjadi satu kalimat ("The claim cannot be closed yet: …") di PitaGalat halaman. Close Claim kini tombol
+  MERAH (`btn--danger`, kapsul kulit) PALING KANAN, sesudah Send Back to Admin / Send Back to Medical (ghost); konfirmasinya
+  Modal `KonfirmasiTutup` (pola modal perpindahan: pertanyaan VERBATIM b499 "Are you sure want to Close Claim?" + peringatan
+  + Cancel / "Yes, Close Claim", nonaktif "Closing…", tanpaTutup); SATU pemanggil `tutupKlaim`; perubahan belum disimpan
+  menonaktifkannya. PanelTutupKlaim (dengan Check readiness) tetap dipakai layar Detail lama (KlaimLife.tsx) saja.
+- CLAIM ANALYST (work owner "dibuat text area dan hanya bisa diedit oleh claim analyst, pada tahap lain hanya read only"):
+  kolom `T_CLAIMLF_PREMIUMLIST_DETAIL.NOTES VARCHAR2(1000)` (migrasi 003) - tanpa migrasi. Textarea per peserta di tahap
+  Claim Analis bagi ReasLifeSPV (`bolehUbahAnalis`), disimpan tombol Save kecil di kaki grid Participant Details (pola Save
+  Medical) → `PUT /api/klaim-life/{id}/analis` `{catatan:{pesertaId:teks}}` → `SimpanAnalis.Simpan`: identitas, kasus
+  terbuka (bb), tahap Claim Analis 409, pemegang tahap SPV 403, peserta aktif, ≤ 1000 byte 422, UPDATE ber-STS_HAPUS IS NULL
+  (409 bila peserta tak lagi aktif), satu transaksi; "Progress saved."; perubahan belum disimpan menahan perpindahan dan Close
+  Claim ("Save your changes first."). Tahap lain: teks baca saja ("—" bila kosong) - TETAP disembunyikan di Claim Admin
+  (Outstanding / Input Register) sesuai keputusan 11-10-2026; tidak ada konflik. Catatan tidak dibekukan oleh STS_REJECT
+  (WO tidak menyebut; keputusan Claim Analyst justru terjadi di tahap ini).
+
+## 12-10-2026 (lanjutan 5) — Title Case label; pop-up Send Claim to Committee DITUNDA (kolom penyimpan)
+
+- Title Case (work owner "untuk kata-katanya dibuat konsisten pakai capital di depan saja"): 43 label HURUF BESAR di
+  `labels.ts` diubah ke Title Case (huruf besar di awal kata; singkatan PL/ICD/DOB/ID/RNM/KPR/STNC/SOB/WPC tetap; of/to/and
+  kecil kecuali di awal) - mis. PL Number, Name of Insured, Date of Birth, Select All, Delete, Certificate No, Policy No,
+  Location of Death, Country, City, Admin Notes, Valuation Begin Date, Date of Loss, Claim Received Date, Max Expired Claim,
+  Max Claim Received, Max Data Received, Claim Analyst, Medical Advisor, Recommendation, Diagnose, ICD Code, Group Diagnose,
+  Disease, Total, Currency; "OutStanding Date" → "Outstanding Date". Nomor baris korpus tetap di komentar; uji baris XML
+  (labels.test, kutipan korpus) TIDAK diubah - hanya ekspektasi atas konstanta / HTML layar ("keputusan WO 12-10-2026 Title
+  Case"). `text-transform: uppercase` subjudul kelompok rincian (`.rincian__judul`) dicabut. CSS inti yang meng-uppercase
+  (`.table thead th`, `.badge`, …) tidak dipakai Claim Life. Penjaga baru: tidak ada label SEMUA HURUF BESAR selain singkatan.
+- Pop-up Send Claim to Committee - DITUNDA, menunggu keputusan WO (penyimpan Remarks / Date):
+  - XML `Section/ClaimComite.xml` (Harness `Committe_Life`): Date `.DataCommitteeTreaty.TanggalComitee` (pxDateTime, DAPAT
+    diubah - pyEditOptions Auto b819), PIC `OperatorID.pyUserName` (baca saja b1006), label "Adjustment" (LABEL b2018),
+    Remarks* `.DataCommitteeTreaty.Remarks` (pxTextArea, wajib), grid `.KomiteList`: Committee Name (.IDKomite) | Status
+    (.KomiteAproval, dropdown) | Date Approve (.DateApprove) | Comment (.KomiteComment); tombol "Send Claim to Committee"
+    pyDisabledWhen `.KomiteList(1).IDKomite = '' || .DataCommitteeTreaty.Remarks='' || pyWorkPage.ClaimData.IsKPR=''` →
+    runActivity `CreateKMTLife_Act` lalu runScript (TANPA konfirmasi kedua); Cancel.
+  - `Activity/CreateKMTLife_Act.xml` hanya MENDEKLARASIKAN parameter `Remarks` (b402) dan tidak menulis Remarks maupun
+    TanggalComitee ke mana pun - di Pega keduanya hidup di halaman kerja (BLOB) saja.
+  - Skema: `T_GENERAL_KOMITE` (ID, ADJUSTMENT_ID, KOMITE_LOOP, KOMITE_COUNT, ACCEPT_STATUS; migrasi 013) dan
+    `T_KOMITE_KOMITELIST` (…, KOMITE_COMMENT, DATE_APPROVE per anggota) TIDAK punya kolom Remarks / tanggal komite / PIC.
+    komiteclaimlife 030 hanya kaskade + lebar ID.
+  - Opsi tanpa migrasi: Remarks ke `T_CLAIMLF_JEJAK.KOMENTAR` (VARCHAR2(4000), migrasi 021) pada baris jejak yang SUDAH ditulis
+    `Penyerahan.Serahkan` di transaksinya (services/komite.go:479) - preseden: Remarks Reject Outstanding (OQ-M5). PIC =
+    AKUN_ID jejak; Date = WAKTU jejak (waktu server, baca saja). Konsekuensi: Date TIDAK dapat diubah (beda dengan Pega), dan
+    layar Komite membaca Remarks dari jejak klaim induk.
+  - Opsi bermigrasi: kolom REMARKS / TANGGAL_KOMITE / PIC di T_GENERAL_KOMITE - jatah migrasi Claim Life habis.
+  - Pratinjau roster (grid "Waiting"): butuh rute baca baru dengan gerbang Serahkan sampai sebelum menulis (identitas, kasus
+    terbuka, tahap Claim Analis, wewenang Type, baris Outstanding, ambang nilai klaim → RosterKomiteOracle/EMAILKOMITE) - siap
+    dikerjakan begitu penyimpan Remarks diputuskan.
+
+## 12-10-2026 (lanjutan 6) — Pop-up Send Claim to Committee (opsi A: Remarks di jejak, Date waktu server)
+
+- Keputusan work owner: "Tanpa migrasi: Remarks disimpan di jejak audit, dan Date memakai waktu server sehingga tidak bisa
+  diubah."
+- Server:
+  - `GET /api/klaim-life/{id}/peserta/{pesertaId}/adjustment/{adjId}/komite` → `Penyerahan.Pratinjau`: gerbang Serahkan
+    SAMPAI SEBELUM menulis (identitas, pengenal, kasus terbuka, Type + WajibWewenangKomite, tahap Claim Analis, lalu
+    `siapkanPenyerahan` bersama: baris milik peserta, mata uang tunggal, Outstanding & belum diserahkan, rekening, ambang,
+    roster EMAILKOMITE, cacah tingkat). Keluaran: waktu server, PIC (AKUN_ID), Claim RNM + mata uang baris, anggota
+    (Committee Name = jabatan, urut) - TANPA email/operator. Nol tulisan.
+  - `POST …/komite` badan `{remarks}` → `Serahkan(…, remarks, saat)`: Remarks wajib, ≤ 4000 byte (422
+    `ErrRemarksKomiteKosong` / `ErrRemarksKomiteKepanjangan`), ditulis ke `KOMENTAR` baris `T_CLAIMLF_JEJAK` "diserahkan ke
+    Komite <kasus>" yang sudah ditulis di transaksi Serahkan; PIC = AKUN_ID, Date = WAKTU baris itu. Remarks TIDAK ikut
+    `MuatanEfek` (email/outbox).
+  - Kalimat galat (Inggris) `jawabGalatKomite`: 401 "The request has no user identity." · 403 "Your role is not allowed to
+    send this claim type to the committee." · 422 "Remarks is required." / "Remarks cannot exceed 4000 characters." · 422 "The
+    claim type is not recognized; sending to the committee requires a valid type." · 422 "Name of bank cannot be empty"
+    (VERBATIM sistem lama, rekening: Name of Bank / ID Bank / Account No) · 409 "Send Claim to Committee is only available at
+    the Claim Analyst stage." · 409 "This row has already been sent to the committee." · 409 "Only Outstanding rows can be sent
+    to the committee." · 422 "The rows of this claim use more than one currency; sending to the committee requires a single
+    currency." · 422 "Claim RNM of this row is empty; the committee level cannot be determined." (`ErrNilaiKlaimKomiteKosong`,
+    baru) · 422 "No committee level covers this claim amount." · 409 "The case is already closed and cannot be changed." · 409
+    "The stage of this case is not recognized." · 400 (permintaan tidak sah, teks teknis) · 500 "Failed to send the row to
+    the committee.".
+- Layar Claim Life (`components/KonfirmasiKomite.tsx`): tombol baris "Send Claim to Committee" (Claim Analis) membuka Modal:
+  Date (dd/mm/yyyy HH:mm, BACA SAJA), PIC, Adjustment ("Claim RNM <nilai> <mata uang>"), Remarks* (≤ 4000), grid Committee
+  Name | Status "Waiting" | Date Approve — | Comment —. Tombol kirim nonaktif bila tanpa anggota, Remarks kosong, atau Is KPR
+  klaim kosong (XML ClaimComite pyDisabledWhen; keterangan tampil bila Is KPR kosong). Tanpa konfirmasi kedua (Pega). Cancel
+  menutup; "Sending…" + tanpaTutup; satu pemanggil. Galat pratinjau / kirim di PitaGalat DALAM modal. Sukses: modal tutup,
+  pita "Claim sent to committee.", muat ulang; kolom Status baris menampilkan "<status> · In Committee (<kasus>)".
+- Komite Claim Life (baca saja): `Riwayat` kini membawa `penyerahan {tanggal, pic, remarks}` dari baris jejak klaim induk
+  "diserahkan ke Komite <kasus>" (pembaca jejak yang sudah ada, `JejakEskalasi`); layar Kasus Komite menampilkan blok "Sent
+  to Committee" (Date / PIC / Remarks). Tanpa tulisan baru di modul itu.
+- LAPORAN rekening (tidak diubah): `PeriksaRekening` menuntut NAME_OF_BANK, ID_BANK, DAN ACCOUNT_NO (GetListKomiteLife b655).
+  ID_BANK / ACCOUNT_NO hanya terisi dari migrasi data warisan (repository/migrasidata.go:303-309, OS_AKSEPTASI IDBANK /
+  ACCOUNTNO) dan disalin saat baris disisip (pohonklaim.sisipBarisAdjustment, putaran baru); tidak ada isian layar (keputusan
+  11-10: hanya Name of Bank yang ditulis, sebelum Save to RNM). Akibatnya klaim baru SELALU ditolak 422 "Name of bank cannot
+  be empty" saat diserahkan, walau Name of Bank terisi - menunggu keputusan WO.
+
+## 12-10-2026 (lanjutan 7) — Saklar rekening Komite, pop-up saat pratinjau ditolak, ejaan dan bahasa teks layar
+
+- Rekening (work owner "tunggu master bank dari DBA" + "untuk proteksi bank account dimatikan dulu sementara, jangan
+  dihapus"): `services.GerbangRekeningKomiteAktif = false` (pola endorsementlife `GerbangPembayaranAktif`); `PeriksaRekening`
+  (GetListKomiteLife b655) hanya dijalankan bila saklar menyala, di `siapkanPenyerahan` - berlaku untuk Pratinjau DAN
+  Serahkan. Kode, pesan "Name of bank cannot be empty", dan uji gerbang TETAP (uji menyalakan saklarnya). Muatan ke Komite
+  tetap membawa data bank apa adanya. Menyalakan kembali: ubah ke true (catatan juga di MODUL.md).
+- Pop-up saat pratinjau ditolak: konteks tetap tampil di bawah pita galat - Date (waktu peramban saat itu), PIC "—",
+  Adjustment dari baris layar (Claim RNM + mata uang), Remarks NONAKTIF, grid "No committee members found."; tombol kirim
+  tetap nonaktif.
+- Ejaan / kapitalisasi / bahasa teks layar (work owner "jika ada yang seperti itu lagi diperbaiki"):
+  - Status baris `kataStatusBaris('0')`: "OutStanding" → "Outstanding".
+  - Label: "Commision %" → "Commission %"; "Sum Reasured" → "Sum Reinsured" (ejaan korpus Pega diperbaiki untuk layar; nomor
+    baris korpus tetap di komentar); "Premium Spreaded Gross / Net" → "Premium Spread Gross / Net". "Ovr Comm %"
+    (singkatan), "Retroceded Share" (benar), "Acceptation No / Date" (istilah Pega/reasuransi) DIBIARKAN.
+    `DETAIL.totalSumReasured` ("Total Sum Reasured") tidak dirender di layar mana pun (enam total dibuang 11-10) - dibiarkan.
+  - Layar Detail lama (`pages/KlaimLife.tsx`) dan panel bersama (`PanelPindahTahap`, `PanelTanggalKlaim`): seluruh teks
+    Indonesia ke Inggris (mis. "Klaim Life" → "Claim Life", "Pengenal klaim" → "Case ID", "Memuat…/Buka" → "Loading…/Open",
+    "Hapus klaim…" → "Delete Claim…", "Memindahkan…" → "Moving…", "Perpindahan dari" → "Move from", "Tanggal klaim gagal
+    disimpan." → "The claim dates could not be saved.").
+  - Pesan galat handler backend Claim Life (≈ 95 kalimat unik, 178 kemunculan) ke Inggris, mis. "database belum
+    dikonfigurasi" → "The database is not configured.", "kasus sudah ditutup dan tidak dapat diubah" → "The case is already
+    closed and cannot be changed.", "klaim tidak ada" → "The claim does not exist.", "Save hanya tersedia pada tahap
+    Outstanding Claim" → "Save is only available at the Claim Admin stage.". Pesan VERBATIM sistem lama ("Name of bank cannot
+    be empty", "Invalid DOL" dsb.) tetap. Penjaga baru: tidak ada pesan galat handler berbahasa Indonesia.

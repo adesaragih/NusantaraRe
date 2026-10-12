@@ -371,3 +371,52 @@ func TestDBRateRingkasanLainDitolak(t *testing.T) {
 		t.Errorf("rate milik 100 berubah / terhapus (%d)", n)
 	}
 }
+
+// RALAT R7: rincian ditulis ke kolom M_RATE_LIFE (nol JSONDATA): sisip menulis kolom, TYPE NULL, nilai kosong = NULL;
+// Edit rate = UPDATE kolom (kosong = NULL) dan hanya untuk ringkasannya sendiri; Edit nama memperbarui USEDBY.
+// Gabung dev 11-10-2026: diadaptasi ke fixture remote (929/930 via rincianFlat); ringkasan uji 190 agar tak bertabrakan
+// dengan baris seed 8997/8998 milik 100.
+func TestDBRateKolomFlatTulis(t *testing.T) {
+	u := pasang(t)
+	u.satuTabel(t)
+	u.rincianFlat(t)
+	g := repository.Baru(u.repo)
+	tx, err := u.repo.Mulai(u.ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = tx.Rollback() }()
+	for _, r := range []models.Rate{
+		{ID: "9401", IDUsedBy: "190", UsedBy: "UJI RATE A 2", Gender: "U", Contract: "1", Age: "30", Rate: "0,5"},
+		{ID: "9402", IDUsedBy: "190", UsedBy: "UJI RATE A 2", Gender: "", Contract: "2", Age: "", Rate: "1,25"},
+	} {
+		if err := g.SisipRate(u.ctx, tx, r); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := g.UbahRate(u.ctx, tx, models.Rate{ID: "9401", IDUsedBy: "190", Gender: "M", Contract: "3", Age: "", Rate: "0,75"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.UbahRate(u.ctx, tx, models.Rate{ID: "9401", IDUsedBy: "101", Gender: "F", Contract: "1", Rate: "9"}); !errors.Is(err, repository.ErrTidakAda) {
+		t.Errorf("Edit rate ringkasan lain: %v", err)
+	}
+	if n, err := g.UbahNamaRate(u.ctx, tx, "190", "UJI RATE A 9"); err != nil || n != 2 {
+		t.Fatalf("Edit nama %d %v", n, err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	for q, mau := range map[string]int{
+		`SELECT COUNT(*) FROM {s}.M_RATE_LIFE WHERE ID = '9401' AND IDUSEDBY = '190' AND GENDER = 'M' AND CONTRACT = '3' AND AGE IS NULL AND RATE = '0,75' AND TYPE IS NULL`: 1,
+		`SELECT COUNT(*) FROM {s}.M_RATE_LIFE WHERE ID = '9402' AND GENDER IS NULL AND AGE IS NULL AND CONTRACT = '2' AND RATE = '1,25' AND TYPE IS NULL`:                    1,
+		`SELECT COUNT(*) FROM {s}.M_RATE_LIFE WHERE IDUSEDBY = '190' AND USEDBY = 'UJI RATE A 9'`:                                                                            2,
+		`SELECT COUNT(*) FROM SYS.ALL_TAB_COLUMNS WHERE OWNER = UPPER('{s}') AND TABLE_NAME = 'M_RATE_LIFE' AND COLUMN_NAME = 'JSONDATA'`:                                    0,
+	} {
+		if n := u.cacah(t, q); n != mau {
+			t.Errorf("%d, mau %d: %s", n, mau, q)
+		}
+	}
+	if n, err := g.JumlahRate(u.ctx, nil, "190"); err != nil || n != 2 {
+		t.Errorf("jumlah %d %v", n, err)
+	}
+}

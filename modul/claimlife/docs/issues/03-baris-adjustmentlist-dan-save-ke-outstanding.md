@@ -1072,3 +1072,24 @@ Uji baru:
 1. **Balapan.** Dua Save to RNM serentak atas tertanggung yang sama sama-sama membaca cermin lawan NULL, jadi keduanya lolos. Gerbang dibaca di luar transaksi tulis, dan Pega punya jendela yang sama.
 2. **`ACCEPTATION_DATE` cermin aplikasi.** Kolom ini tetap bernilai pendaftaran. Dengan `ORDER BY … DESC`, NULL didahulukan.
 3. **Cermin klaim yang di-Save to RNM sebelum `1b51183`.** Cermin itu tetap NULL sampai tombol ditekan ulang atau barisnya diputus. Tidak ada migrasi data (brief: nol migrasi baru); bila work owner menghendaki pemulihan sekaligus, itu satu `UPDATE` data oleh DBA.
+
+## RALAT 10-10-2026 — baris datar OS_AKSEPTASI_KLAIM_LIFE lahir di Save to RNM
+
+Keputusan work owner 10-10-2026 (lihat RALAT kedua tiket 02). Save to RNM langkah 22.1.3.1 (`InsertJsonKlaimLife_sql`):
+
+- **Urutan:** transaksi penomoran pendek (nomor + CLAIM_NO, commit), lalu transaksi utama. Di transaksi utama, setiap baris
+  adjustment Outstanding/baru menjalankan `TulisCerminSaveRNM`, kemudian `SetelCerminOutstanding` ('0', b176). Bila
+  transaksi utama gagal, tidak ada baris datar setengah jadi. Nomornya tetap ada dan tidak dinomori ulang.
+- **Cara menulis:** UPDATE dulu (kunci `ID` + `CASEID`, hanya baris berstatus NULL/0; NO_CLAIM pasti, kolom lain `NVL`),
+  dan INSERT 18 kolom hanya bila belum ada dan baris adjustment-nya belum pernah disimpan (`STS_REJECT` kosong, padanan
+  `.PrintFaceClaim==""`). Hasilnya idempoten: tombol yang ditekan ulang tidak menggandakan baris. NAME_OF_INSURED, DOB, dan
+  CEDINGCO diisi di SQL dari baris sumber peserta (OQ-N2), sama seperti dulu di Register.
+- **Larangan "tabel warisan baca-saja di Save to RNM" dicabut** untuk penulisan baris datar ini. Kolom status
+  (STS_REJECT, NO_ACCEPTATION, ACCEPTATION_DATE) pada UPDATE tetap milik penulis status.
+- **Nomor akseptasi tidak lahir di Save to RNM.** Ia lahir di Akseptasi (`SimpanAdjustment`) atau Komite. Sebab itu
+  NO_ACCEPTATION ditulis dari baris adjustment apa adanya, biasanya kosong. Kalimat work owner "bersamaan dengan … no
+  akseptasi" **perlu dikonfirmasi**: bila nomor akseptasi memang harus terbentuk saat Save to RNM, itu perubahan aturan
+  tersendiri yang belum dibuat.
+- **Risiko (terbuka):** Pindah tahap Outstanding → Medical Check tidak mewajibkan Save to RNM. Klaim yang maju tanpa Save
+  to RNM tidak punya baris datar, dan `RekamAkhirWarisan` Komite (yang menuntut tepat satu baris) akan **gagal terang**.
+  Usulannya: gerbang "CLAIM_NO wajib" pada Pindah dari Outstanding. Ini menunggu keputusan work owner.

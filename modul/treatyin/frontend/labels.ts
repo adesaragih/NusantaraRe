@@ -398,6 +398,11 @@ export const TAB_NON_PROPORSIONAL = [
   //
   // Hitungannya pun cocok: 11 tab − `Value Difference` (syaratnya tidak
   // terpenuhi) = 10, persis yang tangkapan layar perlihatkan.
+  //
+  // ⭐ `Retro` (TABBED @3291797) MENGGANTIKAN posisi `RNM Share` — permintaan
+  // pemakai 10 Oktober 2026: di Pega tab `Retro` ada (kotak centang
+  // `Has Share To Retro`), `RNM Share` tidak.
+  'Retro', // @3291797
   'Installment', // @3465901
   'Value Difference', // @3848946 — ⭐ BERSYARAT, lihat SYARAT_TAB
   'Exclusions', // @3907436

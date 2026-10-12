@@ -99,3 +99,60 @@ describe('gaya modul Claim Life', () => {
     expect([...tanpaKomentar.matchAll(PENAMPUNG_FIXED)].map((m) => m[1])).toEqual([])
   })
 })
+
+// Kerapian tata letak (11-10-2026, "jangan ada kolom yang miring2 atau terpotong"): aturan pentingnya dikunci.
+describe('kerapian tata letak Claim Life', () => {
+  const satu = CSS.replace(/\s+/g, ' ')
+  const aturan = (pemilih: string): string => {
+    const i = satu.lastIndexOf(pemilih + ' {')
+    return i < 0 ? '' : satu.slice(i, satu.indexOf('}', i))
+  }
+  it('sel rincian di grid kembali membungkus (inti: .inbox__tabel td nowrap)', () => {
+    expect(aturan('.claimlife .os__rincian > td')).toContain('white-space: normal')
+  })
+  it('anak grid form boleh menyusut; wadah tidak melebihi halaman', () => {
+    expect(aturan('.claimlife .os__form > *, .claimlife .os__kolom > *')).toContain('min-width: 0')
+    expect(aturan('.claimlife .os__form, .claimlife .os__kolom, .claimlife .rincian')).toContain('max-width: 100%')
+  })
+  it('label tetap lebar dan nowrap; nilai kode nowrap; teks panjang membungkus', () => {
+    expect(satu).toContain('.claimlife .os__baris-form { grid-template-columns: 24ch minmax(0, 1fr);')
+    expect(aturan('.claimlife .os__baris-form > dt, .claimlife .os__baris-form > .os__label')).toContain('white-space: nowrap')
+    // 11-10-2026: nilai kode TIDAK nowrap (meluber ke kolom sebelah di Register Claim) - aturan TERAKHIR membungkus.
+    expect(aturan('.claimlife .os__nilai-kode')).toContain('white-space: normal')
+    expect(aturan('.claimlife .os__nilai-kode')).toContain('overflow-wrap: anywhere')
+    expect(aturan('.claimlife .os__baris-form > dd, .claimlife .os__baris-form > span:not(.os__label)')).toContain('overflow-wrap: anywhere')
+  })
+  it('isian tanggal/angka berlebar tetap (ch), radio satu baris', () => {
+    expect(aturan('.claimlife .os__baris-form input[type="date"]')).toMatch(/width: \d+ch/)
+    expect(aturan('.claimlife .os__isian-angka')).toMatch(/width: \d+ch/)
+    expect(aturan('.claimlife .os__radio')).toContain('white-space: nowrap')
+    expect(aturan('.claimlife .os__angka')).toContain('text-align: right')
+  })
+})
+
+describe('konsistensi isian Outstanding (11-10-2026)', () => {
+  const satu = CSS.replace(/\s+/g, ' ')
+  it('lebar isian diatur menimpa aturan lama; kolom nilai angka selebar tetap; textarea inti tinggi otomatis', () => {
+    expect(satu).toContain('.claimlife .os__baris-form input.os__isian-angka { width: 100%; text-align: right; }')
+    expect(satu).toContain('.claimlife .os__form--angka .os__baris-form { grid-template-columns: minmax(0, 22ch) minmax(0, 20ch); }')
+    expect(satu).toContain('.claimlife textarea.field__input { height: auto;')
+    expect(satu).toMatch(/\.claimlife \.os__baris-form input\.os__isian-tanggal \{ width: \d+ch;/)
+  })
+})
+
+describe('inbox berkulit Claim Fac In (work owner 12-10-2026) - tampilan saja', () => {
+  const INBOX = readFileSync(join(AKAR, 'pages', 'InboxClaimLife.tsx'), 'utf8')
+  const KOMITE = readFileSync(join(AKAR, 'components', 'TabelKomite.tsx'), 'utf8')
+  it('kelas kulit dipasang pada elemen yang sudah ada; tanpa impor dari modul claimfacin', () => {
+    expect(INBOX).toContain('<section className="inbox claimlife__akar">')
+    expect(INBOX).toContain('<table className="inbox__tabel claimlife__tabel">')
+    expect(KOMITE).toContain('<table className="inbox__tabel claimlife__tabel">')
+    for (const s of [INBOX, KOMITE]) expect(s).not.toMatch(/from '[^']*claimfacin/)
+  })
+  it('kulit: token --cl-* di akar, tab bersegmen, tabel kartu berkepala, tema gelap lewat :where', () => {
+    for (const p of ['.claimlife .claimlife__akar {', '.claimlife .claimlife__akar .inbox__tab {', '.claimlife .claimlife__tabel thead th {',
+      '.claimlife .claimlife__tabel tbody tr:hover > td {', '.claimlife .claimlife__akar:where(:root[data-theme="dark"] *) {'])
+      expect(CSS).toContain(p)
+    expect(CSS).toContain('--cl-tombol: #d63a42;')
+  })
+})

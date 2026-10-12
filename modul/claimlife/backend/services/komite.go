@@ -75,6 +75,13 @@ var (
 		"services: satu klaim wajib bermata uang tunggal sebelum diserahkan")
 )
 
+// GerbangRekeningKomiteAktif - saklar gerbang rekening penyerahan Komite (PeriksaRekening: NameOfBank / IDOfBank /
+// NoAccount, GetListKomiteLife b655). Keputusan work owner 12-10-2026: "tunggu master bank dari DBA" + "untuk proteksi
+// bank account dimatikan dulu sementara, jangan dihapus" - MATI sampai master bank tersedia (ID_BANK / ACCOUNT_NO belum
+// punya isian layar). Ubah ke true untuk menyalakan kembali; var (bukan const) supaya uji dapat menyalakannya. Berlaku untuk
+// Pratinjau DAN Serahkan (siapkanPenyerahan). Muatan ke Komite tetap membawa data bank apa adanya.
+var GerbangRekeningKomiteAktif = false
+
 // PeriksaRekening menolak baris yang rekening pembayarannya belum lengkap.
 //
 // `[terverifikasi]` `GetListKomiteLife.xml` pecahan baris 655:
@@ -123,8 +130,8 @@ func PeriksaBolehDiserahkan(b models.BarisAdjustment) error {
 func AmbangRoster(nilai uang.Money) (uang.Money, error) {
 	if nilai.Kosong() {
 		return uang.Money{}, fmt.Errorf(
-			"%w: nilai klaim kosong, ambang roster tidak dapat dihitung",
-			galat.ErrPermintaanTidakSah)
+			"%w: %w: nilai klaim kosong, ambang roster tidak dapat dihitung",
+			galat.ErrPermintaanTidakSah, ErrNilaiKlaimKomiteKosong)
 	}
 	mutlak := new(apd.Decimal).Set(nilai.Amount)
 	mutlak.Negative = false
@@ -371,8 +378,35 @@ func (p *Penyerahan) DenganJejak(j jejak.Jejak) *Penyerahan {
 // Sesudahnya keadaan baris, lalu rekening, baru roster - sebab memanggil
 // roster untuk baris yang tidak boleh diserahkan adalah pekerjaan sia-sia yang
 // menyentuh tabel produksi.
+// ErrSerahkanBukanClaimAnalis - Send Claim to Committee hanya tersedia di tahap Claim Analis (keputusan work owner
+// 11-10-2026).
+var ErrSerahkanBukanClaimAnalis = errors.New("services: Send Claim to Committee hanya tersedia pada tahap Claim Analis")
+
+// Remarks pop-up Send Claim to Committee (`ClaimComite` `.DataCommitteeTreaty.Remarks`, wajib) - keputusan work owner
+// 12-10-2026 opsi A: disimpan di `T_CLAIMLF_JEJAK.KOMENTAR` baris jejak penyerahan (VARCHAR2(4000), migrasi 021).
+var (
+	// ErrNilaiKlaimKomiteKosong - Claim RNM baris kosong; ambang roster tidak dapat dihitung (tetap ErrPermintaanTidakSah).
+	ErrNilaiKlaimKomiteKosong = errors.New("services: nilai klaim kosong")
+	// ErrRemarksKomiteKosong - Remarks wajib diisi.
+	ErrRemarksKomiteKosong = errors.New("services: Remarks wajib diisi")
+	// ErrRemarksKomiteKepanjangan - melebihi lebar KOMENTAR.
+	ErrRemarksKomiteKepanjangan = errors.New("services: Remarks melebihi 4000 byte")
+)
+
+// PeriksaRemarksKomite - Remarks wajib, ≤ BatasKomentarJejak byte (sesudah dipangkas). Mengembalikan nilai terpangkas.
+func PeriksaRemarksKomite(remarks string) (string, error) {
+	r := strings.TrimSpace(remarks)
+	if r == "" {
+		return "", ErrRemarksKomiteKosong
+	}
+	if len(r) > BatasKomentarJejak {
+		return "", fmt.Errorf("%w: %d byte", ErrRemarksKomiteKepanjangan, len(r))
+	}
+	return r, nil
+}
+
 func (p *Penyerahan) Serahkan(ctx context.Context, pelaku inti.Pelaku,
-	klaimID, pesertaID, adjID string, saat time.Time) error {
+	klaimID, pesertaID, adjID, remarks string, saat time.Time) error {
 
 	if err := inti.WajibIdentitas(pelaku); err != nil {
 		return err
@@ -381,6 +415,10 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku inti.Pelaku,
 		strings.TrimSpace(adjID) == "" {
 		return fmt.Errorf("%w: pengenal klaim, peserta, dan baris wajib diisi",
 			galat.ErrPermintaanTidakSah)
+	}
+	remarks, err := PeriksaRemarksKomite(remarks)
+	if err != nil {
+		return err
 	}
 	if !p.svc.PunyaDatabase() {
 		return db.ErrTanpaOracle
@@ -407,40 +445,22 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku inti.Pelaku,
 	if err := WajibWewenangKomite(pelaku, tipe); err != nil {
 		return err
 	}
-
-	perBaris, err := baca.AmbilBaris(ctx, klaimID)
+	// Keputusan work owner 11-10-2026 ("iya itu hanya di claim analis saja"): penyerahan ke Komite hanya dari tahap
+	// Claim Analis - 409 di tahap lain (Outstanding, Medical Check, ...).
+	tahap, err := tahapKasus(ctx, baca, klaimID)
 	if err != nil {
 		return err
 	}
-	baris, ada := cariBarisPeserta(perBaris, pesertaID, adjID)
-	if !ada {
-		return fmt.Errorf("%w: baris %q bukan milik peserta %q pada klaim %q",
-			galat.ErrPermintaanTidakSah, adjID, pesertaID, klaimID)
-	}
-	if err := PeriksaSatuMataUang(pesertaDariPeta(perBaris)); err != nil {
-		return err
-	}
-	if err := PeriksaBolehDiserahkan(baris); err != nil {
-		return err
-	}
-	if err := PeriksaRekening(baris); err != nil {
-		return err
+	if tahap != models.TahapClaimAnalis {
+		return fmt.Errorf("%w: tahap %s", ErrSerahkanBukanClaimAnalis, tahap)
 	}
 
-	ambang, err := AmbangRoster(baris.JumlahKlaim)
+	// Baris, mata uang, keadaan baris, rekening, ambang, roster - SATU tempat bersama Pratinjau (12-10-2026).
+	siap, err := p.siapkanPenyerahan(ctx, baca, klaimID, pesertaID, adjID)
 	if err != nil {
 		return err
 	}
-	anggota, err := p.roster.AmbilAnggota(ctx, ambang, StatusKlaimRoster)
-	if err != nil {
-		return err
-	}
-	// ⛔ Cacahnya DITURUNKAN dari anggotanya, bukan dibaca terpisah: dua
-	// sumber untuk satu angka akhirnya berbeda.
-	tingkat := len(anggota)
-	if err := PeriksaTingkatKomite(tingkat); err != nil {
-		return err
-	}
+	baris, anggota, tingkat := siap.baris, siap.anggota, siap.tingkat
 
 	// Kelahiran kasus komite, penautan baris, dan jejaknya berada dalam SATU
 	// transaksi. Penunjuk dua arah yang ditulis di dua transaksi dapat berakhir
@@ -470,6 +490,9 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku inti.Pelaku,
 			Ke:           "diserahkan ke Komite " + komiteID,
 			AkunID:       pelaku.AkunID,
 			Waktu:        saat,
+			// Remarks pop-up (opsi A 12-10-2026): PIC = AKUN_ID, Date = WAKTU baris jejak ini. ⛔ Remarks TIDAK ikut
+			// MuatanEfek / email / outbox.
+			Komentar: remarks,
 		})
 	}); err != nil {
 		return err
@@ -505,6 +528,126 @@ func (p *Penyerahan) Serahkan(ctx context.Context, pelaku inti.Pelaku,
 //
 // ⚠️ Dibaca pemanggil yang ingin MELAPORKAN, bukan yang ingin menggagalkan.
 func (p *Penyerahan) HasilEfekTerakhir() outbox.HasilSalur { return p.terakhir }
+
+// siapPenyerahan - hasil gerbang baris + roster yang dipakai bersama Serahkan dan Pratinjau.
+type siapPenyerahan struct {
+	baris   models.BarisAdjustment
+	anggota []AnggotaKomite
+	tingkat int
+}
+
+// siapkanPenyerahan menjalankan gerbang baris (milik peserta, mata uang tunggal, Outstanding & belum diserahkan,
+// rekening lengkap), menghitung ambang, dan membaca roster. ⛔ Tanpa tulisan apa pun.
+func (p *Penyerahan) siapkanPenyerahan(ctx context.Context, baca *repository.KlaimLife,
+	klaimID, pesertaID, adjID string) (siapPenyerahan, error) {
+
+	var siap siapPenyerahan
+	perBaris, err := baca.AmbilBaris(ctx, klaimID)
+	if err != nil {
+		return siap, err
+	}
+	baris, ada := cariBarisPeserta(perBaris, pesertaID, adjID)
+	if !ada {
+		return siap, fmt.Errorf("%w: baris %q bukan milik peserta %q pada klaim %q",
+			galat.ErrPermintaanTidakSah, adjID, pesertaID, klaimID)
+	}
+	if err := PeriksaSatuMataUang(pesertaDariPeta(perBaris)); err != nil {
+		return siap, err
+	}
+	if err := PeriksaBolehDiserahkan(baris); err != nil {
+		return siap, err
+	}
+	// Rekening - di balik saklar GerbangRekeningKomiteAktif (mati sementara, keputusan work owner 12-10-2026).
+	if GerbangRekeningKomiteAktif {
+		if err := PeriksaRekening(baris); err != nil {
+			return siap, err
+		}
+	}
+	ambang, err := AmbangRoster(baris.JumlahKlaim)
+	if err != nil {
+		return siap, err
+	}
+	anggota, err := p.roster.AmbilAnggota(ctx, ambang, StatusKlaimRoster)
+	if err != nil {
+		return siap, err
+	}
+	// ⛔ Cacahnya DITURUNKAN dari anggotanya, bukan dibaca terpisah: dua
+	// sumber untuk satu angka akhirnya berbeda.
+	tingkat := len(anggota)
+	if err := PeriksaTingkatKomite(tingkat); err != nil {
+		return siap, err
+	}
+	return siapPenyerahan{baris: baris, anggota: anggota, tingkat: tingkat}, nil
+}
+
+// AnggotaPratinjau - satu baris grid pratinjau pop-up (Committee Name | Status | Date Approve | Comment). ⛔ Tanpa email
+// (data orang) dan tanpa operator ID.
+type AnggotaPratinjau struct {
+	NamaKomite string `json:"namaKomite"`
+	Urut       int    `json:"urut"`
+}
+
+// PratinjauKomite - isi pop-up Send Claim to Committee sebelum dikirim (keputusan work owner 12-10-2026 opsi A).
+type PratinjauKomite struct {
+	// Waktu - waktu server sekarang (Date, baca saja); yang tersimpan nanti WAKTU baris jejak saat dikirim.
+	Waktu time.Time `json:"waktu"`
+	// PIC - akun pelaku (Pega OperatorID.pyUserName, baca saja).
+	PIC string `json:"pic"`
+	// JumlahKlaim / MataUang - keterangan baris adjustment (Claim RNM), teks desimal.
+	JumlahKlaim string             `json:"jumlahKlaim"`
+	MataUang    string             `json:"mataUang"`
+	Anggota     []AnggotaPratinjau `json:"anggota"`
+}
+
+// Pratinjau menjalankan gerbang Serahkan SAMPAI SEBELUM menulis, lalu mengembalikan isi pop-up: waktu server, PIC,
+// keterangan baris, dan anggota roster EMAILKOMITE yang akan menerima (status awal "Waiting" di layar). ⛔ Nol tulisan.
+func (p *Penyerahan) Pratinjau(ctx context.Context, pelaku inti.Pelaku,
+	klaimID, pesertaID, adjID string, saat time.Time) (PratinjauKomite, error) {
+
+	var kosong PratinjauKomite
+	if err := inti.WajibIdentitas(pelaku); err != nil {
+		return kosong, err
+	}
+	if strings.TrimSpace(klaimID) == "" || strings.TrimSpace(pesertaID) == "" ||
+		strings.TrimSpace(adjID) == "" {
+		return kosong, fmt.Errorf("%w: pengenal klaim, peserta, dan baris wajib diisi",
+			galat.ErrPermintaanTidakSah)
+	}
+	if !p.svc.PunyaDatabase() {
+		return kosong, db.ErrTanpaOracle
+	}
+	if err := p.svc.PastikanKasusTerbuka(ctx, klaimID); err != nil {
+		return kosong, err
+	}
+	baca := repository.NewKlaimLife(p.svc.DB())
+	tipe, err := baca.TypeKlaim(ctx, klaimID)
+	if err != nil {
+		return kosong, err
+	}
+	if err := WajibWewenangKomite(pelaku, tipe); err != nil {
+		return kosong, err
+	}
+	tahap, err := tahapKasus(ctx, baca, klaimID)
+	if err != nil {
+		return kosong, err
+	}
+	if tahap != models.TahapClaimAnalis {
+		return kosong, fmt.Errorf("%w: tahap %s", ErrSerahkanBukanClaimAnalis, tahap)
+	}
+	siap, err := p.siapkanPenyerahan(ctx, baca, klaimID, pesertaID, adjID)
+	if err != nil {
+		return kosong, err
+	}
+	out := PratinjauKomite{Waktu: saat, PIC: pelaku.AkunID, MataUang: siap.baris.JumlahKlaim.Currency,
+		Anggota: make([]AnggotaPratinjau, 0, len(siap.anggota))}
+	if siap.baris.JumlahKlaim.Amount != nil {
+		out.JumlahKlaim = utils.FormatDecimal(siap.baris.JumlahKlaim.Amount)
+	}
+	for _, a := range siap.anggota {
+		out.Anggota = append(out.Anggota, AnggotaPratinjau{NamaKomite: a.IDKomite, Urut: a.Urut})
+	}
+	return out, nil
+}
 
 // cariBarisPeserta mencari satu baris milik peserta tertentu.
 func cariBarisPeserta(perBaris map[string][]models.BarisAdjustment,

@@ -358,20 +358,19 @@ describe('panel rincian baris — flow action `Share`', () => {
     expect(html).not.toContain('tl-tambah')
   })
 
-  it('⭐ blok `hidden, reference` TAMPIL bersama Spreading bernama — 15 grid dasar · OR · R/I', () => {
+  it('⭐ blok `hidden, reference` TAMPIL bersama Spreading bernama — 15 judul, lima baris dasar · OR · R/I', () => {
     const html = panel(baris({ RNMSpreadedListXOL: [nilai('IDR', '160000000')] }))
     const judul = GRID_RINCIAN_SPREADING.flat().map((g) => g.judul)
     expect(judul).toHaveLength(15)
     let posisi = -1
     for (const j of judul) {
-      // ⭐ 8 Oktober 2026 — kepala ekspor dua sel: judul · '' (grid Pega).
-      const p = html.indexOf(`<th scope="col">${j}</th><th scope="col" class="trin__angka"></th>`, posisi + 1)
+      const p = html.indexOf(`>${j}</div>`, posisi + 1)
       expect(p, j).toBeGreaterThan(posisi)
       posisi = p
     }
     expect(html).toContain('160.000.000,00')
     // Spreading manual: blok itu tidak tampil (wadahnya `.SpreadingTypeXOL != ''`).
-    expect(panel(baris({ SpreadingTypeXOL: '', SpreadingListXOL: [] }))).not.toContain('Spreading OR Limit')
+    expect(panel(baris({ SpreadingTypeXOL: '', SpreadingListXOL: [] }))).not.toContain('tl-pega-rincian')
   })
 
   it('⭐ Reins Type spreading manual: induk SEMUA grup (`TempSprd.TreatyGroupID` kosong → filter dilewati)', () => {
@@ -482,5 +481,58 @@ describe('Summarry of RNM Share — angka dibulatkan dan tidak membungkus', () =
     // Boundary-nya penting: tanpa `` pola ini ikut mencocoki
     // `.trin__buka-kolom` dan gagal atas aturan yang benar.
     expect(CSS).not.toMatch(/[\s,>]col\s*\{[^}]*white-space/)
+  })
+})
+
+// ⭐ 11 Oktober 2026 — permintaan pemakai (tangkapan Pega "2026 QS 212M TRT ·
+// 16,50" → `QS (R/I)` 60 / `QS (OR)` 40): Reins Type spreading manual SELAIN
+// ORS memperlihatkan anak susunannya dan bagian OR / R/I dari backend.
+describe('rincian spreading manual — anak susunan seperti Pega', () => {
+  const sebar = {
+    ReinsTypeName: '2026 QS 212M TRT',
+    ReinsTypeID: '10260',
+    ParentReinsTypeID: '',
+    Pct: '14',
+    Rp: '',
+    Usd: '',
+    Currency: 'IDR',
+    Value: '5775000000',
+    RnmLimitList: [nilai('IDR', '5775000000')],
+    GrossPremiumList: [nilai('IDR', '264356120')],
+    GrossPremiumMinList: [],
+    DeductionTotalList: [],
+    NetPremiumList: [],
+    BreakDownSprdListXOL: [
+      { ReinsTypeName: 'QS (R/I)', ReinsTypeID: '10004', Currency: 'IDR', Amount: '3465000000', SharePct: '60' },
+      { ReinsTypeName: 'QS (OR)', ReinsTypeID: '10028', Currency: 'IDR', Amount: '2310000000', SharePct: '40' },
+    ],
+    RNMSpreadedListXOL: [nilai('IDR', '2310000000')],
+    RNMSpreadedListRIXOL: [nilai('IDR', '3465000000')],
+    RNMSpreadedListGrossXOL: [nilai('IDR', '105742448')],
+    RNMSpreadedListGrossRIXOL: [nilai('IDR', '158613672')],
+  }
+
+  it('tabel Spread · Currency · Share (%) · Amount dan kolom OR / R/I terisi untuk QS', () => {
+    const html = renderToStaticMarkup(
+      <RincianShare
+        b={baris({ SpreadingTypeXOL: '', SpreadingTypeIDXOL: '', SpreadingListXOL: [sebar] })}
+        induk={[]}
+        bisaUbah={false}
+        modeUbah={false}
+        onUbah={() => undefined}
+        hitung={() => undefined}
+      />,
+    )
+    expect(html).toContain('<th scope="col">Spread</th>')
+    expect(html).toMatch(/<td>QS \(R\/I\)<\/td><td>IDR<\/td><td class="tl-angka">60,00<\/td><td class="tl-angka">3\.465\.000\.000,00<\/td>/)
+    expect(html).toMatch(/<td>QS \(OR\)<\/td><td>IDR<\/td><td class="tl-angka">40,00<\/td><td class="tl-angka">2\.310\.000\.000,00<\/td>/)
+    // Spreading OR / R/I Limit dan MDP dari backend.
+    for (const angka of ['5.775.000.000,00', '2.310.000.000,00', '3.465.000.000,00', '105.742.448,00', '158.613.672,00']) {
+      expect(html).toContain(angka)
+    }
+  })
+
+  it('memilih Reins Type langsung menjalankan SetSpreadingXOL (`spreading-pct`)', () => {
+    expect(KOMP).toMatch(/onUbah\(baru\)\s*hitung\('spreading-pct', \{ dasar: baru \}\)/)
   })
 })

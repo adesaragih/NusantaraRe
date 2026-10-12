@@ -109,11 +109,12 @@
 | --- | --- | --- |
 | Payment Type (NA `IsKomite=="1"`) | `SetInterimXOL_Act` | **dibangun** (kode mentah 1–7, OQ-CNP-14) |
 | No DLA : | postValue | **dibangun** |
-| Claim Acceptation: Add | `AddListClaimNP_Act` (kelas Data-Adjustment) | **nonaktif-OQ** OQ-CNP-33 |
-| Claim Acceptation: Rate of Exchange | `CountClaimTNP_Act` | **dibangun** (hitungan tingkat klaim, jalur absolut pyWorkPage) |
-| Claim Acceptation: Currency / Claim Amount / TPL / Adjuster Fee / Salvage / Fee | `SetCurrency_Act` / `CountClaimTNP_Act` kelas Data-Adjustment | postValue saja — OQ-CNP-33 |
+| Claim Acceptation: Add | `AddListClaimNP_Act` (kelas Data-Adjustment) | **dibangun — MENYIMPANG** (keputusan pemakai 12-10-2026, OQ-CNP-33): baris kosong (`TambahKlaimAkseptasi`) |
+| Claim Acceptation: Rate of Exchange | `CountClaimTNP_Act` | **dibangun — MENYIMPANG** (12-10-2026): menghitung baris akseptasi (`HitungKlaimAkseptasi`), bukan tingkat klaim |
+| Claim Acceptation: Currency / Claim Amount / TPL / Adjuster Fee / Salvage / Fee | `SetCurrency_Act` / `CountClaimTNP_Act` kelas Data-Adjustment | **dibangun — MENYIMPANG** (12-10-2026): rumus CountClaimTNP 13.2.3 atas baris akseptasi (`SetCurrencyAkseptasi`, `HitungKlaimAkseptasi`); kaki Total Claim Amount = Σ IDR · Σ Cedant (IDR) |
 | Claim Acceptation: Delete | deleteRow + `CountClaimTNP_Act` | **dibangun** (`HapusKlaimAkseptasi`) |
-| Loss Allocation: Add / angka / To XOL | `AddLossAlocation_Act`, `CountLossAllocation_act` kelas Data-Adjustment | **nonaktif-OQ** / postValue — OQ-CNP-33 |
+| Loss Allocation: Add / Share (%) | `AddLossAlocation_Act`, `CountLossAllocation_act` kelas Data-Adjustment | **dibangun — MENYIMPANG** (12-10-2026): satu baris per mata uang (`TambahLossAkseptasi`), Share (%) = `HitungPersen` (`HitungLossAkseptasi`) |
+| Loss Allocation: Claim Amount / Adjuster Fee / Salvage / Fee / To XOL / Delete → XOL Allocation | `CountLossAllocation_act` kelas Data-Adjustment | **dibangun — MENYIMPANG** (12-10-2026, laporan pemakai): Claim Amount = `HitungJumlah` (`HitungLossJumlahAkseptasi`); setiap perubahan Loss Allocation / Claim Acceptation menyusun ulang XOL Allocation akseptasi dengan `CountLossAllocation_act` 11-17 tingkat klaim (`alokasiXOL`) lalu nilai layer dengan rumus AdjClaimCNP_Act 2-3 (Claim Amount layer neto, Claim Amount RNM dari nilai bruto — cocok tangkapan Pega 636,4 jt / Salvage 256 jt → 55,4 jt / 124,56 jt / 22,16 jt) dan 11, 15-17 (`HitungXOLAkseptasi`); `ClaimEstimation` lama dipertahankan, selisih ke `AdjClaimValue` |
 | Loss Allocation: Delete | deleteRow | **dibangun** |
 | XOL Allocation Claim Amount | `AdjClaimCNP_Act` | **dibangun** |
 | XOL Allocation baris | expand pane `ShowDetailXOL` (`ReinstatementPremiumDetails`) | **dibangun** — rumus varian `FlagProrate` 0 / 1 (OQ-CNP-12) |

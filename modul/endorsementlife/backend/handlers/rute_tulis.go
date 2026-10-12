@@ -3,7 +3,7 @@ package handlers
 // Rute tulis modul Endorsement Life.
 //
 // ⛔ Identitas kasus baru tidak pernah datang dari klien (ADR-0006): `POST
-// /kasus` menjawab pengenal `EDMLF-<n>` yang diterbitkan server.
+// /kasus` menjawab pengenal `EDML-<n>` yang diterbitkan server.
 
 import (
 	"encoding/json"

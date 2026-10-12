@@ -33,6 +33,16 @@ type Service struct {
 	// pembacaPolis - pembaca polis ringkas PremiumList Life (butir pl4/av),
 	// disambung `cmd/api` lewat `inti/backend/kontrak`. nil = belum disambung.
 	pembacaPolis kontrak.PembacaPolis
+	// garamToken - STORAGE_TOKEN_SALT (inti/config) untuk token penyimpanan dokumen (11-10-2026, Google Storage seperti
+	// Master Product Name Life). Kosong = token baru tidak dapat dirakit (gagal tertutup "Storage is not configured").
+	garamToken string
+}
+
+// DenganGaramToken menyetel garam token penyimpanan.
+func (s *Service) DenganGaramToken(garam string) *Service {
+	salin := *s
+	salin.garamToken = garam
+	return &salin
 }
 
 // DenganUnggahanDir menyetel folder berkas unggahan - lihat
@@ -83,6 +93,11 @@ func (s *Service) PembacaPolis() kontrak.PembacaPolis {
 type pembacaPolisBelumDisambung struct{}
 
 func (pembacaPolisBelumDisambung) Ringkas(context.Context, string) (kontrak.PolisRingkas, error) {
+	return kontrak.PolisRingkas{}, ErrPembacaPolisBelumDisambung
+}
+
+// RingkasDariIdPega - pasangan Ringkas untuk kunci IDPEGA (kuncipolis.go); sama-sama belum disambung.
+func (pembacaPolisBelumDisambung) RingkasDariIdPega(context.Context, string) (kontrak.PolisRingkas, error) {
 	return kontrak.PolisRingkas{}, ErrPembacaPolisBelumDisambung
 }
 

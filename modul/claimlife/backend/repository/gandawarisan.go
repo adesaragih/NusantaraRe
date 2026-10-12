@@ -143,7 +143,7 @@ func sqlIsiTertanggungCermin(lama, sumber string) string {
 // adalah angka sequence, dan baris era Pega berpengenal sama milik klaim lain
 // tidak boleh tersentuh.
 func (r *KlaimLife) IsiTertanggungCermin(ctx context.Context, tx *db.Tx, adjID, caseID string,
-	k KunciPesertaSumber, nomorPolis string) error {
+	k KunciPesertaSumber) error {
 
 	lama, sumber, err := r.duaTabelGanda()
 	if err != nil {
@@ -161,7 +161,7 @@ func (r *KlaimLife) IsiTertanggungCermin(ctx context.Context, tx *db.Tx, adjID, 
 	if err := db.PastikanSatuBaris(hasil, "pengisian tertanggung cermin"); err != nil {
 		return fmt.Errorf("%w: baris sumber peserta %q atau baris cermin %q tidak ada", err, k.SumberID, adjID)
 	}
-	return r.isiCedingCermin(ctx, tx, lama, adjID, caseID, nomorPolis)
+	return r.isiCedingCermin(ctx, tx, lama, sumber, adjID, caseID, k)
 }
 
 func (r *KlaimLife) duaTabelGanda() (lama, sumber string, err error) {

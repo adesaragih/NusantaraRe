@@ -7,6 +7,8 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 
 	"nusantarare/inti/backend/db"
 	"nusantarare/modul/endorsementlife/backend/models"
@@ -131,9 +133,55 @@ func (g *Gudang) TulisRekapWarisan(_ context.Context, _ *db.Tx, r repository.Rek
 			}
 			b[k] = v
 		}
+		// PREMIUM_SELISIH / BALANCE_SELISIH - meniru `sqlSelisihRekap`: rekap atas peserta Delete/Batal/New
+		// kasus bermata uang sama (09-10-2026).
+		var dn []map[string]string
+		for _, d := range g.Peserta {
+			if d.PolisID == r.KasusID && d.Nilai["CURRENCY"] == rk["CURRENCY"] &&
+				(d.EdmStatus == models.StatusDelete || d.EdmStatus == models.StatusBatal || d.EdmStatus == models.StatusNew) {
+				dn = append(dn, d.Nilai)
+			}
+		}
+		sel, err := rekapKelompok(dn, r.Tipe)
+		if err != nil {
+			return 0, err
+		}
+		b["PREMIUM_SELISIH"], b["BALANCE_SELISIH"] = sel["PREMIUM"], sel["BALANCE"]
 		g.RekapWarisan = append(g.RekapWarisan, b)
 	}
 	return len(g.RekapData[r.KasusID]), nil
+}
+
+// TulisJSONPolis meniru `sqlHapusJSONPolisEDM` + `sqlSisipJSONPolisEDM`: satu baris per kasus (08-10-2026).
+func (g *Gudang) TulisJSONPolis(_ context.Context, _ *db.Tx, r repository.JSONPolisTulis) (int, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Galat != nil {
+		return 0, g.Galat
+	}
+	g.catat("TulisJSONPolis")
+	p, ada := g.Polis[r.KasusID]
+	if !ada {
+		return 0, fmt.Errorf("tiruan: JSON_POLIS kasus %s menyentuh 0 baris", r.KasusID)
+	}
+	g.JSONPolisTertulis[r.KasusID] = map[string]string{
+		"IDPEGA": r.KasusID, "NOPOLIS": r.NomorPolis, "PRODKE": strconv.Itoa(r.ProdKe), "NOENDORS": r.Nomor,
+		"TGL_PROD": r.TglProd.Format("2006-01-02"), "USERNAME": p.Pembuat,
+	}
+	return 1, nil
+}
+
+// HariClosing meniru pembacaan `TANGGAL_CLOSING`.
+func (g *Gudang) HariClosing(_ context.Context, _ *db.Tx) (int, error) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.Galat != nil {
+		return 0, g.Galat
+	}
+	if g.HariTutupBuku < 1 {
+		return 0, repository.ErrTanggalClosingKosong
+	}
+	return g.HariTutupBuku, nil
 }
 
 // TulisProduksiWarisan meniru `sqlSisipProduksiWarisan`: satu baris dari kepala kasus.
@@ -159,6 +207,13 @@ func (g *Gudang) TulisProduksiWarisan(_ context.Context, _ *db.Tx, r repository.
 		"RETROID": kp("RETRO_ID"), "RETRONAME": kp("RETRO_NAME"), "TYPECEDINGNAME": models.NamaJenisCeding[kp("TYPE_CEDING")],
 		"SECURITYREINSURERID": kp("SECURITY_REINSURER_ID"), "SECURITYREINSURER": kp("SECURITY_REINSURER"),
 		"TGL_INPUT": "SYSDATE", // cap waktu basis data - tidak ditiru
+		// DESCRIPTION ← Comment keputusan (09-10-2026); "" mewakili NULL (`db.KosongJadiNil`).
+		"DESCRIPTION": strings.TrimSpace(r.Komentar),
+		// WPC / PRODUCTNAMEID / PRODUCTNAME ← kepala kasus (09-10-2026); kosong mewakili NULL.
+		"WPC": kp("WPC"), "PRODUCTNAMEID": kp("PRODUCT_NAME_ID"), "PRODUCTNAME": kp("PRODUCT_NAME"),
+		// NVL(kepala, cadangan versi) - 09-10-2026.
+		"ANNUITYINTEREST":     atau(kp("ANNUITY_INTEREST"), r.CadanganAnnuity),
+		"PREMIUMREFUNDFACTOR": atau(kp("PREMIUM_REFUND_FACTOR"), r.CadanganRefund),
 	})
 	return 1, nil
 }
@@ -188,4 +243,12 @@ func (g *Gudang) TulisPesertaWarisan(_ context.Context, _ *db.Tx, r repository.P
 		c++
 	}
 	return c, nil
+}
+
+// atau - `NVL(a, b)` untuk teks tiruan.
+func atau(a, b string) string {
+	if strings.TrimSpace(a) != "" {
+		return a
+	}
+	return strings.TrimSpace(b)
 }

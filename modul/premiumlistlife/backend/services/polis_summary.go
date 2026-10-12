@@ -297,7 +297,8 @@ func (s *SummaryPremiumList) Submit(ctx context.Context, pelaku inti.Pelaku,
 // warisan - di dalam transaksi MILIK PEMANGGIL.
 //
 // ⛔ URUTANNYA DIKUNCI `TestSimpanDalamUrutanTerkunci`: nomor → rekap →
-// ganti rekap → kepala + ganti summary warisan → sumber warisan → ganti warisan.
+// ganti rekap → kepala + ganti summary warisan → sumber warisan → ganti warisan
+// → LIFEINPRODUCTION → JSON_POLIS (06-10-2026).
 func (s *SummaryPremiumList) simpanDalam(ctx context.Context, tx *db.Tx,
 	polisID string, saat time.Time) (HasilSubmitSummary, error) {
 
@@ -366,6 +367,24 @@ func (s *SummaryPremiumList) simpanDalam(ctx context.Context, tx *db.Tx,
 	if err != nil {
 		return HasilSubmitSummary{}, err
 	}
+	// 6. LIFEINPRODUCTION - InsertJsonPolisLife_Act langkah 9/11
+	//    (SaveLifeinProduction_SQL) dengan SQL langsung, sesudah PL Number dan WPC
+	//    final tertulis (keputusan work owner 06-10-2026). Satu baris per kasus:
+	//    Confirm ulang mengganti, tidak menggandakan. LAYER_1..4 NULL.
+	if err := repository.NewProduksiLife(s.svc.DB()).Ganti(ctx, tx, polisID, nomor.Nomor); err != nil {
+		return HasilSubmitSummary{}, err
+	}
+	// 7. JSON_POLIS - InsertJsonPolisLife_Act langkah 10 (InsertJsonPolis) dengan SQL
+	//    langsung, sesudah nomor dan LIFEINPRODUCTION (keputusan work owner 06-10-2026).
+	//    IDPEGA/USERNAME sama dengan LIFEINPRODUCTION; DATA_JSON NULL; Confirm ulang
+	//    mengganti, tidak menggandakan. Gagal = seluruh Confirm batal.
+	tglProd, err := s.tanggalProduksi(ctx, tx, polisID, nomor.Periode, saat)
+	if err != nil {
+		return HasilSubmitSummary{}, err
+	}
+	if err := repository.NewJSONPolis(s.svc.DB()).Ganti(ctx, tx, polisID, nomor.Nomor, tglProd); err != nil {
+		return HasilSubmitSummary{}, err
+	}
 	return HasilSubmitSummary{
 		Nomor:          nomor,
 		WPC:            wpcTerbit,
@@ -400,4 +419,32 @@ func (s *SummaryPremiumList) perbaruiRekapDalam(ctx context.Context, tx *db.Tx, 
 	}
 	_, _, err = ringkas.GantiRekap(ctx, tx, polisID, rekap)
 	return err
+}
+
+// tanggalProduksi - TGL_PROD JSON_POLIS (`models.TanggalProduksi`) dari periode nomor
+// yang BARU terbit. Nomor yang sudah ada sebelumnya tidak membawa periode: TGL_PROD
+// baris lama dipertahankan, dan bila belum ada, periodenya dihitung ulang dengan
+// aturan PL Number (TANGGAL_CLOSING, `penomor.HitungPeriodeNomor`) pada saat Confirm.
+func (s *SummaryPremiumList) tanggalProduksi(ctx context.Context, tx *db.Tx,
+	polisID, periode string, saat time.Time) (time.Time, error) {
+
+	if periode == "" {
+		lama, err := repository.NewJSONPolis(s.svc.DB()).TglProdLama(ctx, tx, polisID)
+		if err != nil {
+			return time.Time{}, err
+		}
+		if lama != nil {
+			return *lama, nil
+		}
+		hari, err := penomor.NewPenomor(s.svc.DB()).HariClosing(ctx, tx)
+		if err != nil {
+			return time.Time{}, err
+		}
+		p, err := penomor.HitungPeriodeNomor(saat, hari)
+		if err != nil {
+			return time.Time{}, err
+		}
+		periode = p.MMYYYY
+	}
+	return models.TanggalProduksi(saat, periode)
 }

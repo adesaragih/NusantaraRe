@@ -9,6 +9,7 @@
 //	GET  /api/endorsement-life/kasus/{id}/peserta?halaman=   grid peserta b11899 / b17500
 //	GET  /api/endorsement-life/kasus/{id}/peserta/{pid}      rincian `PL_Detail_Sec` + `RetroDetailLife`
 //	GET  /api/endorsement-life/kasus/{id}/polis-lama?halaman= popup `View Old Policy`
+//	GET  /api/endorsement-life/kasus/{id}/perbandingan       Summary Comparison (08-10-2026, bukan korpus)
 //	POST /api/endorsement-life/kelayakan                     `SetErrorBatalEndorsement_Act` (tanpa tulis)
 //	POST /api/endorsement-life/kasus                         `Submit` b4226 → `MappingEDMLife`
 //	POST /api/endorsement-life/kasus/{id}/simpan             `Save` b37202 → `SetPremi_EDM`
@@ -99,6 +100,10 @@ func daftarkanBaca(pasang func(string, rute)) {
 		d, err := l.PolisLama(r.Context(), p, r.PathValue("id"), angkaKueri(r, "halaman"), angkaKueri(r, "ukuran"))
 		tulis(w, d, err)
 	})
+	pasang("GET "+Prefix+"/kasus/{id}/perbandingan", func(w http.ResponseWriter, r *http.Request, l *services.Layanan, p inti.Pelaku) {
+		b, err := l.Perbandingan(r.Context(), p, r.PathValue("id"))
+		tulis(w, b, err)
+	})
 }
 
 func tulis(w http.ResponseWriter, isi any, err error) {
@@ -124,12 +129,12 @@ func jawabGalat(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, services.ErrKasusTidakAda), errors.Is(err, services.ErrPesertaTidakAda):
 		galat.Tulis(w, http.StatusNotFound, services.Pesan(err))
 	case errors.As(err, new(services.GalatKelayakan)), errors.Is(err, services.ErrMasukanTidakSah),
-		errors.Is(err, services.ErrTanpaPeserta), errors.Is(err, services.ErrCSVKosong), errors.Is(err, services.ErrCSVRusak),
+		errors.Is(err, services.ErrTanpaPeserta), errors.Is(err, services.ErrTanpaPerubahan), errors.Is(err, services.ErrCSVKosong), errors.Is(err, services.ErrCSVRusak),
 		errors.Is(err, services.ErrCSVTanpaAcuan), errors.Is(err, services.ErrCSVBukanPerubahanData):
 		// 422: JSON-nya sah, isinya ditolak gerbang - pesan VERBATIM korpus, satu per baris.
 		galat.Tulis(w, http.StatusUnprocessableEntity, services.Pesan(err))
 	case errors.Is(err, services.ErrKasusTerbukaGanda),
-		errors.Is(err, services.ErrKasusTertutup), errors.Is(err, services.ErrSudahDisimpan), errors.Is(err, services.ErrCSVTerkunci),
+		errors.Is(err, services.ErrKasusTertutup), errors.Is(err, services.ErrSudahDisimpan), errors.Is(err, services.ErrSudahDiproses), errors.Is(err, services.ErrCSVTerkunci),
 		errors.Is(err, services.ErrBelumDisimpan), errors.Is(err, services.ErrVersiBerubah):
 		// 409: keadaan DATA menolak - kasus terbuka lain lahir bersamaan, atau
 		// kasus/versi berubah sejak dibaca.

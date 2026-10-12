@@ -3,7 +3,7 @@
 //
 // ⛔ Uang dan angka TEKS sepanjang jalan - tidak pernah `Number` (ADR-0003). Kosong = `""`.
 
-import { kegagalanDari, minta, rakitURL } from '../../../inti/frontend/klien'
+import { kegagalanDari, kodeStatusGalat, minta, pesanGalat, rakitURL, unduhBerkasBeridentitas } from '../../../inti/frontend/klien'
 import { headerIdentitas } from '../../../inti/frontend/store/sesi'
 import type { PilihanHapusEDM } from './tampilan'
 
@@ -25,10 +25,7 @@ export interface BarisInbox {
   type: string
   edmType: string
   policyNo: string
-  sob: string
   ceding: string
-  policyHolder: string
-  marketingName: string
   createDate: string
   createOperator: string
   status: string
@@ -42,6 +39,9 @@ export interface KasusEDM {
   plNumberEdm: string
   prodKe: number
   edmType: string
+  /** Sub-jenis EDM Type (483) - kosong untuk kasus sebelum 483. */
+  edmTypePerubahanData: string
+  edmTypeBatal: string
   description: string
   edmDate: string
   status: string
@@ -50,6 +50,8 @@ export interface KasusEDM {
   kepala: Record<string, string>
   sudahSimpan: boolean
   csvTerkunci: boolean
+  /** Kolom wajib CSV Type kasus - `models.DaftarKolomWajibCSV`. Tidak lagi dipakai layar sejak 10-10-2026 (daftar dihapus dari modal; kolom ada di templat). */
+  kolomWajibCSV?: string[]
   cacah: Record<string, number>
   /** Rekap mata uang `T_PREMIUM_LIST_SUMMARY` - kolom `models.KolomRekapKasus`. */
   rekap: Array<Record<string, string>>
@@ -86,6 +88,27 @@ export function ambilKasus(id: string): Promise<KasusEDM> {
   return minta<KasusEDM>(`${PREFIX_EDM}/kasus/${encodeURIComponent(id)}`)
 }
 
+/** Satu baris perbandingan summary: cacah peserta + kolom rekap (teks desimal) - `models.SelPerbandingan`. */
+export interface SelPerbandinganEDM {
+  cacah: number
+  nilai: Record<string, string>
+}
+
+/** Perbandingan summary satu mata uang (08-10-2026, bukan korpus) - `models.BarisPerbandingan`. */
+export interface BarisPerbandinganEDM {
+  currency: string
+  before: SelPerbandinganEDM
+  deleted: SelPerbandinganEDM
+  added: SelPerbandinganEDM
+  after: SelPerbandinganEDM
+  difference: SelPerbandinganEDM
+}
+
+/** Summary Comparison - `GET /kasus/{id}/perbandingan`. */
+export function ambilPerbandingan(id: string): Promise<BarisPerbandinganEDM[]> {
+  return minta<BarisPerbandinganEDM[]>(`${PREFIX_EDM}/kasus/${encodeURIComponent(id)}/perbandingan`)
+}
+
 /** Peserta kasus - `GET /kasus/{id}/peserta`. */
 export function ambilPeserta(id: string, halaman: number): Promise<HalamanEDM<PesertaEDM>> {
   return minta<HalamanEDM<PesertaEDM>>(`${PREFIX_EDM}/kasus/${encodeURIComponent(id)}/peserta`, { kueri: { halaman } })
@@ -95,6 +118,13 @@ export function ambilPeserta(id: string, halaman: number): Promise<HalamanEDM<Pe
 export interface KelayakanEDM {
   pesan: string[]
   boleh: boolean
+  /** Policy No bernomor endorsement (10-10-2026) - `models.Kelayakan`. */
+  nomorPolis?: string
+  adaAkhiran?: boolean
+  akhiranMasukan?: string
+  polisAda?: boolean
+  nomorVersiTerakhir?: string
+  akhiranVersiTerakhir?: string
 }
 
 /** Isian `EndorsmentLife_Section` - `services.MasukanKasus`. Tanggal `YYYY-MM-DD`. */
@@ -103,6 +133,9 @@ export interface MasukanKasusEDM {
   edmType: string
   edmDate: string
   description: string
+  /** Sub-jenis EDM Type (07-10-2026, migrasi 483): terisi sesuai EDM Type, yang lain kosong. */
+  edmTypePerubahanData: string
+  edmTypeBatal: string
 }
 
 /** Kasus baru - `services.HasilBuat`. */
@@ -121,6 +154,21 @@ export function cekKelayakan(policyNo: string, edmType: string): Promise<Kelayak
 /** Buat kasus - `POST /kasus` (`Submit` b4226 → `MappingEDMLife`). */
 export function buatKasus(m: MasukanKasusEDM): Promise<HasilBuatEDM> {
   return minta<HasilBuatEDM>(`${PREFIX_EDM}/kasus`, { metode: 'POST', badan: m })
+}
+
+/**
+ * Penolakan berpesan `POST /kasus` → daftar pesan (keputusan work owner 07-10-2026). `BuatKasus` menjalankan
+ * ulang seluruh gerbang DENGAN EDM Type (termasuk "sudah dibayar + Batal") dan menolak dengan 422
+ * `{"galat": "<pesan>\n<pesan>"}` (`GalatKelayakan.PesanLayar`, satu pesan per baris; juga isian tidak sah).
+ * Selain 422 berpesan → null (ditampilkan sebagai galat umum).
+ */
+export function pesanPenolakanEDM(err: unknown): string[] | null {
+  if (kodeStatusGalat(err) !== 422) return null
+  const daftar = (pesanGalat(err) ?? '')
+    .split('\n')
+    .map((p) => p.trim())
+    .filter((p) => p !== '')
+  return daftar.length > 0 ? daftar : null
 }
 
 /** Satu baris spreading retro - `models.SpreadingRetro`. */
@@ -232,6 +280,11 @@ async function kirimBerkas(jalur: string, berkas: File): Promise<{ status: numbe
 }
 
 /** `Upload CSV` b8973 - tinjau: urai dan validasi, nol tulis. */
+/** Download Template CSV (10-10-2026) - `GET /kasus/{id}/templat-csv`, unduhan beridentitas. */
+export function unduhTemplatCSV(id: string): Promise<void> {
+  return unduhBerkasBeridentitas(`${PREFIX_EDM}/kasus/${encodeURIComponent(id)}/templat-csv`, `Template_EDM_${id}.csv`)
+}
+
 export async function periksaCSV(id: string, berkas: File): Promise<PeriksaCSVEDM> {
   const j = await kirimBerkas(`${PREFIX_EDM}/kasus/${encodeURIComponent(id)}/unggah`, berkas)
   if (j.status !== 200) throw kegagalanDari(j.status, j.teks)

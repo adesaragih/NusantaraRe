@@ -43,6 +43,21 @@
 
 import { REGISTER } from '../labels'
 import type { PolicyDataLife } from '../api'
+import { formatDate } from '../../../../inti/frontend/lib/format'
+
+/**
+ * Tanggal tampilan dd/mm/yyyy (keputusan work owner 10-10-2026). Memakai pengurai bersama inti (`formatDate`, yang
+ * menjawab dd-mm-yyyy) lalu mengganti pemisahnya; nilai tak terurai / kosong = "—".
+ */
+export function tanggalTampil(v: string | undefined | null): string {
+  const t = formatDate(v ?? '')
+  return t === '' ? '—' : t.split('-').join('/')
+}
+
+/** Chip versi polis di judul panel: versi 0 = "New business", selebihnya "Endorsement /NN". */
+export function labelVersiPolis(prodKe: number): string {
+  return prodKe > 0 ? `Endorsement /${String(prodKe).padStart(2, '0')}` : 'New business'
+}
 
 /** Satu medan panel: label VERBATIM, nilainya, dan keadaan sumbernya. */
 export interface MedanPolis {
@@ -50,6 +65,8 @@ export interface MedanPolis {
   nilai: string
   /** true bila backend belum punya jalan mengisinya. */
   belumBersumber?: boolean
+  /** Nilai kode (PL Number) — satu baris, tidak dipecah (11-10-2026). */
+  kode?: boolean
 }
 
 /**
@@ -98,11 +115,11 @@ export function medanPolis(sumber: {
       ? { label: REGISTER.type, nilai: ada(sumber.type), belumBersumber: true }
       : { label: REGISTER.type, nilai: ada(p.type) },
     // Urut section, b9301 sampai b14806.
-    // `TYPE_CEDING_NAME` yang ditampilkan; kodenya bila katanya kosong.
-    medan(REGISTER.sistemReasuransi, p === null ? undefined : p.typeCedingName || p.typeCeding),
-    medan(REGISTER.metodePremi, p?.proRateType),
+    // ⛔ `System Reinsurance` (b9301) dan `Premium Method` (b9694) TIDAK ditampilkan sejak 10-10-2026 (keputusan work
+    // owner "system reinsurance, premium method tidak perlu di tampilkan") - tampilan saja; datanya tetap di
+    // PolicyDataLife.
     medan(REGISTER.marketing, p?.marketingName),
-    medan(REGISTER.wpc, p?.wpc),
+    medan(REGISTER.wpc, p === null ? undefined : tanggalTampil(p.wpc)),
     ...(treaty
       ? [medan(REGISTER.retroName, p?.retroName), medan(REGISTER.securityReinsurer, p?.securityReinsurer)]
       : []),
@@ -112,7 +129,7 @@ export function medanPolis(sumber: {
     medan(REGISTER.kelasBisnis, p?.businessName),
     medan(REGISTER.idProduk, p?.productNameId),
     medan(REGISTER.namaProduk, p?.productName),
-    medan(REGISTER.tanggalEmail, p?.dateReceived),
+    medan(REGISTER.tanggalEmail, p === null ? undefined : tanggalTampil(p.dateReceived)),
     // ⛔ KELIMA INI TETAP TANPA SUMBER: nol kolom di migrasi 050-056 mana pun
     // (`MedanTanpaSumberPolicyData` di backend menyebut kelimanya).
     tanpaKolom(REGISTER.tanggalRespon),
@@ -125,6 +142,89 @@ export function medanPolis(sumber: {
   ]
 }
 
+/**
+ * Tab Policy Details layar Outstanding — TIGA KOLOM seperti screenshot Pega CLMLF-9293 (keputusan work owner 11-10-2026),
+ * urut `InputOSClaimLife.xml` b6734–b12679.
+ *
+ * ⛔ Berbeda dari panel Register: System Reinsurance (`.PolicyDataLife.TypeCeding` b7102) dan Premium Method
+ * (`.PolicyDataLife.ProRateType` b7495) DITAMPILKAN di sini (screenshot 11-10-2026); keputusan 10-10-2026 yang
+ * menyembunyikannya tetap berlaku untuk panel Register.
+ *
+ * ⚠️ Type tampil sebagai KODE (QP/QR/TP/TR): dropdown b6905 memakai daftar properti (`pyListSource associated`) yang
+ * rule-nya tidak ada di korpus, jadi pemetaan kode → nama tidak dapat diverifikasi.
+ */
+export function medanPolisOutstanding(polis: PolicyDataLife | null, plNumber: string): MedanPolis[][] {
+  const ada = (v: string | undefined): string => (v === undefined || v === '' ? '—' : v)
+  const p = polis
+  const medan = (label: string, v: string | undefined): MedanPolis =>
+    p === null ? { label, nilai: '—', belumBersumber: true } : { label, nilai: ada(v) }
+  const tanpaKolom = (label: string): MedanPolis => ({ label, nilai: '—', belumBersumber: true })
+  const treaty = p?.type === 'TP' || p?.type === 'TR'
+  return [
+    [
+      // 11-10-2026 "rapikan kolom pl number": label "PL Number" (bukan nama kolom), nilai kode satu baris.
+      { label: 'PL Number', nilai: ada(plNumber), kode: true },
+      medan(REGISTER.type, p?.type),
+      medan(REGISTER.sistemReasuransi, p?.typeCedingName || p?.typeCeding),
+      medan(REGISTER.metodePremi, p?.proRateType),
+      medan(REGISTER.marketing, p?.marketingName),
+      medan(REGISTER.wpc, p === null ? undefined : tanggalTampil(p.wpc)),
+      ...(treaty
+        ? [medan(REGISTER.retroName, p?.retroName), medan(REGISTER.securityReinsurer, p?.securityReinsurer)]
+        : []),
+    ],
+    [
+      medan(REGISTER.ceding, p?.cedingCoName),
+      medan(REGISTER.pemegangPolis, p?.policyHolderName),
+      medan(REGISTER.sob, p?.sobName),
+      medan(REGISTER.kelasBisnis, p?.businessName),
+      medan(REGISTER.idProduk, p?.productNameId),
+      medan(REGISTER.namaProduk, p?.productName),
+    ],
+    [
+      medan(REGISTER.tanggalEmail, p === null ? undefined : tanggalTampil(p.dateReceived)),
+      tanpaKolom(REGISTER.tanggalRespon),
+      tanpaKolom(REGISTER.tanggalKonfirmasi),
+      medan(REGISTER.status, p?.status),
+      tanpaKolom(REGISTER.konfirmasiBalik),
+      medan(REGISTER.statusDiperbarui, p?.statusUpdate),
+      tanpaKolom(REGISTER.tanggalRealisasi),
+      tanpaKolom(REGISTER.catatanUnderwriter),
+    ],
+  ]
+}
+
+/** Panel tiga kolom label-nilai tab Policy Details layar Outstanding. */
+export function PanelPolisOutstanding({
+  polis,
+  plNumber,
+  polisTidakDitemukan,
+}: {
+  polis: PolicyDataLife | null
+  plNumber: string
+  polisTidakDitemukan?: { idPega: string }
+}) {
+  return (
+    <section className="os__form os__form--tiga os__form--polis" aria-label="Policy Details">
+      {medanPolisOutstanding(polis, plNumber).map((kolom, i) => (
+        <dl key={i} className="os__kolom">
+          {kolom.map((m) => (
+            <div key={m.label} className={`os__baris-form${m.belumBersumber === true ? ' polis__medan--belum' : ''}`}>
+              <dt>{m.label}</dt>
+              <dd className={m.kode === true ? 'os__nilai-pl' : undefined}>{m.nilai}</dd>
+            </div>
+          ))}
+        </dl>
+      ))}
+      {polis === null && polisTidakDitemukan !== undefined && (
+        <p className="alert alert--warn os__lebar" role="note">
+          Policy data not found for this insured ({polisTidakDitemukan.idPega}).
+        </p>
+      )}
+    </section>
+  )
+}
+
 export interface PanelProps {
   nomorPolis?: string
   namaTertanggung?: string
@@ -132,15 +232,21 @@ export interface PanelProps {
   type?: string
   /** Data polis dari PremiumList Life; null berarti belum terbaca. */
   polis?: PolicyDataLife | null
+  /** Header polis peserta tidak ditemukan (10-10-2026) - satu kalimat sederhana menyebut IDPEGA-nya. */
+  polisTidakDitemukan?: { idPega: string }
 }
 
 export function PanelDataPolis(p: PanelProps) {
   const medan = medanPolis(p)
-  const belum = medan.filter((m) => m.belumBersumber === true).length
 
   return (
     <section className="polis">
-      <h3 className="polis__judul">Data Polis</h3>
+      {/* Judul + chip versi (dulu baris teknis "Polis … — versi … · produk …", dihapus 10-10-2026). */}
+      <h3 className="polis__judul">
+        Data Polis
+        {p.polis != null && <span className="polis__chip">{labelVersiPolis(p.polis.prodKe)}</span>}
+      </h3>
+      {/* Grid label-nilai: label kecil abu-abu di atas, nilai di bawah; nilai panjang membungkus. */}
       <dl className="polis__daftar">
         {medan.map((m) => (
           <div
@@ -152,35 +258,16 @@ export function PanelDataPolis(p: PanelProps) {
           </div>
         ))}
       </dl>
-      {p.polis !== null && p.polis !== undefined && (
-        <p className="polis__versi" role="status">
-          Polis {p.polis.nomorPolis} — versi {p.polis.prodKe}
-          {p.polis.productName !== '' && <> · produk {p.polis.productName}</>}
+      {/* ⛔ Keputusan work owner 10-10-2026: klaim hanya untuk polis Resolved-Completed - Find Insured tetap menampilkan
+          pesertanya, panel memperingatkan (Register menolak 422). */}
+      {p.polis != null && p.polis.status !== 'Resolved-Completed' && (
+        <p className="alert alert--warn" role="note">
+          Policy not Resolved-Completed (status: {p.polis.status === '' ? '—' : p.polis.status}). A claim cannot be registered yet.
         </p>
       )}
-      {belum > 0 && (
-        <p className="polis__catatan" role="note">
-          {p.polis === null || p.polis === undefined ? (
-            <>
-              <strong>Data polis belum terbaca.</strong> Medan ini{' '}
-              <em>read-only</em> dan terisi dari modul PremiumList Life lewat{' '}
-              <code>.PolicyDataLife.*</code> saat nomor polis dipilih. Pilih
-              nomor polis, atau polis itu memang belum ada di modul tersebut.
-            </>
-          ) : (
-            <>
-              {/* ⛔ KALIMAT BERBEDA untuk sebab yang berbeda. "Menunggu modul
-                  PremiumList Life" sesudah modulnya ADA adalah kalimat yang
-                  salah - dan kalimat yang salah membuat orang berhenti
-                  membacanya. */}
-              <strong>{belum} medan belum punya kolom di mana pun.</strong>{' '}
-              <code>{p.polis.medanTanpaSumber.join(', ')}</code> adalah properti
-              halaman kerja Pega dan tidak punya kolom di migrasi 050–056 mana
-              pun. Medannya tetap ditampilkan supaya himpunannya sama dengan{' '}
-              <code>InputRegisterClaimLife.xml</code>, dengan ketiadaannya
-              dinyatakan alih-alih diisi teks kosong.
-            </>
-          )}
+      {p.polis == null && p.polisTidakDitemukan !== undefined && (
+        <p className="alert alert--warn" role="note">
+          Policy data not found for this insured ({p.polisTidakDitemukan.idPega}).
         </p>
       )}
     </section>

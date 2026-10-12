@@ -28,6 +28,41 @@ func sqlAcuanCSV(peserta string) string {
 	  ORDER BY d.CERTIFICATE_NO, d.NAME_OF_INSURED, d.ID FETCH FIRST 1 ROWS ONLY`, peserta)
 }
 
+// sqlMataUangCSV / sqlSertifikatCSV - mata uang dan CERTIFICATE_NO peserta Old kasus (status kosong ikut, seperti
+// acuan) untuk validasi CSV (keputusan work owner 10-10-2026). SATU kueri per unggahan, bukan per baris: set dimuat
+// ke memori (satu teks per peserta - puluhan ribu peserta = beberapa MB), dibandingkan tanpa peka huruf.
+func sqlMataUangCSV(peserta string) string {
+	return fmt.Sprintf(`SELECT DISTINCT TRIM(d.CURRENCY) FROM %s d
+	  WHERE d.PREMIUM_LIST_ID = :1 AND (d.EDM_STATUS IS NULL OR d.EDM_STATUS = :2) AND TRIM(d.CURRENCY) IS NOT NULL
+	  ORDER BY 1`, peserta)
+}
+
+func sqlSertifikatCSV(peserta string) string {
+	return fmt.Sprintf(`SELECT DISTINCT UPPER(TRIM(d.CERTIFICATE_NO)) FROM %s d
+	  WHERE d.PREMIUM_LIST_ID = :1 AND (d.EDM_STATUS IS NULL OR d.EDM_STATUS = :2) AND TRIM(d.CERTIFICATE_NO) IS NOT NULL`, peserta)
+}
+
+// daftarTeks menjalankan kueri satu kolom teks.
+func (g *Gudang) daftarTeks(ctx context.Context, tx *db.Tx, q string, args ...any) ([]string, error) {
+	if err := db.PeriksaSQL(q); err != nil {
+		return nil, err
+	}
+	rows, err := g.pakai(tx).QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = rows.Close() }()
+	var hasil []string
+	for rows.Next() {
+		var v sql.NullString
+		if err := rows.Scan(&v); err != nil {
+			return nil, err
+		}
+		hasil = append(hasil, v.String)
+	}
+	return hasil, rows.Err()
+}
+
 // AcuanCSV membaca baris acuan; false bila kasus tanpa peserta lama.
 func (g *Gudang) AcuanCSV(ctx context.Context, tx *db.Tx, kasusID string) (models.AcuanCSV, bool, error) {
 	n, err := g.nama(tabelPeserta)
@@ -46,7 +81,67 @@ func (g *Gudang) AcuanCSV(ctx context.Context, tx *db.Tx, kasusID string) (model
 	if err != nil {
 		return models.AcuanCSV{}, false, fmt.Errorf("repository: membaca acuan CSV kasus %q: %w", kasusID, err)
 	}
-	return models.AcuanCSV{Plan: plan.String, PolicyHolder: holder.String}, true, nil
+	a := models.AcuanCSV{Plan: plan.String, PolicyHolder: holder.String, Sertifikat: map[string]bool{}}
+	if a.MataUang, err = g.daftarTeks(ctx, tx, sqlMataUangCSV(n[0]), kasusID, models.StatusOld); err != nil {
+		return models.AcuanCSV{}, false, fmt.Errorf("repository: membaca mata uang peserta kasus %q: %w", kasusID, err)
+	}
+	sertifikat, err := g.daftarTeks(ctx, tx, sqlSertifikatCSV(n[0]), kasusID, models.StatusOld)
+	if err != nil {
+		return models.AcuanCSV{}, false, fmt.Errorf("repository: membaca sertifikat peserta kasus %q: %w", kasusID, err)
+	}
+	for _, c := range sertifikat {
+		a.Sertifikat[c] = true
+	}
+	return a, true, nil
+}
+
+// sqlContohPesertaCSV - peserta Old pertama di urutan grid (`sqlPeserta`) untuk baris contoh templat CSV
+// (10-10-2026): kolom `models.KolomCSVTersimpan` dalam bentuk CSV - tanggal DD/MM/YYYY, angka TM9 bertitik.
+func sqlContohPesertaCSV(peserta string) string {
+	var kolom []string
+	for _, c := range models.KolomCSVTersimpan() {
+		switch c.Jenis {
+		case models.CSVTanggal:
+			kolom = append(kolom, "TO_CHAR(d."+c.Kolom+", 'DD/MM/YYYY')")
+		case models.CSVUang, models.CSVDesimal, models.CSVBulat:
+			kolom = append(kolom, "TO_CHAR(d."+c.Kolom+", 'TM9', 'NLS_NUMERIC_CHARACTERS=''.,''')")
+		default:
+			kolom = append(kolom, "d."+c.Kolom)
+		}
+	}
+	return fmt.Sprintf(`SELECT %s FROM %s d
+	  WHERE d.PREMIUM_LIST_ID = :1 AND (d.EDM_STATUS IS NULL OR d.EDM_STATUS = :2)
+	  ORDER BY d.CERTIFICATE_NO, d.NAME_OF_INSURED, d.ID FETCH FIRST 1 ROWS ONLY`, strings.Join(kolom, ", "), peserta)
+}
+
+// ContohPesertaCSV membaca nilai peserta Old pertama berkunci kolom tabel; false bila tidak ada.
+func (g *Gudang) ContohPesertaCSV(ctx context.Context, tx *db.Tx, kasusID string) (map[string]string, bool, error) {
+	n, err := g.nama(tabelPeserta)
+	if err != nil {
+		return nil, false, err
+	}
+	q := sqlContohPesertaCSV(n[0])
+	if err := db.PeriksaSQL(q); err != nil {
+		return nil, false, err
+	}
+	kolom := models.KolomCSVTersimpan()
+	v := make([]sql.NullString, len(kolom))
+	ptr := make([]any, len(v))
+	for i := range v {
+		ptr[i] = &v[i]
+	}
+	err = g.pakai(tx).QueryRowContext(ctx, q, kasusID, models.StatusOld).Scan(ptr...)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, false, nil
+	}
+	if err != nil {
+		return nil, false, fmt.Errorf("repository: membaca contoh peserta kasus %q: %w", kasusID, err)
+	}
+	hasil := make(map[string]string, len(kolom))
+	for i, c := range kolom {
+		hasil[c.Kolom] = v[i].String
+	}
+	return hasil, true, nil
 }
 
 // sqlHapusPesertaBaru - langkah 2.1 b454, prakondisi b547 `.EDMStatus=="New"`.

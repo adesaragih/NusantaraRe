@@ -308,7 +308,26 @@ func TestTreatyNonPropSetSpreadingDariDaftarXOL(t *testing.T) {
 	cekBaris(t, "Spreading(2)", d[1], map[string]string{
 		"TreatyType": "UJI-R2", "SplitRNMSharePct": "4", "SharePercentage": "40", "PremiumSpreaded": "1080",
 	})
-	// 7: SpreadingTypeIDXOL kosong dan FacultativeShare 0 -> pesan halaman (VERBATIM).
+	// 7: ⭐ 11-10-2026 - spreading manual 6 + 4 = RNM Share 10 sudah LENGKAP:
+	// pesan tidak dipasang (Pega memasangnya untuk setiap spreading manual).
+	if p := h.SemuaPesan(); len(p) != 0 {
+		t.Fatalf("spreading manual lengkap tetap berpesan: %v", p)
+	}
+}
+
+// 7: spreading manual yang totalnya BELUM sama dengan RNM Share tetap berpesan.
+func TestTreatyNonPropSetSpreadingManualBelumLengkapBerpesan(t *testing.T) {
+	m := masterUji()
+	m.Daftar["Share"][0]["SpreadingTypeXOL"] = ""
+	m.Daftar["Share"][0]["SpreadingTypeIDXOL"] = ""
+	m.Daftar["Share(1).SpreadingListXOL"] = []models.Baris{{"ReinsTypeID": "UJI-R1", "Pct": "6"}}
+	h := models.HalamanBaru()
+	h.Setel("PolicyTreatyIn.Currency", "IDR")
+	h.Setel("PolicyTreatyIn.NetPremium", "2700")
+	models.TerapkanMasterXOL(h, m)
+	if err := models.TreatyNonPropSetSpreading(h); err != nil {
+		t.Fatal(err)
+	}
 	if p := h.SemuaPesan(); len(p) != 1 || p[0] != "Spreading in Master data is incomplete" {
 		t.Fatalf("pesan %v", p)
 	}

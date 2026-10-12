@@ -33,7 +33,7 @@ import (
 func inboxKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		halaman, _ := strconv.Atoi(r.URL.Query().Get("halaman"))
@@ -50,7 +50,7 @@ func inboxKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func kasusKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		k, err := svc.InboxKomite().Kasus(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("id"))
@@ -72,12 +72,12 @@ type isiKeputusanKomite struct {
 func putuskanKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		var isi isiKeputusanKomite
 		if err := json.NewDecoder(r.Body).Decode(&isi); err != nil {
-			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "The request body is not valid JSON.")
 			return
 		}
 		hasil, err := svc.KeputusanKomite().
@@ -99,7 +99,7 @@ func putuskanKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func eskalasiKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		hasil, err := svc.KeputusanKomite().
@@ -116,7 +116,7 @@ func eskalasiKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func laporanHarianKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		l, err := svc.InboxKomite().LaporanHarian(r.Context(), inti.PelakuDari(r, stubPelaku), time.Now())
@@ -131,7 +131,7 @@ func laporanHarianKomite(svc *services.Service, stubPelaku bool) http.HandlerFun
 func riwayatKomite(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		rw, err := svc.InboxKomite().Riwayat(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("id"))
@@ -150,29 +150,38 @@ func jawabGalatKomite(w http.ResponseWriter, err error) bool {
 	case err == nil:
 		return false
 	case errors.Is(err, inti.ErrTanpaIdentitas):
-		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		galat.Tulis(w, http.StatusUnauthorized, "Requests without a user identity are rejected.")
 	case errors.Is(err, inti.ErrTanpaWewenang):
 		// 403, bukan 404: kasusnya ada, pelakunya bukan anggota tangganya.
-		galat.Tulis(w, http.StatusForbidden, "Anda bukan anggota tangga komite kasus ini")
+		galat.Tulis(w, http.StatusForbidden, "You are not a member of the committee ladder of this case.")
 	case errors.Is(err, services.ErrKasusKomiteTakDitemukan):
-		galat.Tulis(w, http.StatusNotFound, "kasus komite tidak ditemukan")
-	case errors.Is(err, services.ErrKeputusanKomiteTidakDikenal),
-		errors.Is(err, galat.ErrPermintaanTidakSah):
-		galat.Tulis(w, http.StatusBadRequest, err.Error())
-	case errors.Is(err, services.ErrTanggaKomiteBerhenti),
-		errors.Is(err, services.ErrEskalasiTanpaTingkatAtas),
-		errors.Is(err, services.ErrKeputusanKomiteBersamaan),
-		errors.Is(err, kontrak.ErrKasusSudahTertutup):
-		galat.Tulis(w, http.StatusConflict, err.Error())
-	case errors.Is(err, kontrak.ErrNomorAkseptasiBerganda),
-		errors.Is(err, kontrak.ErrKodeBisnisBelumTersimpan):
-		// 409: keadaan DATA (nomor bertabrakan / kode bisnis kosong).
-		galat.Tulis(w, http.StatusConflict, err.Error())
+		galat.Tulis(w, http.StatusNotFound, "The committee case was not found.")
+	// 12-10-2026 (work owner "perbaiki tampilannya"): kalimat layar berbahasa Inggris dan TETAP per galat - teks galat
+	// services/inti (berawalan paket, berbahasa Indonesia) tidak lagi diteruskan ke layar. Kode HTTP tidak berubah.
+	case errors.Is(err, services.ErrKeputusanKomiteTidakDikenal):
+		galat.Tulis(w, http.StatusBadRequest, "The committee decision must be Approve or Reject.")
+	case errors.Is(err, services.ErrNoteKomiteWajib):
+		galat.Tulis(w, http.StatusBadRequest, "Note is required.")
+	case errors.Is(err, galat.ErrPermintaanTidakSah):
+		galat.Tulis(w, http.StatusBadRequest, "The committee request is not valid.")
+	case errors.Is(err, services.ErrTanggaKomiteBerhenti):
+		galat.Tulis(w, http.StatusConflict, "The committee ladder of this case has ended; no decision is pending.")
+	case errors.Is(err, services.ErrEskalasiTanpaTingkatAtas):
+		galat.Tulis(w, http.StatusConflict, "The case is already at the final level; there is no level above it.")
+	case errors.Is(err, services.ErrKeputusanKomiteBersamaan):
+		galat.Tulis(w, http.StatusConflict, "The committee ladder changed since it was loaded. Reload the case.")
+	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
+		galat.Tulis(w, http.StatusConflict, "The case is already closed and cannot be changed.")
+	// 409: keadaan DATA (nomor bertabrakan / kode bisnis kosong).
+	case errors.Is(err, kontrak.ErrNomorAkseptasiBerganda):
+		galat.Tulis(w, http.StatusConflict, "The acceptance number is already in use.")
+	case errors.Is(err, kontrak.ErrKodeBisnisBelumTersimpan):
+		galat.Tulis(w, http.StatusConflict, "The business code of the claim has not been saved yet.")
 	case errors.Is(err, services.ErrPenyelesaianAkhirBelumAda):
 		// 501: permintaannya sah, bagian sistemnya yang belum dibangun.
-		galat.Tulis(w, http.StatusNotImplemented, err.Error())
+		galat.Tulis(w, http.StatusNotImplemented, "The final committee decision (acceptance or rejection) is not available yet.")
 	default:
-		galat.Tulis(w, http.StatusInternalServerError, "gagal memproses permintaan komite")
+		galat.Tulis(w, http.StatusInternalServerError, "The committee request could not be processed.")
 	}
 	return true
 }

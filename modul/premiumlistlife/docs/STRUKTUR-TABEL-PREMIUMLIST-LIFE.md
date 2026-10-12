@@ -126,9 +126,11 @@ versi hidup berdampingan; **versi berjalan adalah baris ber-`PROD_KE` terbesar**
 | `START_DATE` | DATE | ya | | **EDM saja** | keputusan tiket 00 Endorsement |
 | `END_DATE` | DATE | ya | | **EDM saja** | keputusan tiket 00 Endorsement |
 | `PL_NUMBER_EDM` | teks | ya | | **EDM saja** | keputusan tiket 00 Endorsement |
-| `PROD_KE` | bilangan bulat | ya | | **EDM saja** | keputusan tiket 00 Endorsement — versi berjalan = `PRODKE` terbesar |
+| `PROD_KE` | bilangan bulat | ya | | **EDM saja** | keputusan tiket 00 Endorsement — versi berjalan = `PRODKE` terbesar; 485 (08-10-2026): NB = 0 (`DEFAULT 0`), endorsement ke-n = n |
 | `EDM_STATUS` | teks | ya | | **EDM saja** | keputusan tiket 00 Endorsement — `Old`/`New`/`Delete`/`Batal` |
 | `STATUS_OLD` | teks | ya | | **EDM saja** | keputusan tiket 00 Endorsement |
+| `EDM_TYPE_PERUBAHAN_DATA` | teks | ya | | **EDM saja** | keputusan work owner 07-10-2026 (OQ-EDM-005, migrasi 483) — sub-jenis EDM Type 1, teks label `EndorsmentLife_Section` b1645 |
+| `EDM_TYPE_BATAL` | teks | ya | | **EDM saja** | keputusan work owner 07-10-2026 (OQ-EDM-005, migrasi 483) — sub-jenis EDM Type 3, teks label b1937 |
 | `BATAS_USIA_PESERTA` | bilangan bulat | ya | | **NB saja** | korpus `.BatasUsiaPeserta` "Age Limit" — `Section/InputOfferLife.xml`; migrasi 059 |
 | `PERIODE_PERTANGGUNGAN` | teks | ya | | **NB saja** | korpus `.PeriodePertanggungan` "Coverage Period" — InputOfferLife.xml; migrasi 059 |
 | `TANGGAL_PENAWARAN` | DATE | ya | | **NB saja** | korpus `.TanggalPenawaran` "Offering Date" — InputOfferLife.xml; migrasi 059 |
@@ -543,7 +545,7 @@ dengan sendirinya. Seluruh kunci tamu lain **ber-index**.
 - `[terbuka]` delapan kolom produk/layer (`PRODUCT_NAME_ID`, `PRODUCT_NAME`, `LAYER_1..4`, `ANNUITY_INTEREST`, `PREMIUM_REFUND_FACTOR`) tidak ditulis jalur EDM — kosong di baris versi EDM
 - `[terbuka]` rantai versi dicari lewat (`NO_POLIS`, `PROD_KE`), belum ada kolom penunjuk versi sebelumnya
 - `[terbuka]` polis lama hasil migrasi belum punya baris `T_WORK_POLIS`, padahal PK-nya diambil dari sana
-- `[terbuka]` format identitas kerja `EDMLF-<n>`
+- ~~`[terbuka]` format identitas kerja~~ → `EDML-<n>` sama dengan Pega, sequence mulai 828 (Endorsement Life migrasi 484, keputusan work owner 07-10-2026)
 - `[terbuka]` kolom `T_PREMIUM_LIST_SPREADING`, `_SPREADING_RETRO`, dan `T_VIEW_SUGGEST` **sudah ditetapkan** di `spec.md` §12 dan `revisi-penyimpanan-premiumlist.md`; yang belum ditetapkan hanya presisi dan nullability per kolom
 - ~~`[terbuka]` nama kolom audit pada `T_WORK_POLIS` belum ditetapkan; tiket 00 hanya menyebut "audit"~~ —
   **ditutup 01-10-2026** (keputusan work owner): `CREATE_OP`, `CREATE_OP_NAME`, `TGL_CREATE`, `TGL_UPDATE`, migrasi `059`

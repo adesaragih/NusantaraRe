@@ -30,6 +30,7 @@ package repository
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -102,9 +103,9 @@ var kolomTidakDibawa = []string{
 // berkasBolehMenyebutKolomTakDibawa berkunci akhiran jalur, dengan alasan.
 var berkasBolehMenyebutKolomTakDibawa = map[string]string{
 	"repository/barislamakolom.go": "katalog 62 kolom - kolomnya ADA di tabel, ia hanya tidak dibawa",
-	// ⛔ izin work owner 10-10-2026 (OQ-KCFI-08), SEMPIT: satu berkas Komite Claim Fac In penulis OS_AKSEPTASI_KLAIM;
-	// STS_KONVERSI hanya disebut bila terisi (SaveReject_ACT_KMT S17), kosong = kolom tidak ikut INSERT.
-	"modul/komiteclaimfacin/backend/repository/osakseptasi.go": "Komite Claim Fac In - INSERT OS_AKSEPTASI_KLAIM (PEGA_JSON_OS_AKSEP_KLAIM), STS_KONVERSI hanya bila terisi",
+	// 11-10-2026: entri komiteclaimfacin/repository/osakseptasi.go (izin OQ-KCFI-08) DIBUANG - versi sesudah merge 942a16d1
+	// menulis OS_AKSEPTASI_KLAIM (bukan tabel Claim Life) sehingga di luar lingkup dalamLingkupClaimLife; entri tak terpakai
+	// dilarang penguncian jumlah di bawah.
 }
 
 // migrasiDiLuarClaimLife menjawab apakah berkas itu migrasi milik modul lain.
@@ -145,6 +146,13 @@ func TestKolomTakDibawaHanyaAdaDiKatalog(t *testing.T) {
 			// ⚠️ TIDAK menambah `dikecualikan`: pencacah itu dikunci terhadap
 			// peta `berkasBolehMenyebutKolomTakDibawa`, dan mencemarinya dengan
 			// hitungan lingkup akan membuat penjaga peta itu berbunyi palsu.
+			continue
+		}
+		// ⛔ Lingkup 10-10-2026: ketujuh kolom ini milik tabel datar KLAIM `OS_AKSEPTASI_KLAIM_LIFE`. Nama yang sama
+		// dipakai tabel modul lain (`STS_KONVERSI`/`TGL_KONVERSI` di skema nbfacin, `LAYER_*` di `T_PREMIUM_LIST`) dengan
+		// makna sendiri. Yang diperiksa: seluruh berkas Claim Life, dan berkas modul lain HANYA bila kodenya menyebut
+		// tabel Claim Life (membawa kolom itu dari tabel klaim tetap pelanggaran, siapa pun penulisnya).
+		if !dalamLingkupClaimLife(nama, buangKomentarSumber(nama, isi)) {
 			continue
 		}
 		diperiksa++
@@ -190,7 +198,8 @@ func TestKolomTakDibawaHanyaAdaDiKatalog(t *testing.T) {
 // pun.
 //
 // `[data DBA]` OQ-001: `RATE_LIFE` dan `PRODUCTINWARD_LIFE` adalah VIEW atas
-// `JSONDATA`. `m_product_life` memegang JSON produk, dan membacanya menuntut
+// `JSONDATA`. (10-10-2026: view `RATE_LIFE` dibuang; rate kini tabel flat `M_RATE_LIFE` - nama yang dijaga ikut
+// berganti; `strings.Contains` atas `M_RATE_LIFE` tetap menangkap `M_RATE_LIFE_SUMMARY`.) `m_product_life` memegang JSON produk, dan membacanya menuntut
 // persetujuan manusia - produk dibaca dari `product_life` RELASIONAL
 // (`[keputusan work owner 2026-09-16]`).
 //
@@ -200,7 +209,7 @@ func TestKolomTakDibawaHanyaAdaDiKatalog(t *testing.T) {
 // kenyataan bahwa nol kode menyentuh master mana pun hari ini; bila itu
 // berubah, `CURRENCY` harus ditinjau dengan tangan.
 var masterYangTidakDisentuh = []string{
-	"RATE_LIFE", "PRODUCTINWARD_LIFE", "m_product_life", "M_PRODUCT_LIFE",
+	"M_RATE_LIFE", "PRODUCTINWARD_LIFE", "m_product_life", "M_PRODUCT_LIFE",
 }
 
 // TestMasterViewTidakDisentuh - aturan atas NAMA, bukan atas bentuk SQL.
@@ -248,7 +257,7 @@ var berkasIzinMaster = map[string]struct {
 	periksa func(*testing.T, string)
 }{
 	berkasIzinViewProduk: {"PRODUCTINWARD_LIFE", izinViewProduk},
-	"ratelife.go":        {"RATE_LIFE", izinViewRate},
+	"ratelife.go":        {"M_RATE_LIFE", izinViewRate},
 }
 
 // izinViewRate - batas izin `RATE_LIFE` (OQ-M7): satu pembaca, lima kolom,
@@ -259,7 +268,7 @@ func izinViewRate(t *testing.T, isi string) {
 		t.Error("ratelife.go tidak lagi memuat pembaca `RateLife.Baca`")
 	}
 	if len(KolomRateLife) != 5 {
-		t.Errorf("izin RATE_LIFE mencakup TEPAT lima kolom; daftarnya kini %d", len(KolomRateLife))
+		t.Errorf("izin M_RATE_LIFE mencakup TEPAT lima kolom; daftarnya kini %d", len(KolomRateLife))
 	}
 	for _, k := range KolomRateLife {
 		if !strings.Contains(isi, k) {
@@ -277,7 +286,7 @@ func izinViewRate(t *testing.T, isi string) {
 	}
 	for _, tulis := range []string{"INSERT", "UPDATE ", "DELETE", "MERGE"} {
 		if strings.Contains(strings.ToUpper(isi), tulis) {
-			t.Errorf("ratelife.go memuat %q - izin RATE_LIFE READ-ONLY", tulis)
+			t.Errorf("ratelife.go memuat %q - izin M_RATE_LIFE READ-ONLY", tulis)
 		}
 	}
 	if strings.Contains(strings.ToUpper(isi), "JSONDATA") {
@@ -388,27 +397,50 @@ func TestMasterViewTidakDisentuh(t *testing.T) {
 // memeriksa ada-tidaknya `BarisLamaDari(p)` dan `PeriksaNilaiWarisan(b)`, dan
 // dielakkan dengan menghapus gelung `r.exec` sambil meninggalkan kedua
 // penanda itu beserta `_ = datarT`.
+//
+// ⛔ RALAT 10-10-2026 (keputusan work owner): penulisnya PINDAH dari Simpan (Register) ke TulisCerminSaveRNM (Save to
+// RNM). Penjaga terbaliknya tetap: jalur tulisnya WAJIB ADA, dipagari, dan dipanggil Save to RNM di transaksi
+// utamanya. Simpan kini justru DILARANG menyentuh tabel datar.
 func TestJalurTulisDatarWarisanWAJIBADA(t *testing.T) {
-	isi, ada := cariBerkas(berkasSumberProduksi(t), "repository/pohonklaim.go")
+	peta := berkasSumberProduksi(t)
+	isi, ada := cariBerkas(peta, "repository/pohonklaim.go")
 	if !ada {
 		t.Fatal("pohonklaim.go tidak terbaca; pembacanya yang rusak")
 	}
-	simpan := potongFungsi(buangKomentarGo(isi), "func (r *PohonKlaim) Simpan(")
+	kode := buangKomentarGo(isi)
+	tulis := potongFungsi(kode, "func (r *PohonKlaim) TulisCerminSaveRNM(")
+	if tulis == "" {
+		t.Fatal("fungsi TulisCerminSaveRNM tidak ditemukan; pembacanya yang rusak")
+	}
+	if !strings.Contains(tulis, "sqlSisipCermin(datarT)") || !strings.Contains(tulis, "tx.ExecContext(ctx, sisipQ,") {
+		t.Error("TulisCerminSaveRNM tidak lagi meng-INSERT ke tabel datar warisan. Jalur itu WAJIB ADA: hilir - " +
+			"Arasapas - masih membaca OS_AKSEPTASI_KLAIM_LIFE")
+	}
+	if !strings.Contains(tulis, "PeriksaNilaiWarisan(b)") {
+		t.Error("TulisCerminSaveRNM menulis baris datar tanpa PeriksaNilaiWarisan; nilai bukan-angka akan sampai ke " +
+			"Oracle sebagai ORA-01722")
+	}
+	simpan := potongFungsi(kode, "func (r *PohonKlaim) Simpan(")
 	if simpan == "" {
 		t.Fatal("fungsi Simpan tidak ditemukan; pembacanya yang rusak")
 	}
-	// Penulisan yang sesungguhnya: INSERT ke tabel datar, DI DALAM Simpan,
-	// pada transaksi yang sama dengan tabel relasionalnya.
-	if !strings.Contains(simpan, "INSERT INTO %s") || !strings.Contains(simpan, "datarT)") {
-		t.Error("Simpan tidak lagi meng-INSERT ke tabel datar warisan. Jalur itu " +
-			"WAJIB ADA: hilir - Arasapas - masih membaca OS_AKSEPTASI_KLAIM_LIFE, " +
-			"dan yang dibuang hanya JSON (`[keputusan work owner 2026-09-16]`). " +
-			"Dua transaksi pun tidak cukup: ia harus di dalam Simpan")
+	for _, larang := range []string{"namaTabelLama", "datarT", "BarisLamaDari(", "IsiTertanggungCermin("} {
+		if strings.Contains(simpan, larang) {
+			t.Errorf("Simpan (Register) masih menyentuh baris datar lewat %q - RALAT 10-10-2026: baris datar lahir di "+
+				"Save to RNM", larang)
+		}
 	}
-	// Dan pagarnya tetap dipanggil sebelum bind (butir s1).
-	if !strings.Contains(simpan, "PeriksaNilaiWarisan(b)") {
-		t.Error("Simpan menulis baris datar tanpa PeriksaNilaiWarisan; nilai " +
-			"bukan-angka akan sampai ke Oracle sebagai ORA-01722")
+	rnm, ada := cariBerkas(peta, "services/simpanrnm.go")
+	if !ada {
+		t.Fatal("simpanrnm.go tidak terbaca")
+	}
+	rnm = buangKomentarGo(rnm)
+	panggil := strings.Index(rnm, ".TulisCerminSaveRNM(ctx, tx,")
+	kedua := strings.LastIndex(rnm[:max(panggil, 0)], "x.svc.DalamTransaksi(")
+	nomor := strings.Index(rnm, "NomorBerikut(")
+	if panggil < 0 || kedua < 0 || nomor < 0 || !(nomor < kedua) {
+		t.Errorf("Save to RNM tidak menulis baris datar di transaksi UTAMA sesudah transaksi penomoran "+
+			"(panggil %d, transaksi %d, nomor %d)", panggil, kedua, nomor)
 	}
 }
 
@@ -486,16 +518,16 @@ func buangKomentarSumber(nama, isi string) string {
 	return b.String()
 }
 
-// OQ-N2 (GILIRAN-17): Simpan mengisi tertanggung cermin untuk setiap baris
-// yang pesertanya punya baris sumber - di transaksi yang sama.
+// OQ-N2 (GILIRAN-17): penulis baris datar mengisi tertanggung cermin untuk setiap baris yang pesertanya punya baris
+// sumber - di transaksi yang sama. Sejak RALAT 10-10-2026 penulisnya TulisCerminSaveRNM (Save to RNM).
 func TestSimpanMengisiTertanggungCermin(t *testing.T) {
 	isi, ada := cariBerkas(berkasSumberProduksi(t), "repository/pohonklaim.go")
 	if !ada {
 		t.Fatal("pohonklaim.go tidak terbaca")
 	}
-	simpan := potongFungsi(buangKomentarGo(isi), "func (r *PohonKlaim) Simpan(")
-	if !strings.Contains(simpan, ".IsiTertanggungCermin(ctx, tx,") {
-		t.Error("Simpan tidak mengisi NAME_OF_INSURED/DOB/CEDINGCO cermin (OQ-N2)")
+	tulis := potongFungsi(buangKomentarGo(isi), "func (r *PohonKlaim) TulisCerminSaveRNM(")
+	if !strings.Contains(tulis, ".IsiTertanggungCermin(ctx, tx,") {
+		t.Error("TulisCerminSaveRNM tidak mengisi NAME_OF_INSURED/DOB/CEDINGCO cermin (OQ-N2)")
 	}
 }
 
@@ -524,7 +556,31 @@ func TestMasterViewLingkupClaimLifeMenggigit(t *testing.T) {
 	if got := masterTersebut("SELECT JSONDATA FROM %s -- M_PRODUCT_LIFE", ""); len(got) == 0 {
 		t.Error("Claim Life menyebut M_PRODUCT_LIFE harus terbaca pelanggaran")
 	}
-	if got := masterTersebut("RATE_LIFE dan PRODUCTINWARD_LIFE", "RATE_LIFE"); len(got) != 1 || got[0] != "PRODUCTINWARD_LIFE" {
-		t.Errorf("berkas berizin RATE_LIFE tetap dilarang menyebut master lain: %q", got)
+	if got := masterTersebut("M_RATE_LIFE dan PRODUCTINWARD_LIFE", "M_RATE_LIFE"); len(got) != 1 || got[0] != "PRODUCTINWARD_LIFE" {
+		t.Errorf("berkas berizin M_RATE_LIFE tetap dilarang menyebut master lain: %q", got)
 	}
+}
+
+// Lingkup penjaga milik Claim Life (keputusan work owner 10-10-2026 "mulai kerja Claim Life").
+//
+// ⛔ Sejak satu folder per modul, akar pindaian di atas = SELURUH APP_RNM, sehingga aturan internal Claim Life
+// (literal kode status, satu rumah `Type`, kolom tak dibawa, total peserta) ikut menuduh kode modul lain yang punya
+// kosakata sendiri - `inti/backend/master`, bordereaux, nbfacin. Lingkup barunya: SELURUH berkas `modul/claimlife/`,
+// ditambah berkas modul lain yang KODENYA (komentar dibuang) menyebut tabel milik Claim Life - di sanalah aturan
+// Claim Life memang berlaku lintas modul (mis. Komite Claim Life menulis `T_GENERAL_CLAIM`).
+//
+// Tabel milik Claim Life = yang dibuat migrasi `modul/claimlife/backend/migrations` (001-023) + tabel datar warisan
+// `OS_AKSEPTASI_KLAIM_LIFE`, KECUALI tabel Komite (`T_GENERAL_KOMITE`, `T_KOMITE_KOMITELIST`, migrasi 013): milik konteks
+// Komite Claim Life (penjaga `TestNolPenyimpanKeputusanKomiteDiKonteksIni`). `T_LOG_SERVICE_RNM` (015) SENGAJA tidak ikut: antrean layanan bersama yang ditulis banyak
+// modul (Master Product Name Life, Endorsement Life, Komite) dengan kosakatanya sendiri.
+var polaTabelClaimLife = regexp.MustCompile(`(?i)\b(T_WORK_CLAIM|T_GENERAL_CLAIM|T_CLAIMLF_[A-Z0-9_]+|OS_AKSEPTASI_KLAIM_LIFE)\b`)
+
+// berkasModulClaimLife - berkas di folder modul Claim Life (milikClaimLife di migrasi_test.go = batas NOMOR migrasi).
+func berkasModulClaimLife(jalur string) bool {
+	return strings.Contains("/"+filepath.ToSlash(jalur), "/modul/claimlife/")
+}
+
+// dalamLingkupClaimLife - berkas Claim Life, atau berkas lain yang kodenya (tanpa komentar) menyebut tabel Claim Life.
+func dalamLingkupClaimLife(jalur, kodeTanpaKomentar string) bool {
+	return berkasModulClaimLife(jalur) || polaTabelClaimLife.MatchString(kodeTanpaKomentar)
 }

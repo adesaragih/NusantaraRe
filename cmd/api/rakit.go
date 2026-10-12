@@ -195,7 +195,16 @@ var modulBacaSemuaLogin = map[string]bool{"nbfacin": true}
 var ruteDipinjam = map[string][]string{
 	// Panel Data Polis Claim Life membaca polis versi berjalan dari PremiumList
 	// Life (`modul/claimlife/frontend/api.ts`, butir av).
-	"GET /api/polis-life/ringkas": {"claimlife"},
+	// + Form of Internal Claim Requisition layar kasus Komite Claim Life (Policy Detail; work owner 12-10-2026).
+	"GET /api/polis-life/ringkas": {"claimlife", "komiteclaimlife"},
+	// Layar kasus Komite Claim Life membaca klaim induk BACA SAJA (`Section/ShowTransfer.xml`: Claim Detail, Medical
+	// Advisor and Claim Analyst, Adjustment Detail, Treaty Type, Document Claim + View) - work owner 12-10-2026 "perbaiki
+	// tampilannya lagi". ⛔ Tidak melonggarkan akses: modul Komite Claim Life TANPA menu, jadi pinjaman ini tidak memberi
+	// akun mana pun akses baru - layar komite hanya terbuka bagi pemegang menu Claim Life (rute `/api/komite*` di bawah),
+	// yang memang sudah dilayani rute-rute ini sebagai pemiliknya. Tanpa tulisan.
+	"GET /api/klaim-life/{id}":                                     {"komiteclaimlife"},
+	"GET /api/klaim-life/{id}/peserta/{pesertaId}/spreading-polis": {"komiteclaimlife"},
+	"GET /api/klaim-life/{id}/dokumen/{dokId}/isi":                 {"komiteclaimlife"},
 	// Tombol "+" Consultant / Adjuster Claim Prop menambah master adjuster lewat API modul Adjuster Consultant
 	// (Pega MstAdjusterConsultant; keputusan work owner 08-10-2026, `modul/claimprop/frontend/api.ts`).
 	"POST /api/adjuster-consultant": {"claimprop"},

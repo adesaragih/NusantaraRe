@@ -12,6 +12,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -116,14 +117,39 @@ var medanMaster = []string{"ProportionType", "Ceding", "CedingID", "LeadingReins
 
 // MasterTreaty = GetLimitsTreatyIn_SQL (`JSONDATA FROM M_TREATY_IN WHERE ID UNION ALL ... M_TREATY_IN_EDM`) +
 // adoptJSONObject (SetValueClaimTNP_Act langkah 3-4): baris pertama yang ada (M_TREATY_IN lebih dulu).
+//
+// ⭐ 11-10-2026 (laporan pemakai, master Non Prop 1002320): dokumen JSON tidak lagi ditulis sejak 07-10-2026, jadi
+// master tanpa dokumen dibaca dari tabel `T_TREATY_*` (`masterDariTabel`) - bentuk keluaran sama.
+//
+// Spreading manual kedua sumber dirapikan ke bentuk spreading bernama (`rapikanSpreading`).
 func (a *Acuan) MasterTreaty(ctx context.Context, id string) (models.MasterTreaty, bool, error) {
+	m, ada, err := a.bacaMasterSumber(ctx, id)
+	if err != nil || !ada {
+		return m, ada, err
+	}
+	rapikanSpreading(&m)
+	return m, true, nil
+}
+
+// bacaMasterSumber - dokumen JSON (M_TREATY_IN lalu M_TREATY_IN_EDM), cadangan tabel `T_TREATY_*`.
+func (a *Acuan) bacaMasterSumber(ctx context.Context, id string) (models.MasterTreaty, bool, error) {
 	for _, tabel := range []string{"M_TREATY_IN", "M_TREATY_IN_EDM"} {
 		m, ada, err := a.bacaMaster(ctx, tabel, id)
 		if err != nil || ada {
 			return m, ada, err
 		}
 	}
-	return models.MasterTreaty{}, false, nil
+	return a.masterDariTabel(ctx, id)
+}
+
+// rapikanSpreading - spreading MANUAL (Spreading Type kosong): persen relatif terhadap bagian RNM
+// (`models.NormalkanSpreadingManual`), lalu jenis spreading dari rincian tunggal (`lengkapiJenisSpreading`).
+// Urutannya wajib: keduanya mengenali spreading manual dari jenisnya yang kosong.
+func rapikanSpreading(m *models.MasterTreaty) {
+	for i := range m.Share {
+		models.NormalkanSpreadingManual(&m.Share[i], m.RNMShare)
+		lengkapiJenisSpreading(&m.Share[i])
+	}
 }
 
 func jv(p string) string {
@@ -202,16 +228,17 @@ func (a *Acuan) bacaMaster(ctx context.Context, objek, id string) (models.Master
 	for _, k := range kurs {
 		m.CurrencyList = append(m.CurrencyList, models.KursMaster{Currency: k[0], Conversion: k[1]})
 	}
-	share, err := a.banyak(ctx, fmt.Sprintf(`SELECT jt.si, jt.tid, jt.tnm, jt.pct FROM %s m,
+	share, err := a.banyak(ctx, fmt.Sprintf(`SELECT jt.si, jt.tid, jt.tnm, jt.pct, jt.rnm FROM %s m,
 		JSON_TABLE(m.JSONDATA, '$.Share[*]' COLUMNS (si FOR ORDINALITY, tid VARCHAR2(100) PATH '$.SpreadingTypeIDXOL',
-		tnm VARCHAR2(400) PATH '$.SpreadingTypeXOL', pct VARCHAR2(100) PATH '$.SpreadingTotalPctXOL')) jt
-		WHERE m.ID = :1 ORDER BY jt.si`, t), 4, id)
+		tnm VARCHAR2(400) PATH '$.SpreadingTypeXOL', pct VARCHAR2(100) PATH '$.SpreadingTotalPctXOL',
+		rnm VARCHAR2(100) PATH '$.RNMShare')) jt
+		WHERE m.ID = :1 ORDER BY jt.si`, t), 5, id)
 	if err != nil {
 		return models.MasterTreaty{}, false, err
 	}
 	for _, s := range share {
 		m.Share = append(m.Share, models.ShareXOL{SpreadingTypeIDXOL: s[1], SpreadingTypeXOL: s[2],
-			SpreadingTotalPctXOL: s[3]})
+			SpreadingTotalPctXOL: s[3], RNMShare: s[4]})
 	}
 	spr, err := a.banyak(ctx, fmt.Sprintf(`SELECT jt.si, jt.ri, jt.rn, jt.pct FROM %s m,
 		JSON_TABLE(m.JSONDATA, '$.Share[*]' COLUMNS (si FOR ORDINALITY, NESTED PATH '$.SpreadingListXOL[*]' COLUMNS
@@ -250,14 +277,33 @@ func tglPega(s string) string {
 	return s
 }
 
+// tabelPopupMaster - nama berkualifikasi objek popup master: detail treaty + header master pasangannya (TREATY_IN /
+// TREATY_IN_EDM) dan acuan Class of Business (TREATYYEAR, TREATYBUSINESS).
+type tabelPopupMaster struct {
+	detail, edm, master, masterEDM, tahun, bisnis string
+}
+
 // sqlDaftarMaster - popup ChooseMasterTNonProp: BrowseDtlTreatyNP (TREATYINDETAIL ∪ TREATYINDETAILEDM) atau
 // BrowseDtlTreatyNPEDM (TREATYINDETAILEDM saja), `PROPORTIONTYPE = 'NonProportional'`, DISTINCT. Saringan per kolom
 // (mengandung, tanpa beda huruf) dijalankan di server sebelum batas `models.BatasMaster` (pola Claim Prop).
-func sqlDaftarMaster(detail, edm string, s models.SaringanMaster) (string, []any) {
-	var args []any
-	ph := func(v any) string { args = append(args, v); return fmt.Sprintf(":%d", len(args)) }
-	saring := func() string {
-		w := "PROPORTIONTYPE = " + ph(models.ProporsiMaster)
+//
+// ⭐ 11-10-2026 (laporan pemakai, master 1002320): kolom CLASSOFBUSINESS(ID) TREATYINDETAIL kosong untuk SEMUA master
+// Non Prop, jadi Class of Business popup dan `QuotationData.BusinessName` kasus kosong. Class of Business kini dari
+// TREATYBUSINESS per treaty group yang periode TREATYYEAR-nya mencakup Commencement master - join yang sama dengan view
+// CLAIM_MASTER_TREATY popup Claim Prop (satu baris per CoB; kasus Pega lama CLMNP- memang menyimpan CoB seperti itu,
+// mis. master 1001789 -> PROPERTY ALL RISK 10045). LEFT JOIN: master tanpa pemetaan CoB tetap tampil dengan CoB
+// kolom detail (kosong) - catatan popup Pega "Jika saat di filter COB nya kosong ...".
+func sqlDaftarMaster(t tabelPopupMaster, s models.SaringanMaster) []kueriMaster {
+	kol := `TREATYID, TREATYCONTRACTNAME, PROPORTIONTYPE, CLASSOFBUSINESSID, CLASSOFBUSINESS, SOB, CEDING, TREATYYEAR,
+		TREATYGROUP`
+	// bagian - satu sumber (detail + header master pasangannya). Detail di-DISTINCT lebih dulu (banyak baris per
+	// treaty: layer x angsuran), lalu CoB disusun per pasangan (TREATYID, TREATYGROUPID) master Non Prop saja dan
+	// di-join dengan kunci sama. Saringan kolom berlaku atas hasil join (CLASSOFBUSINESS = CoB TREATYBUSINESS).
+	bagian := func(detail, master string) kueriMaster {
+		var args []any
+		ph := func(v any) string { args = append(args, v); return fmt.Sprintf(":%d", len(args)) }
+		pt1, pt2 := ph(models.ProporsiMaster), ph(models.ProporsiMaster)
+		w := "1 = 1"
 		for _, f := range []struct{ kol, nilai string }{
 			{"TREATYID", s.TreatyID}, {"TREATYCONTRACTNAME", s.ContractName}, {"SOB", s.SOB}, {"CEDING", s.Ceding},
 			{"TREATYGROUP", s.TreatyGroup}, {"CLASSOFBUSINESS", s.ClassOfBusiness}, {"TREATYYEAR", s.TreatyYear},
@@ -266,40 +312,98 @@ func sqlDaftarMaster(detail, edm string, s models.SaringanMaster) (string, []any
 				w += " AND UPPER(" + f.kol + ") LIKE " + ph("%"+strings.ToUpper(v)+"%")
 			}
 		}
-		return w
+		return kueriMaster{q: fmt.Sprintf(`SELECT DISTINCT %s FROM (SELECT a.TREATYID, a.TREATYCONTRACTNAME,
+			a.PROPORTIONTYPE, NVL(k.BIZCODE, a.CLASSOFBUSINESSID) CLASSOFBUSINESSID,
+			NVL(k.BIZNAME, a.CLASSOFBUSINESS) CLASSOFBUSINESS, a.SOB, a.CEDING, a.TREATYYEAR, a.TREATYGROUP
+			FROM (SELECT DISTINCT TREATYID, TREATYCONTRACTNAME, PROPORTIONTYPE, CLASSOFBUSINESSID, CLASSOFBUSINESS, SOB,
+				CEDING, TREATYYEAR, TREATYGROUP, TREATYGROUPID FROM %s WHERE PROPORTIONTYPE = %s) a
+			LEFT JOIN (SELECT DISTINCT g.TREATYID, g.TREATYGROUPID, b.BIZCODE, b.BIZNAME
+				FROM (SELECT DISTINCT TREATYID, TREATYGROUPID FROM %s WHERE PROPORTIONTYPE = %s) g
+				JOIN %s d ON TO_CHAR(d.ID) = g.TREATYID
+				JOIN %s c ON c.TREATYGROUPID = g.TREATYGROUPID AND c.STARTDATE <= d.COMMENCEMENT
+					AND c.ENDDATE >= d.COMMENCEMENT
+				JOIN %s b ON b.TREATYGROUPID = g.TREATYGROUPID AND b.BIZNAME IS NOT NULL) k
+				ON k.TREATYID = a.TREATYID AND k.TREATYGROUPID = a.TREATYGROUPID) WHERE %s
+			ORDER BY TREATYYEAR DESC, TREATYID DESC, CLASSOFBUSINESS FETCH FIRST %d ROWS ONLY`,
+			kol, detail, pt1, detail, pt2, master, t.tahun, t.bisnis, w, models.BatasMaster), args: args}
 	}
-	kol := `TREATYID, TREATYCONTRACTNAME, PROPORTIONTYPE, CLASSOFBUSINESSID, CLASSOFBUSINESS, SOB, CEDING, TREATYYEAR,
-		TREATYGROUP`
-	var bagian []string
+	var out []kueriMaster
 	if s.Sumber != models.SumberMasterINEDM {
-		bagian = append(bagian, fmt.Sprintf(`SELECT %s FROM %s WHERE %s`, kol, detail, saring()))
+		out = append(out, bagian(t.detail, t.master))
 	}
-	bagian = append(bagian, fmt.Sprintf(`SELECT %s FROM %s WHERE %s`, kol, edm, saring()))
-	return fmt.Sprintf(`SELECT DISTINCT %s FROM (%s) ORDER BY TREATYYEAR DESC, TREATYID DESC FETCH FIRST %d ROWS ONLY`,
-		kol, strings.Join(bagian, " UNION ALL "), models.BatasMaster), args
+	return append(out, bagian(t.edm, t.masterEDM))
+}
+
+// kueriMaster - satu kueri sumber popup master beserta argumennya.
+type kueriMaster struct {
+	q    string
+	args []any
 }
 
 // DaftarMaster = grid popup ChooseMasterTNonProp (BrowseDtlMasterTNP_Act: Param.TreatyIN IN / INEDM).
+//
+// Sumber IN (detail ∪ EDM) dijalankan per sumber lalu digabung di sini (DISTINCT, urut TREATYYEAR / TREATYID menurun
+// lalu CoB, batas `models.BatasMaster`): satu kueri UNION ALL atas kedua join CoB membuat Oracle memilih rencana
+// 14 s di DEV, sedangkan tiap sumber sendiri < 1 s.
 func (a *Acuan) DaftarMaster(ctx context.Context, s models.SaringanMaster) ([]models.BarisMaster, error) {
-	detail, err := a.q("TREATYINDETAIL")
-	if err != nil {
-		return nil, err
-	}
-	edm, err := a.q("TREATYINDETAILEDM")
-	if err != nil {
-		return nil, err
-	}
-	q, args := sqlDaftarMaster(detail, edm, s)
-	rows, err := a.banyak(ctx, q, 9, args...)
-	if err != nil {
-		return nil, err
+	var t tabelPopupMaster
+	for _, o := range []struct {
+		tuju  *string
+		objek string
+	}{{&t.detail, "TREATYINDETAIL"}, {&t.edm, "TREATYINDETAILEDM"}, {&t.master, "TREATY_IN"},
+		{&t.masterEDM, "TREATY_IN_EDM"}, {&t.tahun, "TREATYYEAR"}, {&t.bisnis, "TREATYBUSINESS"}} {
+		n, err := a.q(o.objek)
+		if err != nil {
+			return nil, err
+		}
+		*o.tuju = n
 	}
 	out := []models.BarisMaster{}
-	for _, r := range rows {
-		out = append(out, models.BarisMaster{TreatyID: r[0], TreatyContractName: r[1], ProportionType: r[2],
-			ClassOfBusinessID: r[3], ClassOfBusiness: r[4], SOB: r[5], Ceding: r[6], TreatyYear: r[7], TreatyGroup: r[8]})
+	sudah := map[models.BarisMaster]bool{}
+	for _, k := range sqlDaftarMaster(t, s) {
+		rows, err := a.banyak(ctx, k.q, 9, k.args...)
+		if err != nil {
+			return nil, err
+		}
+		for _, r := range rows {
+			b := models.BarisMaster{TreatyID: r[0], TreatyContractName: r[1], ProportionType: r[2],
+				ClassOfBusinessID: r[3], ClassOfBusiness: r[4], SOB: r[5], Ceding: r[6], TreatyYear: r[7], TreatyGroup: r[8]}
+			if !sudah[b] {
+				sudah[b] = true
+				out = append(out, b)
+			}
+		}
+	}
+	urutkanBarisMaster(out)
+	if len(out) > models.BatasMaster {
+		out = out[:models.BatasMaster]
 	}
 	return out, nil
+}
+
+// urutkanBarisMaster - urutan Oracle `TREATYYEAR DESC, TREATYID DESC, CLASSOFBUSINESS` (NULL = "" dianggap terbesar,
+// seperti Oracle: di depan untuk DESC, di belakang untuk ASC).
+func urutkanBarisMaster(b []models.BarisMaster) {
+	banding := func(x, y string) int {
+		switch {
+		case x == y:
+			return 0
+		case x == "":
+			return 1
+		case y == "":
+			return -1
+		}
+		return strings.Compare(x, y)
+	}
+	sort.SliceStable(b, func(i, j int) bool {
+		if c := banding(b[i].TreatyYear, b[j].TreatyYear); c != 0 {
+			return c > 0
+		}
+		if c := banding(b[i].TreatyID, b[j].TreatyID); c != 0 {
+			return c > 0
+		}
+		return banding(b[i].ClassOfBusiness, b[j].ClassOfBusiness) < 0
+	})
 }
 
 // BarisMasterDari - satu baris popup master menurut TREATYID + CLASSOFBUSINESSID + TREATYGROUP (parameter tombol Choose

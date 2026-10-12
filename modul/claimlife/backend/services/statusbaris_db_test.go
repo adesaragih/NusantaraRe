@@ -63,7 +63,9 @@ func repoUji(t *testing.T) (*intidb.DB, func()) {
 func pohonUjiStatus(t *testing.T, svc *services.Service, db *intidb.DB) models.PohonKlaim {
 	t.Helper()
 	pohon := models.PohonKlaim{
-		Work: models.WorkClaim{ID: "CLM-UJI400", Lini: inti.LiniLife},
+		// Tahap Outstanding (pemegang Admin) - Reject Outstanding bergerbang tahap sejak 12-10-2026.
+		Work: models.WorkClaim{ID: "CLM-UJI400", Lini: inti.LiniLife,
+			Tahap: models.TahapOutstanding.String(), Position: models.PeranAdminLife},
 		Klaim: models.Klaim{
 			NomorKlaim: "UJI-CLM-400", Type: "QP",
 			Peserta: []models.Peserta{{

@@ -65,3 +65,26 @@ func (g *Gudang) KunciBaris(ctx context.Context, tx *db.Tx, jenis, id string) er
 	}
 	return nil
 }
+
+// sqlKunciTahun - kunci tabel tahun treaty. Baris BARU tidak dapat dikunci
+// `SELECT … FOR UPDATE`; tabrakan periode antar-sisipan karena itu dijaga dengan
+// kunci TABEL: penyimpan kedua menunggu sampai yang pertama selesai, lalu membaca
+// keadaan sesudahnya (keputusan work owner 06-10-2026).
+func sqlKunciTahun(t string) string {
+	return fmt.Sprintf(`LOCK TABLE %s IN EXCLUSIVE MODE`, t)
+}
+
+// KunciTahunTreaty mengunci TREATYYEAR_LIFE sampai transaksi tx selesai.
+func (g *Gudang) KunciTahunTreaty(ctx context.Context, tx *db.Tx) error {
+	if !tx.Terisi() {
+		return fmt.Errorf("repository: locking treaty years requires a transaction")
+	}
+	q, err := g.siapkan(TabelTahun, sqlKunciTahun)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, q); err != nil {
+		return fmt.Errorf("repository: locking treaty years: %w", err)
+	}
+	return nil
+}

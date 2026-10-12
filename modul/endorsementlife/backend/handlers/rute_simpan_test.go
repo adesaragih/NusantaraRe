@@ -14,7 +14,7 @@ func TestRuteSimpan(t *testing.T) {
 	g.Peserta[0].Nilai["CURRENCY"] = "IDR"
 	g.Peserta[0].Nilai["GROSS_PREMIUM"] = "10"
 	h := routerBuat(g)
-	jalur := handlers.Prefix + "/kasus/EDMLF-1/simpan"
+	jalur := handlers.Prefix + "/kasus/EDML-1/simpan"
 	if w := minta(t, h, "POST", jalur, `{"pilih":["UJI-D1"]}`, false); w.Code != http.StatusUnauthorized {
 		t.Fatalf("tanpa identitas %d", w.Code)
 	}
@@ -34,17 +34,26 @@ func TestRuteSimpan(t *testing.T) {
 	}
 	// Kasus tertutup yang BELUM disimpan: 409 karena tertutup, bukan karena simpan kedua.
 	tutup := gudangSatuKasus()
-	tutup.Polis["EDMLF-1"].Status = models.StatusKasusSelesai
+	tutup.Polis["EDML-1"].Status = models.StatusKasusSelesai
 	if w := minta(t, routerBuat(tutup), "POST", jalur, `{}`, true); w.Code != http.StatusConflict || !strings.Contains(w.Body.String(), "already decided") {
 		t.Fatalf("kasus tertutup %d %s", w.Code, w.Body)
 	}
-	if w := minta(t, h, "POST", handlers.Prefix+"/kasus/EDMLF-9/simpan", `{}`, true); w.Code != http.StatusNotFound {
+	if w := minta(t, h, "POST", handlers.Prefix+"/kasus/EDML-9/simpan", `{}`, true); w.Code != http.StatusNotFound {
 		t.Fatalf("kasus tak ada %d", w.Code)
 	}
 	k := gudangSatuKasus()
 	k.Peserta = nil
 	if w := minta(t, routerBuat(k), "POST", jalur, `{}`, true); w.Code != http.StatusUnprocessableEntity {
 		t.Fatalf("tanpa peserta %d %s", w.Code, w.Body)
+	}
+	// Proteksi 08-10-2026: Perubahan Data tanpa centang dan tanpa New - 422 berpesan, peserta tetap Old.
+	tanpa := gudangSatuKasus()
+	if w := minta(t, routerBuat(tanpa), "POST", jalur, `{}`, true); w.Code != http.StatusUnprocessableEntity ||
+		!strings.Contains(w.Body.String(), models.PesanTanpaPerubahan) {
+		t.Fatalf("tanpa perubahan %d %s", w.Code, w.Body)
+	}
+	if tanpa.Peserta[0].EdmStatus != models.StatusOld {
+		t.Error("peserta berubah walau ditolak")
 	}
 	if w := minta(t, routerUji(gudangSatuKasus(), false), "POST", jalur, `{}`, true); w.Code != http.StatusServiceUnavailable {
 		t.Fatalf("tanpa Oracle %d", w.Code)
