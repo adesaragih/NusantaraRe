@@ -66,12 +66,12 @@ func tahapTujuan(potongan string) (models.Tahap, bool) {
 func pindahTahap(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		tujuan, sah := tahapTujuan(r.PathValue("tujuan"))
 		if !sah {
-			galat.Tulis(w, http.StatusNotFound, "tahap tujuan tidak dikenal")
+			galat.Tulis(w, http.StatusNotFound, "The destination stage is not recognized.")
 			return
 		}
 		err := svc.Tahap().DenganJejak(jejak.PerekamJejakOracle(svc)).
@@ -89,17 +89,17 @@ func jawabGalatPindah(w http.ResponseWriter, err error) {
 	case err == nil:
 		w.WriteHeader(http.StatusNoContent)
 	case errors.Is(err, inti.ErrTanpaIdentitas):
-		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		galat.Tulis(w, http.StatusUnauthorized, "The request has no user identity.")
 	case errors.Is(err, inti.ErrTanpaWewenang):
 		// ⛔ Orang memindahkan pekerjaan yang SEDANG IA PEGANG.
 		galat.Tulis(w, http.StatusForbidden,
-			"hanya pemegang tahap asal yang dapat memindahkan kasus ini")
+			"Only the holder of the current stage can move this case.")
 	case errors.Is(err, services.ErrPerpindahanTidakSah):
 		// ⛔ 409, bukan 400: permintaannya berbentuk benar, keadaan
 		// kasusnya yang tidak mengizinkan. Tangga yang setiap anaknya
 		// dapat dilompati bukan tangga.
 		galat.Tulis(w, http.StatusConflict,
-			"perpindahan itu tidak ada di tangga kerja klaim")
+			"That move is not part of the claim workflow.")
 	case errors.As(err, &kurang):
 		// 11-10-2026: peserta Accept tanpa dokumen - 422 berdaftar (pola kekurangan Save to RNM): permintaannya sah,
 		// datanya belum lengkap; SELURUH kekurangan sekaligus.
@@ -116,12 +116,12 @@ func jawabGalatPindah(w http.ResponseWriter, err error) {
 		// 10-10-2026 - gerbang tombol bawah layar Outstanding (InputOSClaimLife b21699, b21832, b22123).
 		galat.Tulis(w, http.StatusConflict, err.Error())
 	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
-		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+		galat.Tulis(w, http.StatusConflict, "The case is already closed and cannot be changed.")
 	case errors.Is(err, services.ErrTahapTidakDikenal):
-		galat.Tulis(w, http.StatusConflict, "tahap kasus ini tidak dikenal")
+		galat.Tulis(w, http.StatusConflict, "The stage of this case is not recognized.")
 	case errors.Is(err, services.ErrKlaimTidakAda):
-		galat.Tulis(w, http.StatusNotFound, "klaim tidak ada")
+		galat.Tulis(w, http.StatusNotFound, "The claim does not exist.")
 	default:
-		galat.Tulis(w, http.StatusInternalServerError, "gagal memindahkan tahap klaim")
+		galat.Tulis(w, http.StatusInternalServerError, "Failed to move the claim to another stage.")
 	}
 }

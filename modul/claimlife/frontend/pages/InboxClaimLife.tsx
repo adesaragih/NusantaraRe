@@ -17,12 +17,14 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { MENU, PERAN, type KodePeran } from '../../../../inti/frontend/labels'
 import TabelKomite from '../components/TabelKomite'
-import { REGISTER_BANYAK, TAHAP } from '../labels'
+import { REGISTER_BANYAK, TABEL_KOMITE, TAHAP } from '../labels'
 import { Halaman, Kosong, Memuat } from '../../../../inti/frontend/components/ui/dasar'
 import { PitaGalat } from '../components/PitaGalat'
 import { unduhXlsx, type KolomEksporXlsx } from '../../../../inti/frontend/lib/exportXlsx'
 import {
   ambilKotakMasuk,
+  kataCariInbox,
+  MAKS_CARI_INBOX,
   TAHAP_NOMOR,
   type BarisInbox,
   type HalamanInbox,
@@ -32,7 +34,10 @@ import {
 /** Satu tab: nomor tahap, judul VERBATIM, dan peran yang memegangnya. */
 interface Tab {
   nomor: NomorTahap
+  /** Nama tahap VERBATIM korpus (kunci uji, Export, kabar) — TIDAK ditampilkan sebagai label tab sejak 12-10-2026. */
   judul: string
+  /** Label tampilan tab (keputusan work owner 12-10-2026, bukan nama korpus): Claim Admin / Medical Advisor / Claim Analyst. */
+  label: string
   peran: KodePeran
   /**
    * Tab disembunyikan selama antriannya KOSONG (keputusan work owner 10-10-2026 "tab input register hilangkan saja,
@@ -42,6 +47,16 @@ interface Tab {
    */
   sembunyiBilaKosong?: boolean
 }
+
+/**
+ * Label tampilan tab inbox (keputusan work owner 12-10-2026: "ubah nama tabnya menjadi Claim Admin, Medical Advisor, Claim
+ * Analyst"). BUKAN nama korpus: nilai TAHAP di basis data, kode tahap, dan logika tidak berubah.
+ */
+export const LABEL_TAB_INBOX = {
+  admin: 'Claim Admin',
+  medis: 'Medical Advisor',
+  analis: 'Claim Analyst',
+} as const
 
 /**
  * Keempat tab, berurut tangga.
@@ -55,22 +70,26 @@ const TAB: readonly Tab[] = [
   {
     nomor: TAHAP_NOMOR.inputRegister,
     judul: TAHAP.inputRegister,
+    label: TAHAP.inputRegister,
     peran: PERAN.admin,
     sembunyiBilaKosong: true,
   },
   {
     nomor: TAHAP_NOMOR.outstanding,
     judul: TAHAP.outstandingClaim,
+    label: LABEL_TAB_INBOX.admin,
     peran: PERAN.admin,
   },
   {
     nomor: TAHAP_NOMOR.medicalCheck,
     judul: TAHAP.medicalCheck,
+    label: LABEL_TAB_INBOX.medis,
     peran: PERAN.medis,
   },
   {
     nomor: TAHAP_NOMOR.claimAnalis,
     judul: TAHAP.claimAnalis,
+    label: LABEL_TAB_INBOX.analis,
     peran: PERAN.spv,
   },
 ]
@@ -89,6 +108,12 @@ export function tabUntuk(peran: readonly KodePeran[]): Tab[] {
  * Tab yang TAMPIL: tab ber-`sembunyiBilaKosong` (Input Register) hanya bila jumlah kasusnya sudah diketahui > 0
  * (10-10-2026). Jumlah yang belum terbaca = disembunyikan.
  */
+/** Placeholder kotak cari inbox (keputusan work owner 12-10-2026). */
+export const CARI_INBOX = 'Search case ID, claim no, PL number, insured name'
+
+/** Jeda ketik sebelum kata kunci dikirim (pola Claim Fac In). */
+export const JEDA_CARI_MS = 300
+
 export function tabTampil(tab: readonly Tab[], jumlah: Partial<Record<NomorTahap, number>>): Tab[] {
   return tab.filter((t) => t.sembunyiBilaKosong !== true || (jumlah[t.nomor] ?? 0) > 0)
 }
@@ -214,12 +239,26 @@ export default function InboxClaimLife({
   const [galat, setGalat] = useState<unknown>(null)
   const [memuat, setMemuat] = useState(false)
   const [halaman, setHalaman] = useState(1)
+  // Kotak cari (work owner 12-10-2026 "tambahkan juga filter untuk mencari seperti claim facin"): `kata` = isian,
+  // `cari` = kata kunci terkirim sesudah jeda 300 ms (pola Claim Fac In JEDA_CARI_MS); berlaku untuk antrian aktif.
+  const [kata, setKata] = useState('')
+  const [cari, setCari] = useState('')
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const k = kataCariInbox(kata)
+      setCari((lama) => {
+        if (lama !== k) setHalaman(1)
+        return k
+      })
+    }, JEDA_CARI_MS)
+    return () => clearTimeout(t)
+  }, [kata])
 
-  const muat = useCallback(async (t: NomorTahap, h: number) => {
+  const muat = useCallback(async (t: NomorTahap, h: number, c: string) => {
     setMemuat(true)
     setGalat(null)
     try {
-      setHal(await ambilKotakMasuk(t, h))
+      setHal(await ambilKotakMasuk(t, h, undefined, c))
     } catch (e) {
       setHal(null)
       setGalat(e)
@@ -230,8 +269,8 @@ export default function InboxClaimLife({
 
   useEffect(() => {
     if (aktif === null) return
-    void muat(aktif, halaman)
-  }, [aktif, halaman, muat])
+    void muat(aktif, halaman, cari)
+  }, [aktif, halaman, cari, muat])
 
   const kunciTab = semuaTab.map((t) => t.nomor).join(',')
   useEffect(() => {
@@ -251,33 +290,42 @@ export default function InboxClaimLife({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kunciTab])
 
-  // Jumlah antrian aktif mengikuti halaman yang baru dimuat.
+  // Jumlah antrian aktif mengikuti halaman yang baru dimuat — HANYA tanpa kata kunci: badge = jumlah seluruh antrian,
+  // hasil cari tampil di paginasi (12-10-2026).
   useEffect(() => {
-    if (aktif !== null && hal !== null) setJumlah((j) => (j[aktif] === hal.total ? j : { ...j, [aktif]: hal.total }))
-  }, [aktif, hal])
+    if (aktif !== null && hal !== null && cari === '')
+      setJumlah((j) => (j[aktif] === hal.total ? j : { ...j, [aktif]: hal.total }))
+  }, [aktif, hal, cari])
 
   if (semuaTab.length === 0) {
     return (
-      <>
-        <Kosong
-          pesan={
-            'No queue for your role. Claim Life queues are held by ReasLifeAdmin, ReasLifeMedicalAdvisor, and ReasLifeSPV.'
-          }
+      // 12-10-2026 (work owner "rapikan tampilan inbox committee ini"): akun tanpa antrian Claim Life langsung mendapat kotak
+      // inbox ber-kulit berjudul Committee Inbox bila punya kasus komite (TabelKomite membaca daftarKomite); kalimat netral
+      // hanya bila daftar komite pun kosong.
+      <section className="inbox claimlife__akar">
+        <TabelKomite
+          peran={peran}
+          onBukaModul={onBukaModul}
+          utama
+          kosong={<Kosong pesan={TABEL_KOMITE.kosongAkun} />}
         />
-        <TabelKomite peran={peran} onBukaModul={onBukaModul} />
-      </>
+      </section>
     )
   }
 
   return (
-    <section className="inbox">
+    // claimlife__akar / claimlife__tabel (12-10-2026): kulit tampilan sama dengan inbox Claim Fac In - kelas saja, struktur tetap.
+    <section className="inbox claimlife__akar">
       <header className="inbox__kepala">
         <h2 className="inbox__judul">{MENU.inbox}</h2>
         {/* Tombol kepala — VERBATIM `Register_Flow.xml:155`. */}
         <div className="inbox__aksi-kepala">
+        {/* Register HANYA di tab Claim Admin (keputusan work owner 12-10-2026); Export xlsx di semua tab. */}
+        {aktif === TAHAP_NOMOR.outstanding && (
         <button type="button" className="btn btn--primary" onClick={onRegister}>
           {MENU.register}
         </button>
+        )}
         {/* ⛔ EKSPOR HANYA YANG TAMPIL — butir bg. Enam kolom yang sama
             dengan tabel di bawah, berurutan sama, dan HANYA halaman yang
             sedang terbuka. Mengekspor seluruh tahap dari tombol yang
@@ -318,10 +366,29 @@ export default function InboxClaimLife({
             }}
           >
             {/* Judul VERBATIM (Inggris) saja; subjudul Indonesia dibuang 10-10-2026. Badge jumlah di setiap tab. */}
-            <span className="inbox__tab-judul">{t.judul}</span>
+            <span className="inbox__tab-judul">{t.label}</span>
             {jumlah[t.nomor] !== undefined && <span className="inbox__lencana">{jumlah[t.nomor]}</span>}
           </button>
         ))}
+      </div>
+
+      {/* Kotak cari (12-10-2026) — letak dan gaya seperti toolbar Claim Fac In; saklar Teknik Claim Fac In tidak ditiru. */}
+      <div className="toolbar claimlife__toolbar">
+        <input
+          className="field__input claimlife__cari"
+          type="search"
+          aria-label={CARI_INBOX}
+          placeholder={CARI_INBOX}
+          maxLength={MAKS_CARI_INBOX}
+          value={kata}
+          onChange={(e) => setKata(e.target.value)}
+        />
+        {kata !== '' && (
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => setKata('')}>
+            Clear
+          </button>
+        )}
+        <span className="toolbar__spacer" />
       </div>
 
       {memuat && <Memuat />}
@@ -331,10 +398,14 @@ export default function InboxClaimLife({
       {!memuat && galat === null && hal !== null && (
         <>
           {hal.baris.length === 0 ? (
-            <Kosong pesan="No cases in this queue." />
+            cari === '' ? (
+              <Kosong pesan="No cases in this queue." />
+            ) : (
+              <Kosong pesan="No cases match the search." />
+            )
           ) : (
             <div className="inbox__gulir">
-            <table className="inbox__tabel">
+            <table className="inbox__tabel claimlife__tabel">
               <thead>
                 <tr>
                   <th>{KOLOM.caseId}</th>

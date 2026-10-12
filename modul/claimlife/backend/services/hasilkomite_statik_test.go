@@ -88,11 +88,15 @@ func TestNolKolomStatusKeduaDiSkema(t *testing.T) {
 			dikecualikanKomite++
 			return nil
 		}
-		if m := polaKolomStatusKedua.FindString(string(isi)); m != "" {
-			t.Errorf("%s: memuat %q; keputusan Komite dipetakan ke STS_REJECT "+
-				"DI BATAS dan tidak disimpan sebagai status kedua (ADR-U-0001). "+
-				"Roster dan keputusan per anggota milik konteks Komite Claim Life",
-				filepath.ToSlash(jalur), m)
+		// Lingkup 11-10-2026: migrasi Claim Life utuh; modul lain hanya pernyataan bersasaran tabel Claim Life
+		// (`APPROVAL` / `COMMENT_TEXT` di tabel claimprop / nbfacin sendiri adalah kosakata modul itu).
+		for _, bagian := range sqlLingkupClaimLifeLuar(jalur, string(isi)) {
+			if m := polaKolomStatusKedua.FindString(bagian); m != "" {
+				t.Errorf("%s: memuat %q; keputusan Komite dipetakan ke STS_REJECT "+
+					"DI BATAS dan tidak disimpan sebagai status kedua (ADR-U-0001). "+
+					"Roster dan keputusan per anggota milik konteks Komite Claim Life",
+					filepath.ToSlash(jalur), m)
+			}
 		}
 		return nil
 	})

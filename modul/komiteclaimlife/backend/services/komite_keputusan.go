@@ -41,6 +41,9 @@ var (
 	ErrPenyelesaianAkhirBelumAda = errors.New(
 		"services: keputusan tingkat akhir komite menuntut akseptasi (tiket 04a/04b) " +
 			"atau penolakan ke baris klaim (tiket 05), yang belum tersedia")
+	// ErrNoteKomiteWajib - Note keputusan kosong. `Section/ShowTransfer.xml` b32893-b32940: medan `Note` (`.Comment`)
+	// `pyRequired true` / `pyRequiredNew always` (keputusan work owner 12-10-2026: ikuti XML).
+	ErrNoteKomiteWajib = errors.New("services: note keputusan komite wajib diisi")
 	// ErrKeputusanKomiteTidakDikenal - nilai di luar {1, 2}.
 	ErrKeputusanKomiteTidakDikenal = models.ErrKeputusanKomiteTidakDikenal
 	// ErrKeputusanKomiteBersamaan - tangga berubah sejak dibaca.
@@ -163,6 +166,10 @@ func (k *KeputusanKomite) Putuskan(ctx context.Context, pelaku inti.Pelaku,
 	// terang di mesin mana pun.
 	if _, err := models.TerapkanKeputusanKomite(keputusan, 1, 1); err != nil {
 		return HasilKeputusanKomite{}, err
+	}
+	// Note WAJIB (ShowTransfer b32940) - juga sebelum basis data.
+	if strings.TrimSpace(komentar) == "" {
+		return HasilKeputusanKomite{}, ErrNoteKomiteWajib
 	}
 	if k == nil || k.svc == nil || !k.svc.PunyaDatabase() {
 		return HasilKeputusanKomite{}, db.ErrTanpaOracle

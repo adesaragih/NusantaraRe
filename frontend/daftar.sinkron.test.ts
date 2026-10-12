@@ -33,7 +33,7 @@ describe('sidebar ↔ palet, dua arah', () => {
     // Tombol di bawah Beranda (`MenuModul.menuAtas`, 09-10-2026) berdiri sesudah Beranda, sebelum tombol modul.
     const dariAtas = PALET.atas.map((e) => [e.modul, e.label])
     expect(PALET.entri.map((e) => [e.modul, e.label])).toEqual([['beranda', 'Home'], ...dariAtas, ...dariSidebar])
-    expect(dariSidebar).toHaveLength(MODUL_FRONTEND.length)
+    expect(dariSidebar).toHaveLength(MODUL_BERMENU.length)
     // Setiap tombol atas milik modul yang tombolnya TAMPIL.
     const tampil = new Set(PALET.golongan.flatMap((g) => g.modul.filter((t) => t.halaman !== null).map((t) => t.kode)))
     for (const e of PALET.atas) expect(tampil.has(e.pemilik ?? ''), e.modul).toBe(true)

@@ -44,9 +44,9 @@ func TestJawabanGalatDaftar(t *testing.T) {
 		{fmt.Errorf("%w: sertifikat 001 pada premium list UJI-PL-A dipilih lebih dari sekali", galat.ErrPermintaanTidakSah), http.StatusBadRequest, "dipilih lebih dari sekali"},
 		{fmt.Errorf("%w: nomor polis UJI-POL-B tidak cocok dengan premium list UJI-PL-A", services.ErrKelompokTidakSah), http.StatusUnprocessableEntity, "tidak cocok dengan premium list UJI-PL-A"},
 		{&services.GalatPesertaSudahDiklaim{Bentrok: []repository.PesertaAktifInApp{{NomorPremiList: "UJI-PL-A", Sertifikat: "001", NomorKlaim: "UJI-CLMLF-1"}}}, http.StatusConflict, `Certificate No "001" (PL UJI-PL-A) is already in claim UJI-CLMLF-1 (Outstanding)`},
-		{inti.ErrTanpaIdentitas, http.StatusUnauthorized, "identitas"},
-		{inti.ErrTanpaWewenang, http.StatusForbidden, "peran"},
-		{errors.New("ORA-03113"), http.StatusInternalServerError, "gagal mendaftarkan klaim"},
+		{inti.ErrTanpaIdentitas, http.StatusUnauthorized, "identity"},
+		{inti.ErrTanpaWewenang, http.StatusForbidden, "role"},
+		{errors.New("ORA-03113"), http.StatusInternalServerError, "Failed to register the claim."},
 	} {
 		status, pesan, ada := jawabanGalatDaftar(k.err)
 		if !ada || status != k.status || !strings.Contains(pesan, k.memuat) {

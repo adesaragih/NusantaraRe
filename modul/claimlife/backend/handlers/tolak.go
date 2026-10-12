@@ -45,12 +45,12 @@ func uraiAlasanTolak(r *http.Request) (string, error) {
 func tolakBaris(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		alasan, err := uraiAlasanTolak(r)
 		if err != nil {
-			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "The request body is not valid JSON.")
 			return
 		}
 		err = svc.Status().DenganJejak(jejak.PerekamJejakOracle(svc)).Tolak(r.Context(), inti.PelakuDari(r, stubPelaku),
@@ -62,18 +62,22 @@ func tolakBaris(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			// menjawab pertanyaan yang berbeda - dan ronde pertama berkas ini
 			// menjawab "bukan ReasLifeAdmin" kepada pemanggil yang sebenarnya
 			// hanya belum menyebut dirinya.
-			galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+			galat.Tulis(w, http.StatusUnauthorized, "The request has no user identity.")
 			return
 		case errors.Is(err, inti.ErrTanpaWewenang):
 			// 403: identitasnya ada, perannya yang kurang.
 			galat.Tulis(w, http.StatusForbidden,
-				"hanya ReasLifeAdmin yang dapat menolak baris Outstanding")
+				"Only ReasLifeAdmin can reject an Outstanding row.")
+			return
+		case errors.Is(err, services.ErrTolakBukanOutstanding):
+			// 409 (12-10-2026): Reject Outstanding hanya di tahap Outstanding Claim (inbox Admin).
+			galat.Tulis(w, http.StatusConflict, "Reject Outstanding is only available at the Outstanding Claim stage.")
 			return
 		case errors.Is(err, services.ErrBarisSudahFinal):
 			// 409: baris itu sudah punya keputusan. Bukan galat permintaan,
 			// melainkan bentrokan dengan keadaan yang sudah ada.
 			galat.Tulis(w, http.StatusConflict,
-				"baris sudah diputus dan tidak dapat ditolak lagi")
+				"The row has already been decided and cannot be rejected.")
 			return
 		case errors.Is(err, services.ErrKlaimBelumBernomor):
 			// 422: datanya yang belum lengkap, bukan permintaannya yang salah.
@@ -82,16 +86,16 @@ func tolakBaris(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 			// sehingga jalur nyata selalu berhenti di sini. Itu keadaan yang
 			// benar - bukan kerusakan - dan dinyatakan di tiket.
 			galat.Tulis(w, http.StatusUnprocessableEntity,
-				"klaim belum bernomor; penolakan baris menunggu nomor klaim")
+				"The claim has no number yet; rejecting a row requires a claim number.")
 			return
 		case errors.Is(err, kontrak.ErrKasusSudahTertutup):
-			galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+			galat.Tulis(w, http.StatusConflict, "The case is already closed and cannot be changed.")
 			return
 		case errors.Is(err, galat.ErrPermintaanTidakSah):
 			galat.Tulis(w, http.StatusBadRequest, err.Error())
 			return
 		case err != nil:
-			galat.Tulis(w, http.StatusInternalServerError, "gagal menolak baris")
+			galat.Tulis(w, http.StatusInternalServerError, "Failed to reject the row.")
 			return
 		}
 

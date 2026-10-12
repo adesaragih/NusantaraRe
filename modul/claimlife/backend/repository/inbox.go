@@ -87,6 +87,9 @@ type SaringInbox struct {
 	AkunID string
 	Offset int
 	Ukuran int
+	// Cari - kotak cari inbox (keputusan work owner 12-10-2026), SUDAH berupa pola LIKE (PolaCariInbox); kosong = tanpa
+	// saringan.
+	Cari string
 }
 
 // sqlInboxWhere merakit klausa penyaring yang DIPAKAI BERSAMA oleh pembacaan
@@ -112,7 +115,7 @@ func sqlInboxWhere(pakaiAkun bool) string {
 // 11-10-2026: PL Number dan Update Operator Name lewat SUBKUERI SKALAR berindeks (IX_PLD_CLAIM_ID, IX_CLAIMLF_JEJAK_KLAIM) -
 // satu kueri, tanpa N+1. PL = PL peserta aktif (STS_HAPUS IS NULL); operator pengubah = AKUN_ID jejak terakhir
 // (KEEP DENSE_RANK LAST, tanpa FETCH FIRST di subkueri), cadangan CREATE_OP_NAME.
-func sqlInbox(work, header, peserta, jejak string, pakaiAkun bool) string {
+func sqlInbox(work, header, peserta, jejak, cari string, pakaiAkun bool) string {
 	// CASE_ID dibuang migrasi 023 (keputusan work owner 01-10-2026): Case ID
 	// kotak masuk = ID kasus.
 	return fmt.Sprintf(`SELECT w.ID, NVL(w.TAHAP, :tahapCadangan),
@@ -122,18 +125,18 @@ func sqlInbox(work, header, peserta, jejak string, pakaiAkun bool) string {
 			   NVL((SELECT MAX(j.AKUN_ID) KEEP (DENSE_RANK LAST ORDER BY j.WAKTU, j.ID) FROM %s j WHERE j.KLAIM_ID = w.ID),
 			       w.CREATE_OP_NAME)
 		  FROM %s w
-		  JOIN %s h ON h.ID = w.ID%s
+		  JOIN %s h ON h.ID = w.ID%s%s
 		 ORDER BY w.TGL_CREATE DESC, w.ID DESC
 		 OFFSET :offset ROWS FETCH NEXT :ukuran ROWS ONLY`,
-		peserta, jejak, work, header, sqlInboxWhere(pakaiAkun))
+		peserta, jejak, work, header, sqlInboxWhere(pakaiAkun), cari)
 }
 
-// sqlCacahInbox merakit pencacahannya.
-func sqlCacahInbox(work, header string, pakaiAkun bool) string {
+// sqlCacahInbox merakit pencacahannya (saringan cari yang SAMA dengan barisnya).
+func sqlCacahInbox(work, header, cari string, pakaiAkun bool) string {
 	return fmt.Sprintf(`SELECT COUNT(*)
 		  FROM %s w
-		  JOIN %s h ON h.ID = w.ID%s`,
-		work, header, sqlInboxWhere(pakaiAkun))
+		  JOIN %s h ON h.ID = w.ID%s%s`,
+		work, header, sqlInboxWhere(pakaiAkun), cari)
 }
 
 // AmbilInbox membaca satu halaman antrian beserta cacah totalnya.
@@ -161,6 +164,12 @@ func (r *KlaimLife) AmbilInbox(ctx context.Context, s SaringInbox) (
 		return nil, 0, err
 	}
 	pakaiAkun := s.AkunID != ""
+	cari := ""
+	if s.Cari != "" {
+		if cari, err = r.saringanCariInbox(peserta); err != nil {
+			return nil, 0, err
+		}
+	}
 
 	// ⛔ Urutan argumen mengikuti urutan MUNCULNYA penanda di teks, sebab
 	// driver Oracle mengikat penanda bernama secara berurutan di jalur ini.
@@ -171,8 +180,13 @@ func (r *KlaimLife) AmbilInbox(ctx context.Context, s SaringInbox) (
 		argBaris = append(argBaris, s.AkunID)
 		argCacah = append(argCacah, s.AkunID)
 	}
+	if cari != "" {
+		// Empat bind berurutan: Case ID, CLAIM_NO, PL Number, nama (sqlInboxCari).
+		argBaris = append(argBaris, s.Cari, s.Cari, s.Cari, s.Cari)
+		argCacah = append(argCacah, s.Cari, s.Cari, s.Cari, s.Cari)
+	}
 
-	qCacah := sqlCacahInbox(work, header, pakaiAkun)
+	qCacah := sqlCacahInbox(work, header, cari, pakaiAkun)
 	if err := db.PeriksaSQL(qCacah); err != nil {
 		return nil, 0, err
 	}
@@ -181,7 +195,7 @@ func (r *KlaimLife) AmbilInbox(ctx context.Context, s SaringInbox) (
 		return nil, 0, fmt.Errorf("repository: mencacah kotak masuk: %w", err)
 	}
 
-	q := sqlInbox(work, header, peserta, jejakT, pakaiAkun)
+	q := sqlInbox(work, header, peserta, jejakT, cari, pakaiAkun)
 	if err := db.PeriksaSQL(q); err != nil {
 		return nil, 0, err
 	}

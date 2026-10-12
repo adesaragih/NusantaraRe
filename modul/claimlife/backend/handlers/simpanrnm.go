@@ -42,15 +42,15 @@ func jawabGalatSimpanRNM(w http.ResponseWriter, err error) bool {
 			Kekurangan []services.KekuranganRNM `json:"kekurangan"`
 		}{tolak.Pesan, tolak.Langkah, kurang})
 	case errors.Is(err, inti.ErrTanpaIdentitas):
-		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		galat.Tulis(w, http.StatusUnauthorized, "The request has no user identity.")
 	case errors.Is(err, inti.ErrTanpaWewenang):
-		galat.Tulis(w, http.StatusForbidden, "hanya pemegang tahap Outstanding Claim yang dapat menyimpan ke RNM")
+		galat.Tulis(w, http.StatusForbidden, "Only the Claim Admin can Save to RNM.")
 	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
-		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+		galat.Tulis(w, http.StatusConflict, "The case is already closed and cannot be changed.")
 	case errors.Is(err, services.ErrSimpanRNMBukanOutstanding):
-		galat.Tulis(w, http.StatusConflict, "Save to RNM hanya tersedia pada tahap Outstanding Claim")
+		galat.Tulis(w, http.StatusConflict, "Save to RNM is only available at the Claim Admin stage.")
 	case errors.Is(err, services.ErrKlaimTidakAda):
-		galat.Tulis(w, http.StatusNotFound, "klaim tidak ada")
+		galat.Tulis(w, http.StatusNotFound, "The claim does not exist.")
 	case errors.Is(err, services.ErrTypeTidakDikenal),
 		errors.Is(err, services.ErrBusinessCodeTidakDikenal),
 		errors.Is(err, kontrak.ErrPolisNomorTakDitemukan):
@@ -60,7 +60,7 @@ func jawabGalatSimpanRNM(w http.ResponseWriter, err error) bool {
 	case errors.Is(err, galat.ErrPermintaanTidakSah):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	default:
-		galat.Tulis(w, http.StatusInternalServerError, "gagal menyimpan ke RNM")
+		galat.Tulis(w, http.StatusInternalServerError, "Failed to Save to RNM.")
 	}
 	return true
 }
@@ -69,7 +69,7 @@ func jawabGalatSimpanRNM(w http.ResponseWriter, err error) bool {
 func simpanRNM(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		hasil, err := services.SimpanRNMOracle(svc).Simpan(r.Context(),

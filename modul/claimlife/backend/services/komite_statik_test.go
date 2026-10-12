@@ -141,6 +141,11 @@ func TestNolPenyimpanKeputusanKomiteDiKonteksIni(t *testing.T) {
 			return err
 		}
 		kode := buangKomentar(string(isi))
+		// Lingkup 11-10-2026: berkas Claim Life selalu; berkas lain hanya bila kodenya menyebut tabel Claim Life
+		// (claimprop `KomiteAproval`, `pxListSubscript` nbfacin / treatyin adalah kosakata modul itu sendiri).
+		if !goLingkupClaimLife(jalur, kode) {
+			return nil
+		}
 		if m := polaMilikKomite.FindString(kode); m != "" {
 			t.Errorf("%s: menyebut %q di luar komentar; roster dan keputusan per "+
 				"anggota milik konteks Komite Claim Life, bukan Claim Life",

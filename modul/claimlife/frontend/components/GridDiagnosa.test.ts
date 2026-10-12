@@ -1,8 +1,11 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import { DIAGNOSA } from '../labels'
 import { bolehUbahDiagnosa, type Diagnosa, type Peserta } from '../api'
-import { PILIHAN_KELOMPOK_DIAGNOSA, pilihanKelompok, ringkasanDiagnosa, selDiagnosa } from './GridDiagnosa'
+import { pilihanKelompok, ringkasanDiagnosa, selDiagnosa } from './GridDiagnosa'
 
 // Uji grid diagnosa — butir bd.
 
@@ -83,7 +86,7 @@ describe('ringkasanDiagnosa (11-10-2026: English, ringkas)', () => {
   })
 
   it('kosong dan baca saja: tanpa ajakan Add', () => {
-    expect(ringkasanDiagnosa([], false)).toBe('No diagnosis recorded.')
+    expect(ringkasanDiagnosa([], false)).toBe('No diagnosis yet.')
   })
 
   it('ada baris: tanpa kalimat (grid yang berbicara)', () => {
@@ -98,8 +101,10 @@ describe('pilihanKelompok', () => {
     expect(pilihanKelompok([], ' ')).toEqual([])
   })
 
-  it('daftar bawaan KOSONG — tidak dikarang (OQ-L)', () => {
-    expect(PILIHAN_KELOMPOK_DIAGNOSA).toEqual([])
+  it('layar TIDAK menyalin daftar kelompok (12-10-2026: satu sumber backend models.KelompokDiagnosa)', () => {
+    const grid = readFileSync(join(__dirname, 'GridDiagnosa.tsx'), 'utf8')
+    expect(grid).not.toContain('Neoplasms')
+    expect(grid).toContain('ambilKelompokDiagnosa()')
   })
 })
 
@@ -109,9 +114,9 @@ describe('label grid diagnosa', () => {
     // Merapikannya menjadi "Diagnose" berarti layar ini menyebut kolom
     // dengan kata yang tidak ada di sistem lama — dan orang yang beralih
     // membaca layar, bukan kode.
-    expect(DIAGNOSA.kolomNama).toBe('DIAGNOSE')
-    expect(DIAGNOSA.kolomIcd).toBe('ICD CODE')
-    expect(DIAGNOSA.kolomKelompok).toBe('GROUP DIAGNOSE')
+    expect(DIAGNOSA.kolomNama).toBe('Diagnose')
+    expect(DIAGNOSA.kolomIcd).toBe('ICD Code')
+    expect(DIAGNOSA.kolomKelompok).toBe('Group Diagnose')
     expect(DIAGNOSA.tambah).toBe('Add')
     expect(DIAGNOSA.hapus).toBe('Delete')
     expect(DIAGNOSA.pilih).toBe('Choose')

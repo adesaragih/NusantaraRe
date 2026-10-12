@@ -89,23 +89,23 @@ func jawabanGalatDaftar(err error) (status int, pesan string, ada bool) {
 		return http.StatusUnprocessableEntity,
 			strings.NewReplacer("services: ", "", "repository: ", "").Replace(err.Error()), true
 	case errors.Is(err, inti.ErrTanpaIdentitas):
-		return http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak", true
+		return http.StatusUnauthorized, "The request has no user identity.", true
 	case errors.Is(err, inti.ErrTanpaWewenang):
-		return http.StatusForbidden, "peran tidak mencukupi", true
+		return http.StatusForbidden, "Your role is not authorized to do this.", true
 	}
-	return http.StatusInternalServerError, "gagal mendaftarkan klaim", true
+	return http.StatusInternalServerError, "Failed to register the claim.", true
 }
 
 // daftarKlaim melayani POST /api/klaim-life.
 func daftarKlaim(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		var masuk permintaanDaftarJSON
 		if err := json.NewDecoder(r.Body).Decode(&masuk); err != nil {
-			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "The request body is not valid JSON.")
 			return
 		}
 
@@ -148,7 +148,7 @@ func jawabanDaftar(pohon []models.PohonKlaim) any {
 func cariPeserta(svc *services.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		pl := r.URL.Query().Get("pl")
@@ -156,7 +156,7 @@ func cariPeserta(svc *services.Service) http.HandlerFunc {
 			// ⛔ 400, bukan hasil kosong: tabel peserta berisi 66,8 juta baris
 			// dan hanya ber-index pada PL_NUMBER. Pencarian tanpa itu bukan
 			// "pencarian luas", melainkan pemindaian penuh.
-			galat.Tulis(w, http.StatusBadRequest, "parameter pl (nomor premium list) wajib diisi")
+			galat.Tulis(w, http.StatusBadRequest, "The PL Number is required.")
 			return
 		}
 		batas, _ := strconv.Atoi(r.URL.Query().Get("n"))
@@ -164,7 +164,7 @@ func cariPeserta(svc *services.Service) http.HandlerFunc {
 		hasil, err := svc.Peserta().Cari(r.Context(), pl,
 			r.URL.Query().Get("sertifikat"), r.URL.Query().Get("nama"), batas)
 		if err != nil {
-			galat.Tulis(w, http.StatusInternalServerError, "gagal mencari peserta")
+			galat.Tulis(w, http.StatusInternalServerError, "Failed to search the insured.")
 			return
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")

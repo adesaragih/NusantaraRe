@@ -144,7 +144,7 @@ export function PanelPindahTahap({
 
   return (
     <section className="tahap">
-      {!tanpaJudul && <h4 className="tahap__judul">Perpindahan dari {tahap}</h4>}
+      {!tanpaJudul && <h4 className="tahap__judul">Move from {tahap}</h4>}
       <p>
         {tombol.map(({ t, atur }) => (
           <button
@@ -159,7 +159,7 @@ export function PanelPindahTahap({
               else void pindah(t.tujuan)
             }}
           >
-            {sibuk === t.tujuan ? 'Memindahkan…' : t.label}
+            {sibuk === t.tujuan ? 'Moving…' : t.label}
           </button>
         ))}
       </p>

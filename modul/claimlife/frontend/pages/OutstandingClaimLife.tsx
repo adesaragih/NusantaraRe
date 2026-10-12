@@ -38,11 +38,10 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 
-import { OS_PEGA, TAHAP, TOMBOL_MEDIS, TOMBOL_OS } from '../labels'
+import { DETAIL, OS_PEGA, TAHAP, TOMBOL_MEDIS, TOMBOL_OS } from '../labels'
 import { PanelPolisOutstanding, tanggalTampil } from '../components/PanelDataPolis'
 import { bacaPolisPeserta } from '../pilihanPeserta'
 import { PanelPindahTahap, type TombolPindah } from '../components/PanelPindahTahap'
-import { PanelTutupKlaim } from '../components/PanelTutupKlaim'
 import {
   claimRNMKosong,
   galatClaimRNM,
@@ -65,8 +64,12 @@ import {
   bolehDeletePeserta,
   bolehIsianOutstanding,
   cabutPeserta,
+  bolehTutupDiLayar,
   GagalSimpanRNM,
   kasusTertutup,
+  penghalangDariGalat,
+  tutupKlaim,
+  simpanAnalis,
   simpanMedis,
   pindahTahap,
   PILIHAN_KATASTROFE,
@@ -665,27 +668,24 @@ export function KonfirmasiSimpanRNM({
 /** Kalimat modal konfirmasi Send to Medical Check (keputusan work owner 11-10-2026: "iya perlu pop up konfirmasi"). */
 export const KONFIRMASI_MEDIS = {
   judul: 'Send to Medical Check',
-  tanya: 'Are you sure you want to send this claim to Medical Check?',
+  tanya: 'Are you sure you want to send this claim to Medical Advisor?',
   peringatan:
-    'After sending, the claim moves to the Medical Advisor queue and can no longer be edited from the Outstanding screen.',
+    'After sending, the claim moves to the Medical Advisor queue and can no longer be edited from the Claim Admin screen.',
   batal: 'Cancel',
   ya: 'Yes, Send to Medical Check',
   proses: 'Sending…',
-  claimNo: 'Claim No',
-  peserta: 'Insured',
-  accept: 'Accepted insured',
 } as const
 
 /** Pita sukses Inbox sesudah Send to Medical Check (pola Register → Inbox). */
 export function kabarTerkirimMedis(klaimID: string): string {
-  return `Claim ${klaimID} sent to Medical Check.`
+  return `Claim ${klaimID} sent to Medical Advisor.`
 }
 
 /** Kabar Inbox sesudah perpindahan dari layar kasus, per tujuan (11-10-2026). */
 export function kabarPindah(klaimID: string, tujuan: TahapJalur): string {
   switch (tujuan) {
     case TAHAP_JALUR.outstanding:
-      return `Claim ${klaimID} sent back to Admin.`
+      return `Claim ${klaimID} sent back to Claim Admin.`
     case TAHAP_JALUR.medicalCheck:
       return kabarTerkirimMedis(klaimID)
     case TAHAP_JALUR.claimAnalis:
@@ -701,30 +701,133 @@ export function kabarTutup(nomor: string): string {
 }
 
 /**
+ * Kalimat modal konfirmasi perpindahan dari layar Medical Check / Claim Analis (keputusan work owner 12-10-2026: "untuk
+ * tombol send back to admin dan send to claim analyst, pastikan ada pesan validasi terlebih dahulu"). XML
+ * `SendtoAdmin_Section` hanya bertanya "Send Back to Admin?" + Submit — tanpa isian alasan, jadi modal pun tanpa isian.
+ */
+export function konfirmasiPindah(tujuan: TahapJalur): { judul: string; tanya: string; peringatan: string; ya: string } {
+  switch (tujuan) {
+    case TAHAP_JALUR.claimAnalis:
+      return {
+        judul: TOMBOL_MEDIS.kirimKeAnalis,
+        tanya: 'Are you sure you want to send this claim to Claim Analyst?',
+        peringatan:
+          'The claim moves to the Claim Analyst queue and can no longer be edited from the Medical Advisor screen.',
+        ya: 'Yes, Send to Claim Analyst',
+      }
+    case TAHAP_JALUR.medicalCheck:
+      return {
+        judul: 'Send Back to Medical',
+        tanya: 'Are you sure you want to send this claim back to Medical Advisor?',
+        peringatan: 'The claim returns to the Medical Advisor queue.',
+        ya: 'Yes, Send Back to Medical',
+      }
+    default:
+      return {
+        judul: TOMBOL_MEDIS.kembaliKeAdmin,
+        tanya: 'Are you sure you want to send this claim back to Claim Admin?',
+        peringatan: 'The claim returns to the Claim Admin queue.',
+        ya: 'Yes, Send Back to Admin',
+      }
+  }
+}
+
+/**
+ * Modal konfirmasi perpindahan (12-10-2026) — Modal inti, pola KonfirmasiKirimMedis. HANYA pertanyaan + peringatan (work
+ * owner 12-10-2026: "cukup validasinya saja, tidak perlu tampilkan nomor claim atau apapun"); Cancel / X / Escape menutup tanpa memanggil server; selama proses nonaktif ("Sending…") dan tak dapat ditutup.
+ */
+export function KonfirmasiPindah({
+  tujuan,
+  sibuk,
+  onLanjut,
+  onTutup,
+}: {
+  tujuan: TahapJalur
+  sibuk: boolean
+  onLanjut: () => void
+  onTutup: () => void
+}) {
+  const k = konfirmasiPindah(tujuan)
+  return (
+    <Modal
+      judul={k.judul}
+      onTutup={onTutup}
+      tanpaTutup={sibuk}
+      labelBatal={KONFIRMASI_MEDIS.batal}
+      aksi={
+        <button type="button" className="btn btn--primary" onClick={onLanjut} disabled={sibuk}>
+          {sibuk ? KONFIRMASI_MEDIS.proses : k.ya}
+        </button>
+      }
+    >
+      <p>{k.tanya}</p>
+      <p role="note" className="alert alert--warn">
+        {k.peringatan}
+      </p>
+    </Modal>
+  )
+}
+
+/**
  * Tombol bawah tahap Medical Check (`MedicalCheckClaimLife`: Save b18572 · Send Back to Admin b20256 · Send to Claim
  * Analyst b21151) dan Claim Analis (Send Back to Admin · Send Back to Medical Check · Close Claim). Perpindahan TIDAK
  * disalin: satu daftar, satu dialog — PanelPindahTahap. Gerbang pemegang tahap ditegakkan server (403/409).
  */
 export function TombolBawahTahap({
   klaim,
-  onSimpan,
-  sibukSimpan = false,
-  bolehSimpan = false,
   sesudahPindah,
   sesudahTutup,
   adaPerubahan = false,
+  onGalat,
 }: {
   klaim: Klaim
+  /** Galat perpindahan ke SATU tempat galat halaman (PitaGalat di atas isi). */
+  onGalat: (e: unknown) => void
   /** Recommendation belum disimpan — perpindahan nonaktif dengan petunjuk (pola Outstanding, 11-10-2026). */
   adaPerubahan?: boolean
-  /** Save Medical Check (Recommendation); tanpa ini tombol Save tidak tampil. */
-  onSimpan?: () => void
-  sibukSimpan?: boolean
-  /** Save aktif (ada perubahan dan pelaku Medical Advisor). */
-  bolehSimpan?: boolean
   sesudahPindah: (tujuan: TahapJalur) => void
   sesudahTutup: (nomor: string) => void
 }) {
+  // Tombol perpindahan yang menunggu konfirmasi (12-10-2026); SATU-SATUNYA pemanggil pindahTahap layar tahap ini.
+  const [menunggu, setMenunggu] = useState<TahapJalur | null>(null)
+  const [sibukPindah, setSibukPindah] = useState(false)
+  // Close Claim (12-10-2026): Modal konfirmasi b499; SATU-SATUNYA pemanggil tutupKlaim layar ini.
+  const [mintaTutup, setMintaTutup] = useState(false)
+  const [sibukTutup, setSibukTutup] = useState(false)
+
+  async function jalankanTutup(): Promise<void> {
+    if (sibukTutup) return
+    const nomor = klaim.nomorKlaim !== '' ? klaim.nomorKlaim : klaim.id
+    setSibukTutup(true)
+    try {
+      await tutupKlaim(klaim.id)
+      setMintaTutup(false)
+      sesudahTutup(nomor)
+    } catch (e) {
+      setMintaTutup(false)
+      // 409 berpenghalang (server memeriksa ulang ProtectCloseClaim_act): daftar per peserta ke tempat galat halaman.
+      onGalat(kalimatPenghalangTutup(e))
+    } finally {
+      setSibukTutup(false)
+    }
+  }
+
+  async function jalankanPindah(): Promise<void> {
+    if (sibukPindah || menunggu === null) return
+    const tujuan = menunggu
+    setSibukPindah(true)
+    try {
+      await pindahTahap(klaim.id, tujuan)
+      setMenunggu(null)
+      sesudahPindah(tujuan)
+    } catch (e) {
+      setMenunggu(null)
+      onGalat(e)
+    } finally {
+      setSibukPindah(false)
+    }
+  }
+
   if (kasusTertutup(klaim)) return null
   return (
     <>
@@ -734,21 +837,94 @@ export function TombolBawahTahap({
         </p>
       )}
       <div className="os__aksi">
-        {klaim.tahap === TAHAP.medicalCheck && onSimpan !== undefined && (
-          <button type="button" className="btn btn--primary" disabled={sibukSimpan || !bolehSimpan} onClick={onSimpan}>
-            {sibukSimpan ? 'Saving…' : TOMBOL_MEDIS.simpan}
-          </button>
-        )}
+        {/* Save Medical Check pindah ke kaki grid Participant Details (12-10-2026: "tombol save yang ada di sebelah send to
+            admin hilangkan saja"). */}
         <PanelPindahTahap
           klaimID={klaim.id}
           tahap={klaim.tahap}
           sesudahPindah={sesudahPindah}
-          aturTombol={() => ({ tampil: true, aktif: !adaPerubahan })}
+          aturTombol={() => ({ tampil: true, aktif: !adaPerubahan && !sibukPindah && !sibukTutup })}
           tanpaJudul
+          // Setiap tombol membuka Modal konfirmasi; PanelPindahTahap tidak memindah sendiri (12-10-2026).
+          sebelumPindah={(t) => {
+            if (adaPerubahan) return false
+            setMenunggu(t.tujuan)
+            return false
+          }}
         />
-        {klaim.tahap === TAHAP.claimAnalis && <PanelTutupKlaim klaim={klaim} sesudahTutup={sesudahTutup} />}
+        {/* Close Claim (12-10-2026): PALING KANAN, merah; "Check readiness" dibuang - penghalangnya diperiksa server saat
+            menutup (409 berdaftar) dan tampil di tempat galat halaman. */}
+        {klaim.tahap === TAHAP.claimAnalis && bolehTutupDiLayar(klaim) && (
+          <button
+            type="button"
+            className="btn btn--danger os__tutup"
+            disabled={adaPerubahan || sibukTutup || sibukPindah}
+            onClick={() => setMintaTutup(true)}
+          >
+            {DETAIL.tutupKlaim}
+          </button>
+        )}
       </div>
+      {mintaTutup && (
+        <KonfirmasiTutup
+          sibuk={sibukTutup}
+          onLanjut={() => {
+            void jalankanTutup()
+          }}
+          onTutup={() => {
+            if (!sibukTutup) setMintaTutup(false)
+          }}
+        />
+      )}
+      {menunggu !== null && (
+        <KonfirmasiPindah
+          tujuan={menunggu}
+          sibuk={sibukPindah}
+          onLanjut={() => {
+            void jalankanPindah()
+          }}
+          onTutup={() => {
+            if (!sibukPindah) setMenunggu(null)
+          }}
+        />
+      )}
     </>
+  )
+}
+
+/** Kalimat galat Close Claim: 409 berpenghalang → satu kalimat per peserta; lainnya pesan servernya. */
+export function kalimatPenghalangTutup(e: unknown): unknown {
+  const halangan = penghalangDariGalat(e)
+  return halangan.length === 0 ? e : ['The claim cannot be closed yet:', ...halangan.map((p) => p.pesan)].join(' ')
+}
+
+/** Kalimat modal Close Claim (12-10-2026) — pertanyaan VERBATIM CloseClaim_Section b499. */
+export const KONFIRMASI_TUTUP = {
+  judul: DETAIL.tutupKlaim,
+  tanya: DETAIL.konfirmasiTutup,
+  peringatan: 'The case is completed and removed from every inbox; nothing can be changed on it afterwards.',
+  ya: 'Yes, Close Claim',
+} as const
+
+/** Modal konfirmasi Close Claim — pola KonfirmasiPindah (pertanyaan + peringatan + Cancel / Yes, tanpa ringkasan). */
+export function KonfirmasiTutup({ sibuk, onLanjut, onTutup }: { sibuk: boolean; onLanjut: () => void; onTutup: () => void }) {
+  return (
+    <Modal
+      judul={KONFIRMASI_TUTUP.judul}
+      onTutup={onTutup}
+      tanpaTutup={sibuk}
+      labelBatal={KONFIRMASI_MEDIS.batal}
+      aksi={
+        <button type="button" className="btn btn--danger" onClick={onLanjut} disabled={sibuk}>
+          {sibuk ? 'Closing…' : KONFIRMASI_TUTUP.ya}
+        </button>
+      }
+    >
+      <p>{KONFIRMASI_TUTUP.tanya}</p>
+      <p role="note" className="alert alert--warn">
+        {KONFIRMASI_TUTUP.peringatan}
+      </p>
+    </Modal>
   )
 }
 
@@ -757,17 +933,15 @@ export function TombolBawahTahap({
  * lolos; Cancel / X / Escape menutup tanpa memanggil server; selama proses nonaktif ("Sending…") dan tak dapat ditutup.
  */
 export function KonfirmasiKirimMedis({
-  klaim,
   sibuk,
   onLanjut,
   onTutup,
 }: {
-  klaim: Klaim
   sibuk: boolean
   onLanjut: () => void
   onTutup: () => void
 }) {
-  const diterima = klaim.peserta.filter((p) => p.isAccept === 'true').length
+  // 12-10-2026: tanpa ringkasan Claim No / peserta, sejalan dengan modal perpindahan lain ("cukup validasinya saja").
   return (
     <Modal
       judul={KONFIRMASI_MEDIS.judul}
@@ -784,20 +958,6 @@ export function KonfirmasiKirimMedis({
       <p role="note" className="alert alert--warn">
         {KONFIRMASI_MEDIS.peringatan}
       </p>
-      <dl className="os__ringkas-rnm">
-        <div className="os__baris-form">
-          <dt>{KONFIRMASI_MEDIS.claimNo}</dt>
-          <dd className="os__nilai-kode">{klaim.nomorKlaim || '—'}</dd>
-        </div>
-        <div className="os__baris-form">
-          <dt>{KONFIRMASI_MEDIS.peserta}</dt>
-          <dd>{klaim.peserta.length}</dd>
-        </div>
-        <div className="os__baris-form">
-          <dt>{KONFIRMASI_MEDIS.accept}</dt>
-          <dd>{diterima}</dd>
-        </div>
-      </dl>
     </Modal>
   )
 }
@@ -821,6 +981,33 @@ export function bolehUbahCatatanAdmin(klaim: Klaim | null, peran: readonly KodeP
  * terbuka (11-10-2026; b4908/b6401 pyPosition ReasLifeMedicalAdvisor). Server menegakkan yang sama (409 tahap, 403
  * pemegang tahap); gerbang STS_REJECT per peserta di RincianPeserta.
  */
+/**
+ * Reject Outstanding tampil HANYA di inbox Admin (keputusan work owner 12-10-2026): tahap Outstanding Claim, pelaku
+ * ReasLifeAdmin, kasus terbuka — kondisi baris (bernomor, Outstanding; b15399) tetap di RincianPeserta. Server: 403 bukan
+ * Admin, 409 bukan tahap Outstanding.
+ */
+export function bolehTolakOutstanding(klaim: Klaim | null, peran: readonly KodePeran[] | undefined): boolean {
+  return klaim !== null && !kasusTertutup(klaim) && klaim.tahap === TAHAP.outstandingClaim && (peran ?? []).includes(PERAN.admin)
+}
+
+/**
+ * Catatan CLAIM ANALYST dapat diisi HANYA di tahap Claim Analis oleh ReasLifeSPV, kasus terbuka (keputusan work owner
+ * 12-10-2026). Server menegakkan yang sama (409 tahap, 403 pemegang tahap).
+ */
+export function bolehUbahAnalis(klaim: Klaim | null, peran: readonly KodePeran[] | undefined): boolean {
+  return klaim !== null && !kasusTertutup(klaim) && klaim.tahap === TAHAP.claimAnalis && (peran ?? []).includes(PERAN.spv)
+}
+
+/** Catatan CLAIM ANALYST yang berbeda dari nilai tersimpan (peserta aktif saja). */
+export function catatanAnalisBerubah(klaim: Klaim, isian: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const p of klaim.peserta) {
+    const v = isian[p.id]
+    if (v !== undefined && v !== (p.catatanAnalis ?? '')) out[p.id] = v
+  }
+  return out
+}
+
 /** Recommendation yang benar-benar berbeda dari nilai tersimpan (peserta aktif saja). */
 export function rekomendasiBerubah(klaim: Klaim, isian: Record<string, string>): Record<string, string> {
   const out: Record<string, string> = {}
@@ -863,6 +1050,9 @@ export default function OutstandingClaimLife({ klaimID, onPindah, peran }: Outst
   // Recommendation yang diubah di layar (Medical Check, 11-10-2026) — hanya peserta yang berubah; dibuang sesudah Save.
   const [rekomendasi, setRekomendasi] = useState<Record<string, string>>({})
   const [sibukSimpanMedis, setSibukSimpanMedis] = useState(false)
+  // Catatan CLAIM ANALYST yang diubah di layar (Claim Analis, 12-10-2026) — hanya peserta yang berubah.
+  const [catatanAnalis, setCatatanAnalis] = useState<Record<string, string>>({})
+  const [sibukSimpanAnalis, setSibukSimpanAnalis] = useState(false)
 
   /**
    * Isian berubah: kotak kekurangan lama DIBERSIHKAN (11-10-2026) — kotak itu hanya milik klik Save to RNM atas data
@@ -932,20 +1122,48 @@ export default function OutstandingClaimLife({ klaimID, onPindah, peran }: Outst
   async function simpanRekomendasi(): Promise<void> {
     if (sibukSimpanMedis || klaim === null) return
     const berubah = rekomendasiBerubah(klaim, rekomendasi)
-    if (Object.keys(berubah).length === 0) return
-    setSibukSimpanMedis(true)
     setGalat(null)
     setKekurangan(null)
     setPesan(null)
+    // Diagnosa sudah tersimpan per aksi; tanpa Recommendation yang berubah tidak ada yang dikirim.
+    if (Object.keys(berubah).length === 0) {
+      setPesan('Progress saved.')
+      return
+    }
+    setSibukSimpanMedis(true)
     try {
       await simpanMedis(klaimID, { rekomendasi: berubah })
       await muatUlang()
       setRekomendasi({})
-      setPesan('Medical Check saved.')
+      setPesan('Progress saved.')
     } catch (e) {
       setGalat(e)
     } finally {
       setSibukSimpanMedis(false)
+    }
+  }
+
+  /** Tombol Save layar Claim Analis — catatan CLAIM ANALYST yang berubah (PUT /analis); "Progress saved.". */
+  async function simpanCatatanAnalis(): Promise<void> {
+    if (sibukSimpanAnalis || klaim === null) return
+    const berubah = catatanAnalisBerubah(klaim, catatanAnalis)
+    setGalat(null)
+    setKekurangan(null)
+    setPesan(null)
+    if (Object.keys(berubah).length === 0) {
+      setPesan('Progress saved.')
+      return
+    }
+    setSibukSimpanAnalis(true)
+    try {
+      await simpanAnalis(klaimID, { catatan: berubah })
+      await muatUlang()
+      setCatatanAnalis({})
+      setPesan('Progress saved.')
+    } catch (e) {
+      setGalat(e)
+    } finally {
+      setSibukSimpanAnalis(false)
     }
   }
 
@@ -1044,7 +1262,8 @@ export default function OutstandingClaimLife({ klaimID, onPindah, peran }: Outst
   const hapusPeserta = klaim?.peserta.find((p) => p.id === hapus)
 
   return (
-    <section className="os">
+    // claimlife__akar + claimlife__kasus (12-10-2026): kulit Claim Fac In di layar kasus - kelas saja, struktur tetap.
+    <section className="os claimlife__akar claimlife__kasus">
       <header className="os__kepala">
         <div>
           <h2 className="os__judul">
@@ -1142,6 +1361,13 @@ export default function OutstandingClaimLife({ klaimID, onPindah, peran }: Outst
                       isianAdjustment={isian.adjustment}
                       kolomKurang={kolomKurangPeserta(kekurangan, p.id)}
                       bolehMedis={bolehUbahMedis(klaim, peran)}
+                      bolehTolakOutstanding={bolehTolakOutstanding(klaim, peran)}
+                      catatanAnalis={catatanAnalis[p.id]}
+                      onUbahCatatanAnalis={
+                        bolehUbahAnalis(klaim, peran)
+                          ? (v) => setCatatanAnalis((c) => ({ ...c, [p.id]: v }))
+                          : undefined
+                      }
                       rekomendasi={rekomendasi[p.id]}
                       onUbahRekomendasi={
                         bolehUbahMedis(klaim, peran)
@@ -1165,6 +1391,27 @@ export default function OutstandingClaimLife({ klaimID, onPindah, peran }: Outst
                       onClick={() => void simpan()}
                     >
                       {sibuk ? 'Saving…' : OS_PEGA.simpan}
+                    </button>
+                  ) : bolehUbahAnalis(klaim, peran) ? (
+                    // Claim Analis (12-10-2026): Save kecil di kaki grid (pola Save Medical) - catatan CLAIM ANALYST saja.
+                    <button
+                      type="button"
+                      className="btn btn--primary btn--sm"
+                      disabled={sibukSimpanAnalis}
+                      onClick={() => void simpanCatatanAnalis()}
+                    >
+                      {sibukSimpanAnalis ? 'Saving…' : OS_PEGA.simpan}
+                    </button>
+                  ) : bolehUbahMedis(klaim, peran) ? (
+                    // Medical Check (work owner 12-10-2026 "tambahkan tombol save juga di medical seperti di admin, fungsinya
+                    // hanya save data"): posisi dan gaya SAMA dengan Save grid Outstanding; menyimpan Recommendation saja.
+                    <button
+                      type="button"
+                      className="btn btn--primary btn--sm"
+                      disabled={sibukSimpanMedis}
+                      onClick={() => void simpanRekomendasi()}
+                    >
+                      {sibukSimpanMedis ? 'Saving…' : OS_PEGA.simpan}
                     </button>
                   ) : undefined
                 }
@@ -1213,12 +1460,11 @@ export default function OutstandingClaimLife({ klaimID, onPindah, peran }: Outst
                 <div className="os__kaki-tab">
                   <TombolBawahTahap
                     klaim={klaim}
-                    onSimpan={() => {
-                      void simpanRekomendasi()
-                    }}
-                    sibukSimpan={sibukSimpanMedis}
-                    bolehSimpan={bolehUbahMedis(klaim, peran) && Object.keys(rekomendasiBerubah(klaim, rekomendasi)).length > 0}
-                    adaPerubahan={Object.keys(rekomendasiBerubah(klaim, rekomendasi)).length > 0}
+                    adaPerubahan={
+                      Object.keys(rekomendasiBerubah(klaim, rekomendasi)).length > 0 ||
+                      Object.keys(catatanAnalisBerubah(klaim, catatanAnalis)).length > 0
+                    }
+                    onGalat={setGalat}
                     sesudahPindah={(tujuan) => onPindah(kabarPindah(klaimID, tujuan))}
                     sesudahTutup={(nomor) => onPindah(kabarTutup(nomor))}
                   />
@@ -1233,7 +1479,6 @@ export default function OutstandingClaimLife({ klaimID, onPindah, peran }: Outst
 
       {konfirmasiMedis && klaim !== null && (
         <KonfirmasiKirimMedis
-          klaim={klaim}
           sibuk={sibukMedis}
           onLanjut={() => {
             void jalankanKirimMedis()

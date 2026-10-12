@@ -32,13 +32,16 @@ func TestPutaranMelahirkanBarisOutstandingBaru(t *testing.T) {
 	pesertaID, baris := barisPertama(t, db, pohon.Work.ID)
 	ctx := context.Background()
 
-	// Baris pertama ditolak dulu - putaran berikutnya lahir dari penolakan.
+	// Baris pertama ditolak dulu - putaran berikutnya lahir dari penolakan. Reject Outstanding hanya di tahap Outstanding
+	// (12-10-2026): fixture pindah ke sana untuk penolakan, lalu kembali ke Claim Analis untuk putaran.
 	jejak := &jejakUji{}
+	setelTahapUji(t, svc, pohon.Work.ID, models.TahapOutstanding)
 	if err := svc.Status().DenganJejak(jejak).Tolak(ctx,
 		inti.Pelaku{AkunID: "UJI-AKUN", Peran: []string{inti.PeranAdmin}},
 		pohon.Work.ID, baris.ID, "UJI alasan", saatUjiKomite); err != nil {
 		t.Fatalf("menolak baris pertama: %v", err)
 	}
+	setelTahapUji(t, svc, pohon.Work.ID, models.TahapClaimAnalis)
 
 	// ⛔ Putaran berikutnya TIDAK boleh dibuka oleh peran penolak.
 	if err := svc.Putaran().DenganJejak(jejak).Tambah(ctx,

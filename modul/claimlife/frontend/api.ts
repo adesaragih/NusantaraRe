@@ -648,13 +648,34 @@ export async function serahkanKeKomite(
   klaimID: string,
   pesertaID: string,
   adjID: string,
+  remarks: string,
 ): Promise<void> {
-  await minta<void>(
+  // 12-10-2026 (opsi A): Remarks pop-up WAJIB, disimpan server di KOMENTAR jejak penyerahan.
+  await minta<void>(jalurKomite(klaimID, pesertaID, adjID), { metode: 'POST', badan: { remarks } })
+}
+
+/** Jalur penyerahan / pratinjau komite satu baris adjustment. */
+function jalurKomite(klaimID: string, pesertaID: string, adjID: string): string {
+  return (
     `/api/klaim-life/${encodeURIComponent(klaimID)}` +
-      `/peserta/${encodeURIComponent(pesertaID)}` +
-      `/adjustment/${encodeURIComponent(adjID)}/komite`,
-    { metode: 'POST' },
+    `/peserta/${encodeURIComponent(pesertaID)}` +
+    `/adjustment/${encodeURIComponent(adjID)}/komite`
   )
+}
+
+/** Isi pop-up Send Claim to Committee sebelum dikirim (GET; gerbang Serahkan tanpa menulis). */
+export interface PratinjauKomite {
+  /** Waktu server ISO — Date, baca saja. */
+  waktu: string
+  pic: string
+  /** Claim RNM baris (teks desimal) dan mata uangnya. */
+  jumlahKlaim: string
+  mataUang: string
+  anggota: { namaKomite: string; urut: number }[]
+}
+
+export async function ambilPratinjauKomite(klaimID: string, pesertaID: string, adjID: string): Promise<PratinjauKomite> {
+  return minta<PratinjauKomite>(jalurKomite(klaimID, pesertaID, adjID))
 }
 
 /** Cacah baris yang akan ikut terhapus bersama sebuah klaim. */
@@ -768,14 +789,28 @@ export const TAHAP_NOMOR = {
 
 export type NomorTahap = (typeof TAHAP_NOMOR)[keyof typeof TAHAP_NOMOR]
 
-/** Membaca satu halaman antrian sebuah tahap. */
+/** Panjang kata kunci kotak cari inbox — sama dengan repository.MinCariInbox / MaksCariInbox (12-10-2026). */
+export const MIN_CARI_INBOX = 2
+export const MAKS_CARI_INBOX = 100
+
+/** Kata kunci yang dikirim: dipangkas; kurang dari 2 karakter = tanpa saringan (layar tidak mengirim yang pasti ditolak). */
+export function kataCariInbox(kata: string): string {
+  const k = kata.trim()
+  return k.length >= MIN_CARI_INBOX ? k.slice(0, MAKS_CARI_INBOX) : ''
+}
+
+/**
+ * Membaca satu halaman antrian sebuah tahap. `cari` (12-10-2026): Case ID, Claim No, PL Number, atau nama tertanggung —
+ * disaring di SERVER (inbox berpaginasi); kosong = tanpa saringan.
+ */
 export async function ambilKotakMasuk(
   tahap: NomorTahap,
   halaman = 1,
   ukuran?: number,
+  cari = '',
 ): Promise<HalamanInbox> {
   return await minta<HalamanInbox>('/api/klaim-life', {
-    kueri: { tahap, halaman, ukuran },
+    kueri: cari === '' ? { tahap, halaman, ukuran } : { tahap, halaman, ukuran, cari },
   })
 }
 
@@ -1172,6 +1207,15 @@ export const UKURAN_HALAMAN_PENYAKIT = 50
  * dengan kedua kata kunci KOSONG sah — itu yang Pega lakukan, dan batasnya
  * yang menahan.
  */
+/**
+ * Daftar pilihan GROUP DIAGNOSE (keputusan work owner 12-10-2026) — satu sumber di backend (models.KelompokDiagnosa),
+ * urutan WO. Layar tidak menyalin daftarnya.
+ */
+export async function ambilKelompokDiagnosa(): Promise<string[]> {
+  const h = await minta<{ daftar: string[] }>('/api/klaim-life/kelompok-diagnosa')
+  return h.daftar
+}
+
 export async function cariPenyakit(
   kodeIcd: string,
   nama: string,
@@ -1531,6 +1575,14 @@ export async function simpanMedis(klaimID: string, isian: IsianMedis): Promise<v
   await minta<void>(`/api/klaim-life/${encodeURIComponent(klaimID)}/medis`, { metode: 'PUT', badan: isian })
 }
 
+/** Batas CLAIM ANALYST (NOTES VARCHAR2(1000)) — server memeriksa byte. */
+export const BATAS_CATATAN_ANALIS = 1000
+
+/** Tombol Save layar Claim Analis (12-10-2026): catatan CLAIM ANALYST per peserta. Gerbang tahap / SPV di server. */
+export async function simpanAnalis(klaimID: string, isian: { catatan: Record<string, string> }): Promise<void> {
+  await minta<void>(`/api/klaim-life/${encodeURIComponent(klaimID)}/analis`, { metode: 'PUT', badan: isian })
+}
+
 /** Kasus ada di tahap Outstanding dan belum ditutup - isian dan tombol layar Outstanding hidup. */
 export function bolehIsianOutstanding(klaim: Klaim | null): boolean {
   return klaim !== null && !kasusTertutup(klaim) && klaim.tahap === TAHAP.outstandingClaim
@@ -1614,7 +1666,7 @@ export function kataStatusBaris(kode: string): string {
     case '':
       return '—'
     case '0':
-      return 'OutStanding'
+      return 'Outstanding'
     case '1':
       return 'Accepted'
     case '2':

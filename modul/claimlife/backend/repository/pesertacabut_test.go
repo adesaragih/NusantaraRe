@@ -72,6 +72,7 @@ var pengecualianSaringCabut = map[string]string{
 	"isianoutstanding.go:TertanggungPeserta":     "SQL-nya di sqlTertanggungPeserta (diperiksa di bawah) - grid Participant Details 10-10-2026",
 	"isianoutstanding.go:SetelAcceptPeserta":     "SQL-nya di sqlSetelAcceptPeserta (diperiksa di bawah) - Accept layar Outstanding 10-10-2026",
 	"isianoutstanding.go:SetelCatatanAdmin":      "SQL-nya di sqlSetelCatatanAdmin (diperiksa di bawah) - Admin Notes 11-10-2026",
+	"analis.go:SetelCatatanAnalis":               "SQL-nya di sqlSetelCatatanAnalis (diperiksa di bawah) - catatan Claim Analyst 12-10-2026",
 	"medis.go:SetelRekomendasi":                  "SQL-nya di sqlSetelRekomendasi (diperiksa di bawah) - Recommendation 11-10-2026",
 	"claimrnm.go:SetelClaimRNM":                  "SQL-nya di sqlSetelClaimRNM (diperiksa di bawah) - Claim RNM 11-10-2026",
 	"claimrnm.go:SetelTanggalPeserta":            "SQL-nya di sqlSetelTanggalPeserta (diperiksa di bawah) - lima tanggal 11-10-2026",
@@ -83,7 +84,7 @@ var pengecualianSaringCabut = map[string]string{
 // parameter, sehingga tidak tertangkap pencarian Qualify.
 var wajibSaringCabut = []string{"sqlAmbilDiagnosa", "sqlTanggalKlaim", "sqlSudahSaveRNM", "sqlPesertaAktifDiKlaimLain",
 	"sqlTertanggungPeserta", "sqlSetelAcceptPeserta", "sqlSetelCatatanAdmin", "sqlSetelClaimRNM",
-	"sqlSetelTanggalPeserta", "sqlInbox", "sqlCacahDokumenPesertaAccept", "sqlSetelRekomendasi"}
+	"sqlSetelTanggalPeserta", "sqlInbox", "sqlCacahDokumenPesertaAccept", "sqlSetelRekomendasi", "sqlSetelCatatanAnalis"}
 
 var polaFungsi = regexp.MustCompile(`(?m)^func (\([^)]*\) )?([A-Za-z0-9_]+)\(`)
 

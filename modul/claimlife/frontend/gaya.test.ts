@@ -139,3 +139,20 @@ describe('konsistensi isian Outstanding (11-10-2026)', () => {
     expect(satu).toMatch(/\.claimlife \.os__baris-form input\.os__isian-tanggal \{ width: \d+ch;/)
   })
 })
+
+describe('inbox berkulit Claim Fac In (work owner 12-10-2026) - tampilan saja', () => {
+  const INBOX = readFileSync(join(AKAR, 'pages', 'InboxClaimLife.tsx'), 'utf8')
+  const KOMITE = readFileSync(join(AKAR, 'components', 'TabelKomite.tsx'), 'utf8')
+  it('kelas kulit dipasang pada elemen yang sudah ada; tanpa impor dari modul claimfacin', () => {
+    expect(INBOX).toContain('<section className="inbox claimlife__akar">')
+    expect(INBOX).toContain('<table className="inbox__tabel claimlife__tabel">')
+    expect(KOMITE).toContain('<table className="inbox__tabel claimlife__tabel">')
+    for (const s of [INBOX, KOMITE]) expect(s).not.toMatch(/from '[^']*claimfacin/)
+  })
+  it('kulit: token --cl-* di akar, tab bersegmen, tabel kartu berkepala, tema gelap lewat :where', () => {
+    for (const p of ['.claimlife .claimlife__akar {', '.claimlife .claimlife__akar .inbox__tab {', '.claimlife .claimlife__tabel thead th {',
+      '.claimlife .claimlife__tabel tbody tr:hover > td {', '.claimlife .claimlife__akar:where(:root[data-theme="dark"] *) {'])
+      expect(CSS).toContain(p)
+    expect(CSS).toContain('--cl-tombol: #d63a42;')
+  })
+})

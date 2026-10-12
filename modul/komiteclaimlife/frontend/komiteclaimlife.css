@@ -20,3 +20,584 @@
   margin: -6px 0 0;
   color: var(--text-2);
 }
+
+/* ======================================== Layar kasus komite - kulit Claim Life (work owner 12-10-2026, "perbaiki
+   tampilannya"). Nilai token DISALIN dari blok kulit `modul/claimlife/frontend/claimlife.css` (`--cl-*`) ke `--kcl-*` milik
+   modul ini - tanpa impor CSS claimlife, tanpa kelas inti baru. Lingkup: `.komiteclaimlife__akar` (section layar kasus). */
+.komiteclaimlife .komiteclaimlife__akar {
+  --kcl-latar-tepi: #cfd7e5;
+  --kcl-latar-atas: #f9fafd;
+  --kcl-latar-bawah: #e4e9f3;
+  --kcl-bayang-akar: 0 2px 6px rgba(30, 45, 90, 0.08), 0 16px 40px -12px rgba(30, 45, 90, 0.24);
+  --kcl-lembut: #e9edf3;
+  --kcl-teks: #101828;
+  --kcl-teks-redup: #4f586b;
+  --kcl-aksen: var(--primary-tanda);
+  --kcl-aksen-teks: #2339a3;
+  --kcl-aksen-lembut: #e3e8f6;
+  --kcl-aksen-garis: #b9c5ee;
+  --kcl-kepala-tabel: #dde4f2;
+  --kcl-kepala-teks: #22326b;
+  --kcl-kepala-garis: #c3cde2;
+  --kcl-isi: #ffffff;
+  --kcl-baris-hover: #e6ecfa;
+  --kcl-garis: #e1e6ef;
+  --kcl-tepi: #c8d1e1;
+  --kcl-tombol: #d63a42;
+  --kcl-tombol-ujung: #bf2f37;
+  --kcl-tombol-hover: #c2333b;
+  --kcl-tombol-hover-ujung: #a9282f;
+  --kcl-terang: rgba(255, 255, 255, 0.92);
+  --kcl-gelap: rgba(163, 177, 198, 0.55);
+  --kcl-tekan: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
+  --kcl-timbul-kecil: 4px 4px 9px var(--kcl-gelap), -4px -4px 9px var(--kcl-terang);
+  --kcl-cekung-kecil: inset 2px 2px 4px var(--kcl-gelap), inset -2px -2px 4px var(--kcl-terang);
+  --kcl-bayang-tombol: 4px 4px 10px rgba(214, 58, 66, 0.35), -4px -4px 10px var(--kcl-terang);
+  /* Chip status: Waiting kuning, Approved hijau, Rejected merah. */
+  --kcl-tunggu-latar: #fdf1d6;
+  --kcl-tunggu-teks: #8a5a00;
+  --kcl-setuju-latar: #dcf3e4;
+  --kcl-setuju-teks: #17663a;
+  --kcl-tolak-latar: #fbe0e1;
+  --kcl-tolak-teks: #a3232b;
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 24px;
+  color: var(--kcl-teks);
+  font-size: 13px;
+  border: 1px solid var(--kcl-latar-tepi);
+  border-radius: 26px;
+  background: linear-gradient(180deg, var(--kcl-latar-atas) 0%, var(--kcl-latar-bawah) 100%);
+  box-shadow: var(--kcl-bayang-akar);
+}
+
+/* Tema gelap: :where() menjaga awalan .komiteclaimlife (penjaga gaya); blok ini sesudah blok terang, jadi menang. */
+.komiteclaimlife .komiteclaimlife__akar:where(:root[data-theme="dark"] *) {
+  --kcl-latar-tepi: #323b50;
+  --kcl-latar-atas: #222a3b;
+  --kcl-latar-bawah: #161b27;
+  --kcl-bayang-akar: 0 2px 6px rgba(0, 0, 0, 0.45), 0 16px 40px -12px rgba(0, 0, 0, 0.75);
+  --kcl-lembut: #181d2a;
+  --kcl-teks: #eef0f6;
+  --kcl-teks-redup: #aab2c4;
+  --kcl-aksen-teks: #aebcff;
+  --kcl-aksen-lembut: #222b45;
+  --kcl-aksen-garis: #3a4b8f;
+  --kcl-kepala-tabel: #273152;
+  --kcl-kepala-teks: #dbe2ff;
+  --kcl-kepala-garis: #3a4670;
+  --kcl-isi: #1f2638;
+  --kcl-baris-hover: #2b3554;
+  --kcl-garis: #2c3447;
+  --kcl-tepi: #3a4459;
+  --kcl-terang: rgba(255, 255, 255, 0.045);
+  --kcl-gelap: rgba(0, 0, 0, 0.55);
+  --kcl-bayang-tombol: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px var(--kcl-terang);
+  --kcl-tunggu-latar: #3d3216;
+  --kcl-tunggu-teks: #f3cf7a;
+  --kcl-setuju-latar: #173826;
+  --kcl-setuju-teks: #8fe0ad;
+  --kcl-tolak-latar: #43191c;
+  --kcl-tolak-teks: #f5a3a8;
+}
+
+.komiteclaimlife .komiteclaimlife__akar :focus-visible {
+  outline: 2px solid var(--kcl-aksen);
+  outline-offset: 2px;
+}
+
+/* Kepala: Back (ghost kecil) kiri atas; judul Poppins 22px + chip giliran. */
+.komiteclaimlife .komiteclaimlife__kepala {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+}
+
+.komiteclaimlife .komiteclaimlife__judul-baris {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.komiteclaimlife .komiteclaimlife__judul {
+  margin: 0;
+  color: var(--kcl-teks);
+  font-family: "Poppins", var(--font);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+/* Tombol kapsul (salinan kulit Claim Life): utama merah bergradasi, ghost putih timbul. */
+.komiteclaimlife .komiteclaimlife__akar .btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+.komiteclaimlife .komiteclaimlife__akar .btn--sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.komiteclaimlife .komiteclaimlife__akar .btn--primary {
+  background: linear-gradient(180deg, var(--kcl-tombol), var(--kcl-tombol-ujung));
+  border-color: var(--kcl-tombol-ujung);
+  color: var(--on-primary);
+  box-shadow: var(--kcl-bayang-tombol);
+}
+
+.komiteclaimlife .komiteclaimlife__akar .btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--kcl-tombol-hover), var(--kcl-tombol-hover-ujung));
+  border-color: var(--kcl-tombol-hover-ujung);
+}
+
+.komiteclaimlife .komiteclaimlife__akar .btn--primary:active:not(:disabled) {
+  box-shadow: var(--kcl-tekan);
+}
+
+.komiteclaimlife .komiteclaimlife__akar .btn--ghost {
+  background: var(--kcl-isi);
+  border: 1px solid var(--kcl-tepi);
+  color: var(--kcl-aksen-teks);
+  font-weight: 600;
+  box-shadow: var(--kcl-timbul-kecil);
+}
+
+.komiteclaimlife .komiteclaimlife__akar .btn--ghost:hover:not(:disabled) {
+  background: var(--kcl-aksen-lembut);
+  border-color: var(--kcl-aksen-garis);
+}
+
+.komiteclaimlife .komiteclaimlife__akar .btn--ghost:active:not(:disabled) {
+  box-shadow: var(--kcl-cekung-kecil);
+}
+
+.komiteclaimlife .komiteclaimlife__akar .btn:disabled {
+  box-shadow: none;
+}
+
+.komiteclaimlife .komiteclaimlife__akar .alert {
+  margin: 0;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+/* Pita galat atas (pola PitaGalat Claim Life): tombol tutup di pojok kanan atas. */
+.komiteclaimlife .komiteclaimlife__pita {
+  position: relative;
+}
+
+.komiteclaimlife .komiteclaimlife__pita > .alert {
+  padding-right: 40px;
+}
+
+.komiteclaimlife .komiteclaimlife__pita-tutup {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.komiteclaimlife .komiteclaimlife__pita-tutup:hover {
+  background: var(--surface);
+}
+
+/* Kartu: putih, tepi halus, sudut 18px; isi tidak menggulir sendiri (tabel lebar menggulir di wadahnya). */
+.komiteclaimlife .komiteclaimlife__kartu-kartu {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.komiteclaimlife .komiteclaimlife__kartu {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--kcl-tepi);
+  border-radius: 18px;
+  background: var(--kcl-isi);
+  box-shadow: var(--kcl-timbul-kecil);
+}
+
+.komiteclaimlife .komiteclaimlife__kartu-judul {
+  margin: 0;
+  color: var(--kcl-kepala-teks);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.komiteclaimlife .komiteclaimlife__sub-judul {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.komiteclaimlife .komiteclaimlife__redup {
+  color: var(--kcl-teks-redup);
+}
+
+/* Grid label-nilai: label kecil redup di atas nilai tebal; jumlah kolom menyesuaikan lebar. */
+.komiteclaimlife .komiteclaimlife__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px 20px;
+  margin: 0;
+}
+
+.komiteclaimlife .komiteclaimlife__grid > div {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.komiteclaimlife .komiteclaimlife__grid .komiteclaimlife__grid-penuh {
+  grid-column: 1 / -1;
+}
+
+.komiteclaimlife .komiteclaimlife__grid dt {
+  color: var(--kcl-teks-redup);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.komiteclaimlife .komiteclaimlife__grid dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Remarks panjang: baris baru dihormati, kata panjang dipatahkan. */
+.komiteclaimlife .komiteclaimlife__grid .komite-kasus__remarks {
+  font-weight: 400;
+  white-space: pre-wrap;
+}
+
+.komiteclaimlife .komiteclaimlife__angka {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Chip: kapsul kecil; nada menurut status. */
+.komiteclaimlife .komiteclaimlife__chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--kcl-aksen-lembut);
+  color: var(--kcl-aksen-teks);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.komiteclaimlife .komiteclaimlife__chip--giliran {
+  background: var(--kcl-aksen-teks);
+  color: var(--kcl-isi);
+}
+
+.komiteclaimlife .komiteclaimlife__chip--menunggu {
+  background: var(--kcl-tunggu-latar);
+  color: var(--kcl-tunggu-teks);
+}
+
+.komiteclaimlife .komiteclaimlife__chip--setuju {
+  background: var(--kcl-setuju-latar);
+  color: var(--kcl-setuju-teks);
+}
+
+.komiteclaimlife .komiteclaimlife__chip--tolak {
+  background: var(--kcl-tolak-latar);
+  color: var(--kcl-tolak-teks);
+}
+
+/* Tabel: gulir mendatar DI DALAM kartu bila sempit; kepala navy lembut, baris genap berselang. */
+.komiteclaimlife .komiteclaimlife__gulir {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.komiteclaimlife .komiteclaimlife__tabel {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--kcl-tepi);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.komiteclaimlife .komiteclaimlife__tabel th,
+.komiteclaimlife .komiteclaimlife__tabel td {
+  padding: 7px 10px;
+  font-size: 12.5px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--kcl-garis);
+}
+
+.komiteclaimlife .komiteclaimlife__tabel thead th {
+  background: var(--kcl-kepala-tabel);
+  color: var(--kcl-kepala-teks);
+  font-weight: 700;
+  white-space: nowrap;
+  border-bottom-color: var(--kcl-kepala-garis);
+}
+
+.komiteclaimlife .komiteclaimlife__tabel td {
+  color: var(--kcl-teks);
+  background: var(--kcl-isi);
+}
+
+.komiteclaimlife .komiteclaimlife__tabel tbody tr:last-child > td {
+  border-bottom: 0;
+}
+
+.komiteclaimlife .komiteclaimlife__tabel tbody tr:nth-child(even) > td {
+  background: var(--kcl-lembut);
+}
+
+.komiteclaimlife .komiteclaimlife__tabel tbody tr:hover > td {
+  background: var(--kcl-baris-hover);
+}
+
+.komiteclaimlife .komiteclaimlife__tabel .komiteclaimlife__tengah {
+  text-align: center;
+}
+
+.komiteclaimlife .komiteclaimlife__tabel .komiteclaimlife__waktu {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Komentar panjang dibungkus, tidak melebarkan tabel tanpa batas. */
+.komiteclaimlife .komiteclaimlife__tabel .komiteclaimlife__teks {
+  min-width: 160px;
+  max-width: 360px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.komiteclaimlife .komite-kasus__eskalasi-riwayat {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.komiteclaimlife .komite-kasus__eskalasi {
+  margin: 0;
+}
+
+/* Formulir Decision: pilihan + Comment penuh lebar; tombol utama di kanan. */
+.komiteclaimlife .komiteclaimlife__form {
+  display: grid;
+  grid-template-columns: minmax(0, 320px);
+  gap: 12px;
+}
+
+.komiteclaimlife .komiteclaimlife__isian {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.komiteclaimlife .komiteclaimlife__isian--penuh,
+.komiteclaimlife .komiteclaimlife__aksi {
+  grid-column: 1 / -1;
+}
+
+.komiteclaimlife .komiteclaimlife__label {
+  color: var(--kcl-teks-redup);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.komiteclaimlife .komiteclaimlife__isian .field__input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.komiteclaimlife .komiteclaimlife__isian textarea {
+  min-height: 6.5em;
+  resize: vertical;
+}
+
+.komiteclaimlife .komiteclaimlife__aksi {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Modal konfirmasi: pertanyaan tebal, peringatan kuning. */
+.komiteclaimlife .komiteclaimlife__konfirmasi {
+  display: grid;
+  gap: 10px;
+}
+
+.komiteclaimlife .komiteclaimlife__konfirmasi p {
+  margin: 0;
+}
+
+.komiteclaimlife .komiteclaimlife__tanya {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .komiteclaimlife .komiteclaimlife__akar {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .komiteclaimlife .komiteclaimlife__form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .komiteclaimlife .komiteclaimlife__aksi .btn {
+    flex: 1 1 auto;
+  }
+}
+
+/* ======================================== Form of Internal Claim Requisition (work owner 12-10-2026, "perbaiki
+   tampilannya lagi"): urutan kotak `Section/ShowTransfer.xml`. Kolom-kolom kotak Pega (Policy Detail dua kolom, Claim
+   Detail tiga kolom, Adjustment Detail empat per baris) turun menjadi satu kolom di layar sempit. */
+
+/* Ringkasan kasus di bawah judul: Parent Claim · Level · Row Status, kecil dan sebaris. */
+.komiteclaimlife .komiteclaimlife__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  margin: 0;
+}
+
+.komiteclaimlife .komiteclaimlife__meta > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.komiteclaimlife .komiteclaimlife__meta dt {
+  color: var(--kcl-teks-redup);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.komiteclaimlife .komiteclaimlife__meta dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Judul formulir Pega, tengah, huruf besar kecil Title Case. */
+.komiteclaimlife .komiteclaimlife__judul-form {
+  margin: 4px 0 0;
+  color: var(--kcl-kepala-teks);
+  font-family: "Poppins", var(--font);
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* Kolom-kolom kotak: dua (Policy Detail) atau tiga (Claim Detail) kolom bertumpuk. */
+.komiteclaimlife .komiteclaimlife__kolom {
+  display: grid;
+  gap: 12px 24px;
+  min-width: 0;
+}
+
+.komiteclaimlife .komiteclaimlife__kolom--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.komiteclaimlife .komiteclaimlife__kolom--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.komiteclaimlife .komiteclaimlife__grid--tumpuk {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Adjustment Detail: empat medan per baris (Pega), baris berikut sejajar kolomnya. */
+.komiteclaimlife .komiteclaimlife__grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.komiteclaimlife .komiteclaimlife__grid--4 dd {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Teks panjang (Recommendation, Claim Analyst, Note): baris baru dihormati. */
+.komiteclaimlife .komiteclaimlife__grid .komiteclaimlife__teks-panjang {
+  font-weight: 400;
+  white-space: pre-wrap;
+}
+
+/* Grid kecil (Diagnose, Treaty Type): tidak merentang penuh di layar lebar. */
+.komiteclaimlife .komiteclaimlife__tabel--sempit {
+  width: auto;
+  min-width: min(100%, 360px);
+}
+
+.komiteclaimlife .komiteclaimlife__tabel .komiteclaimlife__kanan {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* File Name: tombol bergaya tautan (View berkas). */
+.komiteclaimlife .komiteclaimlife__tautan {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--kcl-aksen-teks);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.komiteclaimlife .komiteclaimlife__tautan:hover {
+  color: var(--kcl-kepala-teks);
+}
+
+.komiteclaimlife .komiteclaimlife__aksi--kiri {
+  justify-content: flex-start;
+}
+
+/* Keputusan: Cancel kiri, Submit kanan (ShowTransfer). */
+.komiteclaimlife .komiteclaimlife__aksi--antara {
+  justify-content: space-between;
+}
+
+@media (max-width: 900px) {
+  .komiteclaimlife .komiteclaimlife__kolom--3,
+  .komiteclaimlife .komiteclaimlife__grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .komiteclaimlife .komiteclaimlife__kolom--2,
+  .komiteclaimlife .komiteclaimlife__kolom--3,
+  .komiteclaimlife .komiteclaimlife__grid--4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

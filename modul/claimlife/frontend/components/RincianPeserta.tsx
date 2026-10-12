@@ -23,6 +23,7 @@ import { DETAIL, OS_PEGA, TAHAP, TOMBOL, TOMBOL_KOMITE } from '../labels'
 import { DialogTolakOutstanding } from './DialogTolakOutstanding'
 import { PanelDokumenPeserta } from './PanelDokumenPeserta'
 import { GridDiagnosa } from './GridDiagnosa'
+import { KonfirmasiKomite } from './KonfirmasiKomite'
 import { keIsianTanggal, PanelTanggalKlaim } from './PanelTanggalKlaim'
 import { tanggalTampil } from './PanelDataPolis'
 import { Kosong, Memuat, StripTab } from '../../../../inti/frontend/components/ui/dasar'
@@ -30,17 +31,15 @@ import { DESIMAL_TAK_DIBATASI, formatNumber, formatPersen } from '../../../../in
 import { bandingDesimal, normalisasiDesimal, persenKlaimTeks, saringKetikanAngka } from '../desimal'
 import {
   ambilSpreadingPolis,
+  BATAS_CATATAN_ANALIS,
   BATAS_REKOMENDASI,
   bolehAddAdjustment,
   bolehUbahDiagnosa,
   bolehSerahkanDiLayar,
-  bolehSimpanAdjustment,
   bolehSuntingClaimRNM,
   bolehUbahTanggalKlaim,
   jumlahUang,
   kataStatusBaris,
-  serahkanKeKomite,
-  simpanAdjustment,
   STATUS_OUTSTANDING,
   tambahPutaran,
   tolakBarisAdjustment,
@@ -91,6 +90,11 @@ export interface RincianPesertaProps {
    * 11-10-2026). Gerbang `STS_REJECT` peserta ditambahkan di sini. Tanpa ini baca saja.
    */
   bolehMedis?: boolean
+  /** Reject Outstanding boleh tampil (tahap Outstanding + ReasLifeAdmin, dihitung pemanggil; 12-10-2026). Bawaan: tidak. */
+  bolehTolakOutstanding?: boolean
+  /** CLAIM ANALYST (NOTES) yang sedang diisi; tanpa `onUbahCatatanAnalis` baca saja (12-10-2026). */
+  catatanAnalis?: string
+  onUbahCatatanAnalis?: (v: string) => void
   /** RECOMMENDATION yang sedang diisi (disimpan tombol Save Medical Check). Tanpa `onUbahRekomendasi` baca saja. */
   rekomendasi?: string
   onUbahRekomendasi?: (v: string) => void
@@ -192,6 +196,9 @@ export function RincianPeserta({
   onUbahAdjustment,
   kolomKurang,
   bolehMedis = false,
+  bolehTolakOutstanding = false,
+  catatanAnalis,
+  onUbahCatatanAnalis,
   rekomendasi,
   onUbahRekomendasi,
 }: RincianPesertaProps) {
@@ -202,9 +209,10 @@ export function RincianPeserta({
   const [menolak, setMenolak] = useState<string | null>(null)
   const [dialogTolak, setDialogTolak] = useState<string | null>(null)
   const [galatTolak, setGalatTolak] = useState<string | null>(null)
-  const [menyerahkan, setMenyerahkan] = useState<string | null>(null)
+  // Pop-up Send Claim to Committee (12-10-2026): baris yang sedang dibuka modalnya; pita sukses sesudah terkirim.
+  const [komiteBaris, setKomiteBaris] = useState<string | null>(null)
+  const [pesanKomite, setPesanKomite] = useState<string | null>(null)
   const [memutar, setMemutar] = useState(false)
-  const [mengaksep, setMengaksep] = useState(false)
   const [editTanggal, setEditTanggal] = useState(false)
   // Kekurangan dokumen (Send to Medical Check, 11-10-2026): sub-tab Document langsung terbuka.
   const [subTab, setSubTab] = useState<SubTab>(() =>
@@ -256,29 +264,6 @@ export function RincianPeserta({
     }
   }
 
-  async function aksep(): Promise<void> {
-    setGalat(null)
-    setMengaksep(true)
-    try {
-      const nomor = await simpanAdjustment(klaim.id, p.id)
-      await onMuatUlang()
-      setGalat(`Row accepted with number ${nomor}.`)
-    } catch (err: unknown) {
-      const kode = kodeStatusGalat(err)
-      setGalat(
-        kode === 403
-          ? 'Only the holder of this claim stage can accept its rows.'
-          : kode === 409
-            ? (pesanGalat(err) ?? 'The row cannot be accepted in its current state.')
-            : kode === 501
-              ? (pesanGalat(err) ?? 'Acceptance cannot be saved yet.')
-              : 'Failed to accept the row.',
-      )
-    } finally {
-      setMengaksep(false)
-    }
-  }
-
   async function putaranBaru(): Promise<void> {
     setGalat(null)
     setMemutar(true)
@@ -298,31 +283,6 @@ export function RincianPeserta({
       )
     } finally {
       setMemutar(false)
-    }
-  }
-
-  async function serahkan(adjID: string): Promise<void> {
-    setGalat(null)
-    setMenyerahkan(adjID)
-    try {
-      await serahkanKeKomite(klaim.id, p.id, adjID)
-      await onMuatUlang()
-    } catch (err: unknown) {
-      const kode = kodeStatusGalat(err)
-      setGalat(
-        kode === 403
-          ? 'Your role cannot submit rows of this type to the Committee.'
-          : kode === 409
-            ? (pesanGalat(err) ?? 'The row was already submitted, or is no longer Outstanding.')
-            : kode === 422
-              ? // ⛔ Pesan 422 dicetak APA ADANYA ("Name of bank cannot be empty" - kalimat sistem lama).
-                (pesanGalat(err) ?? 'Submission rejected.')
-              : kode === 501
-                ? 'Submission cannot be saved yet.'
-                : 'Failed to submit the row to the Committee.',
-      )
-    } finally {
-      setMenyerahkan(null)
     }
   }
 
@@ -382,6 +342,26 @@ export function RincianPeserta({
           onKirim={(remarks) => void tolak(dialogTolak, remarks)}
           onBatal={() => {
             setDialogTolak(null)
+          }}
+        />
+      )}
+      {pesanKomite !== null && (
+        <p role="status" className="alert alert--ok">
+          {pesanKomite}
+        </p>
+      )}
+      {komiteBaris !== null && (
+        <KonfirmasiKomite
+          klaim={klaim}
+          pesertaID={p.id}
+          adjID={komiteBaris}
+          jumlahKlaim={jumlahUang(p.baris.find((x) => x.id === komiteBaris)?.jumlahKlaim)}
+          mataUang={p.baris.find((x) => x.id === komiteBaris)?.jumlahKlaim?.currency ?? ''}
+          onTutup={() => setKomiteBaris(null)}
+          onTerkirim={async () => {
+            setKomiteBaris(null)
+            setPesanKomite(PESAN_KOMITE_TERKIRIM)
+            await onMuatUlang()
           }}
         />
       )}
@@ -485,25 +465,18 @@ export function RincianPeserta({
             ) : (
               <Baris label={R.dokumenLengkap} nilai={tanggalTampil(p.tanggalDokumenLengkap)} />
             )}
-            {isianTanggal !== null ? (
+            {/* 12-10-2026 (work owner "kolomnya di-hide jika datanya kosong"): MAX DATA RECEIVED tetap ISIAN selama dapat
+                diisi (Outstanding sebelum Save to RNM); dalam mode baca saja disembunyikan bila kosong. */}
+            {isianTanggal !== null && (tanggalBoleh || isianTanggal.maksData !== '') ? (
               <IsianTanggalBaris label={R.maksData} nilai={isianTanggal.maksData} boleh={tanggalBoleh}
                 onUbah={(v) => onUbahTanggal?.({ ...isianTanggal, maksData: v })} />
-            ) : (
+            ) : isianTanggal === null && tampilBila(p.tanggalMaksData) ? (
               <Baris label={R.maksData} nilai={tanggalTampil(p.tanggalMaksData)} />
-            )}
-            <Baris label={R.maksKadaluarsa} nilai={p.maksKlaimKadaluarsa} />
-            {/* Butir bk — dihitung backend saat baca. ⛔ Alasan teknis (penandaTerimaKlaimAlasan) TIDAK dirender (11-10-2026):
-                bila tidak dihitung, tampil "—" dengan keterangan ringkas di tooltip. */}
-            {p.penandaTerimaKlaim === '' && p.penandaTerimaKlaimAlasan !== '' ? (
-              <div className="os__baris-form">
-                <dt>{R.maksTerima}</dt>
-                <dd title={TIDAK_TERSEDIA_AMBANG}>
-                  — <span className="os__info" aria-label={TIDAK_TERSEDIA_AMBANG}>ⓘ</span>
-                </dd>
-              </div>
-            ) : (
-              <Baris label={R.maksTerima} nilai={p.penandaTerimaKlaim} />
-            )}
+            ) : null}
+            {/* MAX EXPIRED CLAIM dan MAX CLAIM RECEIVED (baca saja, dihitung backend - butir bk) TIDAK dirender bila kosong /
+                tidak dihitung (12-10-2026); alasan teknis tidak pernah dirender. */}
+            {tampilBila(p.maksKlaimKadaluarsa) && <Baris label={R.maksKadaluarsa} nilai={p.maksKlaimKadaluarsa} />}
+            {tampilBila(p.penandaTerimaKlaim) && <Baris label={R.maksTerima} nilai={p.penandaTerimaKlaim} />}
             {/* STNC DATA dihitung ValidasiSTNC_Act di Pega — belum ditiru. */}
             <Baris label={R.stncData} nilai="" />
             {/* Edit Date hanya di layar tanpa isian langsung (layar Detail). */}
@@ -550,18 +523,11 @@ export function RincianPeserta({
         </div>
       )}
 
-      {/* CLAIM ANALYST hanya di tahap Claim Analis (keputusan work owner 11-10-2026: "kolom claim analyst hanya tampil di
-          inbox claim analyst, di admin hide saja"); di Pega bagian ini tampil bagi pyPosition ReasLifeSPV (b15474). */}
-      {klaim.tahap === TAHAP.claimAnalis && (
-        <div className="os__baris-form os__baris-form--tumpuk">
-          <span className="os__label">{R.analis}</span>
-          <span>{p.catatanAnalis || '—'}</span>
-        </div>
-      )}
-
       {/* Kotak MEDICAL ADVISOR (11-10-2026) — grid diagnosa butir bd. Tampil di Medical Check dan Claim Analis; dapat diubah
           hanya Medical Advisor di Medical Check (b4908, b6401) selama peserta belum diputus (STS_REJECT b4682). */}
-      {(klaim.tahap === TAHAP.medicalCheck || klaim.tahap === TAHAP.claimAnalis) && (
+      {/* 12-10-2026 (work owner "tetap bisa terlihat di semua tahap tapi hanya read only, kecuali di inbox medical"): kotak
+          tampil di SEMUA tahap; dapat diubah hanya bolehMedis (Medical Check + Medical Advisor). */}
+      {(
         <fieldset className="rincian__kotak rincian__medis">
           <legend className="os__label">{R.medis}</legend>
           <GridDiagnosa
@@ -593,6 +559,36 @@ export function RincianPeserta({
             </div>
           )}
         </fieldset>
+      )}
+
+      {/* 12-10-2026 (work owner "untuk kolom claim analyst posisinya ada di bawah recommendation"): kotak sendiri TEPAT
+          sesudah kotak MEDICAL ADVISOR (bukan di dalamnya: kotak itu berjudul Medical Advisor dan tampil juga di Claim Admin,
+          tempat CLAIM ANALYST tetap disembunyikan). */}
+      {/* CLAIM ANALYST hanya di tahap Claim Analis (keputusan work owner 11-10-2026: "kolom claim analyst hanya tampil di
+          inbox claim analyst, di admin hide saja"); di Pega bagian ini tampil bagi pyPosition ReasLifeSPV (b15474). */}
+      {/* 12-10-2026 (work owner "dibuat text area dan hanya bisa diedit oleh claim analyst, pada tahap lain hanya read only"):
+          textarea di tahap Claim Analis oleh ReasLifeSPV; baca saja di tahap lain KECUALI Claim Admin (Outstanding/Input
+          Register), tempat ia tetap disembunyikan (keputusan 11-10-2026). */}
+      {klaim.tahap !== TAHAP.outstandingClaim && klaim.tahap !== TAHAP.inputRegister && (
+        <div className="rincian__kotak rincian__catatan">
+          {onUbahCatatanAnalis !== undefined ? (
+            <label className="rincian__catatan-isian">
+              <span className="os__label">{R.analis}</span>
+              <textarea
+                className="field__input os__isian-area"
+                rows={3}
+                maxLength={BATAS_CATATAN_ANALIS}
+                value={catatanAnalis ?? p.catatanAnalis ?? ''}
+                onChange={(e) => onUbahCatatanAnalis(e.target.value)}
+              />
+            </label>
+          ) : (
+            <>
+              <span className="os__label">{R.analis}</span>
+              <p className="rincian__catatan-teks">{(catatanAnalis ?? p.catatanAnalis ?? '') || '—'}</p>
+            </>
+          )}
+        </div>
       )}
 
       <StripTab<SubTab>
@@ -637,7 +633,7 @@ export function RincianPeserta({
                         }
                         onClick={() => setBarisBuka(buka ? null : b.id)}
                       >
-                        <td>{kataStatusBaris(b.kodeStatus)}</td>
+                        <td>{statusBarisKomite(b)}</td>
                         <td>{tanggalTampil(b.tanggalOutstanding)}</td>
                         <td>{b.nomorAkseptasi || '—'}</td>
                         <td>{tanggalTampil(b.tanggalAkseptasi)}</td>
@@ -655,8 +651,9 @@ export function RincianPeserta({
                               onUbah={onUbahAdjustment === undefined ? undefined : (isi) => onUbahAdjustment(b.id, isi)}
                               aksi={
                                 <>
-                                  {/* Reject Outstanding b15101: Admin && CLAIM_NO != '' && STS_REJECT == 0 (b15399). */}
-                                  {b.status === STATUS_OUTSTANDING && klaim.nomorKlaim ? (
+                                  {/* Reject Outstanding b15101: Admin && CLAIM_NO != '' && STS_REJECT == 0 (b15399); 12-10-2026 hanya
+                                      inbox Admin (tahap Outstanding) - bolehTolakOutstanding dari pemanggil. */}
+                                  {bolehTolakOutstanding && b.status === STATUS_OUTSTANDING && klaim.nomorKlaim ? (
                                     <button
                                       type="button"
                                       className="btn btn--ghost btn--sm"
@@ -675,10 +672,12 @@ export function RincianPeserta({
                                     <button
                                       type="button"
                                       className="btn btn--ghost btn--sm"
-                                      disabled={menyerahkan === b.id}
-                                      onClick={() => void serahkan(b.id)}
+                                      onClick={() => {
+                                        setPesanKomite(null)
+                                        setKomiteBaris(b.id)
+                                      }}
                                     >
-                                      {menyerahkan === b.id ? 'Submitting…' : TOMBOL_KOMITE.serahkan}
+                                      {TOMBOL_KOMITE.serahkan}
                                     </button>
                                   ) : null}
                                 </>
@@ -694,14 +693,8 @@ export function RincianPeserta({
             </div>
           )}
 
-          {/* ⭐ Jalur akseptasi Claim Life — `SaveAdjustment_Act`. */}
-          {bolehSimpanAdjustment(p, p.baris) && (
-            <p>
-              <button type="button" className="btn btn--primary btn--sm" disabled={mengaksep} onClick={() => void aksep()}>
-                {mengaksep ? 'Saving…' : 'Save Adjustment'}
-              </button>
-            </p>
-          )}
+          {/* ⛔ Save Adjustment (`SaveAdjustment_Act`) TIDAK dirender di tahap mana pun (work owner 12-10-2026 "sembunyikan saja
+              di semua tahap"; di Pega sel tombolnya `pyCondition 1=2`, ClaimLifeDetailGCNM b22810). Rute server tetap. */}
 
           {/* `Add` b17937 hanya bila `pyPosition=='ReasLifeSPV'` (b18160): jalur PUTARAN. ⛔ `Delete` b19120 TIDAK
               DIRENDER (OQ-N7, ADR-U-0031). */}
@@ -800,7 +793,20 @@ export function galatDOL(klaim: Klaim, p: Peserta, dol: string): string | null {
 }
 
 /** Keterangan MAX CLAIM RECEIVED yang tidak dapat dihitung (ambang produk belum diisi / tak terbaca) — tanpa teks galat. */
-export const TIDAK_TERSEDIA_AMBANG = 'Not available: product threshold not set'
+/** Pita sukses sesudah Send Claim to Committee (12-10-2026). */
+export const PESAN_KOMITE_TERKIRIM = 'Claim sent to committee.'
+
+/** Status baris adjustment beserta status komitenya: baris yang sudah diserahkan (KOMITE_ID terisi) menyebut kasusnya. */
+export function statusBarisKomite(b: { kodeStatus: string; komiteId?: string }): string {
+  const kata = kataStatusBaris(b.kodeStatus)
+  const komite = (b.komiteId ?? '').trim()
+  return komite === '' ? kata : `${kata} · In Committee (${komite})`
+}
+
+/** Baris baca saja yang disembunyikan bila kosong (12-10-2026: MAX DATA RECEIVED / MAX EXPIRED CLAIM / MAX CLAIM RECEIVED). */
+export function tampilBila(nilai: string | undefined | null): boolean {
+  return (nilai ?? '').trim() !== ''
+}
 
 /** Nama kolom Claim RNM di `KekuranganRNM.kolom` (backend services.PeriksaSimpanRNM). */
 export const KOLOM_CLAIM_RNM = 'Claim RNM'

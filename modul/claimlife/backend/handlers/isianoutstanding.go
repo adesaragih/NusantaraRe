@@ -31,12 +31,12 @@ const batasBadanIsian = 1 << 20
 func simpanIsianOutstanding(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		var masuk services.IsianOutstanding
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, batasBadanIsian)).Decode(&masuk); err != nil {
-			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "The request body is not valid JSON.")
 			return
 		}
 		err := svc.SimpanOutstanding().Simpan(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("id"),
@@ -53,20 +53,20 @@ func simpanIsianOutstanding(svc *services.Service, stubPelaku bool) http.Handler
 func jawabGalatIsianOutstanding(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, inti.ErrTanpaIdentitas):
-		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		galat.Tulis(w, http.StatusUnauthorized, "The request has no user identity.")
 	case errors.Is(err, inti.ErrTanpaWewenang):
-		galat.Tulis(w, http.StatusForbidden, "hanya pemegang tahap Outstanding Claim yang dapat menyimpan layar ini")
+		galat.Tulis(w, http.StatusForbidden, "Only the Claim Admin can save this screen.")
 	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
-		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+		galat.Tulis(w, http.StatusConflict, "The case is already closed and cannot be changed.")
 	case errors.Is(err, services.ErrIsianBukanOutstanding):
-		galat.Tulis(w, http.StatusConflict, "Save hanya tersedia pada tahap Outstanding Claim")
+		galat.Tulis(w, http.StatusConflict, "Save is only available at the Claim Admin stage.")
 	case errors.Is(err, models.ErrClaimGrossMelebihiShare):
 		// Kalimat b526 VERBATIM.
 		galat.Tulis(w, http.StatusUnprocessableEntity, models.ErrClaimGrossMelebihiShare.Error())
 	case errors.Is(err, services.ErrAdjustmentTerkunci):
-		galat.Tulis(w, http.StatusConflict, "adjustment tidak dapat diubah sesudah Save to RNM")
+		galat.Tulis(w, http.StatusConflict, "The adjustment cannot be changed after Save to RNM.")
 	case errors.Is(err, services.ErrTanggalTerkunciSesudahSaveRNM):
-		galat.Tulis(w, http.StatusConflict, "tanggal peserta terkunci sesudah Save to RNM")
+		galat.Tulis(w, http.StatusConflict, "The insured dates are locked after Save to RNM.")
 	case errors.Is(err, services.ErrDOLTidakSah):
 		// 11-10-2026: kalimat jelas dengan nomor peserta dan rentang valuasi; "Invalid DOL" (ValidasiDOL_Act) tetap kode.
 		var dol services.GalatDOL
@@ -76,17 +76,17 @@ func jawabGalatIsianOutstanding(w http.ResponseWriter, err error) {
 			galat.Tulis(w, http.StatusUnprocessableEntity, err.Error())
 		}
 	case errors.Is(err, services.ErrCatatanAdminTerkunci):
-		galat.Tulis(w, http.StatusConflict, "Admin Notes tidak dapat diubah untuk peserta yang sudah diputus")
+		galat.Tulis(w, http.StatusConflict, "Admin Notes cannot be changed for an insured that has been decided.")
 	case errors.Is(err, services.ErrKatastrofeTerkunci):
-		galat.Tulis(w, http.StatusConflict, "Catastrophe dan Catastrophe Note tidak dapat diubah sesudah klaim bernomor")
+		galat.Tulis(w, http.StatusConflict, "Catastrophe and Catastrophe Note cannot be changed once the claim has a number.")
 	case errors.Is(err, services.ErrKlaimTidakAda):
-		galat.Tulis(w, http.StatusNotFound, "klaim tidak ada")
+		galat.Tulis(w, http.StatusNotFound, "The claim does not exist.")
 	case errors.Is(err, services.ErrTahapTidakDikenal):
-		galat.Tulis(w, http.StatusConflict, "tahap kasus ini tidak dikenal")
+		galat.Tulis(w, http.StatusConflict, "The stage of this case is not recognized.")
 	case errors.Is(err, galat.ErrPermintaanTidakSah):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	default:
-		galat.Tulis(w, http.StatusInternalServerError, "gagal menyimpan layar Outstanding")
+		galat.Tulis(w, http.StatusInternalServerError, "Failed to save the Claim Admin screen.")
 	}
 }
 
@@ -95,14 +95,14 @@ func jawabGalatIsianOutstanding(w http.ResponseWriter, err error) {
 func pesertaPolis(svc *services.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		halaman := 1
 		if t := r.URL.Query().Get("halaman"); t != "" {
 			n, err := strconv.Atoi(t)
 			if err != nil || n < 1 {
-				galat.Tulis(w, http.StatusBadRequest, "halaman harus bilangan bulat >= 1")
+				galat.Tulis(w, http.StatusBadRequest, "The page must be a whole number of at least 1.")
 				return
 			}
 			halaman = n
@@ -110,7 +110,7 @@ func pesertaPolis(svc *services.Service) http.HandlerFunc {
 		hasil, err := svc.SimpanOutstanding().PesertaPolis(r.Context(), r.PathValue("id"), halaman)
 		switch {
 		case errors.Is(err, services.ErrKlaimTidakAda):
-			galat.Tulis(w, http.StatusNotFound, "klaim tidak ada")
+			galat.Tulis(w, http.StatusNotFound, "The claim does not exist.")
 			return
 		case errors.Is(err, galat.ErrPermintaanTidakSah):
 			galat.Tulis(w, http.StatusBadRequest, err.Error())

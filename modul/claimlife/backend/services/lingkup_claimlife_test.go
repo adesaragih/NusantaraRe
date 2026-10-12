@@ -36,3 +36,56 @@ func relAkar(jalur string) string {
 	}
 	return rel
 }
+
+// polaSasaranClaimLife - pernyataan SQL yang SASARANNYA tabel Claim Life (11-10-2026). Menyebut saja tidak cukup:
+// migrasi claimprop / claimfacin / claimnonprop menautkan tabel MEREKA SENDIRI ke header klaim bersama lewat
+// `FOREIGN KEY (CLAIM_ID) REFERENCES {skema}.T_GENERAL_CLAIM (ID)`; kolom tabel itu keputusan modulnya, bukan skema
+// Claim Life. Yang diperiksa: CREATE / ALTER / DROP / COMMENT ON / INSERT / UPDATE / MERGE atas tabel Claim Life.
+var polaSasaranClaimLife = regexp.MustCompile(`(?is)^\s*(CREATE\s+(GLOBAL\s+TEMPORARY\s+)?TABLE|ALTER\s+TABLE|DROP\s+TABLE|` +
+	`COMMENT\s+ON\s+(TABLE|COLUMN)|INSERT\s+INTO|UPDATE|MERGE\s+INTO)\s+("?[A-Z0-9_{}]+"?\.)?"?` +
+	`(T_WORK_CLAIM|T_GENERAL_CLAIM|T_CLAIMLF_[A-Z0-9_]+|OS_AKSEPTASI_KLAIM_LIFE)\b`)
+
+// pernyataanSQL memecah isi migrasi menjadi pernyataan: baris komentar `--` dibuang, pemisahnya `;` ATAU baris `/`
+// sendirian (gaya SQL*Plus yang dipakai migrasi modul lain - memecah hanya pada `;` membuat seluruh berkas satu
+// pernyataan).
+func pernyataanSQL(isi string) []string {
+	var hasil []string
+	var kini strings.Builder
+	tutup := func() {
+		for _, p := range strings.Split(kini.String(), ";") {
+			if strings.TrimSpace(p) != "" {
+				hasil = append(hasil, p)
+			}
+		}
+		kini.Reset()
+	}
+	for _, baris := range strings.Split(strings.ReplaceAll(isi, "\r\n", "\n"), "\n") {
+		t := strings.TrimSpace(baris)
+		if strings.HasPrefix(t, "--") {
+			continue
+		}
+		if t == "/" {
+			tutup()
+			continue
+		}
+		kini.WriteString(baris)
+		kini.WriteString("\n")
+	}
+	tutup()
+	return hasil
+}
+
+// sqlLingkupClaimLife - bagian migrasi yang tunduk pada aturan skema Claim Life: berkas Claim Life UTUH; berkas modul
+// lain hanya pernyataan yang sasarannya tabel Claim Life (polaSasaranClaimLife).
+func sqlLingkupClaimLife(jalur, isi string) []string {
+	if milikClaimLife(jalur) {
+		return []string{isi}
+	}
+	var hasil []string
+	for _, p := range pernyataanSQL(isi) {
+		if polaSasaranClaimLife.MatchString(p) {
+			hasil = append(hasil, p)
+		}
+	}
+	return hasil
+}

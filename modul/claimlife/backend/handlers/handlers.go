@@ -51,6 +51,10 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc(
 		"POST /api/klaim-life/{id}/peserta/{pesertaId}/adjustment/{adjId}/komite",
 		serahkanKomite(svc, stubPelaku))
+	// Pratinjau pop-up Send Claim to Committee (12-10-2026, opsi A): gerbang Serahkan sampai sebelum menulis.
+	mux.HandleFunc(
+		"GET /api/klaim-life/{id}/peserta/{pesertaId}/adjustment/{adjId}/komite",
+		pratinjauKomite(svc, stubPelaku))
 	// Perpindahan tahap - butir aw. Dua tombol layar Outstanding
 	// memanggilnya: `Send Back to Register` (InputOSClaimLife.xml
 	// 21404) dan `Send to Medical Check` (21839). Tujuannya KATA,
@@ -65,6 +69,8 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	mux.HandleFunc("PUT /api/klaim-life/{id}/outstanding/isian", simpanIsianOutstanding(svc, stubPelaku))
 	// Tombol `Save` layar Medical Check (`MedicalCheckClaimLife`, 11-10-2026): RECOMMENDATION per peserta.
 	mux.HandleFunc("PUT /api/klaim-life/{id}/medis", simpanMedis(svc, stubPelaku))
+	// Tombol `Save` layar Claim Analis (12-10-2026): CLAIM ANALYST (NOTES) per peserta.
+	mux.HandleFunc("PUT /api/klaim-life/{id}/analis", simpanAnalis(svc, stubPelaku))
 	// View Detail peserta polis - tab Policy Details layar Outstanding (DetailPolisLife b631, 11-10-2026). Baca saja.
 	mux.HandleFunc("GET /api/klaim-life/{id}/peserta-polis", pesertaPolis(svc))
 	// Spreading peserta diambil dari PremiumList Life (keputusan work owner 11-10-2026). Baca saja.
@@ -90,6 +96,8 @@ func DaftarkanRute(mux *http.ServeMux, svc *services.Service, stubPelaku bool) {
 	// BERSARANG di bawah pesertanya: `SetDisease.xml` b389 menutup dengan
 	// `Obj-Save pyWorkPage`, jadi diagnosa tidak punya hidup di luar peserta
 	// yang memuatnya.
+	// Daftar GROUP DIAGNOSE (keputusan work owner 12-10-2026) - satu sumber models.KelompokDiagnosa.
+	mux.HandleFunc("GET /api/klaim-life/kelompok-diagnosa", kelompokDiagnosa())
 	mux.HandleFunc("POST /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa",
 		tambahDiagnosa(svc, stubPelaku))
 	mux.HandleFunc("PUT /api/klaim-life/{id}/peserta/{pesertaId}/diagnosa/{diagId}",

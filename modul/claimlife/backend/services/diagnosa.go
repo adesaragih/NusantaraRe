@@ -50,6 +50,8 @@ var (
 	ErrTahapTidakBergridPeserta = errors.New("services: tahap ini tidak membuka grid peserta")
 	// ErrDiagnosaBukanMedicalCheck - diagnosa diubah HANYA di tahap Medical Check (11-10-2026).
 	ErrDiagnosaBukanMedicalCheck = errors.New("services: diagnosa hanya dapat diubah di tahap Medical Check")
+	// ErrKelompokDiagnosaTidakDikenal - GROUP DIAGNOSE di luar daftar WO 12-10-2026 (models.KelompokDiagnosa).
+	ErrKelompokDiagnosaTidakDikenal = errors.New("services: Group Diagnose tidak ada di daftar")
 	// ErrNilaiDiagnosaKepanjangan - satu nilai melebihi lebar kolomnya.
 	ErrNilaiDiagnosaKepanjangan = errors.New("services: nilai diagnosa melebihi lebar kolomnya")
 )
@@ -206,9 +208,10 @@ func (d *DiagnosaPeserta) Tambah(ctx context.Context, pelaku inti.Pelaku,
 // layar keduanya menyunting baris yang sama, dan dua rute berarti baris yang
 // separuh tersimpan.
 //
-// ⛔ `groupDiagnose` diterima apa adanya - `[terbuka - OQ-L]`. Daftar
-// pilihannya hidup pada rule properti yang tidak diekspor, jadi satu-satunya
-// pemeriksaan yang jujur adalah panjangnya.
+// ⛔ `groupDiagnose` (12-10-2026, daftar WO): kosong, salah satu
+// `models.KelompokDiagnosa`, ATAU nilai warisan yang sama dengan yang sudah
+// tersimpan di baris itu (tidak diubah) - selain itu 422. Panjangnya tetap
+// diperiksa (VARCHAR2(255)).
 func (d *DiagnosaPeserta) Ubah(ctx context.Context, pelaku inti.Pelaku,
 	klaimID, pesertaID string, diagID int64, kodeICD, nama, grup string) error {
 
@@ -222,8 +225,12 @@ func (d *DiagnosaPeserta) Ubah(ctx context.Context, pelaku inti.Pelaku,
 	if kolom, muat := models.PotongDiagnosa(kodeICD, nama, grup); !muat {
 		return fmt.Errorf("%w: kolom %s", ErrNilaiDiagnosaKepanjangan, kolom)
 	}
-	if _, err := d.milikPeserta(ctx, k, klaimID, pesertaID, diagID); err != nil {
+	lama, err := d.milikPeserta(ctx, k, klaimID, pesertaID, diagID)
+	if err != nil {
 		return err
+	}
+	if !models.KelompokDiagnosaSah(grup, strings.TrimSpace(lama.GroupDiagnose)) {
+		return fmt.Errorf("%w: %q", ErrKelompokDiagnosaTidakDikenal, grup)
 	}
 	return d.svc.DalamTransaksi(ctx, func(tx *db.Tx) error {
 		return k.diag.PerbaruiDiagnosa(ctx, tx, diagID, kodeICD, nama, grup)

@@ -169,16 +169,16 @@ func TestMataUangSatuKlaimWajibSeragam(t *testing.T) {
 func TestSerahkanMenjagaPagarnya(t *testing.T) {
 	svc := services.New(nil)
 	ctx := context.Background()
-	if err := svc.Komite().Serahkan(ctx, inti.Pelaku{}, "CLM-1", "P-1", "A-1",
+	if err := svc.Komite().Serahkan(ctx, inti.Pelaku{}, "CLM-1", "P-1", "A-1", "UJI REMARKS",
 		saatUji); !errors.Is(err, inti.ErrTanpaIdentitas) {
 		t.Errorf("tanpa identitas: galat = %v, mau ErrTanpaIdentitas", err)
 	}
 	if err := svc.Komite().Serahkan(ctx, pelakuBerperan(inti.PeranSPV),
-		"  ", "P-1", "A-1", saatUji); !errors.Is(err, galat.ErrPermintaanTidakSah) {
+		"  ", "P-1", "A-1", "UJI REMARKS", saatUji); !errors.Is(err, galat.ErrPermintaanTidakSah) {
 		t.Errorf("pengenal kosong: galat = %v, mau ErrPermintaanTidakSah", err)
 	}
 	if err := svc.Komite().Serahkan(ctx, pelakuBerperan(inti.PeranSPV),
-		"CLM-1", "P-1", "A-1", saatUji); err == nil {
+		"CLM-1", "P-1", "A-1", "UJI REMARKS", saatUji); err == nil {
 		t.Error("tanpa Oracle: lolos tanpa galat")
 	}
 }

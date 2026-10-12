@@ -24,12 +24,12 @@ import (
 func simpanMedis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !svc.PunyaDatabase() {
-			galat.Tulis(w, http.StatusServiceUnavailable, "database belum dikonfigurasi")
+			galat.Tulis(w, http.StatusServiceUnavailable, "The database is not configured.")
 			return
 		}
 		var masuk services.IsianMedis
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, batasBadanIsian)).Decode(&masuk); err != nil {
-			galat.Tulis(w, http.StatusBadRequest, "badan permintaan bukan JSON yang sah")
+			galat.Tulis(w, http.StatusBadRequest, "The request body is not valid JSON.")
 			return
 		}
 		if err := svc.SimpanMedis().Simpan(r.Context(), inti.PelakuDari(r, stubPelaku), r.PathValue("id"), masuk); err != nil {
@@ -44,11 +44,11 @@ func simpanMedis(svc *services.Service, stubPelaku bool) http.HandlerFunc {
 func jawabGalatMedis(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, inti.ErrTanpaIdentitas):
-		galat.Tulis(w, http.StatusUnauthorized, "permintaan tanpa identitas pelaku ditolak")
+		galat.Tulis(w, http.StatusUnauthorized, "The request has no user identity.")
 	case errors.Is(err, inti.ErrTanpaWewenang):
 		galat.Tulis(w, http.StatusForbidden, "Only the Medical Advisor can save the Medical Check.")
 	case errors.Is(err, kontrak.ErrKasusSudahTertutup):
-		galat.Tulis(w, http.StatusConflict, "kasus sudah ditutup dan tidak dapat diubah")
+		galat.Tulis(w, http.StatusConflict, "The case is already closed and cannot be changed.")
 	case errors.Is(err, services.ErrMedisBukanMedicalCheck):
 		galat.Tulis(w, http.StatusConflict, "Save is only available at the Medical Check stage.")
 	case errors.Is(err, services.ErrRekomendasiTerkunci):
@@ -56,9 +56,9 @@ func jawabGalatMedis(w http.ResponseWriter, err error) {
 	case errors.Is(err, services.ErrRekomendasiKepanjangan):
 		galat.Tulis(w, http.StatusUnprocessableEntity, "The recommendation cannot exceed 1000 characters.")
 	case errors.Is(err, services.ErrKlaimTidakAda):
-		galat.Tulis(w, http.StatusNotFound, "klaim tidak ada")
+		galat.Tulis(w, http.StatusNotFound, "The claim does not exist.")
 	case errors.Is(err, services.ErrTahapTidakDikenal):
-		galat.Tulis(w, http.StatusConflict, "tahap kasus ini tidak dikenal")
+		galat.Tulis(w, http.StatusConflict, "The stage of this case is not recognized.")
 	case errors.Is(err, galat.ErrPermintaanTidakSah):
 		galat.Tulis(w, http.StatusBadRequest, err.Error())
 	default:

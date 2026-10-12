@@ -137,3 +137,13 @@ RATE`, semua teks, nilai Pega apa adanya - RATE berkoma maupun bertitik desimal)
 dari `M_RATE_LIFE` (`repository/ratelife.go` (`RateLife.Baca`, konstanta `NamaViewRateLife`); spreading retro (`services/spreading.go`)) - perilaku tidak berubah, tetap baca-saja, nol JSONDATA. Rujukan `RATE_LIFE` di
 dokumen modul ini sebelum tanggal itu berarti view lama. ⚠️ Untuk tinjauan pemilik modul dan tim inti
 (`modul/riratelife/docs/PR-RIRATELIFE-FLAT.md` bab "Perlu tinjauan tim inti").
+
+
+## Saklar sementara: gerbang rekening penyerahan Komite (12-10-2026)
+
+`services.GerbangRekeningKomiteAktif` (`backend/services/komite.go`) = **false**. Keputusan work owner 12-10-2026: "tunggu
+master bank dari DBA" + "untuk proteksi bank account dimatikan dulu sementara, jangan dihapus". Selama mati, Send Claim to
+Committee (Pratinjau dan Serahkan, lewat `siapkanPenyerahan`) TIDAK menolak baris yang NAME_OF_BANK / ID_BANK / ACCOUNT_NO-nya
+kosong; muatan ke Komite tetap membawa data bank apa adanya. Kode `PeriksaRekening`, pesan "Name of bank cannot be empty",
+dan ujinya tetap (uji gerbang menyalakan saklarnya). **Menyalakan kembali:** ubah ke `true` begitu master bank DBA tersedia
+dan layar punya isian ID Bank / Account No.
