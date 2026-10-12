@@ -13,6 +13,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	inti "nusantarare/inti/backend"
@@ -109,8 +110,17 @@ func (p penyimpanOracle) Transaksi(ctx context.Context, fn func(tx *db.Tx) error
 
 // MasterXOL = `repository.MasterXOLDariJSON` (K8) - satu-satunya titik ganti
 // ke kontrak `PembacaMasterTreaty` modul treatyin.
+//
+// ⭐ 11-10-2026 (laporan pemakai, master Non-Prop 1002318): dokumen JSON tidak
+// lagi ditulis sejak 07-10-2026, jadi master baru dibaca dari tabel `T_TREATY_*`
+// (`repository.MasterXOLDariTabel`) - bentuk keluaran sama. Master lama tetap
+// dibaca dari JSON lebih dulu.
 func (p penyimpanOracle) MasterXOL(ctx context.Context, noKontrak string) (models.MasterXOL, error) {
-	return p.Gudang.MasterXOLDariJSON(ctx, noKontrak)
+	m, err := p.Gudang.MasterXOLDariJSON(ctx, noKontrak)
+	if errors.Is(err, repository.ErrMasterXOLTidakAda) {
+		return p.Gudang.MasterXOLDariTabel(ctx, noKontrak)
+	}
+	return m, err
 }
 
 // DariDasar menyusun layanan di atas basis data bersama. Tanpa Oracle

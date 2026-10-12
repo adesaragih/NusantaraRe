@@ -417,12 +417,14 @@ func (k konteksShare) xolAddSpreading(s *models.ShareNP) []string {
 			}
 		}
 	}
-	// [11] Total OR / R/I Limit dari baris Share.
+	// [11] Total OR / R/I Limit dari baris Share (spreading manual: tingkat
+	// spreading, `sebaranTotalBaris`).
 	s.Total["TotalSpreadedRnmProp"] = []models.NilaiMataUang{}
 	s.Total["TotalSpreadedRnmRIProp"] = []models.NilaiMataUang{}
 	for _, b := range s.Share {
-		s.Total["TotalSpreadedRnmProp"] = jumlahkan(s.Total["TotalSpreadedRnmProp"], b.RNMSpreadedListXOL)
-		s.Total["TotalSpreadedRnmRIProp"] = jumlahkan(s.Total["TotalSpreadedRnmRIProp"], b.RNMSpreadedListRIXOL)
+		or, ri, _, _ := sebaranTotalBaris(b)
+		s.Total["TotalSpreadedRnmProp"] = jumlahkan(s.Total["TotalSpreadedRnmProp"], or)
+		s.Total["TotalSpreadedRnmRIProp"] = jumlahkan(s.Total["TotalSpreadedRnmRIProp"], ri)
 	}
 	return pesan
 }
@@ -495,6 +497,13 @@ func sebarLama(b *models.BarisShareNP, perbarui bool, idKontrak string) {
 	b.SpreadingTotalPctXOL = teks(totalPct(b.SpreadingListXOL))
 	// [14], [19]
 	q := apd.New(0, 0)
+	// ⭐ MENYIMPANG DARI EKSPOR (10 Oktober 2026, permintaan pemakai: total
+	// OR / R/I harus sama dengan Pega): induk `ORS` = 100 % OR walau master
+	// tidak punya anak untuk periodenya (ORS 2025–2026: nol anak). Tanpa ini
+	// `q` tetap 0 dan seluruh nilai jatuh ke R/I.
+	if b.SpreadingTypeXOL == namaORS {
+		q = apd.New(100, 0)
+	}
 	for i := range b.SpreadingListXOL {
 		sp := &b.SpreadingListXOL[i]
 		if sp.ReinsTypeName == namaQSOR {
@@ -547,9 +556,7 @@ func (k konteksShare) setSpreadingXOL(s *models.ShareNP, b *models.BarisShareNP)
 		// [5.3.4] nama induk dari RD bila `ReinsTypeID` terisi — parameter
 		// `TreatyGroupID := TempSprd.TreatyGroupID`, yang tak pernah diisi
 		// untuk baris Non-Prop: filter B dilewati, induk SEMUA grup.
-		// Rincian anaknya ([5.3.7]) bersyarat `Primary.SpreadingTypeID ==
-		// ""` → LEWATI, dan `SpreadingTypeID` tidak pernah diisi di
-		// Non-Prop: rincian itu tak tercapai, jadi bagian OR / R/I-nya kosong.
+		// Rincian anaknya ([5.3.5]–[5.3.8]) — lihat `anakSpreading`.
 		if sp.ReinsTypeID != "" {
 			for _, p := range k.src.Induk("", k.mulai) {
 				if p.ReinsTypeID == sp.ReinsTypeID {
@@ -558,11 +565,18 @@ func (k konteksShare) setSpreadingXOL(s *models.ShareNP, b *models.BarisShareNP)
 			}
 		}
 	}
-	sebarManual(b)
+	sebarManual(b, k.anakSpreading)
+	// ⭐ MENYIMPANG DARI EKSPOR (10 Oktober 2026): baris yang memuat `ORS`
+	// juga memperoleh Net / Deduction OR · R/I, dan keempat total dijumlah
+	// ulang dari seluruh baris Share — Pega di gambar pemakai memperlihatkan
+	// `Total OR Limit` = RNM Limit dan `Total OR Net Premium` = seluruh Net.
+	if adaORS(b) {
+		sebarBrokerage(b, persenORBaris(b, apd.New(0, 0)), k.idKontrak)
+	}
 	// [6] `CountTotalPctSpreadXOL`.
 	b.SpreadingTotalPctXOL = teks(totalPct(b.SpreadingListXOL))
-	// [7] menjumlah larik spreaded TINGKAT SPREADING — selalu kosong (lihat
-	// [5.3.7]), jadi keempat total tetap kosong.
+	// [7] menjumlah larik spreaded TINGKAT SPREADING (`totalSebaranOR`).
+	totalSebaranOR(s, true)
 	// [9]
 	if angka(b.SpreadingTotalPctXOL).Cmp(angka(b.RNMShare)) != 0 {
 		return []string{PesanShareSpreading}
@@ -570,21 +584,196 @@ func (k konteksShare) setSpreadingXOL(s *models.ShareNP, b *models.BarisShareNP)
 	return nil
 }
 
-// sebarManual — `SetSpreadingXOL` langkah 5.1–5.8: tiap baris spreading
-// mendapat bagian `@divide(.Pct, RNMShare, 20)` dari larik baris Share.
-func sebarManual(b *models.BarisShareNP) {
+// sebarManual — `SetSpreadingXOL` langkah 5.1–5.9: tiap baris spreading
+// mendapat bagian `@divide(.Pct, RNMShare, 20)` dari larik baris Share, lalu
+// rincian anak induknya (`pecahSpreading`). `anak` = sumber anak susunan
+// (`konteksShare.anakSpreading`); nil = tanpa bacaan RD.
+func sebarManual(b *models.BarisShareNP, anak func(reinsTypeID string) []models.SusunanSpreading) {
 	for i := range b.SpreadingListXOL {
 		sp := &b.SpreadingListXOL[i]
 		f := bagiBulatDes(angka(sp.Pct), angka(b.RNMShare), 20)
-		// [5.4] `.RnmLimitList(<APPEND>)` dari `.Currency`/`.Value` baris
-		// spreading — keduanya hanya diisi rincian anak yang tak tercapai,
-		// jadi barisnya bermata uang kosong dan tak pernah dijumlah.
-		sp.RnmLimitList = []models.NilaiMataUang{}
+		// [5.3.8.1.1] `.Currency` / `.Value` = RNM Limit layer × bagian, lalu
+		// [5.4] `.RnmLimitList(<APPEND>)`. ⚠️ Pega menambah SATU baris (mata
+		// uang TERAKHIR yang tersisa di `.Currency`); di sini setiap mata uang
+		// — sama untuk kontrak satu mata uang (kontrak 1002304: 7.837.500.000
+		// × 14 ÷ 19 = 5.775.000.000).
+		sp.RnmLimitList = kaliLarik(b.RnmLimitList, f)
+		sp.Currency, sp.Value = "", ""
+		if n := len(sp.RnmLimitList); n > 0 {
+			sp.Currency, sp.Value = sp.RnmLimitList[n-1].Currency, sp.RnmLimitList[n-1].Value
+		}
 		sp.GrossPremiumList = kaliLarik(b.GrossPremiumList, f)
 		sp.GrossPremiumMinList = kaliLarik(b.GrossPremiumMinList, f)
 		sp.DeductionTotalList = kaliLarik(b.DeductionTotalList, f)
 		sp.NetPremiumList = kaliLarik(b.NetPremiumList, f)
+		pecahSpreading(sp, anak)
 	}
+	// ⭐ MENYIMPANG DARI EKSPOR (10 Oktober 2026): baris yang spreading
+	// manualnya memuat `ORS` memperoleh bagian OR / R/I untuk Limit, Gross,
+	// dan Deduction — Pega memperlihatkan `Total OR Limit` = seluruh RNM Limit
+	// untuk ORS (100 % OR). Net sudah dibagi `sebarBrokerage`.
+	if adaORS(b) {
+		orP := bagiPolos(persenORBaris(b, apd.New(0, 0)), seratus)
+		riP := kurang(apd.New(1, 0), orP)
+		b.RNMSpreadedListXOL, b.RNMSpreadedListRIXOL = bagiDua(b.RnmLimitList, orP, riP)
+		b.RNMSpreadedListGrossXOL, b.RNMSpreadedListGrossRIXOL = bagiDua(b.GrossPremiumList, orP, riP)
+		b.RNMSpreadedListGrossMinXOL, b.RNMSpreadedListGrossRIMinXOL = bagiDua(b.GrossPremiumMinList, orP, riP)
+		b.RNMSpreadedListDeductXOL, b.RNMSpreadedListDeductRIXOL = bagiDua(b.DeductionTotalList, orP, riP)
+	}
+}
+
+// anakSpreading — `SetSpreadingXOL` [5.3.2]–[5.3.7]: induk ber-`ReinsTypeID`
+// itu dicari di RD `ParentReinsMasterTrt` (filter grup dilewati, seperti nama
+// induk [5.3.4]) untuk `TreatyYearID`-nya, lalu anak susunannya dari
+// `BrowseTreatyArrangement_Limit_MstTrt_RD` — parameter [5.3.5]
+// `ParentReinsTypeID` + `TreatyYearID` (yang lain dikosongkan, filternya
+// dilewati): sama dengan `SumberSpreading.Anak`.
+//
+// ⭐ MENYIMPANG DARI BACAAN EKSPOR SEBELUMNYA (11 Oktober 2026, permintaan
+// pemakai dengan tangkapan Pega "2026 QS 212M TRT · 16,50" → `QS (R/I)` 60 /
+// `QS (OR)` 40): [5.3.7] bersyarat `Primary.SpreadingTypeID == ""`, yang
+// dulu dibaca "selalu dilewati". Hasil Pega membantahnya — tangkapan pemakai
+// dan dokumen 1002304 (`BreakDownSprdListXOL` terisi anak induknya) — jadi
+// rinciannya DIBACA. Induk tak ditemukan = tanpa rincian.
+func (k konteksShare) anakSpreading(id string) []models.SusunanSpreading {
+	if k.src == nil || id == "" {
+		return nil
+	}
+	tahun, ada := "", false
+	for _, p := range k.src.Induk("", k.mulai) {
+		if p.ReinsTypeID == id {
+			tahun, ada = p.TreatyYearID, true
+		}
+	}
+	if !ada {
+		return nil
+	}
+	return k.src.Anak(id, tahun)
+}
+
+// pecahSpreading — `SetSpreadingXOL` [5.3.8.1.2] dan [5.9] untuk SATU baris
+// spreading manual: `BreakDownSprdListXOL` (anak × mata uang RNM Limit), lalu
+// bagian OR (`QS (OR)` / `ORS`) dan R/I (`QS (R/I)`) TINGKAT SPREADING =
+// `@divide(SharePct,100,20)` × larik baris spreading.
+//
+// ⚠️ Simpangan: (a) [5.9] Pega berulang atas baris RINCIAN (anak × mata uang)
+// dan tiap putaran menambah seluruh mata uang — kontrak dua mata uang
+// tergandakan; di sini sekali per anak, dijumlah per mata uang (sama untuk
+// satu mata uang). (b) `ORS` tanpa anak di master (periode 2025–2026: nol
+// anak) = satu rincian `ORS` 100 % — keputusan 10 Oktober 2026 "ORS = 100 % OR".
+func pecahSpreading(sp *models.BarisSpreadingNP, anak func(string) []models.SusunanSpreading) {
+	sp.BreakDownSprdListXOL = []models.BarisPecahanSpreadingNP{}
+	kosongkanSebaranSpreading(sp)
+	var daftar []models.SusunanSpreading
+	if sp.ReinsTypeID != "" && anak != nil { // [5.3] `.ReinsTypeID == ""` → lewati
+		daftar = anak(sp.ReinsTypeID)
+	}
+	if len(daftar) == 0 && sp.ReinsTypeName == namaORS {
+		daftar = []models.SusunanSpreading{{ReinsTypeID: sp.ReinsTypeID, ReinsTypeName: namaORS, Pct: "100"}}
+	}
+	for _, a := range daftar {
+		pct := angka(a.Pct)
+		for _, v := range sp.RnmLimitList {
+			sp.BreakDownSprdListXOL = append(sp.BreakDownSprdListXOL, models.BarisPecahanSpreadingNP{
+				ReinsTypeName: a.ReinsTypeName, ReinsTypeID: a.ReinsTypeID, Currency: v.Currency,
+				Amount: teks(bagiBulatDes(kali(angka(v.Value), pct), seratus, 20)), SharePct: a.Pct,
+			})
+		}
+		q := bagiBulatDes(pct, seratus, 20)
+		var limit, gross, grossMin, deduksi, net *[]models.NilaiMataUang
+		switch a.ReinsTypeName {
+		case namaQSOR, namaORS: // [5.9.1]
+			limit, gross, grossMin = &sp.RNMSpreadedListXOL, &sp.RNMSpreadedListGrossXOL, &sp.RNMSpreadedListGrossMinXOL
+			deduksi, net = &sp.RNMSpreadedListDeductXOL, &sp.RNMSpreadedListNetXOL
+		case namaQSRI: // [5.9.2]
+			limit, gross, grossMin = &sp.RNMSpreadedListRIXOL, &sp.RNMSpreadedListGrossRIXOL, &sp.RNMSpreadedListGrossRIMinXOL
+			deduksi, net = &sp.RNMSpreadedListDeductRIXOL, &sp.RNMSpreadedListNetRIXOL
+		default:
+			continue
+		}
+		*limit = jumlahkan(*limit, kaliLarik(sp.RnmLimitList, q))
+		*gross = jumlahkan(*gross, kaliLarik(sp.GrossPremiumList, q))
+		*grossMin = jumlahkan(*grossMin, kaliLarik(sp.GrossPremiumMinList, q))
+		*deduksi = jumlahkan(*deduksi, kaliLarik(sp.DeductionTotalList, q))
+		*net = jumlahkan(*net, kaliLarik(sp.NetPremiumList, q))
+	}
+}
+
+// kosongkanSebaranSpreading — larik OR / R/I satu baris spreading.
+func kosongkanSebaranSpreading(sp *models.BarisSpreadingNP) {
+	for _, l := range larikSebaranSpreading(sp) {
+		*l = []models.NilaiMataUang{}
+	}
+}
+
+// larikSebaranSpreading — kesepuluh larik OR / R/I TINGKAT SPREADING.
+func larikSebaranSpreading(sp *models.BarisSpreadingNP) []*[]models.NilaiMataUang {
+	return []*[]models.NilaiMataUang{
+		&sp.RNMSpreadedListXOL, &sp.RNMSpreadedListRIXOL, &sp.RNMSpreadedListGrossXOL, &sp.RNMSpreadedListGrossRIXOL,
+		&sp.RNMSpreadedListGrossMinXOL, &sp.RNMSpreadedListGrossRIMinXOL, &sp.RNMSpreadedListDeductXOL,
+		&sp.RNMSpreadedListDeductRIXOL, &sp.RNMSpreadedListNetXOL, &sp.RNMSpreadedListNetRIXOL,
+	}
+}
+
+// sebaranTotalBaris — bagian OR / R/I satu baris Share untuk Total tab:
+// spreading MANUAL dari tingkat spreading (`SetSpreadingXOL` [7], dijumlah
+// seluruh baris spreading), spreading bernama dari baris Share sendiri.
+func sebaranTotalBaris(b models.BarisShareNP) (or, ri, netOR, netRI []models.NilaiMataUang) {
+	if b.SpreadingTypeXOL != "" || len(b.SpreadingListXOL) == 0 {
+		return b.RNMSpreadedListXOL, b.RNMSpreadedListRIXOL, b.RNMSpreadedListNetXOL, b.RNMSpreadedListNetRIXOL
+	}
+	or, ri, netOR, netRI = []models.NilaiMataUang{}, []models.NilaiMataUang{}, []models.NilaiMataUang{}, []models.NilaiMataUang{}
+	for _, sp := range b.SpreadingListXOL {
+		or = jumlahkan(or, sp.RNMSpreadedListXOL)
+		ri = jumlahkan(ri, sp.RNMSpreadedListRIXOL)
+		netOR = jumlahkan(netOR, sp.RNMSpreadedListNetXOL)
+		netRI = jumlahkan(netRI, sp.RNMSpreadedListNetRIXOL)
+	}
+	return or, ri, netOR, netRI
+}
+
+// adaORS - baris Share memuat spreading `ORS` (induk atau baris manual).
+func adaORS(b *models.BarisShareNP) bool {
+	if b.SpreadingTypeXOL == namaORS {
+		return true
+	}
+	for _, sp := range b.SpreadingListXOL {
+		if sp.ReinsTypeName == namaORS {
+			return true
+		}
+	}
+	return false
+}
+
+// persenORBaris - `local.QSPCT` satu baris Share, TERBAWA dari `q` bila baris
+// ini tak menyebutnya: `QS (OR)` = Pct-nya; `ORS` = 100 % OR. Pada spreading
+// MANUAL (tanpa Spreading Type) yang memuat `ORS`, bagian OR = Pct baris ORS
+// ÷ total Pct spreading × 100.
+func persenORBaris(b *models.BarisShareNP, q *apd.Decimal) *apd.Decimal {
+	if b.SpreadingTypeXOL == namaORS {
+		return apd.New(100, 0)
+	}
+	if b.SpreadingTypeXOL == "" && adaORS(b) {
+		total, ors := apd.New(0, 0), apd.New(0, 0)
+		for _, sp := range b.SpreadingListXOL {
+			total = tambah(total, angka(sp.Pct))
+			if sp.ReinsTypeName == namaORS {
+				ors = tambah(ors, angka(sp.Pct))
+			}
+		}
+		if !total.IsZero() {
+			return kali(bagiBulatDes(ors, total, 12), seratus)
+		}
+	}
+	for _, sp := range b.SpreadingListXOL {
+		if sp.ReinsTypeName == namaQSOR {
+			q = angka(sp.Pct)
+		}
+		if sp.ReinsTypeName == namaORS {
+			q = apd.New(100, 0)
+		}
+	}
+	return q
 }
 
 // AddSpreadingXOL — `add=true`: baris baru `Pct 0`; `add=false`: hapus baris
@@ -634,11 +823,7 @@ func (k konteksShare) setBrokerage(s *models.ShareNP) []string {
 	for _, larik := range [][]models.BarisShareNP{s.Share, s.FacultativeShareList} {
 		for i := range larik {
 			b := &larik[i]
-			for _, sp := range b.SpreadingListXOL {
-				if sp.ReinsTypeName == namaQSOR {
-					q = angka(sp.Pct)
-				}
-			}
+			q = persenORBaris(b, q)
 			sebarBrokerage(b, q, k.idKontrak)
 		}
 	}
@@ -700,12 +885,7 @@ func (k konteksShare) xolAddSpreadingDetail(s *models.ShareNP, idx int, layers [
 	// [4.2]
 	pesan := hitungDeduksiShare(b, "pct", 0)
 	// [5] QSPCT dari `QS (OR)` (kini kosong → 0); Net & Deduction OR / R/I.
-	q := apd.New(0, 0)
-	for _, sp := range b.SpreadingListXOL {
-		if sp.ReinsTypeName == namaQSOR {
-			q = angka(sp.Pct)
-		}
-	}
+	q := persenORBaris(b, apd.New(0, 0))
 	orP, riP := bagiPolos(q, seratus), bagiPolos(kurang(seratus, q), seratus)
 	b.RNMSpreadedListNetXOL, b.RNMSpreadedListNetRIXOL = bagiDua(b.NetPremiumList, orP, riP)
 	b.RNMSpreadedListDeductXOL, b.RNMSpreadedListDeductRIXOL = bagiDua(b.DeductionTotalList, orP, riP)
@@ -724,11 +904,12 @@ func totalSebaranOR(s *models.ShareNP, net bool) {
 		s.Total["TotalSpreadedNetPremiRI"] = []models.NilaiMataUang{}
 	}
 	for _, b := range s.Share {
-		s.Total["TotalSpreadedRnmProp"] = jumlahkan(s.Total["TotalSpreadedRnmProp"], b.RNMSpreadedListXOL)
-		s.Total["TotalSpreadedRnmRIProp"] = jumlahkan(s.Total["TotalSpreadedRnmRIProp"], b.RNMSpreadedListRIXOL)
+		or, ri, netOR, netRI := sebaranTotalBaris(b)
+		s.Total["TotalSpreadedRnmProp"] = jumlahkan(s.Total["TotalSpreadedRnmProp"], or)
+		s.Total["TotalSpreadedRnmRIProp"] = jumlahkan(s.Total["TotalSpreadedRnmRIProp"], ri)
 		if net {
-			s.Total["TotalSpreadedNetPremi"] = jumlahkan(s.Total["TotalSpreadedNetPremi"], b.RNMSpreadedListNetXOL)
-			s.Total["TotalSpreadedNetPremiRI"] = jumlahkan(s.Total["TotalSpreadedNetPremiRI"], b.RNMSpreadedListNetRIXOL)
+			s.Total["TotalSpreadedNetPremi"] = jumlahkan(s.Total["TotalSpreadedNetPremi"], netOR)
+			s.Total["TotalSpreadedNetPremiRI"] = jumlahkan(s.Total["TotalSpreadedNetPremiRI"], netRI)
 		}
 	}
 }

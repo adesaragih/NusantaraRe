@@ -148,9 +148,10 @@ describe('layar daftar kontrak', () => {
 describe('strip tab - DUA himpunan, dan keduanya tidak sama', () => {
   // ⛔ 8 Oktober 2026 — tab utama `RNM Share` Non-Prop DIHAPUS atas keputusan
   // pemilik proses (*"di non prop tab RNM SHARE itu tidak ada"*): sepuluh.
-  it('proporsional sepuluh tab, non-proporsional sepuluh', () => {
+  // ⭐ 10 Oktober 2026: `Retro` mengisi posisi `RNM Share` di Non-Prop — 11 tab.
+  it('proporsional sepuluh tab, non-proporsional sebelas (dengan Retro)', () => {
     expect(TAB_PROPORSIONAL).toHaveLength(10)
-    expect(TAB_NON_PROPORSIONAL).toHaveLength(10)
+    expect(TAB_NON_PROPORSIONAL).toHaveLength(11)
     expect(TAB_NON_PROPORSIONAL as readonly string[]).not.toContain('RNM Share')
   })
 
@@ -184,6 +185,7 @@ describe('strip tab - DUA himpunan, dan keduanya tidak sama', () => {
       'Maximum Retention',
       'Event Limits',
       'EGNPI',
+      'Retro',
       'Installment',
       'Value Difference',
     ])
@@ -1215,8 +1217,11 @@ describe('pemilih "Choose …" adalah DROPDOWN sejak 5 Oktober 2026', () => {
 describe('Retro — keadaan KEEMPAT: jarang, bukan belum-ada-kode', () => {
   // ⛔ DIBALIK 8 Oktober 2026 — tab itu dikeluarkan dari proyek, jadi nol
   // cabang render boleh menyebutnya lagi.
-  it('⛔ nol cabang render menyebutnya', () => {
-    expect(FORM).not.toContain("tabTampil === 'Retro'")
+  // ⭐ 10 Oktober 2026 — tab Retro Non-Prop kembali (Pega: `Has Share To
+  // Retro`), dirender `TabRetro`.
+  it('⭐ tab Retro Non-Prop dirender `TabRetro`', () => {
+    expect(FORM).toContain("tabTampil === 'Retro'")
+    expect(FORM).toContain('<TabRetro')
   })
 
   // ⛔ DIBALIK 8 Oktober 2026 — petunjuknya DICABUT dari layar.

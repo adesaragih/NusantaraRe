@@ -565,7 +565,7 @@ export interface BarisKursWarisan {
 // `T_TREATY_*`, kepala `TREATY_IN`, kurs `TREATYEXCHANGEYEARLY`.
 // ---------------------------------------------------------------------------
 
-/** Grid Rate of Exchange yang Save kirim — baris yang BERUBAH atau BARU saja. */
+/** Grid Rate of Exchange yang Save kirim — baris yang BERUBAH atau BARU, dan yang di-Delete. */
 export interface KursSimpan {
   tahun: string
   baris: BarisKursWarisan[]
@@ -1079,6 +1079,38 @@ export interface BarisSpreadingShare {
   GrossPremiumMinList: NilaiShare[]
   DeductionTotalList: NilaiShare[]
   NetPremiumList: NilaiShare[]
+  /**
+   * Rincian spreading MANUAL dari backend — `SetSpreadingXOL` [5.3.8]–[5.9]
+   * (11 Oktober 2026): RNM Limit baris (`Currency` · `Value`), anak susunan
+   * induk (`BreakDownSprdListXOL`), dan bagian OR / R/I tingkat spreading.
+   * Turunan: tidak dikirim saat Save (`TURUNAN_SPREADING`).
+   */
+  Currency?: string
+  Value?: string
+  BreakDownSprdListXOL?: BarisPecahanSpreading[]
+  RNMSpreadedListXOL?: NilaiShare[]
+  RNMSpreadedListRIXOL?: NilaiShare[]
+  RNMSpreadedListGrossXOL?: NilaiShare[]
+  RNMSpreadedListGrossRIXOL?: NilaiShare[]
+  RNMSpreadedListGrossMinXOL?: NilaiShare[]
+  RNMSpreadedListGrossRIMinXOL?: NilaiShare[]
+  RNMSpreadedListDeductXOL?: NilaiShare[]
+  RNMSpreadedListDeductRIXOL?: NilaiShare[]
+  RNMSpreadedListNetXOL?: NilaiShare[]
+  RNMSpreadedListNetRIXOL?: NilaiShare[]
+}
+
+/**
+ * Satu baris `SpreadingListXOL(n).BreakDownSprdListXOL` — anak susunan induk
+ * spreading manual per mata uang (`QS (R/I)` 60 · `QS (OR)` 40 …). `Amount` =
+ * RNM Limit baris × `SharePct` ÷ 100.
+ */
+export interface BarisPecahanSpreading {
+  ReinsTypeName: string
+  ReinsTypeID: string
+  Currency: string
+  Amount: string
+  SharePct: string
 }
 
 /** Satu baris `TreatyIn.Share` — SATU per layer Limits. */

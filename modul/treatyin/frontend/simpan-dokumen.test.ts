@@ -83,6 +83,7 @@ describe('kursBerubah — seluruh grid; yang tidak berubah bertanda tetap', () =
       berlakuSampai: '30/06/26',
       berlakuDariAsli: '20250701',
       berlakuSampaiAsli: '20260630',
+      tetap: true, // tercatat MILIK kontrak (`T_TREATY_KURS`)
     },
   ]
 
@@ -124,6 +125,53 @@ describe('kursBerubah — seluruh grid; yang tidak berubah bertanda tetap', () =
 
   it('⛔ baris yang di-Delete hanya LEPAS: grid tanpa baris itu dikirim, nol hapus di tabel', () => {
     expect(kursBerubah([], asli, '2025')).toEqual({ tahun: '2025', baris: [] })
+  })
+
+  // ⛔ Laporan 10 Oktober 2026: kontrak tanpa catatan membaca kurs SELURUH
+  // tahun treaty; Save pertama mencatat semuanya sebagai miliknya.
+  describe('grid cadangan seluruh-tahun (baris dimuat tanpa tanda tetap)', () => {
+    const baris = (id: string, cur: string): BarisKursWarisan => ({
+      id,
+      mataUang: cur,
+      mataUangID: '1',
+      nilaiKeIDR: '1',
+      berlakuDari: '',
+      berlakuSampai: '',
+      berlakuDariAsli: '20250701',
+      berlakuSampaiAsli: '20260630',
+    })
+    const cadangan = [baris('1', 'BND'), baris('2', 'CAD'), baris('3', 'CHF')]
+    const baru: BarisKursWarisan = { mataUang: 'IDR', mataUangID: '10026', nilaiKeIDR: '1', berlakuDari: '', berlakuSampai: '', berlakuDariAsli: '01-01-2026', berlakuSampaiAsli: '31-12-2026' }
+
+    it('tanpa perubahan → null: kurs kontrak lama tidak disentuh', () => {
+      expect(kursBerubah(cadangan, cadangan, '2025')).toBeNull()
+    })
+
+    it('⭐ hanya baris BARU yang dikirim — cadangan yang tak disentuh tidak ikut tercatat', () => {
+      const k = kursBerubah([...cadangan, baru], cadangan, '2025')
+      expect(k?.baris).toHaveLength(1)
+      expect(k?.baris[0]).toMatchObject({ mataUang: 'IDR', berlakuDariAsli: '20260101' })
+      expect(k?.baris[0]?.tetap).toBeUndefined()
+    })
+
+    it('baris cadangan yang DIUBAH ikut dikirim tanpa tanda tetap (supaya benar-benar ditulis)', () => {
+      const k = kursBerubah([{ ...cadangan[0]!, nilaiKeIDR: '5' }, cadangan[1]!, cadangan[2]!], cadangan, '2025')
+      expect(k?.baris).toHaveLength(1)
+      expect(k?.baris[0]).toMatchObject({ id: '1', nilaiKeIDR: '5' })
+      expect(k?.baris[0]?.tetap).toBeUndefined()
+    })
+
+    it('⭐ pemakai menghapus baris cadangan → sisanya dicatat bertanda tetap', () => {
+      const k = kursBerubah([cadangan[0]!], cadangan, '2025')
+      expect(k?.baris).toHaveLength(1)
+      expect(k?.baris[0]).toMatchObject({ id: '1', tetap: true })
+    })
+  })
+
+  it('baris milik kontrak yang diubah dikirim TANPA tanda tetap (kalau tidak, ubahannya tidak ditulis)', () => {
+    const k = kursBerubah([{ ...asli[0]!, nilaiKeIDR: '17000' }], asli, '2025')
+    expect(k?.baris[0]).toMatchObject({ id: '13358', nilaiKeIDR: '17000' })
+    expect(k?.baris[0]?.tetap).toBeUndefined()
   })
 
   it('keYYYYMMDD menerima tiga bentuk', () => {
@@ -181,5 +229,74 @@ describe('Actions dinilai dari PERAN, bukan dari nama Position To', () => {
     const i = src.indexOf('export function bolehActions')
     expect(i).toBeGreaterThan(0)
     expect(src.slice(i, i + 400)).not.toMatch(/pemegangPosisi|PositionUsername/)
+  })
+})
+
+// ⛔ Laporan 10 Oktober 2026: Save menampilkan "No column in the table yet, so
+// NOT saved: DeductionTotalList, GrossPremiumList, GrossPremiumMinList,
+// NetPremiumList". Daftar turunan tingkat spreading tidak dikirim lagi.
+describe('susunDokumen — daftar turunan spreading tidak ikut dikirim', () => {
+  it('Gross / Gross Min / Deduction / Net / RnmLimit tingkat spreading dibuang; isian tetap', () => {
+    const nilai = [{ Currency: 'IDR', CurrencyID: '', Value: '1' }]
+    const share = {
+      Share: [
+        {
+          Layer: '1',
+          GrossPremiumList: nilai,
+          SpreadingListXOL: [
+            {
+              ReinsTypeID: '10007',
+              ReinsTypeName: 'ORS',
+              Pct: '22.5',
+              GrossPremiumList: nilai,
+              GrossPremiumMinList: nilai,
+              DeductionTotalList: nilai,
+              NetPremiumList: nilai,
+              RnmLimitList: nilai,
+              // ⭐ 11 Oktober 2026 — rincian anak susunan + OR / R/I tingkat spreading
+              Currency: 'IDR',
+              Value: '1',
+              BreakDownSprdListXOL: [{ ReinsTypeName: 'ORS', ReinsTypeID: '10007', Currency: 'IDR', Amount: '1', SharePct: '100' }],
+              RNMSpreadedListXOL: nilai,
+              RNMSpreadedListRIXOL: nilai,
+              RNMSpreadedListNetXOL: nilai,
+            },
+          ],
+        },
+      ],
+    }
+    const d = susunDokumen(KEPALA, share, null, null)
+    const sp = (d.Share as { SpreadingListXOL: Record<string, unknown>[]; GrossPremiumList: unknown }[])[0]!
+    expect(sp.SpreadingListXOL[0]).toEqual({ ReinsTypeID: '10007', ReinsTypeName: 'ORS', Pct: '22.5' })
+    // daftar tingkat BARIS Share (punya kolom) tetap terkirim
+    expect(sp.GrossPremiumList).toEqual(nilai)
+  })
+})
+
+// ⛔ Laporan 10 Oktober 2026: Copy lalu Save mengubah Rate of Exchange. Kontrak
+// baru hasil Copy tidak punya catatan, jadi grid milik sumber harus ikut dikirim.
+describe('kursBerubah — Copy (kontrak baru)', () => {
+  const milik: BarisKursWarisan = {
+    id: '10146',
+    mataUang: 'IDR',
+    mataUangID: '10026',
+    nilaiKeIDR: '1',
+    berlakuDari: '',
+    berlakuSampai: '',
+    berlakuDariAsli: '20260101',
+    berlakuSampaiAsli: '20261231',
+    tetap: true,
+  }
+  it('grid milik sumber dikirim bertanda tetap walau tak diubah', () => {
+    const k = kursBerubah([milik], [milik], '2026', true)
+    expect(k?.baris).toHaveLength(1)
+    expect(k?.baris[0]).toMatchObject({ id: '10146', tetap: true })
+  })
+  it('bukan Copy: tak diubah → null (perilaku lama)', () => {
+    expect(kursBerubah([milik], [milik], '2026', false)).toBeNull()
+  })
+  it('Copy dari sumber tanpa catatan (cadangan seluruh-tahun) → tidak dikirim', () => {
+    const { tetap: _t, ...cadangan } = milik
+    expect(kursBerubah([cadangan], [cadangan], '2026', true)).toBeNull()
   })
 })

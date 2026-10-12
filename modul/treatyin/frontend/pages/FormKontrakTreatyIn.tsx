@@ -80,6 +80,7 @@ import TabPortofolio from '../components/TabPortofolio'
 import TabCoInsScale from '../components/TabCoInsScale'
 import TabTeksPanjang from '../components/TabTeksPanjang'
 import TabEventLimits from '../components/TabEventLimits'
+import TabRetro from '../components/TabRetro'
 import DropdownWarisan from '../components/DropdownWarisan'
 import TabReportingPeriod from '../components/TabReportingPeriod'
 import TabAkumulasi from '../components/TabAkumulasi'
@@ -381,7 +382,7 @@ export default function FormKontrakTreatyIn({ idKontrak, mode: modeRute = 'lihat
       ),
       ...tambahan,
     },
-    kurs: kursBerubah(kurs, warisan?.kurs ?? [], tahunTreaty),
+    kurs: kursBerubah(kurs, warisan?.kurs ?? [], tahunTreaty, idKontrak === ''),
   })
 
   /** Satu penekanan tombol tulis; sesudah berhasil, data dibaca ulang dari tabel. */
@@ -1263,6 +1264,8 @@ export default function FormKontrakTreatyIn({ idKontrak, mode: modeRute = 'lihat
            AKAR (`TreatyIn.RSMDLimit` …), bukan `Detail[]`. Lihat
            `TabEventLimits.tsx`. */
         <TabEventLimits mode={mode} />
+      ) : tabTampil === 'Retro' ? (
+        <TabRetro awal={warisan?.retroBerganda ?? ''} mode={mode} />
       ) : tabTampil === 'Achievement In IDR' ? (
         /* ⛔ Cabang tab utama `RNM Share` (Non-Prop) DICABUT 8 Oktober 2026 —
            pemilik proses: *"di non prop tab RNM SHARE itu tidak ada"*. Ia
@@ -1284,6 +1287,10 @@ export default function FormKontrakTreatyIn({ idKontrak, mode: modeRute = 'lihat
         <TabCoInsScale baris={warisan?.skalaKoasuransi ?? []} mode={mode} />
       ) : tabTampil === 'Exclusions' ? (
         <TabTeksPanjang
+          // ⛔ `key` WAJIB: kedua tab (Exclusions, Special Conditions) berada di
+          // posisi pohon yang sama, jadi tanpa `key` React memakai ulang
+          // komponennya dan teks tab pertama ikut tersemai ke tab kedua.
+          key={tabTampil}
           judul={tabTampil}
           // `TreatyIn.ExclusionsP` (Prop) / `TreatyIn.Exclusions` (Non-Prop).
           properti={jenis === NON_PROPORSIONAL ? 'Exclusions' : 'ExclusionsP'}
@@ -1293,6 +1300,10 @@ export default function FormKontrakTreatyIn({ idKontrak, mode: modeRute = 'lihat
         />
       ) : tabTampil === 'Special Conditions' ? (
         <TabTeksPanjang
+          // ⛔ `key` WAJIB: kedua tab (Exclusions, Special Conditions) berada di
+          // posisi pohon yang sama, jadi tanpa `key` React memakai ulang
+          // komponennya dan teks tab pertama ikut tersemai ke tab kedua.
+          key={tabTampil}
           judul={tabTampil}
           properti={jenis === NON_PROPORSIONAL ? 'SpecialConditions' : 'SpecialConditionsP'}
           tab={warisan?.syaratKhusus}

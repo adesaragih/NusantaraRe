@@ -56,11 +56,25 @@ const DUA: Sajian = { desimal: 2 }
 const angka2 = (v: string | undefined) => sajikan(v ?? '', DUA)
 const TEKS = new Set(['Note', 'Currency'])
 
-/** Teks satu sel grid: kolom tanpa properti kosong; Note/Currency apa adanya; format
- *  kolom (`Kolom.format`) bila ada; selain itu sajian grid. */
+/** Nilai tampil sel ANGKA yang kosong (permintaan pemakai 11-10-2026: "kalau nilai pada
+ *  kolom tidak ada atau kosong, isi 0,00 jangan kosong"). */
+const NOL_TAMPIL = '0,00'
+
+/** Kolom berisi angka: bukan kolom tanpa properti, bukan Note/Currency, bukan tanggal. */
+const kolomAngka = (c: Kolom) => c.m !== '' && !TEKS.has(c.m) && c.m !== 'DueDate'
+
+/** Sel angka yang tidak ada / kosong di baris. */
+const angkaKosong = (b: Baris, c: Kolom) => kolomAngka(c) && (b[c.m] ?? '').trim() === ''
+
+/** Nilai untuk kelas rata sel: sel angka kosong diperlakukan sebagai 0. */
+const nilaiKelas = (b: Baris, c: Kolom) => (angkaKosong(b, c) ? '0' : b[c.m])
+
+/** Teks satu sel grid: kolom tanpa properti kosong; Note/Currency apa adanya; sel angka
+ *  kosong `0,00`; format kolom (`Kolom.format`) bila ada; selain itu sajian grid. */
 function teksSel(b: Baris, c: Kolom, sajian: Sajian): string {
   if (c.m === '') return ''
   const v = b[c.m] ?? ''
+  if (angkaKosong(b, c)) return NOL_TAMPIL
   if (TEKS.has(c.m) || c.format === 'mentah') return v
   return sajikan(v, c.m === 'DueDate' ? 'tanggal' : (c.format ?? sajian))
 }
@@ -85,7 +99,7 @@ function Grid({ baris, kolom, sajian = DUA, nomor = false }: PropsGrid) {
                 key={`${c.m}-${j}`}
                 scope="col"
                 // kepala ikut rata kanan bila kolomnya berisi angka, sejajar dengan selnya
-                className={baris.some((b) => kelasAngka(b[c.m]) !== undefined) ? 'nbti__angka' : undefined}
+                className={baris.some((b) => kelasAngka(nilaiKelas(b, c)) !== undefined) ? 'nbti__angka' : undefined}
               >
                 {c.label}
               </th>
@@ -97,7 +111,7 @@ function Grid({ baris, kolom, sajian = DUA, nomor = false }: PropsGrid) {
             <tr key={i}>
               {nomor && <td className="nbti__urut-np">{i + 1}</td>}
               {kolom.map((c, j) => (
-                <td key={`${c.m}-${j}`} className={kelasAngka(b[c.m])}>
+                <td key={`${c.m}-${j}`} className={kelasAngka(nilaiKelas(b, c))}>
                   {teksSel(b, c, sajian)}
                 </td>
               ))}

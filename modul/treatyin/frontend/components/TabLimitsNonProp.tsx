@@ -24,7 +24,6 @@ import { PemicuUbah, usePemicuUbah } from './pemicuUbah'
 import { Field, FieldAngka } from '../../../../inti/frontend/components/ui/dasar'
 import { PilihCari as Pilih } from '../../../../inti/frontend/components/ui/pilihSaring'
 import {
-  ambilKelasBisnis,
   ambilOpsiLimits,
   hitungLimitNP,
   type AksiLimitNP,
@@ -109,6 +108,7 @@ function MedanNP({
   bisaUbah,
   onUbah,
   onLepas,
+  teks = false,
 }: {
   label: string
   nilai: string
@@ -116,6 +116,8 @@ function MedanNP({
   bisaUbah: boolean
   onUbah: (v: string) => void
   onLepas?: () => void
+  /** Teks bebas — huruf boleh (Layer/Part), tidak disaring `saringAngka`. */
+  teks?: boolean
 }) {
   // ⭐ Peristiwa `change` Pega — Activity berjalan HANYA bila nilainya
   // BERUBAH sejak medan dimasuki (8 Oktober 2026). Sebelumnya setiap
@@ -152,7 +154,7 @@ function MedanNP({
           value={bisaUbah ? nilai : tampil(nilai, desimal)}
           readOnly={!bisaUbah}
           onChange={(v) => {
-            onUbah(saringAngka(v))
+            onUbah(teks ? v : saringAngka(v))
           }}
         />
       ) : (
@@ -300,59 +302,22 @@ function RincianGrup({
   g,
   opsi,
   bisaUbah,
-  onUbah,
   onGantiGrup,
 }: {
   g: SimpulLimit
   opsi: OpsiLimits
   bisaUbah: boolean
-  onUbah: (g: SimpulLimit) => void
   onGantiGrup: (g: SimpulLimit) => void
 }) {
-  const [kelas, setKelas] = useState<PilihanWarisan[]>([])
-  const idGrup = teksDari(g, 'TreatyGroupID')
-  useEffect(() => {
-    if (!bisaUbah || idGrup === '') return
-    let dibuang = false
-    ambilKelasBisnis(idGrup)
-      .then((d) => {
-        if (!dibuang) setKelas(d)
-      })
-      .catch(() => undefined)
-    return () => {
-      dibuang = true
-    }
-  }, [bisaUbah, idGrup])
   const pilihGrup = (nama: string, id: string) => {
     onGantiGrup({ ...g, TreatyGroup: nama, TreatyGroupID: id })
   }
-  const daftarCoB = larikDari(g, 'ClassOfBusinessList')
   return (
     <>
       <DropdownDaftar label={LIMITS_NP.treatyGroup} nilai={teksDari(g, 'TreatyGroup')} pilihan={opsi.kelompokTreaty} bisaUbah={bisaUbah} onPilih={pilihGrup} />
-      {/* Add CoB / Delete MATI di ekspor (`ViewState !='1' && 1=2`). */}
-      <GridPega
-        label={LIMITS_NP.kelasBisnis}
-        kolom={[
-          {
-            judul: LIMITS_NP.kelasBisnis,
-            lebar: 722,
-            isi: (c, r) => (
-              <DropdownDaftar
-                label=""
-                nilai={teksDari(c, 'ClassOfBusiness')}
-                pilihan={kelas}
-                bisaUbah={bisaUbah}
-                onPilih={(nama, id) => {
-                  // DT `SetCoB` — nama dan kode Class of Business.
-                  onUbah({ ...g, ClassOfBusinessList: ganti(daftarCoB, r, { ...c, ClassOfBusiness: nama, ClassOfBusinessID: id }) })
-                }}
-              />
-            ),
-          },
-        ]}
-        baris={daftarCoB}
-      />
+      {/* ⛔ Class of Business TIDAK ditampilkan lagi (permintaan pemakai
+          10 Oktober 2026: "tidak digunakan lagi"). `ClassOfBusinessList`
+          tetap ada di data layer dan ikut tersimpan apa adanya. */}
     </>
   )
 }
@@ -421,9 +386,6 @@ function GridGrup({
           g={g}
           opsi={opsi}
           bisaUbah={bisaUbah}
-          onUbah={(baru) => {
-            onUbahBaris(r, baru)
-          }}
           onGantiGrup={(baru) => {
             onGantiBaris(r, baru)
           }}
@@ -499,14 +461,19 @@ export function RincianLayer({
       }}
     />
   )
-  const selMatriks = (kunci: string, desimal: number | null, label: string) =>
+  const selMatriks = (kunci: string, desimal: number | null, _label: string) =>
     bisaUbah ? (
-      <input
-        className="field__input"
+      // ⛔ `FieldAngka`, BUKAN input mentah + `saringAngka`: penyaring itu
+      // menganggap titik pemisah DESIMAL, sehingga `2.000.000.000` menjadi
+      // `2.000000000` = 2 — limit mengecil dan ROL % membengkak
+      // (33.390.000.000 vs Pega 33,39). `FieldAngka` memperlakukan titik
+      // sebagai ribuan dan koma sebagai desimal, lalu menyimpan bentuk kabel.
+      <FieldAngka
+        label=""
         value={teksDari(l, kunci)}
-        aria-label={label}
-        onChange={(e) => {
-          onUbah({ ...l, [kunci]: saringAngka(e.target.value) })
+        desimal={desimal === null ? 2 : desimal}
+        onChange={(v) => {
+          onUbah({ ...l, [kunci]: v })
         }}
       />
     ) : (
@@ -531,10 +498,12 @@ export function RincianLayer({
           `[Layer ▾] [1] Part of [Layer ▾] [1]`. */}
       <TataPegaBlok tata="alir">
         <PilihNP label="" nilai={teksDari(l, 'LayerType')} opsi={opsi.jenisLayer ?? []} bisaUbah={bisaUbah} onUbah={set('LayerType')} />
-        <MedanNP label="" nilai={teksDari(l, 'Layer')} desimal={null} bisaUbah={bisaUbah} onUbah={set('Layer')} />
+        {/* ⭐ Layer dan Part boleh HURUF (permintaan pemakai 10 Oktober 2026) —
+            bukan kontrol Number, jadi tidak disaring `saringAngka`. */}
+        <MedanNP label="" nilai={teksDari(l, 'Layer')} desimal={null} bisaUbah={bisaUbah} onUbah={set('Layer')} teks />
         <TeksPega>{LIMITS_NP.partOf}</TeksPega>
         <PilihNP label="" nilai={teksDari(l, 'LayerPartType')} opsi={opsi.jenisLayer ?? []} bisaUbah={bisaUbah} onUbah={set('LayerPartType')} />
-        <MedanNP label="" nilai={teksDari(l, 'LayerPart')} desimal={null} bisaUbah={bisaUbah} onUbah={set('LayerPart')} />
+        <MedanNP label="" nilai={teksDari(l, 'LayerPart')} desimal={null} bisaUbah={bisaUbah} onUbah={set('LayerPart')} teks />
       </TataPegaBlok>
 
       {/* Grid Treaty Group — `masterDetail`, rincian `CoBList`. */}
@@ -678,12 +647,13 @@ export function RincianLayer({
                     if (aksi !== undefined) hitung(aksi, r)
                   }}
                 >
-                  <input
-                    className="field__input"
+                  {/* `FieldAngka` — lihat `selMatriks`: titik = ribuan, bukan desimal. */}
+                  <FieldAngka
+                    label=""
                     value={v}
-                    aria-label={k.label}
-                    onChange={(e) => {
-                      ubahSel(saringAngka(e.target.value))
+                    desimal={k.desimal === null ? 2 : k.desimal}
+                    onChange={(x) => {
+                      ubahSel(x)
                     }}
                   />
                 </PemicuUbah>

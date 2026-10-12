@@ -55,13 +55,16 @@ describe('§0 syarat tampil tab', () => {
     expect(tabUntuk(NON_PROPORSIONAL)).toEqual(TAB_NON_PROPORSIONAL)
   })
 
-  // ⛔ DIBALIK 8 Oktober 2026 — tab itu DIKELUARKAN dari proyek atas
-  // keputusan pemilik proses. Kedua uji lama menjaga kapan ia tampil; yang
-  // ini menjaga bahwa ia TIDAK PERNAH tampil, pada nilai apa pun.
-  it('⛔ tab itu nol di kedua cabang, pada keadaan dokumen apa pun', () => {
+  // ⛔ 8 Oktober 2026 — Retro DIKELUARKAN dari cabang PROPORSIONAL atas
+  // keputusan pemilik proses, dan tetap tidak pernah tampil di sana.
+  // ⭐ 10 Oktober 2026 — cabang NON-PROPORSIONAL memakainya lagi (Pega: tab
+  // `Retro` ada, `RNM Share` tidak), tanpa syarat (`TABBED` @3291797, nol
+  // `pyContainerVisibleWhen`): tampil pada keadaan dokumen apa pun.
+  it('⛔ Retro nol di Prop; selalu ada di Non-Prop, pada keadaan dokumen apa pun', () => {
     for (const k of [KOSONG, { ...KOSONG, retroBerganda: 'false' }, { ...KOSONG, retroBerganda: 'true' }]) {
       expect(tabUntuk(PROPORSIONAL, k)).not.toContain('Retro')
-      expect(tabUntuk(NON_PROPORSIONAL, k)).not.toContain('Retro')
+      expect(tabUntuk(NON_PROPORSIONAL, k)).toContain('Retro')
+      expect(tabUntuk(NON_PROPORSIONAL, k)).not.toContain('RNM Share')
     }
   })
 
@@ -107,7 +110,10 @@ describe('§0 syarat tampil tab', () => {
   // tidak ada"*). Pertanyaan terbukanya TERTUTUP; alasannya tercatat.
   it('hanya RNM Share Non-Prop yang dihapus, dan keputusannya tercatat', () => {
     expect(TAB_PROPORSIONAL).toHaveLength(10)
-    expect(TAB_NON_PROPORSIONAL).toHaveLength(10)
+    // ⭐ 10 Oktober 2026: `Retro` mengisi posisi `RNM Share` yang dihapus
+    // keputusan 8 Oktober (`di non prop tab RNM SHARE itu tidak ada`). Tetap 11.
+    expect(TAB_NON_PROPORSIONAL).toHaveLength(11)
+    expect(TAB_NON_PROPORSIONAL).toContain('Retro')
     expect(TAB_NON_PROPORSIONAL as readonly string[]).not.toContain('RNM Share')
     expect(LABELS).toContain('di non prop tab RNM SHARE itu tidak')
   })
@@ -230,7 +236,8 @@ describe('§5 Update Total dan Total Retention Amount', () => {
 // untuk memasukkan sesuatu ke dalamnya diam-diam.
 describe('⛔ tab yang dikeluarkan nol jejak di strip', () => {
   it('daftar tab dan peta syaratnya bersih', () => {
-    expect([...TAB_PROPORSIONAL, ...TAB_NON_PROPORSIONAL]).not.toContain('Retro')
+    expect([...TAB_PROPORSIONAL]).not.toContain('Retro')
+    expect([...TAB_NON_PROPORSIONAL]).toContain('Retro')
     expect(Object.keys(SYARAT_TAB_PROPORSIONAL)).not.toContain('Retro')
     expect(Object.keys(SYARAT_TAB_NON_PROPORSIONAL)).not.toContain('Retro')
   })
